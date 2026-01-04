@@ -217,11 +217,11 @@
                             class="{{ Route::currentRouteName() == 'dashboard.requests.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
                                 class="{{ Route::currentRouteName() == 'dashboard.requests.index' ? 'text-white' : '' }} fa fa-shopping-cart text-gray-500 pl-2"></i>
-                            <span class="ml-3">طلبات الانظمة الجاهزة</span>
+                            <span class="ml-3">الطلبات</span>
                         </a>
                     </li>
                     @endif
-                    @if (Auth::user()->role == 'admin')
+                    {{-- @if (Auth::user()->role == 'admin')
                     <li>
                         <a href="{{ route('dashboard.special-request.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.special-request.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -230,7 +230,7 @@
                             <span class="ml-3">الطلبات الخاصة</span>
                         </a>
                     </li>
-                    @endif
+                    @endif --}}
                     @if (Auth::user()->role == 'client')
                     <li>
                         <a href="{{ route('special-request.show') }}"
