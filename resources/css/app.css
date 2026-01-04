@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*,
+body {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: "Cairo", sans-serif;
+}
+
+.iti.iti--allow-dropdown.iti--show-flags.iti--inline-dropdown {
+    width: 100% !important;
+}
