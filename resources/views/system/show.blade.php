@@ -130,7 +130,7 @@
                             {{ __('messages.buy_now') }}
                         </button>
                         @else
-                        <a href="{{ $system->system_link }}" target="_blank"
+                        <a href="{{ $system->external_url }}" target="_blank"
                             class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg
                             hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center
                             gap-2">
