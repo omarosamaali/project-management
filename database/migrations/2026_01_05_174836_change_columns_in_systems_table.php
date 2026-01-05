@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('systems', function (Blueprint $table) {
+            $table->boolean('system_external')->nullable()->default(false)->change();
+            $table->json('requirements')->nullable()->change();
+            $table->json('features')->nullable()->change();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('system', function (Blueprint $table) {
+            //
+        });
+    }
+};

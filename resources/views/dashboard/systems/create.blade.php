@@ -196,8 +196,6 @@
                     </h2>
 
                     <div id="requirements-container" class="space-y-3">
-
-                        <!-- Requirement 1 -->
                         <div class="flex gap-2 requirement-row">
                             <input type="text" name="requirements_ar[]"
                                 class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
