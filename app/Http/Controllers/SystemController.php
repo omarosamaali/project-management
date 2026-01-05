@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Logo;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Requests;
 use App\Models\System;
@@ -14,8 +15,8 @@ class SystemController extends Controller
         $systems = System::where('status', 'active')
             ->with('payments', 'requests')
             ->get();
-
-        return view('system.index', compact('systems'));
+        $logos = Logo::all();
+        return view('system.index', compact('systems', 'logos'));
     }
 
     // Show Method

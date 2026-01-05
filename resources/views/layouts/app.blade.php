@@ -384,10 +384,16 @@
                             class="{{ Route::currentRouteName() == 'dashboard.kb_categories.index' ? 'text-white' : '' }} fas fa-tags text-gray-500 pl-2"></i>
                         <span class="ml-3">تصنيفات المعلومات</span>
                     </a>
+                    <a href="{{ route('dashboard.kb.index') }}"
+                        class="{{ Route::currentRouteName() == 'dashboard.kb.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ Route::currentRouteName() == 'dashboard.kb.index' ? 'text-white' : '' }} fas fa-book-reader text-gray-500 pl-2"></i>
+                        <span class="ml-3">بنك المعلومات</span>
+                    </a>
                     @endif
 
                     @if(Auth::user()->role == 'partner' && Auth::user()->is_employee == 1 &&
-                                        Auth::user()->can_request_meetings == 1)
+                    Auth::user()->can_request_meetings == 1)
                     <a href="{{ route('dashboard.sessions.index') }}"
                         class="{{ str_contains(Route::currentRouteName(), 'dashboard.sessions') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
@@ -397,6 +403,18 @@
                     @endif
 
                     @if(Auth::user()->role == 'admin')
+                    <a href="{{ route('dashboard.logos.index') }}"
+                        class="{{ str_contains(Route::currentRouteName(), 'dashboard.sessions') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName(), 'dashboard.logos') ? 'text-white' : '' }} fas fa-handshake text-gray-500 pl-2"></i>
+                        <span class="ml-3">شركاء النجاح</span>
+                    </a>
+                    <a href="{{ route('dashboard.sessions.index') }}"
+                        class="{{ str_contains(Route::currentRouteName(), 'dashboard.sessions') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName(), 'dashboard.sessions') ? 'text-white' : '' }} fas fa-handshake text-gray-500 pl-2"></i>
+                        <span class="ml-3">طلبات الاجتماعات</span>
+                    </a>
                     <a href="{{ route('dashboard.work-times.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i

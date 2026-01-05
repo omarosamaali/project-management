@@ -155,81 +155,18 @@
 <!-- Start Marquee Section -->
 <section class="pt-4">
     <div class="container-fluid px-0">
-    <div class="text-center mb-12">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">{{ __('messages.success_partners') }}</h1>
-    </div>
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">{{ __('messages.success_partners') }}</h1>
+        </div>
         <div class="marquee-container">
             <div class="marquee-content">
-                <!-- First set of logos -->
+                {{-- عرض الشعارات مرتين لضمان استمرارية الحركة --}}
+                @foreach($logos->concat($logos) as $logo)
                 <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/amazon.svg" alt="Amazon"
-                        style="filter: invert(0.3);">
+                    <img src="{{ asset('storage/' . $logo->image_path) }}" alt="{{ $logo->name }}"
+                        style="filter: invert(0.3); max-height: 50px;">
                 </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/google.svg" alt="Google"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/lenovo.svg" alt="Lenovo"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/paypal.svg" alt="PayPal"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/shopify.svg" alt="Shopify"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/spotify.svg" alt="Spotify"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/microsoft.svg" alt="Microsoft"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/apple.svg" alt="Apple"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/meta.svg" alt="Meta"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/netflix.svg" alt="Netflix"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/adobe.svg" alt="Adobe"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/tesla.svg" alt="Tesla"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/apple.svg" alt="Apple"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/meta.svg" alt="Meta"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/netflix.svg" alt="Netflix"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/adobe.svg" alt="Adobe"
-                        style="filter: invert(0.3);">
-                </div>
-                <div class="marquee-item">
-                    <img src="https://cdnjs.cloudflare.com/ajax/libs/simple-icons/9.0.0/tesla.svg" alt="Tesla"
-                        style="filter: invert(0.3);">
-                </div>
-
+                @endforeach
             </div>
         </div>
     </div>

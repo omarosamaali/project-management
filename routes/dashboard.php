@@ -13,6 +13,7 @@ use App\Http\Controllers\Dashboard\WithdrawalRequestsController;
 use App\Http\Controllers\Dashboard\SpecialRequestController;
 use App\Http\Controllers\Dashboard\ServiceController;
 use App\Http\Controllers\Dashboard\MyServiceController;
+use App\Http\Controllers\Dashboard\LogoController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ExpensesController;
@@ -75,6 +76,7 @@ Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(func
 
 // System Routes
 Route::middleware('auth')->group(function () {
+    Route::resource('logos', LogoController::class)->names('dashboard.logos');
     Route::post('/request-files', [RequestFileController::class, 'store'])->name('request-files.store');
     Route::delete('/request-files/{file}', [RequestFileController::class, 'destroy'])->name('request-files.destroy');
     Route::post('/dashboard/requests/{id}/add-note', [RequestsController::class, 'addNote'])->name('dashboard.requests.add-note');
