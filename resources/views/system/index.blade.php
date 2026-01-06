@@ -53,17 +53,23 @@
                             {{ $system->execution_days_to }} {{ __('messages.day') }}</span>
                     </div>
                 </div>
-
+                @if(!empty($system->features) && isset($system->features[0][app()->getLocale()]) &&
+                $system->features[0][app()->getLocale()] !== null && $system->features[0][app()->getLocale()] !== '')
                 <div class="mb-4 flex-grow">
-                    <h4 class="font-semibold text-gray-700 mb-2 ltr:text-left rtl:text-right">{{
-                        __('messages.features') }}</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2 ltr:text-left rtl:text-right">
+                        {{ __('messages.features') }}
+                    </h4>
                     <div class="flex flex-wrap gap-2">
                         @foreach($system->features as $feature)
+                        @if(!empty($feature[app()->getLocale()]))
                         <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">
-                            {{ app()->getLocale() == 'en' ? $feature['en'] : $feature['ar'] }}</span>
+                            {{ $feature[app()->getLocale()] }}
+                        </span>
+                        @endif
                         @endforeach
                     </div>
                 </div>
+                @endif
                 <div class="mt-auto pt-4 space-y-3">
                     <a href="{{ route('system.show', $system) }}"
                         class="block text-center w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-md hover:shadow-lg">
@@ -76,9 +82,9 @@
                         @if($system->counter > 0)
                         <span class="text-sm font-medium">
                             {{ __('messages.purchase') }}
-                        <span class="font-bold text-red-600">
-                            {{ $system->counter }}
-                        </span>
+                            <span class="font-bold text-red-600">
+                                {{ $system->counter }}
+                            </span>
                             {{ __('messages.times') }}
                         </span>
                         @else

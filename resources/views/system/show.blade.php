@@ -78,6 +78,9 @@
                         </div>
 
                         <!-- Requirements Card -->
+                        @if(!empty($system->requirements) && isset($system->requirements[0][app()->getLocale()]) &&
+                        $system->requirements[0][app()->getLocale()] !== null &&
+                        $system->requirements[0][app()->getLocale()] !== '')
                         <div class="flex items-start gap-3 p-4 bg-gray-100 rounded-lg">
                             <i class="fa fa-box-open h-6 w-6 text-black mt-1"></i>
                             <div class="ltr:text-left rtl:text-right flex-1">
@@ -95,8 +98,12 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <!-- Features List -->
+                    @if(!empty($system->features) && isset($system->features[0][app()->getLocale()]) &&
+                    $system->features[0][app()->getLocale()] !== null && $system->features[0][app()->getLocale()] !==
+                    '')
                     <div class="mb-8">
                         <h3 class="text-2xl font-bold text-gray-800 mb-4 ltr:text-left rtl:text-right">
                             {{ __('messages.all_features') }}
@@ -112,6 +119,7 @@
                             @endforeach
                         </div>
                     </div>
+                    @endif
 
                     <!-- Action Buttons -->
                     <div class="flex gap-4">
@@ -130,8 +138,7 @@
                             {{ __('messages.buy_now') }}
                         </button>
                         @else
-                        <a href="{{ $system->external_url }}" target="_blank"
-                            class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg
+                        <a href="{{ $system->external_url }}" target="_blank" class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg
                             hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center
                             gap-2">
                             <i class="fas fa-shopping-cart"></i>
@@ -150,8 +157,9 @@
                                         <span id="originalPrice" class="font-bold"></span>
                                     </div>
                                     <div class="flex justify-between text-sm text-gray-600">
-                                        <span class="items-center flex">{{ __('messages.payment_fees') }} (7.9% + 2 
-                                            <x-drhm-icon width="16" height="16" color="000" />):</span>
+                                        <span class="items-center flex">{{ __('messages.payment_fees') }} (7.9% + 2
+                                            <x-drhm-icon width="16" height="16" color="000" />):
+                                        </span>
                                         <span id="fees"></span>
                                     </div>
                                     <div class="flex justify-between text-lg font-bold border-t pt-3">

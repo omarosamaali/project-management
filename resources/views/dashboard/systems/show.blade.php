@@ -173,6 +173,10 @@
                 </div>
 
                 <!-- المتطلبات -->
+                
+                @if(!empty($system->requirements) && isset($system->requirements[0][app()->getLocale()]) &&
+                    $system->requirements[0][app()->getLocale()] !== null &&
+                    $system->requirements[0][app()->getLocale()] !== '')
                 <div class="border-b pb-6">
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                         <i class="fas fa-list-check text-blue-600"></i>
@@ -195,8 +199,12 @@
                         @endforeach
                     </div>
                 </div>
+                @endif
 
                 <!-- المميزات -->
+                @if(!empty($system->features) && isset($system->features[0][app()->getLocale()]) &&
+                $system->features[0][app()->getLocale()] !== null && $system->features[0][app()->getLocale()] !==
+                '')
                 <div class="border-b pb-6">
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
                         <i class="fas fa-star text-blue-600"></i>
@@ -219,6 +227,7 @@
                         @endforeach
                     </div>
                 </div>
+                @endif
 
                 <!-- الأزرار -->
                 @if(!empty($system->buttons))
