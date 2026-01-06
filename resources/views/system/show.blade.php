@@ -99,27 +99,43 @@
                         </div>
                     </div>
                     @endif
-
-                    <!-- Features List -->
-                    @if(!empty($system->features) && isset($system->features[0][app()->getLocale()]) &&
-                    $system->features[0][app()->getLocale()] !== null && $system->features[0][app()->getLocale()] !==
-                    '')
-                    <div class="mb-8">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-4 ltr:text-left rtl:text-right">
-                            {{ __('messages.all_features') }}
-                        </h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            @foreach($system->features as $feature)
-                            <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                                <div class="h-2 w-2 bg-red-600 rounded-full flex-shrink-0"></div>
-                                <span class="text-gray-700">
-                                    {{ app()->getLocale() == 'en' ? $feature['en'] : $feature['ar'] }}
-                                </span>
-                            </div>
-                            @endforeach
+            @if($system->service_id && $system->service)
+            <div
+                class="mb-6 inline-flex items-center gap-2 bg-gradient-to-r from-red-50 to-red-100 border border-red-200 text-red-700 px-4 py-2 rounded-lg shadow-sm">
+                @if($system->service->image)
+                <img src="{{ asset('storage/' . $system->service->image) }}"
+                    alt="{{ app()->getLocale() == 'ar' ? $system->service->name_ar : $system->service->name_en }}"
+                    class="w-6 h-6 object-contain"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <i class="fas fa-tag" style="display: none;"></i>
+                @else
+                <i class="fas fa-tag"></i>
+                @endif
+                <span class="font-semibold text-sm">
+                    {{ app()->getLocale() == 'ar' ? $system->service->name_ar : $system->service->name_en }}
+                </span>
+            </div>
+            @endif
+                
+                <!-- Features List -->
+                @if(!empty($system->features) && isset($system->features[0][app()->getLocale()]) &&
+                $system->features[0][app()->getLocale()] !== null && $system->features[0][app()->getLocale()] !== '')
+                <div class="mb-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4 ltr:text-left rtl:text-right">
+                        {{ __('messages.all_features') }}
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        @foreach($system->features as $feature)
+                        <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <div class="h-2 w-2 bg-red-600 rounded-full flex-shrink-0"></div>
+                            <span class="text-gray-700">
+                                {{ app()->getLocale() == 'en' ? $feature['en'] : $feature['ar'] }}
+                            </span>
                         </div>
+                        @endforeach
                     </div>
-                    @endif
+                </div>
+                @endif
 
                     <!-- Action Buttons -->
                     <div class="flex gap-4">

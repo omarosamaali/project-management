@@ -22,6 +22,16 @@
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.systems.index') }}" second="الأنظمة" third="إضافة نظام" />
     <div class="mx-auto max-w-4xl w-full rounded-xl">
         <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
+            {{-- display all errors --}}
+            @foreach ($errors->all() as $error)
+            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+                role="alert">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-times-circle"></i>
+                    <span class="font-medium">{{ $error }}</span>
+                </div>
+            </div>
+            @endforeach
             <form action="{{ route('dashboard.systems.store') }}" method="POST" enctype="multipart/form-data"
                 class="space-y-8">
                 @csrf
