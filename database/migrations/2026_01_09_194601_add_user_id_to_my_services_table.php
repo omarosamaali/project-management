@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('my_services', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
-        });
+            if (!Schema::hasColumn('my_services', 'user_id')) {
+                $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
+            } else {
+                // إذا كان العمود موجوداً ولكن ينقصه الربط (Foreign Key)
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade')->change();
+            }        });
     }
 
     /**
