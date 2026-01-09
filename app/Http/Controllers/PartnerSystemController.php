@@ -12,7 +12,7 @@ class PartnerSystemController extends Controller
      */
     public function index()
     {
-        $myServices = MyService::paginate(8);
+        $myServices = MyService::where('status', 'active')->paginate(8);
         return view('dashboard.partner_systems.index', compact('myServices'));
     }
 
