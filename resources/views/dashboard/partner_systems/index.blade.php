@@ -87,7 +87,7 @@
                                 {{ $loop->iteration }}
                             </td>
                             <td class="px-4 py-3">
-                                {{ $service->user->name }}
+                                {{ $service->user->name ?? 'لا يوجد' }}
                             </td>
                             <td class="px-4 py-3">
                                 {{ $service->name_ar }}
