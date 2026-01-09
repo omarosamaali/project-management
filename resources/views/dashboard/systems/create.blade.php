@@ -22,6 +22,7 @@
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.systems.index') }}" second="الأنظمة" third="إضافة نظام" />
     <div class="mx-auto max-w-4xl w-full rounded-xl">
         <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
+
             {{-- display all errors --}}
             @foreach ($errors->all() as $error)
             <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
@@ -32,6 +33,7 @@
                 </div>
             </div>
             @endforeach
+
             <form action="{{ route('dashboard.systems.store') }}" method="POST" enctype="multipart/form-data"
                 class="space-y-8">
                 @csrf
@@ -242,10 +244,10 @@
                         <!-- Feature 1 -->
                         <div class="flex gap-2 feature-row">
                             <input type="text" name="features_ar[]"
-                                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                class="feature-ar-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 placeholder="لوحة تحكم احترافية">
                             <input type="text" name="features_en[]" dir="ltr"
-                                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                class="feature-en-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 placeholder="Professional Dashboard">
                             @error('features_ar.*')
                             <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -420,32 +422,42 @@
                         رابط النظام الخارجي <span class="text-red-500">*</span>
                     </label>
                     <input type="url" name="external_url" id="external_url" value="{{ old('external_url') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         placeholder="https://example.com">
                     @error('external_url')
                     <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
-                        const toggle = document.getElementById('system_external_toggle');
-                        const urlContainer = document.getElementById('external_url_container');
-                        const urlInput = document.getElementById('external_url');
-                                        const handleToggle = (isChecked) => {
-                            if (isChecked) {
-                                urlContainer.classList.remove('hidden');
-                                urlInput.setAttribute('required', 'required');
-                            } else {
-                                urlContainer.classList.add('hidden');
-                                urlInput.removeAttribute('required');
-                            }
-                        };
-                        toggle.addEventListener('change', function () {
-                            handleToggle(this.checked);
-                        });
-                    });
-                </script>
+                <div class="mb-4">
+                    <label for="evorq_onwer" class="block text-sm font-medium text-gray-700 mb-1">
+                        هل تملك Evorq النظام <span class="text-red-500">*</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        
+                        <input type="checkbox" id="evorq_onwer_toggle" name="evorq_onwer" value="1" class="sr-only peer"
+                            {{ old('evorq_onwer') ? 'checked' : '' }}>
+                        <div
+                            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        </div>
+                        <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
+                    </label>
+                    @error('evorq_onwer')
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+                
+                <div id="onwer_system_container" class="{{ old('evorq_onwer') ? '' : 'hidden' }} mt-4 mb-6">
+                    <label for="onwer_system" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        اسم مالك النظام <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system') }}"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                        >
+                    @error('onwer_system')
+                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
 
                 <!-- الحالة -->
                 <div class="border-b pb-6">
@@ -485,6 +497,139 @@
                     </button>
                 </div>
             </form>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                                                
+                                                // ترجمة المميزات باستخدام Event Delegation
+                                                const featuresContainer = document.getElementById('features-container');
+                                                if (featuresContainer) {
+                                                featuresContainer.addEventListener('input', function (e) {
+                                                // إذا كان الإدخال في حقل عربي
+                                                if (e.target.name === 'features_ar[]') {
+                                                const row = e.target.closest('.feature-row');
+                                                const targetInput = row.querySelector('input[name="features_en[]"]');
+                                                
+                                                clearTimeout(e.target.timeout);
+                                                e.target.timeout = setTimeout(async () => {
+                                                if (e.target.value.trim()) {
+                                                const translated = await translateText(e.target.value, 'ar', 'en');
+                                                targetInput.value = translated;
+                                                }
+                                                }, 1000);
+                                                }
+                                                
+                                                // إذا كان الإدخال في حقل إنجليزي
+                                                if (e.target.name === 'features_en[]') {
+                                                const row = e.target.closest('.feature-row');
+                                                const targetInput = row.querySelector('input[name="features_ar[]"]');
+                                                
+                                                clearTimeout(e.target.timeout);
+                                                e.target.timeout = setTimeout(async () => {
+                                                if (e.target.value.trim()) {
+                                                const translated = await translateText(e.target.value, 'en', 'ar');
+                                                targetInput.value = translated;
+                                                }
+                                                }, 1000);
+                                                }
+                                                });
+                                                }
+                                                
+                                                // باقي الكود للاسم والوصف (شغال صح)
+                                                let nameArTimeout;
+                                                const nameArInput = document.getElementById('name_ar');
+                                                if (nameArInput) {
+                                                nameArInput.addEventListener('input', function(e) {
+                                                clearTimeout(nameArTimeout);
+                                                nameArTimeout = setTimeout(async () => {
+                                                if (e.target.value.trim()) {
+                                                const translated = await translateText(e.target.value, 'ar', 'en');
+                                                document.getElementById('name_en').value = translated;
+                                                }
+                                                }, 1000);
+                                                });
+                                                }
+                                                
+                                                let nameEnTimeout;
+                                                const nameEnInput = document.getElementById('name_en');
+                                                if (nameEnInput) {
+                                                nameEnInput.addEventListener('input', function(e) {
+                                                clearTimeout(nameEnTimeout);
+                                                nameEnTimeout = setTimeout(async () => {
+                                                if (e.target.value.trim()) {
+                                                const translated = await translateText(e.target.value, 'en', 'ar');
+                                                document.getElementById('name_ar').value = translated;
+                                                }
+                                                }, 1000);
+                                                });
+                                                }
+                                                
+                                                let descArTimeout;
+                                                const descArInput = document.getElementById('description_ar');
+                                                if (descArInput) {
+                                                descArInput.addEventListener('input', function(e) {
+                                                clearTimeout(descArTimeout);
+                                                descArTimeout = setTimeout(async () => {
+                                                if (e.target.value.trim()) {
+                                                const translated = await translateText(e.target.value, 'ar', 'en');
+                                                document.getElementById('description_en').value = translated;
+                                                }
+                                                }, 1000);
+                                                });
+                                                }
+                                                
+                                                let descEnTimeout;
+                                                const descEnInput = document.getElementById('description_en');
+                                                if (descEnInput) {
+                                                descEnInput.addEventListener('input', function(e) {
+                                                clearTimeout(descEnTimeout);
+                                                descEnTimeout = setTimeout(async () => {
+                                                if (e.target.value.trim()) {
+                                                const translated = await translateText(e.target.value, 'en', 'ar');
+                                                document.getElementById('description_ar').value = translated;
+                                                }
+                                                }, 1500);
+                                                });
+                                                }
+                                                
+                                                });
+             
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    const toggle = document.getElementById('system_external_toggle');
+                                    const urlContainer = document.getElementById('external_url_container');
+                                    const urlInput = document.getElementById('external_url');
+                                                    const handleToggle = (isChecked) => {
+                                        if (isChecked) {
+                                            urlContainer.classList.remove('hidden');
+                                            urlInput.setAttribute('required', 'required');
+                                        } else {
+                                            urlContainer.classList.add('hidden');
+                                            urlInput.removeAttribute('required');
+                                        }
+                                    };
+                                    toggle.addEventListener('change', function () {
+                                        handleToggle(this.checked);
+                                    });
+                                });
+
+                                document.addEventListener('DOMContentLoaded', function () {
+                                                            const toggle = document.getElementById('evorq_onwer_toggle');
+                                                            const urlContainer = document.getElementById('onwer_system_container');
+                                                            const urlInput = document.getElementById('onwer_system');
+                                                            const handleToggle = (isChecked) => {
+                                                            if (isChecked) {
+                                                            urlContainer.classList.remove('hidden');
+                                                            urlInput.setAttribute('required', 'required');
+                                                            } else {
+                                                            urlContainer.classList.add('hidden');
+                                                            urlInput.removeAttribute('required');
+                                                            }
+                                                            };
+                                                            toggle.addEventListener('change', function () {
+                                                            handleToggle(this.checked);
+                                                            });
+                                                            });
+            </script>
         </div>
     </div>
 </section>

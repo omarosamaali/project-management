@@ -25,7 +25,9 @@ class System extends Model
         'service_id',
         'counter',
         'system_external',
-        'external_url'
+        'external_url',
+        'onwer_system',
+        'evorq_onwer',
     ];
 
     protected $casts = [
@@ -54,7 +56,6 @@ class System extends Model
         return $this->belongsTo(Service::class);
     }
 
-    // في app/Models/System.php
     public function payments()
     {
         return $this->hasMany(Payment::class, 'system_id');

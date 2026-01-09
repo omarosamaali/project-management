@@ -65,11 +65,29 @@
                             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                                 الاسم (الانجليزي)
                             </label>
-                            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ $service->name_en }}</span>
+                            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ $service->name_en
+                                }}</span>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                نسبة شركة ايفورك
+                            </label>
+                            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ $service->evork_commission
+                                }}</span>
+                        </div>
+
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
+                                هل الخدمة متوفرة لشاشة الشركاء
+                            </label>
+                            <span class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ $service->show_in_partner_screen == 1 ? 'نعم' : 'لا'
+                                }}</span>
                         </div>
 
                         <div class="bg-green-50 dark:bg-gray-700 p-4 rounded-lg">
-                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">الحالة</label>
+                            <label
+                                class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">الحالة</label>
                             <div class="flex items-center gap-1">
                                 <span class="text-2xl font-bold text-green-700 dark:text-green-400">
                                     {{ $service->status == 'active' ? 'نشط' : 'غير نشط' }}

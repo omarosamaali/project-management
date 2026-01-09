@@ -40,7 +40,8 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             PartnerAssignmentSeeder::class,
             SystemPaymentsSeeder::class,
-            RequestsTableSeeder::class
+            RequestsTableSeeder::class,
+            WorkTimeSeeder::class
         ]);
     }
 }

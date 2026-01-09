@@ -42,12 +42,11 @@
     }
 
     .marquee-item img {
-        height: 60px;
-        width: 120px;
+        height: 80px;
+        width: 140px;
         object-fit: contain;
     }
 
-    /* الـ keyframes الجديدة بدون مسافات فارغة */
     @keyframes marquee {
         0% {
             transform: translateX(-0);

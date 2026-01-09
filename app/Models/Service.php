@@ -11,6 +11,8 @@ class Service extends Model
         'name_ar',
         'name_en',
         'status',
+        'evork_commission',
+        'show_in_partner_screen',
     ];
 
     public function user()

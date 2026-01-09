@@ -8,9 +8,12 @@
 
     <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold dark:text-white">بنك المعلومات</h1>
+        @if(Auth::user()->is_employee == 1 &&
+        Auth::user()->can_enter_knowledge_bank == 1)
         <a href="{{ route('dashboard.kb.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">
             <i class="fas fa-plus"></i> إضافة معلومة جديدة
         </a>
+        @endif
     </div>
 
     <div

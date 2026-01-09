@@ -476,6 +476,36 @@
     });
 </script>
 
+<div class="mb-4">
+    <label for="evorq_onwer" class="block text-sm font-medium text-gray-700 mb-1">
+        هل تملك Evorq النظام<span class="text-red-500">*</span>
+    </label>
+    <label class="inline-flex items-center cursor-pointer">
+<input type="hidden" name="evorq_onwer" value="0">
+
+<input type="checkbox" id="evorq_onwer_toggle" name="evorq_onwer" value="1" class="sr-only peer" {{ old('evorq_onwer',
+    $system->evorq_onwer) ? 'checked' : '' }}>        <div
+            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+        </div>
+        <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
+    </label>
+    @error('evorq_onwer')
+    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    @enderror
+</div>
+
+<div id="onwer_system_container"
+    class="{{ old('evorq_onwer', $system->evorq_onwer) ? '' : 'hidden' }} mt-4 mb-6">
+    <label for="onwer_system" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        اسم مالك النظام <span class="text-red-500">*</span>
+    </label>
+    <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system', $system->onwer_system) }}"
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+        >
+    @error('onwer_system')
+    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    @enderror
+</div>
                 <!-- الحالة -->
                 <div class="border-b pb-6">
                     <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -524,6 +554,30 @@
 </section>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const toggle = document.getElementById('evorq_onwer_toggle');
+    
+    // FIX: Match the ID used in your HTML div
+    const urlContainer = document.getElementById('onwer_system_container');
+    
+    const urlInput = document.getElementById('onwer_system');
+    
+    const handleToggle = (isChecked) => {
+    if (urlContainer) { // Added a safety check
+    if (isChecked) {
+    urlContainer.classList.remove('hidden');
+    urlInput.setAttribute('required', 'required');
+    } else {
+    urlContainer.classList.add('hidden');
+    urlInput.removeAttribute('required');
+    }
+    }
+    };
+    
+    toggle.addEventListener('change', function() {
+    handleToggle(this.checked);
+    });
+    });
     function deleteImage(index, button) {
     if (confirm('هل أنت متأكد من حذف هذه الصورة؟')) {
         button.closest('.existing-image-item').remove();

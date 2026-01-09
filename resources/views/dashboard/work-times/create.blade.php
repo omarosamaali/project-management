@@ -29,7 +29,7 @@
 
 <section class="p-3 sm:p-5">
     {{-- Breadcrumb --}}
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.work-times.index') }}" second="أوقات العمل"
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.work-times.index') }}" second="الحضور والإنصراف"
         third="إضافة سجل وقت" />
 
     <div class="mx-auto max-w-4xl w-full">
@@ -73,25 +73,49 @@
                 </style>
                 {{-- الموظف والبلد --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">اسم
-                            الموظف</label>
-                        <select name="user_id"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
-                            <option selected disabled>اختر الموظف</option>
-                            @foreach($employees as $emp)
-                            <option value="{{ $emp->id }}">{{ $emp->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">الدولة</label>
-                        <select id="country_select2" name="country"
-                            class="!py-3 placeholder-gray-400 block mt-1 w-full rtl:text-right " required>
-                            <option value="" disabled selected>... جاري تحميل الدول ...</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('country')" class="mt-2" />
-                    </div>
+<div>
+    <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">اسم الموظف</label>
+    <select name="user_id" id="employee_select"
+        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
+        <option selected disabled>اختر الموظف</option>
+        @foreach($employees as $emp)
+        <option value="{{ $emp->id }}" data-country="{{ $emp->country_name }}">
+            {{ $emp->name }}
+        </option>
+        @endforeach
+    </select>
+</div>
+
+<div>
+    <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">الدولة</label>
+    <select id="country_select2" name="country" class="!py-3 placeholder-gray-400 block mt-1 w-full rtl:text-right"
+        required>
+        <option value="" disabled selected>اختر الموظف أولاً</option>
+    </select>
+    <x-input-error :messages="$errors->get('country')" class="mt-2" />
+</div>
+<script>
+    document.getElementById('employee_select').addEventListener('change', function() {
+        // 1. الحصول على خيار الموظف المختار
+        const selectedOption = this.options[this.selectedIndex];
+        
+        // 2. سحب اسم الدولة (الذي أصبح الآن الاسم الكامل وليس الرمز)
+        const countryName = selectedOption.getAttribute('data-country');
+        
+        const countrySelect = document.getElementById('country_select2');
+        
+        // 3. تحديث قائمة الدول
+        countrySelect.innerHTML = ''; 
+        
+        if (countryName && countryName.trim() !== "") {
+            // نضع اسم الدولة كنص (Text) وكقيمة (Value) ليتم إرسالها للـ Controller عند الحفظ
+            const newOption = new Option(countryName, countryName, true, true);
+            countrySelect.add(newOption);
+        } else {
+            countrySelect.innerHTML = '<option disabled selected>لا توجد دولة مسجلة لهذا الموظف</option>';
+        }
+    });
+</script>
                 </div>
 
                 {{-- نوع الحركة --}}
@@ -112,7 +136,7 @@
                 </div>
 
                 {{-- التاريخ والوقت --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">التاريخ</label>
                         <div class="relative">
@@ -127,12 +151,12 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                             required>
                     </div>
-                    <div>
+                    {{-- <div>
                         <label class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">وقت
                             الانتهاء</label>
                         <input type="time" id="end_time" name="end_time"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    </div>
+                    </div> --}}
                 </div>
 
                 {{-- الملاحظات --}}

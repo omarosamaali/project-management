@@ -31,6 +31,10 @@ use App\Http\Controllers\ProjectManagerController;
 use App\Http\Controllers\IssueCommentController;
 use App\Http\Controllers\WorkTimeController;
 use App\Http\Controllers\RequestFileController;
+use App\Http\Controllers\PartnerSystemController;
+use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\AdminRemarkController;
+
 
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('work-times', WorkTimeController::class);
@@ -100,8 +104,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('withdrawal-requests', WithdrawalRequestsController::class)->names('dashboard.withdrawal-requests');
     Route::resource('services', ServiceController::class)->names('dashboard.services');
     Route::resource('my_services', MyServiceController::class)->names('dashboard.my_services');
+    Route::resource('partner_systems', PartnerSystemController::class)->names('dashboard.partner_systems');
+    Route::resource('salaries', SalaryController::class)->names('dashboard.salaries');
+    Route::resource('dashboard/admin-remarks', AdminRemarkController::class)->names('dashboard.admin_remarks');
 });
-
+Route::get('/dashboard/salaries/fetch-attendance/{user_id}', [SalaryController::class, 'fetchAttendance'])->name('salaries.fetchAttendance');
 // Register Partner
 Route::get('/register/partner', [PartnerRegistrationController::class, 'create'])->name('register.partner');
 Route::post('/register/partner', [PartnerRegistrationController::class, 'store'])->name('register.partner.store');

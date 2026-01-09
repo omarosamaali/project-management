@@ -27,14 +27,16 @@ class User extends Authenticatable
         'apply_working_hours',
         'can_request_meetings',
         'services_screen_available',
-
-        // أضف هذه الحقول الجديدة هنا:
+        'first_country',
+        
+        // --- الحقول الإدارية والملاحظات ---
         'note_title',
         'note_date',
         'note_details',
         'note_attachment',
         'is_visible_to_employee',
 
+        // --- البيانات المالية والرواتب الأساسية ---
         'apply_salary_scale',
         'salary_year',
         'salary_month',
@@ -42,16 +44,39 @@ class User extends Authenticatable
         'salary_notes',
         'salary_amount',
         'salary_currency',
-        'hiring_date'
+        'hiring_date',
+
+        // --- نظام ساعات العمل والدوام (الحقول الجديدة) ---
+        'work_start_time',
+        'work_end_time',
+        'daily_work_hours',
+        'break_minutes',
+        'overtime_hourly_rate',
+
+        // --- الخصومات والمدد المسموحة (الحقول الجديدة) ---
+        'allowed_late_minutes',
+        'morning_late_deduction',
+        'break_late_deduction',
+        'early_leave_deduction',
+
+        // --- الإجازات (الحقول الجديدة) ---
+        'vacation_days',
+
+        // --- نظام حساب الراتب - Scale (الحقول الجديدة) ---
+        'salary_amount_scale',
+        'salary_currency_scale',
+        'hiring_date_scale',
     ];
 
     protected $casts = [
+        'vacation_days' => 'array',
         'is_employee' => 'boolean',
         'can_view_projects' => 'boolean',
         'can_view_notes' => 'boolean',
         'can_propose_quotes' => 'boolean',
         'can_enter_knowledge_bank' => 'boolean',
         'apply_working_hours' => 'boolean',
+        'hiring_date_scale' => 'date',
         'can_request_meetings' => 'boolean',
         'services_screen_available' => 'boolean',
         'apply_salary_scale' => 'boolean',

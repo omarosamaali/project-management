@@ -242,7 +242,7 @@
 
             <div class="contact-info">
                 <div class="phone">{{ __('messages.tareq_mohamed_bn_kalban') }}</div>
-                <div class="phone">📞 0501774477</div>
+                <div class="phone">📞 contact@evorq.com</div>
                 <div class="website">🌐 <a href="https://evorq.com/" target="_blank">https://evorq.com</a></div>
             </div>
 

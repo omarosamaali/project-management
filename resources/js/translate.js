@@ -12,6 +12,75 @@ async function translateText(text, sourceLang, targetLang) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    
+    // ترجمة المميزات باستخدام Event Delegation
+    const featuresContainer = document.getElementById('features-container');
+    if (featuresContainer) {
+        featuresContainer.addEventListener('input', function (e) {
+            // إذا كان الإدخال في حقل عربي
+            if (e.target.name === 'features_ar[]') {
+                const row = e.target.closest('.feature-row');
+                const targetInput = row.querySelector('input[name="features_en[]"]');
+                
+                clearTimeout(e.target.timeout);
+                e.target.timeout = setTimeout(async () => {
+                    if (e.target.value.trim()) {
+                        const translated = await translateText(e.target.value, 'ar', 'en');
+                        targetInput.value = translated;
+                    }
+                }, 1000);
+            }
+            
+            // إذا كان الإدخال في حقل إنجليزي
+            if (e.target.name === 'features_en[]') {
+                const row = e.target.closest('.feature-row');
+                const targetInput = row.querySelector('input[name="features_ar[]"]');
+                
+                clearTimeout(e.target.timeout);
+                e.target.timeout = setTimeout(async () => {
+                    if (e.target.value.trim()) {
+                        const translated = await translateText(e.target.value, 'en', 'ar');
+                        targetInput.value = translated;
+                    }
+                }, 1000);
+            }
+        });
+    }
+
+    // ترجمة المتطلبات باستخدام Event Delegation
+    const requirementsContainer = document.getElementById('requirements-container');
+    if (requirementsContainer) {
+        requirementsContainer.addEventListener('input', function (e) {
+            // إذا كان الإدخال في حقل عربي
+            if (e.target.name === 'requirements_ar[]') {
+                const row = e.target.closest('.requirement-row');
+                const targetInput = row.querySelector('input[name="requirements_en[]"]');
+                
+                clearTimeout(e.target.timeout);
+                e.target.timeout = setTimeout(async () => {
+                    if (e.target.value.trim()) {
+                        const translated = await translateText(e.target.value, 'ar', 'en');
+                        targetInput.value = translated;
+                    }
+                }, 1000);
+            }
+            
+            // إذا كان الإدخال في حقل إنجليزي
+            if (e.target.name === 'requirements_en[]') {
+                const row = e.target.closest('.requirement-row');
+                const targetInput = row.querySelector('input[name="requirements_ar[]"]');
+                
+                clearTimeout(e.target.timeout);
+                e.target.timeout = setTimeout(async () => {
+                    if (e.target.value.trim()) {
+                        const translated = await translateText(e.target.value, 'en', 'ar');
+                        targetInput.value = translated;
+                    }
+                }, 1000);
+            }
+        });
+    }
+
     // ترجمة الاسم من عربي لإنجليزي
     let nameArTimeout;
     const nameArInput = document.getElementById('name_ar');
@@ -53,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const translated = await translateText(e.target.value, 'ar', 'en');
                     document.getElementById('description_en').value = translated;
                 }
-            }, 1500);
+            }, 1000);
         });
     }
 

@@ -70,10 +70,10 @@
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th scope="col" class="px-4 py-3">#</th>
-                            <th scope="col" class="px-4 py-3">عنوان الخدمة</th>
-                            <th scope="col" class="px-4 py-3">نوع الخدمة</th>
-                            <th scope="col" class="px-4 py-3">سعر الخدمة</th>
-                            <th scope="col" class="px-4 py-3">مدة التسليم</th>
+                            <th scope="col" class="px-4 py-3">الإسم</th>
+                            <th scope="col" class="px-4 py-3">السعر</th>
+                            <th scope="col" class="px-4 py-3">مدة التنفيذ</th>
+                            <th scope="col" class="px-4 py-3">الوصف</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
                             </th>
@@ -88,16 +88,20 @@
                                 {{ $loop->iteration }}
                             </td>
                             <td class="px-4 py-3">
-                                {{ $service->title }}
+                                {{ $service->name_ar }}
                             </td>
                             <td class="px-4 py-3">
-                                {{ $service->service->name_ar }}
+                                <div class="flex items-center">
+                                    {{ $service->price }}
+                                    <x-drhm-icon color="737373" widt="12" height="12" />
+                                </div>
                             </td>
                             <td class="px-4 py-3 flex items-center">
-                                {{ $service->price }} <x-drhm-icon color="737373" />
+                                {{ $service->execution_days_from }} - {{ $service->execution_days_to }} 
+                                <span class="text-xs">&nbsp; يوم</span>
                             </td>
                             <td class="px-4 py-3">
-                                {{ $service->duration }} يوم
+                                {{ Str::limit($service->description_ar, 30) }}
                             </td>
                             <td class="px-4 py-3 flex items-center justify-end">
                                 <a href="{{ route('dashboard.my_services.show', $service->id) }}"
@@ -108,7 +112,7 @@
                                     class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('dashboard.my_services.destroy', $service) }}" method="POST"
+                                <form action="{{ route('dashboard.my_services.destroy', $service->id) }}" method="POST"
                                     class="inline">
                                     @csrf
                                     @method('DELETE')

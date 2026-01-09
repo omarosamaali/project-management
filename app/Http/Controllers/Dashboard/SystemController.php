@@ -110,7 +110,10 @@ class SystemController extends Controller
             'service_id' => $request->service_id,
             'counter' => $request->counter,
             'system_external' => $request->has('system_external') ? 1 : 0,
-            'external_url' => $request->has('system_external') ? $request->external_url : null
+            'external_url' => $request->has('system_external') ? $request->external_url : null,
+            'evorq_onwer' => $request->evorq_onwer, // سيأخذ 0 أو 1 من الحقل المخفي والـ checkbox
+            'onwer_system' => $request->onwer_system,
+
         ];
 
         if ($request->hasFile('main_image')) {
@@ -178,7 +181,8 @@ class SystemController extends Controller
             'status' => 'required|in:active,inactive',
             'support_days' => 'required|numeric',
             'service_id' => 'required|exists:services,id',
-            'counter' => 'required|numeric'
+            'counter' => 'required|numeric',
+
         ]);
 
         $requirements = [];
@@ -227,7 +231,10 @@ class SystemController extends Controller
             'service_id' => $request->service_id,
             'counter' => $request->counter,
             'system_external' => $request->has('system_external') ? 1 : 0,
-            'external_url' => $request->has('system_external') ? $request->external_url : null
+            'external_url' => $request->has('system_external') ? $request->external_url : null,
+
+            'evorq_onwer'  => $request->evorq_onwer,
+            'onwer_system' => $request->onwer_system,
 
         ];
 
@@ -286,13 +293,11 @@ class SystemController extends Controller
         return redirect()->route('dashboard.systems.index')->with('success', 'تم حذف النظام بنجاح');
     }
 
-
     public function payments($id)
     {
         $system = System::with(['payments' => function ($query) {
             $query->orderBy('created_at', 'desc');
         }])->findOrFail($id);
-
         return view('dashboard.systems.payments', compact('system'));
     }
 }

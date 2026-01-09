@@ -218,7 +218,7 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت البدء</label>
+                    <label class="block text-xs font-bold mb-1 dark:text-gray-400">الوقت</label>
                     <input type="datetime-local" name="start_at" required
                         class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>

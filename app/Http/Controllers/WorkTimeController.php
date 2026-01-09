@@ -16,14 +16,10 @@ class WorkTimeController extends Controller
                 $q->where('name', 'like', '%' . $request->search . '%');
             });
         }
-
         $workTimes = $query->latest()->paginate(10);
-
-        // إحصائيات سريعة (مثل نموذج الطلبات)
         $allCount = WorkTime::count();
         $attendanceCount = WorkTime::where('type', 'حضور')->count();
         $leaveCount = WorkTime::where('type', 'انصراف')->count();
-
         return view('dashboard.work-times.index', compact('workTimes', 'allCount', 'attendanceCount', 'leaveCount'));
     }
 
@@ -48,7 +44,7 @@ class WorkTimeController extends Controller
 
     public function edit(WorkTime $workTime)
     {
-        $employees = User::all(); // جلب الموظفين لعمل القائمة المنسدلة
+        $employees = User::all();
         return view('dashboard.work-times.edit', compact('workTime', 'employees'));
     }
 

@@ -63,51 +63,57 @@ class PartnerController extends Controller
     // Store Method
     public function store(Request $request)
     {
+        // 1. التحقق من البيانات (Validation)
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
             'percentage' => 'required|numeric|min:0|max:100',
-            'systems_id' => 'required|array|min:1',
+            'systems_id' => 'nullable|array',
             'services_id' => 'required|array',
-            // حقول الراتب الجديدة
+            'first_country' => 'nullable|string',
+            // التحقق من الحقول الجديدة (اختياري لكن مفضل)
             'salary_amount' => 'nullable|numeric',
-            'salary_currency' => 'nullable|string',
-            'hiring_date' => 'nullable|date',
+            'work_start_time' => 'nullable|string',
+            'work_end_time' => 'nullable|string',
+            'daily_work_hours' => 'nullable|numeric',
+            'vacation_days' => 'nullable|array',
         ]);
 
         try {
-            $partner = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => 'partner',
-                'percentage' => $validated['percentage'],
-                'orders' => $request->orders ?? 0,
-                'is_employee' => $request->boolean('is_employee'),
+            // 2. معالجة حقول الـ Boolean والبيانات الإضافية
+            $data = $request->all();
 
-                // تخزين الصلاحيات مباشرة في جدول users
-                'can_view_projects' => $request->boolean('can_view_projects'),
-                'can_view_notes' => $request->boolean('can_view_notes'),
-                'can_propose_quotes' => $request->boolean('can_propose_quotes'),
-                'can_enter_knowledge_bank' => $request->boolean('can_enter_knowledge_bank'),
-                'apply_working_hours' => $request->boolean('apply_working_hours'),
-                'can_request_meetings' => $request->boolean('can_request_meetings'),
-                'services_screen_available' => $request->boolean('services_screen_available'),
+            // تشفير كلمة المرور
+            $data['password'] = Hash::make($request->password);
+            $data['role'] = 'partner';
+            $data['orders'] = $request->orders ?? 0;
 
-                // تخزين بيانات الراتب
-                'apply_salary_scale' => $request->boolean('apply_salary_scale'),
-                'salary_amount' => $request->salary_amount,
-                'salary_currency' => $request->salary_currency,
-                'hiring_date' => $request->hiring_date,
-            ]);
+            // معالجة قيم الـ Switchers/Checkboxes لضمان تخزينها كـ 0 أو 1
+            $data['is_employee'] = $request->has('is_employee');
+            $data['can_view_projects'] = $request->has('can_view_projects');
+            $data['can_view_notes'] = $request->has('can_view_notes');
+            $data['can_propose_quotes'] = $request->has('can_propose_quotes');
+            $data['can_enter_knowledge_bank'] = $request->has('can_enter_knowledge_bank');
+            $data['apply_working_hours'] = $request->has('apply_working_hours');
+            $data['can_request_meetings'] = $request->has('can_request_meetings');
+            $data['services_screen_available'] = $request->has('services_screen_available');
+            $data['apply_salary_scale'] = $request->has('apply_salary_scale');
+            $data['is_visible_to_employee'] = $request->has('is_visible_to_employee');
+            $data['first_country'] = $request->first_country;
+            $data['country'] = $request->country;
+            // 3. إنشاء الشريك
+            $partner = User::create($data);
 
-            $partner->systems()->attach($request->systems_id);
+            // 4. ربط الأنظمة والخدمات
+            if ($request->has('systems_id')) {
+                $partner->systems()->attach($request->systems_id);
+            }
             $partner->services()->sync($request->services_id);
 
             return redirect()->route('dashboard.partners.index')->with('success', 'تم إضافة الشريك بنجاح');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->withErrors(['error' => 'خطأ: ' . $e->getMessage()]);
+            return redirect()->back()->withInput()->withErrors(['error' => 'خطأ أثناء الحفظ: ' . $e->getMessage()]);
         }
     }
 
@@ -129,11 +135,12 @@ class PartnerController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $partner->id,
             'percentage' => 'required|numeric|min:0|max:100',
-            'systems_id' => 'required|array',
+            'systems_id' => 'nullable|array',
             'services_id' => 'required|array',
             // يمكنك إضافة قواعد تحقق للملفات هنا
             'note_attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'salary_attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'first_country' => 'nullable|string',
         ]);
 
         // 2. تجميع البيانات الأساسية والصلاحيات
@@ -166,11 +173,13 @@ class PartnerController extends Controller
             'salary_amount'             => $request->salary_amount,
             'salary_currency'           => $request->salary_currency,
             'hiring_date'               => $request->hiring_date,
+            'first_country'             => $request->first_country,
+            'country'                   => $request->country,
         ];
 
         // 3. معالجة كلمة المرور
         if ($request->filled('password')) {
-            $data['password'] = \Illuminate\Support\Facades\Hash::make($request->password);
+            $data['password'] = Hash::make($request->password);
         }
 
         // 4. معالجة رفع الملفات (المرفقات)

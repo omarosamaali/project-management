@@ -4,7 +4,7 @@
 <section class="p-5">
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.sessions.index') }}" second="الاجتماعات" />
     <div class="flex justify-between items-center mb-6 text-right" dir="rtl">
-        <h1 class="text-2xl font-bold dark:text-white">طلبات الاجتماعات</h1>
+        <h1 class="text-2xl font-bold dark:text-white">إدارة الاجتماعات</h1>
         <a href="{{ route('dashboard.sessions.create') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg">
             طلب اجتماع جديد
         </a>

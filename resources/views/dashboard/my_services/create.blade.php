@@ -3,132 +3,485 @@
 @section('title', 'إضافة خدمة')
 
 @section('content')
-<style>
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
+    <style>
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
 
-    input[type="number"] {
-        -moz-appearance: textfield;
-    }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
 
-    input[type="number"] {
-        -moz-appearance: textfield;
-    }
-</style>
-<section class="p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my_services.index') }}" second="خدماتي"
-        third="إضافة خدمة" />
-    <div class="mx-auto max-w-4xl w-full rounded-xl">
-        <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
-            <form method="POST" action="{{ route('dashboard.my_services.store') }}" class="space-y-6"
-                enctype="multipart/form-data">
-                @csrf
-                {{-- Title --}}
-                <div>
-                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-                        عنوان الخدمة
-                    </label>
-                    <input type="text" id="title" name="title" placeholder="ادخل اسم الخدمة هنا" required
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    @error('title')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+    </style>
+    <section class="p-3 sm:p-5">
+        <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my_services.index') }}" second="خدماتي" third="إضافة خدمة" />
+        <div class="mx-auto max-w-4xl w-full rounded-xl">
+            <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
+                <form method="POST" action="{{ route('dashboard.my_services.store') }}" class="space-y-6"
+                    enctype="multipart/form-data">
+                    @csrf
+                    <!-- معلومات أساسية -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-info-circle text-blue-600"></i>
+                            المعلومات الأساسية
+                        </h2>
 
-                {{-- Services --}}
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        اختر الخدمة: <span class="text-red-500">*</span>
-                    </label>
-                    <div
-                        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-                        @foreach($services as $service)
-                        <div class="flex items-center">
-                            <input type="radio" id="service_{{ $service->id }}" name="service_id"
-                                value="{{ $service->id }}"
-                            class="h-4 w-4 text-blue-600 border-gray-300 rounded-full focus:ring-blue-500">
-                            <label for="service_{{ $service->id }}"
-                                class="mr-3 text-sm font-medium text-gray-700 cursor-pointer">
-                                {{ $service->name_ar }}
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <!-- اسم الخدمة -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    إسم الخدمة (بالعربي) <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="name_ar" name="name_ar" required
+                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="الإسم">
+                                @error('name_ar')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <!-- اسم الخدمة بالإنجليزية -->
+                            <div>
+                                <label class="block text-sm text-left font-medium text-gray-700 mb-2">
+                                    Service Name (English)
+                                </label>
+                                <input required type="text" id="name_en" name="name_en" dir="ltr"
+                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Name">
+                                @error('name_en')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <!-- السعر الكلي -->
+                            <div>
+                                <label class="flex text-sm font-medium text-gray-700 mb-2">
+                                    السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span
+                                        class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="price" required min="0" step="1"
+                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="999">
+                                    @error('price')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <!-- مدة التنفيذ -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    مدة التنفيذ <span class="text-red-500">*</span>
+                                </label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="relative">
+                                        <input type="number" name="execution_days_from" required min="0"
+                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="10">
+                                        <span
+                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">من</span>
+                                        @error('execution_days_from')
+                                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" name="execution_days_to" required min="0"
+                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            placeholder="15">
+                                        <span
+                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">إلى</span>
+                                        @error('execution_days_to')
+                                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">يوم عمل</p>
+                            </div>
+
+                            {{-- مدة الدعم الفني --}}
+                            <div>
+                                <label class="flex text-sm font-medium text-gray-700 mb-2">
+                                    مدة الدعم الفني (بالايام) <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="support_days" required min="0" step="1"
+                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="365 يوم">
+                                    @error('support_days')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            {{-- نوع الخدمة --}}
+                            <div class="mb-4">
+                                <x-input-label for="service_id" :value="__('نوع الخدمة')" />
+                                <select id="service_id" name="service_id"
+                                    class="mt-2 px-4 py-3 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300
+                                                focus:border-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 rounded-md shadow-sm block w-full"
+                                    required>
+                                    <option class="text-gray-500">-- اختر نوع الخدمة --</option>
+                                    @foreach ($services as $service)
+                                        <option value="{{ $service->id }}">
+                                            {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <x-input-error :messages="$errors->get('service_id')" class="mt-2" />
+                            </div>
+
+                            {{-- مدة الدعم الفني --}}
+                            {{-- <div>
+                                <label class="flex text-sm font-medium text-gray-700 mb-2">
+                                    بداية العداد <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number" name="counter" required min="0" step="1"
+                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    @error('counter')
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div> --}}
+                        </div>
+                    </div>
+
+                    <!-- الوصف -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-align-right text-blue-600"></i>
+                            الوصف
+                        </h2>
+
+                        <div class="space-y-4">
+                            <!-- الوصف بالعربي -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    الوصف بالعربي <span class="text-red-500">*</span>
+                                </label>
+                                <textarea name="description_ar" id="description_ar" required rows="4"
+                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="نظام متكامل لإدارة المبيعات والمخزون، والعطاءات مع نظام محاسبي مبسط وواجهة سهلة الاستخدام"></textarea>
+                                @error('description_ar')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <!-- الوصف بالإنجليزية -->
+                            <div>
+                                <label class="block text-sm text-left font-medium text-gray-700 mb-2">
+                                    Description (English)
+                                </label>
+                                <textarea required name="description_en" id="description_en" rows="4" dir="ltr"
+                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Integrated Service for sales and inventory management..."></textarea>
+                                @error('description_en')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- المتطلبات -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-list-check text-blue-600"></i>
+                            المتطلبات
+                        </h2>
+
+                        <div id="requirements-container" class="space-y-3">
+                            <div class="flex gap-2 requirement-row">
+                                <input type="text" name="requirements_ar[]"
+                                    class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="متطلب جديد">
+                                <input type="text" name="requirements_en[]" dir="ltr"
+                                    class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="New Requirement">
+                                @error('requirements_ar.*')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                                <button type="button"
+                                    class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <button type="button"
+                            class="add-requirement-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="fas fa-plus"></i>
+                            إضافة متطلب
+                        </button>
+                    </div>
+
+                    <!-- جميع المميزات -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-star text-blue-600"></i>
+                            جميع المميزات
+                        </h2>
+
+                        <div id="features-container" class="space-y-3">
+                            <!-- Feature 1 -->
+                            <div class="flex gap-2 feature-row">
+                                <input type="text" name="features_ar[]"
+                                    class="feature-ar-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="لوحة تحكم احترافية">
+                                <input type="text" name="features_en[]" dir="ltr"
+                                    class="feature-en-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Professional Dashboard">
+                                @error('features_ar.*')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                                <button type="button"
+                                    class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                            class="add-feature-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="fas fa-plus"></i>
+                            إضافة ميزة
+                        </button>
+                    </div>
+                    
+                    <!-- الصور -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-image text-blue-600"></i>
+                            الصور
+                        </h2>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <!-- الصورة الرئيسية -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    الصورة الرئيسية <span class="text-red-500">*</span>
+                                </label>
+
+                                <div
+                                    class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
+                                    <input id="main_image_input" type="file" name="main_image" accept="image/*"
+                                        required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-600">اضغط أو اسحب الصورة هنا</p>
+                                </div>
+                                @error('main_image')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                                <!-- المعاينة -->
+                                <div id="main_preview_container" class="mt-3 hidden relative w-full h-56">
+                                    <img id="main_image_preview" class="w-full h-full object-cover rounded-lg border" />
+                                    <!-- زر حذف -->
+                                    <button onclick="removeMainImage()"
+                                        class="absolute top-1 right-1 bg-red-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- صور إضافية -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    صور إضافية
+                                </label>
+
+                                <div
+                                    class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
+                                    <input id="extra_images_input" type="file" name="images[]" accept="image/*"
+                                        multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <i class="fas fa-images text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-600">يمكنك اختيار عدة صور</p>
+                                </div>
+                                @error('images.*')
+                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                                <!-- معاينة الصور المتعددة -->
+                                <div id="extra_images_preview" class="mt-3 flex flex-wrap gap-3"></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div id="external_url_container" class="{{ old('Service_external') ? '' : 'hidden' }} mt-4 mb-6">
+                        <label for="external_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            رابط الخدمة الخارجي <span class="text-red-500">*</span>
+                        </label>
+                        <input type="url" name="external_url" id="external_url" value="{{ old('external_url') }}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="https://example.com">
+                        @error('external_url')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <!-- الحالة -->
+                    <div class="border-b pb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-toggle-on text-blue-600"></i>
+                            الحالة
+                        </h2>
+
+                        <div class="flex gap-4">
+                            <label
+                                class="flex items-center gap-3 p-4 border-2 border-green-300 bg-green-50 rounded-lg cursor-pointer">
+                                <input type="radio" name="status" value="active" checked
+                                    class="w-5 h-5 text-green-600">
+                                <span class="font-medium text-green-700">نشط</span>
+                            </label>
+                            <label
+                                class="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                                <input type="radio" name="status" value="inactive" class="w-5 h-5 text-gray-600">
+                                <span class="font-medium text-gray-700">غير نشط</span>
                             </label>
                         </div>
-                        @endforeach
+                        @error('status')
+                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                        @enderror
                     </div>
-                    {{-- تحديث رسالة الخطأ لتستهدف services_id --}}
-                    @error('service_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                    <p class="mt-2 text-sm text-gray-500">
-                        <i class="fas fa-info-circle text-blue-500"></i>
-                        اختر خدمة واحدة أو أكثر يعمل بها الشريك.
-                    </p>
-                </div>
 
-                {{-- price --}}
-                <div>
-                    <label for="price" class="block text-sm font-medium text-gray-700 mb-1">
-                        اجمالي سعر الخدمة</label>
-                    <input type="number" id="price" name="price" placeholder="ادخل السعر" required
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    <span class="text-sm text-gray-500">نسبة شركة EVORQ هي <span class="text-blue-500 font-bold">{{
-                            Auth::user()->percentage }}%</span> سوف تحصل علي اجمالي سعر الخدمة ناقص نسبة شركة
-                        EVORQ</span>
-                    @error('price')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+                    <!-- الأزرار -->
+                    <div class="flex gap-4 pt-4">
+                        <button type="submit"
+                            class="flex-1 bg-blue-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl">
+                            <i class="fas fa-save ml-2"></i>
+                            حفظ الخدمة
+                        </button>
+                        <button type="reset"
+                            class="px-8 bg-gray-200 text-gray-700 py-4 rounded-lg font-bold hover:bg-gray-300 transition">
+                            <i class="fas fa-redo ml-2"></i>
+                            إعادة تعيين
+                        </button>
+                    </div>
+                </form>
 
-                {{-- duration --}}
-                <div>
-                    <label for="duration" class="block text-sm font-medium text-gray-700 mb-1">
-                        مدة تسليم المشروع</label>
-                    <input type="number" id="duration" name="duration" placeholder="مدة التسليم بالأيام مثال 30" required
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
-                    @error('duration')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
 
-                {{-- description --}}
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                        عن الخدمة
-                    </label>
-                    <textarea rows="5" id="description" name="description" placeholder="ادخل تفاصيل عن الخدمة" required
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500
-                            focus:border-blue-500 transition duration-150 ease-in-out"></textarea>
-                    @error('description')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+                        // ترجمة المميزات باستخدام Event Delegation
+                        const featuresContainer = document.getElementById('features-container');
+                        if (featuresContainer) {
+                            featuresContainer.addEventListener('input', function(e) {
+                                // إذا كان الإدخال في حقل عربي
+                                if (e.target.name === 'features_ar[]') {
+                                    const row = e.target.closest('.feature-row');
+                                    const targetInput = row.querySelector('input[name="features_en[]"]');
 
-                {{-- what_you_will_get --}}
-                <div>
-                    <label for="what_you_will_get" class="block text-sm font-medium text-gray-700 mb-1">
-                        علي ماذا سوف يحصل العميل
-                    </label>
-                    <textarea rows="5" id="what_you_will_get" name="what_you_will_get" placeholder="ادخل ماذا سوف يحصل العميل" required
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500
-                                                            focus:border-blue-500 transition duration-150 ease-in-out"></textarea>
-                    @error('what_you_will_get')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                    @enderror
-                </div>
+                                    clearTimeout(e.target.timeout);
+                                    e.target.timeout = setTimeout(async () => {
+                                        if (e.target.value.trim()) {
+                                            const translated = await translateText(e.target.value, 'ar',
+                                                'en');
+                                            targetInput.value = translated;
+                                        }
+                                    }, 1000);
+                                }
 
-                {{-- submit --}}
-                <div class="pt-4">
-                    <button type="submit"
-                        class="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
-                        <i class="fas fa-save"></i>
-                        حفظ بيانات الشريك
-                    </button>
-                </div>
+                                // إذا كان الإدخال في حقل إنجليزي
+                                if (e.target.name === 'features_en[]') {
+                                    const row = e.target.closest('.feature-row');
+                                    const targetInput = row.querySelector('input[name="features_ar[]"]');
 
-            </form>
+                                    clearTimeout(e.target.timeout);
+                                    e.target.timeout = setTimeout(async () => {
+                                        if (e.target.value.trim()) {
+                                            const translated = await translateText(e.target.value, 'en',
+                                                'ar');
+                                            targetInput.value = translated;
+                                        }
+                                    }, 1000);
+                                }
+                            });
+                        }
+
+                        // باقي الكود للاسم والوصف (شغال صح)
+                        let nameArTimeout;
+                        const nameArInput = document.getElementById('name_ar');
+                        if (nameArInput) {
+                            nameArInput.addEventListener('input', function(e) {
+                                clearTimeout(nameArTimeout);
+                                nameArTimeout = setTimeout(async () => {
+                                    if (e.target.value.trim()) {
+                                        const translated = await translateText(e.target.value, 'ar', 'en');
+                                        document.getElementById('name_en').value = translated;
+                                    }
+                                }, 1000);
+                            });
+                        }
+
+                        let nameEnTimeout;
+                        const nameEnInput = document.getElementById('name_en');
+                        if (nameEnInput) {
+                            nameEnInput.addEventListener('input', function(e) {
+                                clearTimeout(nameEnTimeout);
+                                nameEnTimeout = setTimeout(async () => {
+                                    if (e.target.value.trim()) {
+                                        const translated = await translateText(e.target.value, 'en', 'ar');
+                                        document.getElementById('name_ar').value = translated;
+                                    }
+                                }, 1000);
+                            });
+                        }
+
+                        let descArTimeout;
+                        const descArInput = document.getElementById('description_ar');
+                        if (descArInput) {
+                            descArInput.addEventListener('input', function(e) {
+                                clearTimeout(descArTimeout);
+                                descArTimeout = setTimeout(async () => {
+                                    if (e.target.value.trim()) {
+                                        const translated = await translateText(e.target.value, 'ar', 'en');
+                                        document.getElementById('description_en').value = translated;
+                                    }
+                                }, 1000);
+                            });
+                        }
+
+                        let descEnTimeout;
+                        const descEnInput = document.getElementById('description_en');
+                        if (descEnInput) {
+                            descEnInput.addEventListener('input', function(e) {
+                                clearTimeout(descEnTimeout);
+                                descEnTimeout = setTimeout(async () => {
+                                    if (e.target.value.trim()) {
+                                        const translated = await translateText(e.target.value, 'en', 'ar');
+                                        document.getElementById('description_ar').value = translated;
+                                    }
+                                }, 1500);
+                            });
+                        }
+
+                    });
+
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const toggle = document.getElementById('Service_external_toggle');
+                        const urlContainer = document.getElementById('external_url_container');
+                        const urlInput = document.getElementById('external_url');
+                        const handleToggle = (isChecked) => {
+                            if (isChecked) {
+                                urlContainer.classList.remove('hidden');
+                                urlInput.setAttribute('required', 'required');
+                            } else {
+                                urlContainer.classList.add('hidden');
+                                urlInput.removeAttribute('required');
+                            }
+                        };
+                        toggle.addEventListener('change', function() {
+                            handleToggle(this.checked);
+                        });
+                    });
+                </script>
+            </div>
         </div>
-    </div>
-</section>
+    </section>
 @endsection

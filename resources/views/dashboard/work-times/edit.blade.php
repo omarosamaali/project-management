@@ -5,7 +5,7 @@
 @section('content')
 <section class="p-3 sm:p-5">
     {{-- Breadcrumb --}}
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.work-times.index') }}" second="أوقات العمل"
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.work-times.index') }}" second="الحضور والإنصراف"
         third="تعديل سجل: {{ $workTime->user->name }}" />
 
     <div class="mx-auto max-w-4xl w-full">

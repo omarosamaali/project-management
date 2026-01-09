@@ -91,6 +91,9 @@
                                 {{ $loop->iteration }}
                             </th>
                             <td class="px-4 py-3">
+                                @if($system->evorq_onwer != 0)
+                                <span class="text-xs bg-green-700 text-green-200 rounded-xl px-1">{{ $system->onwer_system }}</span>
+                                @endif
                                 {{ Str::limit($system->name_ar, 20) }}
                             </td>
                             <td class="px-4 py-3 flex items-center">
@@ -104,11 +107,10 @@
                                 <span class="text-xs">يوم</span>
                             </td>
                             <td class="px-4 py-3">
-                                {{ $system->payments->count() }}
-                            </td>
+                                {{ $system->payments->where('status', 'success')->count() }} </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-1 text-[12px]">
-                                    {{ number_format($system->payments->sum('amount'), 2) }}
+                                    {{ number_format($system->payments->where('status', 'success')->sum('amount'), 2) }}
                                     <x-drhm-icon color="737373" width="12" height="14" />
                                 </div>
                             </td>

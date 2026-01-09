@@ -33,6 +33,8 @@ class ServiceController extends Controller
             'image' => 'required|mimes:jpeg,png,jpg,gif|max:2048',
             'name_ar' => 'required',
             'name_en' => 'required',
+            'evork_commission' => 'required',
+            'show_in_partner_screen' => 'required',
         ]);
 
         if ($request->hasFile('image')) {
@@ -43,7 +45,9 @@ class ServiceController extends Controller
             'image' => $imagePath,
             'name_ar' => $request->name_ar,
             'name_en' => $request->name_en,
-            'status' => $request->status
+            'status' => $request->status,
+            'evork_commission' => $request->evork_commission,
+            'show_in_partner_screen' => $request->show_in_partner_screen,
         ]);
 
         return redirect()->route('dashboard.services.index')
@@ -69,10 +73,11 @@ class ServiceController extends Controller
             'image' => 'nullable|mimes:jpeg,png,jpg,gif|max:2048',
             'name_ar' => 'required',
             'name_en' => 'required',
+            'evork_commission' => 'required',
+            'show_in_partner_screen' => 'required',
         ]);
-
+        
         $imagePath = $service->image;
-
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('services', 'public');
         }
@@ -82,6 +87,8 @@ class ServiceController extends Controller
             'name_ar' => $request->name_ar,
             'name_en' => $request->name_en,
             'status' => $request->status,
+            'evork_commission' => $request->evork_commission,
+            'show_in_partner_screen' => $request->show_in_partner_screen,
         ]);
 
         return redirect()
