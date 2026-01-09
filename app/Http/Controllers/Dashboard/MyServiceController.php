@@ -23,7 +23,6 @@ class MyServiceController extends Controller
     }
 
     // Create Method
-
     public function create()
     {
         $services = Service::where('status', 'active')->get();
@@ -271,7 +270,6 @@ class MyServiceController extends Controller
 
         return redirect()->route('dashboard.my_services.index')->with('success', 'تم تحديث النظام بنجاح');
     }
-
 
     // Destroy Method
     public function destroy(string $id)

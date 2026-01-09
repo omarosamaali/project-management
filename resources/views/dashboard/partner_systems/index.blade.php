@@ -97,9 +97,6 @@
                                 {{ $service->service->name_ar }}
                             </td>
                             <td class="px-4 py-3">
-                                {{-- {{ Str::limit($service->description_ar, 30) }} --}}
-                            </td>
-                            <td class="px-4 py-3 flex items-center justify-end">
                                 <a href="{{ route('dashboard.partner_systems.show', $service->id) }}"
                                     class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                     <i class="fas fa-eye"></i>
