@@ -87,6 +87,7 @@
                                 {{ $loop->iteration }}
                             </td>
                             <td class="px-4 py-3">
+                                <span class="rounded-xl px-1 text-xs {{ $service->user->is_employee == 1 ? ' bg-green-700 text-green-200' : 'bg-red-700 text-red-200' }}">{{ $service->user->is_employee == 1 ? 'موظف' : 'مستقل' }}</span>
                                 {{ $service->user->name ?? 'لا يوجد' }}
                             </td>
                             <td class="px-4 py-3">
