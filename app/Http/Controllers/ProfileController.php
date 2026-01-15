@@ -11,7 +11,9 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    // Edit Method
+    /**
+     * Display the user's profile form.
+     */
     public function edit(Request $request): View
     {
         return view('profile.edit', [
@@ -19,28 +21,38 @@ class ProfileController extends Controller
         ]);
     }
 
-    // Update Method
+    /**
+     * Update the user's profile information.
+     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // جلب البيانات التي تم التحقق منها من الـ Request
+        $user->fill($request->validated());
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        if($request) {
-            $request->user()->country = $request->country;
-            $request->user()->withdrawal_email = $request->withdrawal_email;
-            $request->user()->withdrawal_notes = $request->withdrawal_notes;
-            $request->user()->withdrawal_method = $request->withdrawal_method;
-        }
+        // تحديث الحقول الإضافية بما فيها حقول المحفظة الجديدة
+        $user->country = $request->country;
+        $user->withdrawal_method = $request->withdrawal_method;
+        $user->withdrawal_email = $request->withdrawal_email;
+        $user->withdrawal_notes = $request->withdrawal_notes;
 
-        $request->user()->save();
+        // الحقول الجديدة التي أضفناها للمحفظة
+        $user->wallet_type = $request->wallet_type;
+        $user->wallet_full_name = $request->wallet_full_name;
+
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    // Destroy Method
+    /**
+     * Delete the user's account.
+     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [

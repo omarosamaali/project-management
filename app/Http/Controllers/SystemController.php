@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Logo;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Requests;
+use App\Models\Service;
 use App\Models\System;
 
 class SystemController extends Controller
@@ -13,10 +14,12 @@ class SystemController extends Controller
     public function index()
     {
         $systems = System::where('status', 'active')
-            ->with('payments', 'requests')
+            ->with(['payments', 'requests', 'service'])
             ->get();
         $logos = Logo::all();
-        return view('system.index', compact('systems', 'logos'));
+        $services = Service::where('status', 'active')->get();
+
+        return view('system.index', compact('systems', 'logos', 'services'));
     }
 
     // Show Method

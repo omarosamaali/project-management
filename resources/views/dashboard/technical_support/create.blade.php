@@ -23,7 +23,7 @@
                         class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         placeholder="مشكلة في إظهار البيانات، استفسار بخصوص خدمة، إلخ.">
                     @error('subject')
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-black dark:text-black">{{ $message }}</p>
                     @enderror
                 </div>
 
@@ -35,14 +35,14 @@
                         class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         placeholder="يرجى وصف المشكلة بالتفصيل وموعد حدوثها إن أمكن.">{{ old('description') }}</textarea>
                     @error('description')
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-black dark:text-black">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- حقل ربط الطلب (Request ID) (اختياري) --}}
                 <div class="mb-6">
                     <label for="request_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">ربط
-                        التذكرة بطلب سابق <span class="text-red-500">*</span>:</label>
+                        التذكرة بطلب سابق <span class="text-black">*</span>:</label>
                     <select id="request_id" name="request_id" required
                         class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                         <option value="">لا يوجد طلب محدد</option>
@@ -53,7 +53,7 @@
                         @endforeach
                     </select>
                     @error('request_id')
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-black dark:text-black">{{ $message }}</p>
                     @enderror
                 </div>
 

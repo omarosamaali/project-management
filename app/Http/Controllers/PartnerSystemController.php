@@ -10,26 +10,39 @@ class PartnerSystemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $myServices = MyService::where('status', 'active')->paginate(8);
-        return view('dashboard.partner_systems.index', compact('myServices'));
-    }
+        // جلب قيم البحث من الطلب
+        $search = $request->input('search');
+        $userId = $request->input('user_id');
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        
-    }
+        // بناء الاستعلام
+        $query = MyService::where('status', 'active')->with('user', 'service');
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
+        // فلتر البحث النصي (اسم الخدمة أو اسم الشريك)
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name_ar', 'LIKE', "%{$search}%")
+                    ->orWhere('name_en', 'LIKE', "%{$search}%")
+                    ->orWhereHas('user', function ($userQuery) use ($search) {
+                        $userQuery->where('name', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        // فلتر اختيار الشريك من القائمة المنسدلة
+        if ($userId) {
+            $query->where('user_id', $userId);
+        }
+
+        $myServices = $query->paginate(8)->withQueryString();
+
+        // جلب قائمة الشركاء فقط لعرضهم في الفلتر (الذين لديهم خدمات مفعلة)
+        $partners = \App\Models\User::whereHas('myServices', function ($q) {
+            $q->where('status', 'active');
+        })->get();
+
+        return view('dashboard.partner_systems.index', compact('myServices', 'partners'));
     }
 
     /**
@@ -39,22 +52,6 @@ class PartnerSystemController extends Controller
     {
         $myService = MyService::findOrFail($id);
         return view('dashboard.partner_systems.show', compact('myService'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
     }
 
     /**

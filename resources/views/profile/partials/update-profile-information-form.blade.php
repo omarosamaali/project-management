@@ -107,66 +107,72 @@
         @if(Auth::user()->role == 'partner')
         {{-- payment --}}
         <div class="space-y-6">
-            <!-- طرق سحب الأرباح -->
-            <div class="border border-gray-300 rounded-lg p-6 bg-white">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">طرق سحب الأرباح</h3>
+            <div class="border border-gray-300 rounded-lg p-6 bg-white shadow-sm">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-wallet text-blue-600"></i> طرق سحب الأرباح
+                </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <!-- محفظة إلكترونية -->
                     <div
-                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition">
+                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition cursor-pointer">
                         <input {{ old('withdrawal_method', $user->withdrawal_method) == 'wallet' ? 'checked' : '' }}
                         type="radio" id="withdrawal_wallet" name="withdrawal_method" value="wallet"
-                        class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 method-radio">
                         <label for="withdrawal_wallet"
                             class="mr-3 text-sm font-medium text-gray-700 cursor-pointer flex items-center">
-                            <svg class="w-5 h-5 ml-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                                <path fill-rule="evenodd"
-                                    d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                            محفظة إلكترونية
+                            <i class="fas fa-mobile-alt ml-2 text-green-600"></i> محفظة إلكترونية
                         </label>
                     </div>
 
-                    <!-- PayPal -->
                     <div
-                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition">
-                        <input {{ old('withdrawal_method', $user->withdrawal_method) == 'paypal' ? 'checked'
-                        : '' }} type="radio" id="withdrawal_paypal" name="withdrawal_method" value="paypal"
-                        class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 transition cursor-pointer">
+                        <input {{ old('withdrawal_method', $user->withdrawal_method) == 'paypal' ? 'checked' : '' }}
+                        type="radio" id="withdrawal_paypal" name="withdrawal_method" value="paypal"
+                        class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500 method-radio">
                         <label for="withdrawal_paypal"
                             class="mr-3 text-sm font-medium text-gray-700 cursor-pointer flex items-center">
-                            <svg class="w-5 h-5 ml-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                            </svg>
-                            PayPal
+                            <i class="fab fa-paypal ml-2 text-blue-600"></i> PayPal
                         </label>
                     </div>
                 </div>
 
-                <!-- حقل البريد الإلكتروني -->
-                <div class="mt-4">
-                    <label for="withdrawal_email" class="block text-sm font-medium text-gray-700 mb-2">
-                        تحويل الارابح علي <span class="text-red-500">*</span>
-                    </label>
-                    <input value="{{ old('withdrawal_email', $user->withdrawal_email) }}" type="text"
-                        id="withdrawal_email" name="withdrawal_email"
-                        placeholder="أدخل البريد الإلكتروني للمحفظة أو PayPal"
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <p class="mt-1 text-xs text-gray-500">سيتم إرسال الأرباح إلى هذا البريد الإلكتروني</p>
+                <div id="wallet_details_section"
+                    class="{{ old('withdrawal_method', $user->withdrawal_method) == 'wallet' ? '' : 'hidden' }} space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-200 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">نوع المحفظة (مثل: Vodafone Cash)
+                                <span class="text-black">*</span></label>
+                            <input type="text" name="wallet_type" value="{{ old('wallet_type', $user->wallet_type) }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
+                                placeholder="e.g. Orange Money">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">الاسم بالكامل بالإنجليزية <span
+                                    class="text-black">*</span></label>
+                            <input type="text" name="wallet_full_name"
+                                value="{{ old('wallet_full_name', $user->wallet_full_name) }}"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500"
+                                placeholder="Full Name in English">
+                        </div>
+                    </div>
                 </div>
 
-                <!-- معلومات إضافية (اختياري) -->
                 <div class="mt-4">
-                    <label for="withdrawal_notes" class="block text-sm font-medium text-gray-700 mb-2">
-                        ملاحظات إضافية (اختياري)
+                    <label for="withdrawal_email" id="email_label" class="block text-sm font-medium text-gray-700 mb-2">
+                        {{ old('withdrawal_method', $user->withdrawal_method) == 'wallet' ? 'رقم المحفظة' : 'بريد
+                        PayPal' }}
+                        <span class="text-black">*</span>
                     </label>
+                    <input value="{{ old('withdrawal_email', $user->withdrawal_email) }}" type="text"
+                        id="withdrawal_email" name="withdrawal_email" placeholder="أدخل البيانات المطلوبة هنا"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mt-4">
+                    <label for="withdrawal_notes" class="block text-sm font-medium text-gray-700 mb-2">ملاحظات
+                        إضافية</label>
                     <textarea id="withdrawal_notes" name="withdrawal_notes" rows="3"
-                        placeholder="أي معلومات إضافية تساعدنا في معالجة السحب"
-                        class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">{{ old('withdrawal_notes', $user->withdrawal_notes) }}</textarea>
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">{{ old('withdrawal_notes', $user->withdrawal_notes) }}</textarea>
                 </div>
             </div>
         </div>
@@ -244,5 +250,24 @@
                 $('#country_select2').empty().append(new Option("تعذر تحميل الدول", "", true, true));
             });
     });
+    </script>
+    <script>
+        document.querySelectorAll('.method-radio').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const walletSection = document.getElementById('wallet_details_section');
+                const emailLabel = document.getElementById('email_label');
+                const emailInput = document.getElementById('withdrawal_email');
+    
+                if (this.value === 'wallet') {
+                    walletSection.classList.remove('hidden');
+                    emailLabel.innerHTML = 'رقم المحفظة (Phone Number) <span class="text-black">*</span>';
+                    emailInput.placeholder = '01xxxxxxxxx';
+                } else {
+                    walletSection.classList.add('hidden');
+                    emailLabel.innerHTML = 'بريد PayPal الإلكتروني <span class="text-black">*</span>';
+                    emailInput.placeholder = 'example@paypal.com';
+                }
+            });
+        });
     </script>
 </section>

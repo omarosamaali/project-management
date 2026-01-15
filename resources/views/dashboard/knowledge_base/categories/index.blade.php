@@ -33,7 +33,7 @@
                     </select>
                 </div>
                 <button type="submit"
-                    class="w-full bg-gray- hover:bg-gray-700 text-white font-bold py-2 rounded-lg transition-all">حفظ
+                    class="w-full bg-gray- bg-gray-700 text-white font-bold py-2 rounded-lg transition-all">حفظ
                     التصنيف</button>
             </form>
         </div>
@@ -67,7 +67,7 @@
                             <form action="{{ route('dashboard.kb_categories.destroy', $category->id) }}" method="POST"
                                 onsubmit="return confirm('هل أنت متأكد؟')">
                                 @csrf @method('DELETE')
-                                <button class="text-red-500"><i class="fas fa-trash"></i></button>
+                                <button class="text-black"><i class="fas fa-trash"></i></button>
                             </form>
                         </td>
                     </tr>

@@ -82,27 +82,22 @@
                     </div>
                 </div>
             </div>
-
-            {{-- محتوى الملاحظة --}}
             <div class="p-4">
                 <p class="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{{
                     $note->description }}</p>
             </div>
-
-            {{-- أزرار الإجراءات --}}
             @if(auth()->user()->role === 'admin' || auth()->id() === $note->user_id)
             <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t dark:border-gray-600 flex justify-end gap-2">
                 <button onclick='editNote(@json($note))'
                     class="px-3 py-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors text-sm font-medium">
                     <i class="fas fa-edit ml-1"></i> تعديل
                 </button>
-
                 <form action="{{ route('dashboard.special-request.destroy-note', $note->id) }}" method="POST"
                     onsubmit="return confirm('هل أنت متأكد من حذف هذه الملاحظة؟');" class="inline">
                     @csrf
                     @method('DELETE')
                     <button type="submit"
-                        class="px-3 py-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium">
+                        class="px-3 py-1.5 text-black hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-sm font-medium">
                         <i class="fas fa-trash-alt ml-1"></i> حذف
                     </button>
                 </form>
@@ -249,17 +244,14 @@
 </div>
 
 <script>
-    // فتح نافذة إضافة ملاحظة
-function openAddNoteModal() {
+    function openAddNoteModal() {
     document.getElementById('addNoteModal').classList.remove('hidden');
 }
 
-// إغلاق نافذة إضافة ملاحظة
 function closeAddNoteModal() {
     document.getElementById('addNoteModal').classList.add('hidden');
 }
 
-// فتح نافذة تعديل ملاحظة
 function editNote(note) {
     const form = document.getElementById('editNoteForm');
     form.action = `/notes/${note.id}`;
@@ -274,12 +266,10 @@ function editNote(note) {
     document.getElementById('editNoteModal').classList.remove('hidden');
 }
 
-// إغلاق نافذة تعديل ملاحظة
 function closeEditNoteModal() {
     document.getElementById('editNoteModal').classList.add('hidden');
 }
 
-// إغلاق النوافذ عند الضغط على الخلفية
 document.getElementById('addNoteModal')?.addEventListener('click', function(e) {
     if (e.target === this) {
         closeAddNoteModal();
@@ -292,7 +282,6 @@ document.getElementById('editNoteModal')?.addEventListener('click', function(e) 
     }
 });
 
-// إغلاق النوافذ عند الضغط على ESC
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeAddNoteModal();

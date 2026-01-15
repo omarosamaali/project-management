@@ -47,7 +47,7 @@
                                 onsubmit="return confirm('هل أنت متأكد من الحذف؟')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800 mr-3">
+                                <button type="submit" class="text-black hover:text-red-800 mr-3">
                                     <i class="fas fa-trash"></i> حذف
                                 </button>
                             </form>

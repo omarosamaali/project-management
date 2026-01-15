@@ -8,44 +8,35 @@ use Illuminate\Http\Request;
 class ProjectManagerController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'special_request_id' => 'required',
-            'request_id'         => 'required', // حقل جديد
             'user_id'            => 'required|exists:users,id',
+            'special_request_id' => 'nullable',
+            'request_id'         => 'nullable',
         ]);
 
-        // استخدام updateOrCreate لضمان وجود مدير مشروع واحد فقط لكل طلب
+        $searchCriteria = [];
+        $dataToUpdate = ['user_id' => $validated['user_id']];
+
+        if ($request->filled('request_id')) {
+            $searchCriteria = ['request_id' => $request->request_id];
+            // نمرر null صريحة للحقل الآخر لضمان عدم اعتراض قاعدة البيانات
+            $dataToUpdate['special_request_id'] = null;
+        } elseif ($request->filled('special_request_id')) {
+            $searchCriteria = ['special_request_id' => $request->special_request_id];
+            // نمرر null صريحة للحقل الآخر لضمان عدم اعتراض قاعدة البيانات
+            $dataToUpdate['request_id'] = null;
+        }
+
         Project_Manager::updateOrCreate(
-            [
-                'special_request_id' => $validated['special_request_id'],
-                'request_id'         => $validated['request_id'],
-            ],
-            [
-                'user_id' => $validated['user_id'],
-            ]
+            $searchCriteria,
+            $dataToUpdate
         );
 
-        return back()->with('success', 'تم تحديد مدير المشروع بنجاح');
+        return back()->with('success', 'تم تعيين مدير المشروع بنجاح');
     }
 
     /**

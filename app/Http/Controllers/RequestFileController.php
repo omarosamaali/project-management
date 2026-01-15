@@ -11,9 +11,9 @@ class RequestFileController extends Controller
     public function store(HttpRequest $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
-            'file' => 'required|file|max:10240',
-            'request_id' => 'required|exists:requests,id'
+            'title' => 'string|max:255',
+            'file' => 'file|max:10240',
+            'request_id' => 'exists:requests,id'
         ]);
 
         $path = $request->file('file')->store('request_files', 'public');

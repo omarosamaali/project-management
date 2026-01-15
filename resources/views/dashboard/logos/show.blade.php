@@ -46,7 +46,7 @@
                 @csrf
                 @method('DELETE')
                 <button type="submit"
-                    class="w-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white py-2 rounded-lg font-bold transition-all">
+                    class="w-full bg-red-100 text-black hover:bg-black hover:text-white py-2 rounded-lg font-bold transition-all">
                     حذف الشعار
                 </button>
             </form>

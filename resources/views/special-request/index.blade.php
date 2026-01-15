@@ -3,14 +3,18 @@
 @section('title', 'طلبات خاصة')
 
 @section('content')
-
+<style>
+    div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm) {
+        background-color: black !important;
+    }
+</style>
 <div class="max-w-4xl my-5 border mx-auto p-6 lg:p-8 bg-white dark:bg-gray-800 shadow-md sm:rounded-lg">
     <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6 text-center">✨ نموذج طلب نظام إلكتروني خاص</h2>
     <form action="{{ route('special-request.store') }}" method="POST">
         @csrf
 
         <div class="mb-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <h3 class="text-xl font-semibold text-red-600  dark:text-red-400 mb-4 border-b pb-2">1. معلومات أساسية
+            <h3 class="text-xl font-semibold text-black  dark:text-red-400 mb-4 border-b pb-2">1. معلومات أساسية
             </h3>
 
             <div class="mb-4">
@@ -46,7 +50,7 @@
         </div>
 
         <div class="mb-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4 border-b pb-2">2. الميزات
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-4 border-b pb-2">2. الميزات
                 والوظائف</h3>
 
             <div class="mb-4">
@@ -69,7 +73,7 @@
         </div>
 
         <div class="mb-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4 border-b pb-2">3. الميزانية
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-4 border-b pb-2">3. الميزانية
                 والجدول الزمني</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -92,7 +96,7 @@
 
         <div class="flex justify-end mt-6">
             <button type="submit"
-                class="w-full md:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out">
+                class="w-full md:w-auto px-6 py-3 bg-black hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out">
                 إرسال الطلب
             </button>
         </div>

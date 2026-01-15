@@ -94,6 +94,7 @@ class Requests extends Model
 
     public function requestFiles() // تأكد من الاسم لاستخدامه في الـ Blade
     {
+        // return $this->hasMany(RequestFile::class, 'request_id');
         return $this->hasMany(RequestFile::class, 'request_id');
     }
 

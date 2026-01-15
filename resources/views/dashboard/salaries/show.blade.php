@@ -97,7 +97,7 @@
                         </div>
 
                         <div class="bg-red-50 dark:bg-gray-700 p-4 rounded-lg border-l-4 border-red-500">
-                            <label class="block text-sm font-medium text-red-600 dark:text-red-400">الخصومات (-)</label>
+                            <label class="block text-sm font-medium text-black dark:text-red-400">الخصومات (-)</label>
                             <span class="text-xl font-bold text-red-700 dark:text-red-400">{{
                                 number_format($salary->deduction_value, 2) }}</span>
                         </div>

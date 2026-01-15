@@ -39,7 +39,7 @@
                     <input type="text" id="name" name="name" placeholder="أدخل اسم العميل هنا" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('name')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -48,7 +48,7 @@
                     <input type="email" id="email" name="email" placeholder="example@domain.com" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('email')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -58,7 +58,7 @@
                         name="phone" required />
                     <x-input-error :messages="$errors->get('phone')" class="mt-2" />
                     @error('phone')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -67,7 +67,7 @@
                     <input type="text" id="password" name="password" placeholder="********" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('password')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -91,7 +91,7 @@
                         </label>
                     </div>
                     @error('status')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 

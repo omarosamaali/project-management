@@ -161,7 +161,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" onclick="return confirm('هل أنت متأكد من الحذف؟')"
-                                                class="block w-full text-right py-2 px-4 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                                class="block w-full text-right py-2 px-4 text-sm text-black hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                                 حذف
                                             </button>
                                         </form>

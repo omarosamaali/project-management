@@ -48,13 +48,13 @@
                         <!-- اسم النظام -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                إسم النظام (بالعربي) <span class="text-red-500">*</span>
+                                إسم النظام (بالعربي) <span class="text-black">*</span>
                             </label>
                             <input type="text" id="name_ar" name="name_ar" required
                                 class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="الإسم">
                             @error('name_ar')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -67,7 +67,7 @@
                                 class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Name">
                             @error('name_en')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -75,14 +75,14 @@
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
                                 السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span
-                                    class="text-red-500">*</span>
+                                    class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input type="number" name="price" required min="0" step="1"
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="999">
                                 @error('price')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -90,7 +90,7 @@
                         <!-- مدة التنفيذ -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                مدة التنفيذ <span class="text-red-500">*</span>
+                                مدة التنفيذ <span class="text-black">*</span>
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="relative">
@@ -100,7 +100,7 @@
                                     <span
                                         class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">من</span>
                                     @error('execution_days_from')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
                                 <div class="relative">
@@ -110,7 +110,7 @@
                                     <span
                                         class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">إلى</span>
                                     @error('execution_days_to')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div>
@@ -120,14 +120,14 @@
                         {{-- مدة الدعم الفني --}}
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                مدة الدعم الفني (بالايام) <span class="text-red-500">*</span>
+                                مدة الدعم الفني (بالايام) <span class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input type="number" name="support_days" required min="0" step="1"
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="365 يوم">
                                 @error('support_days')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -151,13 +151,13 @@
                         {{-- مدة الدعم الفني --}}
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                بداية العداد <span class="text-red-500">*</span>
+                                بداية العداد <span class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input type="number" name="counter" required min="0" step="1"
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('counter')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -175,13 +175,13 @@
                         <!-- الوصف بالعربي -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                الوصف بالعربي <span class="text-red-500">*</span>
+                                الوصف بالعربي <span class="text-black">*</span>
                             </label>
                             <textarea name="description_ar" id="description_ar" required rows="4"
                                 class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="نظام متكامل لإدارة المبيعات والمخزون، والعطاءات مع نظام محاسبي مبسط وواجهة سهلة الاستخدام"></textarea>
                             @error('description_ar')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
@@ -194,7 +194,7 @@
                                 class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 placeholder="Integrated system for sales and inventory management..."></textarea>
                             @error('description_en')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                     </div>
@@ -216,10 +216,10 @@
                                 class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 placeholder="New Requirement">
                             @error('requirements_ar.*')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                             <button type="button"
-                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -250,10 +250,10 @@
                                 class="feature-en-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 placeholder="Professional Dashboard">
                             @error('features_ar.*')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                             <button type="button"
-                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -327,7 +327,7 @@
                             <!-- زر الحذف -->
                             <div class="flex justify-end mt-3">
                                 <button type="button"
-                                    class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
+                                    class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center gap-2">
                                     <i class="fas fa-trash"></i>
                                     حذف الزر
                                 </button>
@@ -353,7 +353,7 @@
                         <!-- الصورة الرئيسية -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                الصورة الرئيسية <span class="text-red-500">*</span>
+                                الصورة الرئيسية <span class="text-black">*</span>
                             </label>
 
                             <div
@@ -364,14 +364,14 @@
                                 <p class="text-sm text-gray-600">اضغط أو اسحب الصورة هنا</p>
                             </div>
                             @error('main_image')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                             <!-- المعاينة -->
                             <div id="main_preview_container" class="mt-3 hidden relative w-full h-56">
                                 <img id="main_image_preview" class="w-full h-full object-cover rounded-lg border" />
                                 <!-- زر حذف -->
                                 <button onclick="removeMainImage()"
-                                    class="absolute top-1 right-1 bg-red-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                    class="absolute top-1 right-1 bg-black text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -391,7 +391,7 @@
                                 <p class="text-sm text-gray-600">يمكنك اختيار عدة صور</p>
                             </div>
                             @error('images.*')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                             <!-- معاينة الصور المتعددة -->
                             <div id="extra_images_preview" class="mt-3 flex flex-wrap gap-3"></div>
@@ -402,7 +402,7 @@
 
                 <div class="mb-4">
                     <label for="system_external" class="block text-sm font-medium text-gray-700 mb-1">
-                        هل النظام خارجي <span class="text-red-500">*</span>
+                        هل النظام خارجي <span class="text-black">*</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="system_external_toggle" name="system_external" value="1"
@@ -413,25 +413,25 @@
                         <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
                     </label>
                     @error('system_external')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <div id="external_url_container" class="{{ old('system_external') ? '' : 'hidden' }} mt-4 mb-6">
                     <label for="external_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        رابط النظام الخارجي <span class="text-red-500">*</span>
+                        رابط النظام الخارجي <span class="text-black">*</span>
                     </label>
                     <input type="url" name="external_url" id="external_url" value="{{ old('external_url') }}"
                         class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         placeholder="https://example.com">
                     @error('external_url')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <div class="mb-4">
                     <label for="evorq_onwer" class="block text-sm font-medium text-gray-700 mb-1">
-                        هل تملك Evorq النظام <span class="text-red-500">*</span>
+                        هل تملك Evorq النظام <span class="text-black">*</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
                         
@@ -440,22 +440,22 @@
                         <div
                             class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
                         </div>
-                        <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
+                        <span class="ms-3 text-sm font-medium text-gray-900 select-none">لا</span>
                     </label>
                     @error('evorq_onwer')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
                 
                 <div id="onwer_system_container" class="{{ old('evorq_onwer') ? '' : 'hidden' }} mt-4 mb-6">
                     <label for="onwer_system" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        اسم مالك النظام <span class="text-red-500">*</span>
+                        اسم مالك النظام <span class="text-black">*</span>
                     </label>
                     <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system') }}"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                         >
                     @error('onwer_system')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -479,7 +479,7 @@
                         </label>
                     </div>
                     @error('status')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 

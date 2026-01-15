@@ -33,7 +33,7 @@
 
         {{-- بوكس المتأخرة --}}
         <div class="bg-red-50 dark:bg-red-900/20 p-4 rounded-xl border border-red-100 dark:border-red-800">
-            <div class="text-red-600 dark:text-red-400 text-sm font-bold flex items-center gap-2">
+            <div class="text-black dark:text-red-400 text-sm font-bold flex items-center gap-2">
                 <i class="fas fa-exclamation-triangle"></i> المهام المتأخرة
             </div>
             <div class="text-2xl font-black text-red-700 dark:text-red-300">
@@ -135,7 +135,7 @@
                                     <form action="{{ route('tasks.destroy', $task->id) }}" method="POST"
                                         onsubmit="return confirm('حذف المهمة؟')">
                                         @csrf @method('DELETE')
-                                        <button type="submit" class="p-2 text-red-600 hover:bg-red-50 rounded-lg"><i
+                                        <button type="submit" class="p-2 text-black hover:bg-red-50 rounded-lg"><i
                                                 class="fas fa-trash-alt"></i></button>
                                     </form>
                                 </div>
@@ -159,7 +159,7 @@
         <div class="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-blue-50 dark:bg-blue-900/20">
             <h3 class="text-lg font-bold dark:text-white">إضافة مهمة جديدة</h3>
             <button onclick="document.getElementById('addTaskModal').classList.add('hidden')"
-                class="text-2xl hover:text-red-500">&times;</button>
+                class="text-2xl hover:text-black">&times;</button>
         </div>
 
 <form action="{{ route('tasks.request-store') }}" method="POST" class="p-6 space-y-4">
@@ -250,7 +250,7 @@
                 <i class="fas fa-edit text-amber-600"></i> تعديل بيانات المهمة
             </h3>
             <button type="button" onclick="closeEditModal()"
-                class="text-2xl hover:text-red-500 text-gray-400">&times;</button>
+                class="text-2xl hover:text-black text-gray-400">&times;</button>
         </div>
 
         <form id="editTaskForm" method="POST" class="p-6 space-y-4">

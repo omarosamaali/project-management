@@ -42,6 +42,27 @@ class SpecialRequestController extends Controller
         return back()->with('success', 'تم إضافة المرحلة بنجاح');
     }
 
+    public function storeStage1(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'details'     => 'nullable|string',
+            'hours_count' => 'nullable|integer|min:0',
+            'end_date'    => 'nullable|date',
+        ]);
+
+        ProjectStage::create([
+            'special_request_id'  => $id,
+            'title'       => $validated['title'],
+            'details'     => $validated['details'],
+            'hours_count' => $validated['hours_count'] ?? 0,
+            'end_date'    => $validated['end_date'],
+            'status'      => 'waiting',
+        ]);
+
+        return back()->with('success', 'تم إضافة المرحلة بنجاح');
+    }
+
 
     // Index Method
     public function index(Request $request)
@@ -347,23 +368,26 @@ class SpecialRequestController extends Controller
         return redirect()->route('dashboard.special-request.index')->with('success', 'تم حذف الطلب بنجاح');
     }
 
-    public function addNote(Request $request, SpecialRequest $specialRequest)
+    public function addNote(Request $request, SpecialRequest $special_request) // تأكد من الاسم هنا
     {
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'visible_to_client' => 'nullable|boolean',
         ]);
 
-        $data['user_id'] = auth()->id();
-        $data['visible_to_client'] = $request->has('visible_to_client') ? true : false;
-
-        $specialRequest->notes()->create($data);
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $specialRequest->id,
+        // تأكد أن $special_request->id ليس null قبل الإدخال
+        $special_request->notes()->create([
+            'title' => $data['title'],
+            'description' => $data['description'],
             'user_id' => auth()->id(),
-            'type' => 'file', // أو status, invoice, etc
-            'description' => 'تم اضافة ملاحظة جديدة للمشروع',
+            'visible_to_client' => $request->has('visible_to_client'),
+        ]);
+
+        \App\Models\ProjectActivity::create([
+            'special_request_id' => $special_request->id,
+            'user_id' => auth()->id(),
+            'type' => 'file',
+            'description' => 'تم إضافة ملاحظة جديدة للمشروع: ' . $data['title'],
         ]);
 
         return back()->with('success', 'تمت إضافة الملاحظة بنجاح');

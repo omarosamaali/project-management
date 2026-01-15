@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Performance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\WorkTime;
+use App\Models\EmployeeAdjustment;
 use Carbon\Carbon;
 
 class PerformanceController extends Controller
@@ -13,59 +15,47 @@ class PerformanceController extends Controller
     public function __invoke(Request $request)
     {
         $userId = Auth::id();
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
 
-        // أحدث أداء للمستخدم
-        $latestPerformance = Performance::where('user_id', $userId)
-            ->latest('performance_date')
-            ->first();
-
-        // إذا لم يكن هناك بيانات، نعرض قيم افتراضية
-        if (!$latestPerformance) {
-            $latestPerformance = new Performance([
-                'response_speed' => 0,
-                'execution_time' => 0,
-                'message_response_rate' => 0,
-                'support_tickets_closed' => 0,
-                'completed_tasks' => 0,
-            ]);
-        }
-
-        // بيانات آخر 7 أيام للرسم البياني
-        $weeklyData = Performance::where('user_id', $userId)
-            ->where('performance_date', '>=', Carbon::now()->subDays(7))
-            ->orderBy('performance_date')
+        $workStats = WorkTime::where('user_id', $userId)
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->get();
 
-        // إذا لم يكن هناك بيانات أسبوعية، نملأ بقيم افتراضية
-        if ($weeklyData->isEmpty()) {
-            $weeklyData = collect();
-            for ($i = 6; $i >= 0; $i--) {
-                $weeklyData->push(new Performance([
-                    'performance_date' => Carbon::now()->subDays($i),
-                    'response_speed' => 0,
-                    'execution_time' => 0,
-                    'message_response_rate' => 0,
-                    'support_tickets_closed' => 0,
-                    'completed_tasks' => 0,
-                ]));
+        $totalLateMinutes = 0;
+        foreach ($workStats->where('type', 'حضور') as $record) {
+            $startTime = Carbon::parse($record->start_time);
+            if ($startTime->hour >= 9 && $startTime->minute > 0) {
+                $totalLateMinutes += $startTime->diffInMinutes(Carbon::parse('09:00:00'));
             }
         }
 
-        // حساب المتوسطات
-        $averages = Performance::where('user_id', $userId)
+        $financials = EmployeeAdjustment::where('user_id', $userId)
+            ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->selectRaw('
-                AVG(response_speed) as avg_response_speed,
-                AVG(execution_time) as avg_execution_time,
-                AVG(message_response_rate) as avg_message_response,
-                SUM(support_tickets_closed) as total_support,
-                SUM(completed_tasks) as total_tasks
-            ')
+            SUM(CASE WHEN type = "bonus" THEN amount ELSE 0 END) as total_bonuses,
+            SUM(CASE WHEN type = "deduction" THEN amount ELSE 0 END) as total_deductions
+        ')->first();
+
+        $latestPerformance = Performance::where('user_id', $userId)->latest('performance_date')->first()
+            ?? new Performance(['total_score' => 0]);
+
+        $weeklyData = Performance::where('user_id', $userId)
+            ->where('performance_date', '>=', Carbon::now()->subDays(7))
+            ->orderBy('performance_date')->get();
+
+        $averages = Performance::where('user_id', $userId)
+            ->selectRaw('SUM(support_tickets_closed) as total_support, SUM(completed_tasks) as total_tasks')
             ->first();
 
         return view('dashboard.performance.show', compact(
             'latestPerformance',
             'weeklyData',
-            'averages'
+            'averages',
+            'totalLateMinutes',
+            'financials',
+            'workStats'
         ));
     }
 }

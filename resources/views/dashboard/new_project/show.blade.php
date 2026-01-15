@@ -71,13 +71,13 @@
 
                                     <div class="flex justify-between items-center">
                                         <span class="text-gray-500 font-medium">اخر موعد لتقديم عروض الاسعار</span>
-                                        <span class="text-red-500 font-bold">{{ $newProject->deadline ?? 'غير محدد'
+                                        <span class="text-black font-bold">{{ $newProject->deadline ?? 'غير محدد'
                                             }}</span>
                                     </div>
 
                                     <div class="flex justify-between items-center">
                                         <span class="text-gray-500 font-medium">موعد تسليم المشروع</span>
-                                        <span class="text-red-500 font-bold">{{ $newProject->deadline ?? 'غير محدد'
+                                        <span class="text-black font-bold">{{ $newProject->deadline ?? 'غير محدد'
                                             }}</span>
                                     </div>
 
@@ -104,8 +104,7 @@
                 </div>
             </div>
         </div>
-
-        @if(Auth::user()->role == 'partner' && Auth::user()->is_employee == 1 && Auth::user()->can_propose_quotes == 1)
+        @if(Auth::user()->role == 'partner' && Auth::user()->can_propose_quotes == 1 && $newProject->budget_to == null)
         <div
             class="bg-white dark:bg-gray-800 shadow-lg rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 p-8">
             <div class="flex items-center gap-4 mb-8">
@@ -143,10 +142,14 @@
                         <div class="flex items-center gap-3">
                             <div class="relative flex-1 flex">
                                 <input type="number" name="budget_to" value="{{ old('budget_to', $myProposal->budget_to ?? '') }}"
-                                    class="w-full pr-2 rounded-r-xl border-gray-300 focus:ring-gray-500 dark:bg-gray-900"
-                                    required>
+                                    class="
+                                    {{ $newProject->bidding_deadline > \Carbon\Carbon::now() && $newProject->budget_to == null ? '!bg-gray-400' : '' }}
+                                    w-full pr-2 rounded-r-xl border-gray-300 focus:ring-gray-500"
+                                    required 
+                                    {{ $newProject->bidding_deadline > \Carbon\Carbon::now() && $newProject->budget_to == null ? '' : 'disabled' }}
+                                    >
                                 <div class="bg-gray-300 flex items-center justify-center px-1 rounded-l-xl">
-                                    <x-drhm-icon color="333" />
+                                    <x-drhm-icon color="black" />
                                 </div>
                             </div>
                         </div>
@@ -157,6 +160,7 @@
                         <div class="relative flex-1 flex"> <input type="number" name="execution_time"
                                 value="{{ old('execution_time', $myProposal->execution_time ?? '') }}"
                                 class="w-full pl-10 rounded-r-xl border-gray-300 focus:ring-gray-500 dark:bg-gray-900"
+                                {{ $newProject->bidding_deadline > \Carbon\Carbon::now() && $newProject->budget_to == null ? '' : 'disabled' }}
                                 required>
                             <div class="bg-gray-300 flex items-center justify-center px-1 rounded-l-xl ">
                                 أيام
@@ -168,11 +172,11 @@
                 <div class="space-y-2">
                     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300">تفاصيل العرض
                     </label>
-                    <textarea name="proposal_details" rows="5"
+                    <textarea {{ $newProject->bidding_deadline > \Carbon\Carbon::now() && $newProject->budget_to == null ? '' : 'disabled' }} name="proposal_details" rows="5"
                         class="w-full rounded-xl border-gray-300 focus:ring-gray-500 dark:bg-gray-900"
-                        required>{{ old('proposal_details', $myProposal->proposal_details ?? '') }}</textarea>
+                        required>{!! old('proposal_details', $myProposal->proposal_details ?? '') !!}</textarea>
                 </div>
-
+                @if($newProject->bidding_deadline > \Carbon\Carbon::now() && $newProject->budget_to == null)
                 <div class="flex items-center justify-between gap-4 pt-6 border-t dark:border-gray-700">
                     <button type="submit"
                         class="w-full bg-gray-900 hover:bg-gray-700 text-white px-10 py-3 rounded-xl font-bold shadow-xl shadow-gray-100 transition-all hover:-translate-y-1">
@@ -186,6 +190,7 @@
                     </span>
                     @endif
                 </div>
+                @endif
             </form>
         </div>
         @endif

@@ -34,14 +34,21 @@ use App\Http\Controllers\RequestFileController;
 use App\Http\Controllers\PartnerSystemController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\AdminRemarkController;
+use App\Http\Controllers\Dashboard\AdjustmentController;
 
-
+// ملف web.php
+Route::post('/special-request/{special_request}/add-note', [SpecialRequestController::class, 'addNote'])
+    ->name('dashboard.special-request.add-note');
+    
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('work-times', WorkTimeController::class);
+
     Route::post('special-request/{specialRequest}/store-stage', [SpecialRequestController::class, 'storeStage'])
         ->name('special-request.store-stage');
 
-    // إضافة مسار حذف المرحلة (إذا لم يكن موجوداً)
+    Route::post('special-request/{specialRequest}/store--stage', [SpecialRequestController::class, 'storeStage1'])
+        ->name('special-request.store1-stage');
+
     Route::delete('special-request/stages/{stage}', [SpecialRequestController::class, 'destroyStage'])
         ->name('special-request.destroy-stage');
 });
@@ -78,6 +85,7 @@ Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(func
     Route::get('/my-services/show', [MyServicesController::class, 'show'])->name('my_service.show');
 });
 
+
 // System Routes
 Route::middleware('auth')->group(function () {
     Route::resource('logos', LogoController::class)->names('dashboard.logos');
@@ -107,6 +115,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('partner_systems', PartnerSystemController::class)->names('dashboard.partner_systems');
     Route::resource('salaries', SalaryController::class)->names('dashboard.salaries');
     Route::resource('dashboard/admin-remarks', AdminRemarkController::class)->names('dashboard.admin_remarks');
+    Route::resource('adjustments', AdjustmentController::class)->names('dashboard.adjustments');
 });
 Route::get('/dashboard/salaries/fetch-attendance/{user_id}', [SalaryController::class, 'fetchAttendance'])->name('salaries.fetchAttendance');
 // Register Partner

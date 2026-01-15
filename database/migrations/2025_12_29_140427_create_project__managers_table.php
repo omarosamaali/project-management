@@ -14,11 +14,8 @@ return new class extends Migration
         Schema::create('project__managers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('special_request_id')->constrained('special_requests')->onDelete('cascade');
-
-            // إضافة الحقل الجديد للربط مع موديل Requests
-            $table->foreignId('request_id')->constrained('requests')->onDelete('cascade');
-
+            $table->foreignId('special_request_id')->nullable()->constrained('special_requests')->onDelete('cascade');
+            $table->foreignId('request_id')->nullable()->constrained('requests')->onDelete('cascade');
             $table->timestamps();
         });
     }

@@ -57,7 +57,9 @@
                 <div>
                     <p class="text-sm text-green-600 dark:text-green-400 font-medium">المبلغ المدفوع</p>
                     <p class="text-3xl font-bold text-green-700 dark:text-green-300 mt-2">
-                        {{ number_format($SpecialRequest->total_paid, 2) }} <span class="text-lg">             <x-drhm-icon width="12" height="14" /></span>
+                        {{ number_format($SpecialRequest->total_paid, 2) }} <span class="text-lg">
+                            <x-drhm-icon width="12" height="14" />
+                        </span>
                     </p>
                 </div>
                 <div class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center">
@@ -73,7 +75,9 @@
                 <div>
                     <p class="text-sm text-orange-600 dark:text-orange-400 font-medium">المبلغ المتبقي</p>
                     <p class="text-3xl font-bold text-orange-700 dark:text-orange-300 mt-2">
-                        {{ number_format($SpecialRequest->remaining_amount, 2) }} <span class="text-lg">             <x-drhm-icon width="12" height="14" /></span>
+                        {{ number_format($SpecialRequest->remaining_amount, 2) }} <span class="text-lg">
+                            <x-drhm-icon width="12" height="14" />
+                        </span>
                     </p>
                 </div>
                 <div class="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center">
@@ -121,7 +125,9 @@
                         <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                             <span class="flex items-center gap-1">
                                 <i class="fas fa-money-bill-wave"></i>
-                                <strong>{{ number_format($payment->amount, 2) }}              <x-drhm-icon width="12" height="14" /></strong>
+                                <strong>{{ number_format($payment->amount, 2) }}
+                                    <x-drhm-icon width="12" height="14" />
+                                </strong>
                             </span>
                             @if($payment->due_date)
                             <span class="flex items-center gap-1">
@@ -153,13 +159,16 @@
 
                         <div class="text-right mb-3">
                             <p class="text-lg font-bold text-gray-800 dark:text-white">
-                                المبلغ الأساسي: {{ number_format($baseAmount, 2) }}              <x-drhm-icon width="12" height="14" />
+                                المبلغ الأساسي: {{ number_format($baseAmount, 2) }}
+                                <x-drhm-icon width="12" height="14" />
                             </p>
                             <p class="text-sm text-orange-600 font-medium">
-                                + رسوم بوابة الدفع: {{ number_format($fees, 2) }}              <x-drhm-icon width="12" height="14" />
+                                + رسوم بوابة الدفع: {{ number_format($fees, 2) }}
+                                <x-drhm-icon width="12" height="14" />
                             </p>
                             <p class="text-xl font-bold text-emerald-600 mt-1">
-                                الإجمالي: {{ number_format($totalWithFees, 2) }}              <x-drhm-icon width="12" height="14" />
+                                الإجمالي: {{ number_format($totalWithFees, 2) }}
+                                <x-drhm-icon width="12" height="14" />
                             </p>
                         </div>
 
@@ -169,7 +178,8 @@
                             <button type="button" onclick="payWithZiina({{ $payment->id }}, {{ $totalWithFees }})"
                                 class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-6 py-3 rounded-lg font-bold flex items-center gap-2 shadow-lg transition-all transform hover:scale-105">
                                 <i class="fas fa-credit-card"></i>
-                                دفع {{ number_format($totalWithFees, 2) }}              <x-drhm-icon width="12" height="14" /> الآن عبر Ziina
+                                دفع {{ number_format($totalWithFees, 2) }}
+                                <x-drhm-icon color="#fffff" width="12" height="14" />
                             </button>
                         </form>
                     </div>
@@ -178,26 +188,26 @@
                     @else
                     {{-- @else block --}}
                     <div class="flex flex-col items-end">
-                     @php
-                    $paidPayment = \App\Models\Payment::where('status', 'completed')
-                    // إذا كنت تريد البحث بـ payment_id الفريد من زيينا
-                    ->latest()
-                    ->first();
-                    @endphp
-                    
-                    @if($paidPayment)
-                    <a href="{{ route('special-request.payment.invoice', ['specialRequest' => $SpecialRequest->id, 'payment' => $paidPayment->id]) }}"
-                        target="_blank" class="...">
-                        معاينة الفاتورة
-                    </a>
-                    @else
-                    <span class="text-muted">جاري معالجة الدفع أو البيانات غير مكتملة</span>
-                    @endif
+                        @php
+                        $paidPayment = \App\Models\Payment::where('status', 'completed')
+                        // إذا كنت تريد البحث بـ payment_id الفريد من زيينا
+                        ->latest()
+                        ->first();
+                        @endphp
+
+                        @if($paidPayment)
+                        <a href="{{ route('special-request.payment.invoice', ['specialRequest' => $SpecialRequest->id, 'payment' => $paidPayment->id]) }}"
+                            target="_blank" class="...">
+                            معاينة الفاتورة
+                        </a>
+                        @else
+                        <span class="text-muted">جاري معالجة الدفع أو البيانات غير مكتملة</span>
+                        @endif
                     </div>
                     @endif
-                    </div>
-                    <script>
-                        function payWithZiina(paymentId, totalAmount) {
+                </div>
+                <script>
+                    function payWithZiina(paymentId, totalAmount) {
         const button = document.querySelector(`#ziina-form-${paymentId} button`);
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحويل إلى Ziina...';
@@ -227,18 +237,18 @@
             button.innerHTML = `<i class="fas fa-credit-card"></i> دفع ${totalAmount.toFixed(2)}              <x-drhm-icon width="12" height="14" /> الآن عبر Ziina`;
         });
     }
-                    </script>
-                </div>
+                </script>
             </div>
-            @empty
-
-            <div class="p-10 text-center">
-                <i class="fas fa-receipt text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
-                <p class="text-gray-400 dark:text-gray-500">لا توجد دفعات محددة</p>
-            </div>
-            @endforelse
         </div>
+        @empty
+
+        <div class="p-10 text-center">
+            <i class="fas fa-receipt text-5xl text-gray-300 dark:text-gray-600 mb-3"></i>
+            <p class="text-gray-400 dark:text-gray-500">لا توجد دفعات محددة</p>
+        </div>
+        @endforelse
     </div>
+</div>
 </div>
 
 {{-- نافذة تعديل الميزانية (للأدمن) --}}
@@ -316,7 +326,7 @@
                             value="{{ $payment->due_date?->format('Y-m-d') }}"
                             class="w-40 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm">
                         <button type="button" onclick="removeInstallment(this)"
-                            class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                            class="px-3 py-2 bg-red-500 text-white rounded hover:bg-black">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -435,7 +445,7 @@ document.addEventListener('keydown', (e) => {
         <div
             class="p-6 border-b dark:border-gray-700 bg-gradient-to-r from-red-50 to-orange-50 dark:from-gray-700 dark:to-gray-700">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <i class="fas fa-times-circle text-red-600"></i>
+                <i class="fas fa-times-circle text-black"></i>
                 رفض الدفعة
             </h3>
         </div>
@@ -453,7 +463,7 @@ document.addEventListener('keydown', (e) => {
             </div>
 
             <div class="flex gap-3">
-                <button type="submit" class="flex-1 bg-red-600 text-white py-2.5 rounded-lg font-bold hover:bg-red-700">
+                <button type="submit" class="flex-1 bg-black text-white py-2.5 rounded-lg font-bold hover:bg-red-700">
                     تأكيد الرفض
                 </button>
                 <button type="button" onclick="closeRejectModal()"
@@ -508,7 +518,7 @@ function addInstallment() {
             <input type="date" name="installments[${index}][due_date]" 
                 class="w-40 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm">
             <button type="button" onclick="removeInstallment(this)" 
-                class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                class="px-3 py-2 bg-red-500 text-white rounded hover:bg-black">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -540,12 +550,12 @@ function calculateTotal() {
     const msg = document.getElementById('difference_msg');
     
     if (diff > 0) {
-        msg.classList.remove('hidden', 'text-red-600');
+        msg.classList.remove('hidden', 'text-black');
         msg.classList.add('text-yellow-600');
         msg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> المتبقي: ${diff.toFixed(2)}              <x-drhm-icon width="12" height="14" />`;
     } else if (diff < 0) {
         msg.classList.remove('hidden', 'text-yellow-600');
-        msg.classList.add('text-red-600');
+        msg.classList.add('text-black');
         msg.innerHTML = `<i class="fas fa-times-circle"></i> تجاوز الميزانية بـ ${Math.abs(diff).toFixed(2)}              <x-drhm-icon width="12" height="14" />`;
     } else {
         msg.classList.add('hidden');

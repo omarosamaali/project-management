@@ -52,7 +52,7 @@
                     @endforeach
                 </select>
                 @error('system_id')
-                <span class="text-red-500 text-xs">{{ $message }}</span>
+                <span class="text-black text-xs">{{ $message }}</span>
                 @enderror
                 
                 {{-- العميل --}}
@@ -70,7 +70,7 @@
                     </div>
                     @endforeach
                     @error('client_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -137,7 +137,7 @@
                             <input type="radio" name="status" value="ملغية" {{ old('status', $userRequest->status) ==
                             'ملغية' ? 'checked' : ''
                             }}
-                            class="w-5 h-5 text-red-600">
+                            class="w-5 h-5 text-black">
                             <span class="font-medium text-red-700">ملغية</span>
                         </label>
 
@@ -152,7 +152,7 @@
                         </label>
                     </div>
                     @error('status')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 

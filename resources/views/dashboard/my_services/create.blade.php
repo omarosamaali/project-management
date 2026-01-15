@@ -36,13 +36,13 @@
                             <!-- اسم الخدمة -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    إسم الخدمة (بالعربي) <span class="text-red-500">*</span>
+                                    إسم الخدمة (بالعربي) <span class="text-black">*</span>
                                 </label>
                                 <input type="text" id="name_ar" name="name_ar" required
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="الإسم">
                                 @error('name_ar')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
 
@@ -55,30 +55,28 @@
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="Name">
                                 @error('name_en')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
-
-                            <!-- السعر الكلي -->
-                            <div>
-                                <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                    السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span
-                                        class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="price" required min="0" step="1"
-                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="999">
-                                    @error('price')
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
+                            {{-- مدة الدعم الفني --}}
+                                                        <div>
+                                                            <label class="flex text-sm font-medium text-gray-700 mb-2">
+                                                                مدة الدعم الفني (بالايام) <span class="text-black">*</span>
+                                                            </label>
+                                                            <div class="relative">
+                                                                <input type="number" name="support_days" required min="0" step="1"
+                                                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                    placeholder="365 يوم">
+                                                                @error('support_days')
+                                                                <span class="text-black text-xs mt-1">{{ $message }}</span>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
 
                             <!-- مدة التنفيذ -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    مدة التنفيذ <span class="text-red-500">*</span>
+                                    مدة التنفيذ <span class="text-black">*</span>
                                 </label>
                                 <div class="grid grid-cols-2 gap-2">
                                     <div class="relative">
@@ -88,7 +86,7 @@
                                         <span
                                             class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">من</span>
                                         @error('execution_days_from')
-                                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                                         @enderror
                                     </div>
                                     <div class="relative">
@@ -98,55 +96,92 @@
                                         <span
                                             class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">إلى</span>
                                         @error('execution_days_to')
-                                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                                         @enderror
                                     </div>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">يوم عمل</p>
                             </div>
+<div>
 
-                            {{-- مدة الدعم الفني --}}
-                            <div>
-                                <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                    مدة الدعم الفني (بالايام) <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="support_days" required min="0" step="1"
-                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="365 يوم">
-                                    @error('support_days')
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
+    <label class="flex text-sm font-medium text-gray-700 mb-2">
 
-                            {{-- نوع الخدمة --}}
-                            <div class="mb-4">
-                                <x-input-label for="service_id" :value="__('نوع الخدمة')" />
-                                <select id="service_id" name="service_id"
-                                    class="mt-2 px-4 py-3 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300
-                                                focus:border-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 rounded-md shadow-sm block w-full"
-                                    required>
-                                    <option class="text-gray-500">-- اختر نوع الخدمة --</option>
-                                    @foreach ($services as $service)
-                                        <option value="{{ $service->id }}">
-                                            {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <x-input-error :messages="$errors->get('service_id')" class="mt-2" />
-                            </div>
+        السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span class="text-black">*</span>
 
+    </label>
+
+    <div class="relative">
+
+        <input type="number" name="price" required min="0" step="1"
+            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="999">
+
+        @error('price')
+
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
+
+        @enderror
+
+    </div>
+
+</div>
+                            <!-- السعر الكلي -->
+{{-- نوع الخدمة --}}
+{{-- نوع الخدمة --}}
+<div class="mb-4">
+    <x-input-label for="service_id" :value="__('نوع الخدمة')" />
+    <select id="service_id" name="service_id"
+        class="mt-2 px-4 py-3 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm block w-full"
+        required>
+        <option value="" data-price="0" data-commission="0">-- اختر نوع الخدمة --</option>
+        @foreach ($services as $service)
+        <option value="{{ $service->id }}" data-price="{{ $service->price ?? 0 }}"
+            data-commission="{{ $service->evork_commission ?? 0 }}">
+            {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
+        </option>
+        @endforeach
+    </select>
+</div>
+
+{{-- حقل السعر الذي سيظهر فيه السعر بعد الخصم --}}
+<div>
+    <label class="flex text-sm font-medium text-gray-700 mb-2">
+        السعر النهائي (بعد خصم عمولة {{ $service->evork_commission ?? '' }}%)
+    </label>
+    <input type="number" id="total_price_input" name="price" required
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const serviceSelect = document.getElementById('service_id');
+    const priceInput = document.getElementById('total_price_input');
+
+    serviceSelect.addEventListener('change', function () {
+        // الحصول على الخيار المختار حالياً
+        const selectedOption = this.options[this.selectedIndex];
+        
+        // جلب السعر من خاصية data-price التي أضفناها
+        const servicePrice = selectedOption.getAttribute('data-price');
+
+        // تحديث قيمة حقل السعر الكلي
+        if (servicePrice) {
+            priceInput.value = servicePrice;
+        } else {
+            priceInput.value = '';
+        }
+    });
+});
+</script>
                             {{-- مدة الدعم الفني --}}
                             {{-- <div>
                                 <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                    بداية العداد <span class="text-red-500">*</span>
+                                    بداية العداد <span class="text-black">*</span>
                                 </label>
                                 <div class="relative">
                                     <input type="number" name="counter" required min="0" step="1"
                                         class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     @error('counter')
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                        <span class="text-black text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
                             </div> --}}
@@ -164,13 +199,13 @@
                             <!-- الوصف بالعربي -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    الوصف بالعربي <span class="text-red-500">*</span>
+                                    الوصف بالعربي <span class="text-black">*</span>
                                 </label>
                                 <textarea name="description_ar" id="description_ar" required rows="4"
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="نظام متكامل لإدارة المبيعات والمخزون، والعطاءات مع نظام محاسبي مبسط وواجهة سهلة الاستخدام"></textarea>
                                 @error('description_ar')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
 
@@ -183,7 +218,7 @@
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="Integrated Service for sales and inventory management..."></textarea>
                                 @error('description_en')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -205,10 +240,10 @@
                                     class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="New Requirement">
                                 @error('requirements_ar.*')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                                 <button type="button"
-                                    class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -239,10 +274,10 @@
                                     class="feature-en-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     placeholder="Professional Dashboard">
                                 @error('features_ar.*')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                                 <button type="button"
-                                    class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -266,7 +301,7 @@
                             <!-- الصورة الرئيسية -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    الصورة الرئيسية <span class="text-red-500">*</span>
+                                    الصورة الرئيسية <span class="text-black">*</span>
                                 </label>
 
                                 <div
@@ -277,14 +312,14 @@
                                     <p class="text-sm text-gray-600">اضغط أو اسحب الصورة هنا</p>
                                 </div>
                                 @error('main_image')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                                 <!-- المعاينة -->
                                 <div id="main_preview_container" class="mt-3 hidden relative w-full h-56">
                                     <img id="main_image_preview" class="w-full h-full object-cover rounded-lg border" />
                                     <!-- زر حذف -->
                                     <button onclick="removeMainImage()"
-                                        class="absolute top-1 right-1 bg-red-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                        class="absolute top-1 right-1 bg-black text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
@@ -304,7 +339,7 @@
                                     <p class="text-sm text-gray-600">يمكنك اختيار عدة صور</p>
                                 </div>
                                 @error('images.*')
-                                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                                 <!-- معاينة الصور المتعددة -->
                                 <div id="extra_images_preview" class="mt-3 flex flex-wrap gap-3"></div>
@@ -315,13 +350,13 @@
 
                     <div id="external_url_container" class="{{ old('Service_external') ? '' : 'hidden' }} mt-4 mb-6">
                         <label for="external_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            رابط الخدمة الخارجي <span class="text-red-500">*</span>
+                            رابط الخدمة الخارجي <span class="text-black">*</span>
                         </label>
                         <input type="url" name="external_url" id="external_url" value="{{ old('external_url') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                             placeholder="https://example.com">
                         @error('external_url')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                         @enderror
                     </div>
 
@@ -346,7 +381,7 @@
                             </label>
                         </div>
                         @error('status')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                         @enderror
                     </div>
 

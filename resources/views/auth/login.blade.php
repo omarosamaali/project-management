@@ -56,10 +56,10 @@
             <div class="flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input name="remember" id="remember_me" type="checkbox"
-                        class="w-5 h-5 text-red-600 rounded focus:ring-red-500">
+                        class="w-5 h-5 text-black rounded focus:ring-red-500">
                     <span class="text-sm text-gray-600">{{ __('messages.remember_me') }}</span>
                 </label>
-                <a href="{{ route('password.request') }}" class="text-red-600 hover:text-red-800 font-semibold">
+                <a href="{{ route('password.request') }}" class="text-black hover:text-red-800 font-semibold">
                     {{ __('messages.forgot_password') }}
                 </a>
             </div>
@@ -75,7 +75,7 @@
         <div class="mt-10 text-center">
             <p class="text-gray-600">
                 {{ __('messages.no_account') }}
-                <a href="{{ route('register') }}" class="text-red-600 hover:text-red-800 font-bold">
+                <a href="{{ route('register') }}" class="text-black hover:text-red-800 font-bold">
                     {{ __('messages.register_now') }}
                 </a>
             </p>

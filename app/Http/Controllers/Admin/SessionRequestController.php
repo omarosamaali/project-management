@@ -14,76 +14,55 @@ class SessionRequestController extends Controller
         $user = auth()->user();
         $userEmail = $user->email;
         $userId = $user->id;
-
         $query = SessionRequest::with('user');
-
-        // إذا لم يكن المستخدم أدمن، نطبق الفلترة
-        // تأكد من اسم العمود الخاص بالصلاحيات عندك (مثلاً role أو is_admin)
         if ($user->role !== 'admin') {
             $query->where(function ($q) use ($userEmail, $userId) {
-                $q->where('user_id', $userId) // عرض الاجتماعات التي أنشأها
-                    ->orWhereJsonContains('invitees', ['email' => $userEmail]); // عرض الاجتماعات المدعو إليها
+                $q->where('user_id', $userId)
+                    ->orWhereJsonContains('invitees', ['email' => $userEmail]);
             });
         }
-
         $sessions = $query->latest()->paginate(10);
-
         return view('dashboard.sessions.index', compact('sessions'));
     }
-
-    // SessionRequestController.php
 
     public function show(SessionRequest $session)
     {
         $user = auth()->user();
-
-        // حماية الدخول
         $isOwner = $session->user_id === $user->id;
         $isInvited = $session->getParticipantStatus($user->email) !== null;
         $isAdmin = $user->role === 'admin';
-
         if (!$isAdmin && !$isOwner && !$isInvited) {
             abort(403, 'غير مسموح لك بالدخول');
         }
-
-        // جلب كل المستخدمين ليقوم الأدمن بالاختيار منهم (باستثناء الأدمن نفسه)
         $users = User::where('role', '!=', 'admin')->get();
-
         return view('dashboard.sessions.show', compact('session', 'users'));
     }
 
     public function update(Request $request, SessionRequest $session)
     {
-        // الأدمن فقط مسموح له بتحديث الموعد والمدعوين
         if (auth()->user()->role !== 'admin') {
             abort(403);
         }
-
         $request->validate([
             'session_time' => 'required',
             'session_link' => 'required|url',
-            'user_ids'     => 'required|array', // استلام IDs المستخدمين
+            'user_ids'     => 'required|array',
         ]);
-
-        // تحويل الـ IDs المختارة إلى الصيغة المطلوبة (Email + Status)
         $invitees = [];
         $selectedUsers = User::whereIn('id', $request->user_ids)->get();
-
         foreach ($selectedUsers as $user) {
             $invitees[] = [
                 'email'  => $user->email,
-                'name'   => $user->name, // اختياري لسهولة العرض
+                'name'   => $user->name,
                 'status' => 'pending'
             ];
         }
-
         $session->update([
             'session_time' => $request->session_time,
             'session_link' => $request->session_link,
             'invitees'     => $invitees,
             'status'       => 'confirmed',
         ]);
-
         return back()->with('success', 'تم تحديد موعد الاجتماع ودعوة المستخدمين');
     }
 
@@ -109,25 +88,18 @@ class SessionRequestController extends Controller
         return redirect()->route('dashboard.sessions.index')->with('success', 'تم إرسال طلب الاجتماع بنجاح');
     }
 
-    // SessionRequestController.php
-    // SessionRequest.php
-
     public function getParticipantStatus($email)
     {
-        // التأكد من أن الحقل مصفوفة وليس فارغاً
         if (!$this->invitees || !is_array($this->invitees)) {
             return null;
         }
 
         foreach ($this->invitees as $invitee) {
-            // فحص: هل العنصر مصفوفة (النظام الجديد)؟
             if (is_array($invitee)) {
-                // الوصول الآمن للمفتاح email
                 if (isset($invitee['email']) && $invitee['email'] === $email) {
                     return $invitee['status'] ?? 'pending';
                 }
             }
-            // فحص: هل العنصر نص (النظام القديم)؟
             elseif (is_string($invitee)) {
                 if ($invitee === $email) {
                     return 'pending'; // الحالة الافتراضية للبيانات القديمة

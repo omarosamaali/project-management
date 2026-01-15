@@ -14,19 +14,33 @@
         <p class="text-xl text-gray-600">{{ __('messages.system_description') }}</p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="flex flex-wrap justify-center gap-4 mb-10">
+        <button onclick="filterSystems('all')"
+            class="service-filter-btn active-filter bg-black text-white px-6 py-2 rounded-full shadow-md transition-all"
+            data-id="all">
+            {{ __('الكل') }}
+        </button>
+        @foreach($services as $service)
+        <button onclick="filterSystems({{ $service->id }})"
+            class="service-filter-btn bg-white text-gray-700 border border-gray-200 px-6 py-2 rounded-full shadow-sm hover:bg-gray-50 transition-all"
+            data-id="{{ $service->id }}">
+            {{ app()->getLocale() == 'en' ? $service->name_en : $service->name_ar }}
+        </button>
+        @endforeach
+    </div>
+
+    <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($systems as $system)
-        <div
-            class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col">
+        <div class="system-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+            data-service="{{ $system->service_id }}">
+
             <div class="relative h-48 overflow-hidden">
                 @if($system->service_id)
-                <span class="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded">
+                <span class="absolute top-2 right-2 bg-black text-white text-xs px-2 py-1 rounded">
                     {{ $system->service->name_ar }}
                 </span>
                 @endif
-                <img src="{{ asset($system->main_image) }}"
-                    alt="{{ app()->getLocale() == 'en' ? $system->name_en : $system->name_ar }}"
-                    class="w-full h-full object-cover">
+                <img src="{{ asset($system->main_image) }}" alt="..." class="w-full h-full object-cover">
             </div>
 
             <div class="p-6 flex flex-col flex-grow">
@@ -37,66 +51,66 @@
                     {{ app()->getLocale() == 'en' ? $system->description_en : $system->description_ar }}
                 </p>
 
-                <div class="space-y-2 mb-4">
-                    <div class="flex items-center gap-2 text-gray-700 ">
-                        <span class="font-bold text-lg flex">{{ $system->price }} <img
-                                src="{{ asset('assets/images/drhm-icon.svg') }}" alt="">
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2 text-gray-600 ">
-                        <svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>{{ $system->execution_days }} {{ $system->execution_days_from }} {{
-                            __('messages.from') }}
-                            {{ $system->execution_days_to }} {{ __('messages.day') }}</span>
-                    </div>
-                </div>
-                @if(!empty($system->features) && isset($system->features[0][app()->getLocale()]) &&
-                $system->features[0][app()->getLocale()] !== null && $system->features[0][app()->getLocale()] !== '')
-                <div class="mb-4 flex-grow">
-                    <h4 class="font-semibold text-gray-700 mb-2 ltr:text-left rtl:text-right">
-                        {{ __('messages.features') }}
-                    </h4>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($system->features as $feature)
-                        @if(!empty($feature[app()->getLocale()]))
-                        <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm">
-                            {{ $feature[app()->getLocale()] }}
-                        </span>
-                        @endif
-                        @endforeach
-                    </div>
-                </div>
-                @endif
-                <div class="mt-auto pt-4 space-y-3">
+                <div class="mt-auto pt-4">
                     <a href="{{ route('system.show', $system) }}"
-                        class="block text-center w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-3 rounded-lg font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-md hover:shadow-lg">
+                        class="block text-center w-full bg-black text-white py-3 rounded-lg font-semibold">
                         {{ __('messages.show_details') }}
                     </a>
-
-                    <div
-                        class="flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
-                        <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
-                        @if($system->counter > 0)
-                        <span class="text-sm font-medium">
-                            {{ __('messages.purchase') }}
-                            <span class="font-bold text-red-600">
-                                {{ $system->counter }}
-                            </span>
-                            {{ __('messages.times') }}
-                        </span>
-                        @else
-                        <span class="text-sm font-medium">
-                            {{ __('messages.no_purchases') }}
-                        </span>
-                        @endif
-                    </div>
                 </div>
             </div>
         </div>
         @endforeach
     </div>
+
+    <div id="no-systems-msg" class="hidden text-center py-20">
+        <p class="text-gray-500 text-lg">لا توجد أنظمة متاحة لهذا القسم حالياً.</p>
+    </div>
 </section>
+
+<style>
+    .active-filter {
+        background-color: #000 !important;
+        /* black */
+        color: white !important;
+        border-color: #000 !important;
+    }
+</style>
+
+<script>
+    function filterSystems(serviceId) {
+    const cards = document.querySelectorAll('.system-card');
+    const buttons = document.querySelectorAll('.service-filter-btn');
+    let visibleCount = 0;
+
+    // تحديث شكل الأزرار
+    buttons.forEach(btn => {
+        if(btn.getAttribute('data-id') == serviceId) {
+            btn.classList.add('active-filter', 'bg-black', 'text-white');
+            btn.classList.remove('bg-white', 'text-gray-700');
+        } else {
+            btn.classList.remove('active-filter', 'bg-black', 'text-white');
+            btn.classList.add('bg-white', 'text-gray-700');
+        }
+    });
+
+    // تصفية الكروت
+    cards.forEach(card => {
+        if (serviceId === 'all' || card.getAttribute('data-service') == serviceId) {
+            card.style.display = 'flex';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // إظهار رسالة "لا يوجد" إذا كانت النتائج صفر
+    const msg = document.getElementById('no-systems-msg');
+    if(visibleCount === 0) {
+        msg.classList.remove('hidden');
+    } else {
+        msg.classList.add('hidden');
+    }
+}
+</script>
+
 @endsection

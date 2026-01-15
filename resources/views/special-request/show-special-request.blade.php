@@ -16,7 +16,7 @@
         <div>
             @if(Auth::user()->role === 'admin')
             <a href="{{ route('special-request.edit', $specialRequest) }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition">
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-red-700 transition">
                 <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -33,7 +33,7 @@
 {{-- زر الدفع (إذا كان مشروع وله سعر ولم يتم الدفع) --}}
 @if($specialRequest->is_project && $specialRequest->price && $specialRequest->status !== 'completed')
 <div class="p-4 border-2 border-red-600 dark:border-red-500 rounded-lg md:col-span-2 bg-red-50 dark:bg-red-900/10">
-    <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">
+    <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">
         💳 الدفع والتسليم
     </h3>
 
@@ -41,7 +41,7 @@
         <div>
             <p class="text-gray-700 dark:text-gray-300 mb-2">
                 المبلغ المطلوب:
-                <span class="text-2xl font-bold text-red-600 dark:text-red-400">
+                <span class="text-2xl font-bold text-black dark:text-red-400">
                     {{ number_format($specialRequest->price) }} <x-drhm-icon color="000" />
                 </span>
             </p>
@@ -51,7 +51,7 @@
         </div>
 
         <button onclick="handlePurchase({{ $specialRequest->id }}, {{ $specialRequest->price }})"
-            class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition shadow-lg hover:shadow-xl">
+            class="px-6 py-3 bg-black hover:bg-red-700 text-white font-bold rounded-lg transition shadow-lg hover:shadow-xl">
             💰 الدفع الآن
         </button>
     </div>
@@ -82,7 +82,7 @@
                 <div
                     class="flex justify-between items-center p-3 bg-red-100 dark:bg-red-900/30 rounded border-2 border-red-600">
                     <span class="text-gray-900 dark:text-white font-bold">الإجمالي:</span>
-                    <span class="font-bold text-red-600 dark:text-red-400 text-xl" id="totalPrice">0.00 <x-drhm-icon color="000" /></span>
+                    <span class="font-bold text-black dark:text-red-400 text-xl" id="totalPrice">0.00 <x-drhm-icon color="000" /></span>
                 </div>
             </div>
 
@@ -194,7 +194,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
 
         {{-- تفاصيل الطلب --}}
         <div class="p-4 border rounded-lg dark:border-gray-700 md:col-span-2">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">تفاصيل الطلب</h3>
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">تفاصيل الطلب</h3>
 
             <p class="mb-4">
                 <span class="font-medium text-gray-700 dark:text-gray-400 block">العنوان:</span>
@@ -210,7 +210,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
 
         {{-- معلومات فنية --}}
         <div class="p-4 border rounded-lg dark:border-gray-700">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">المواصفات الفنية</h3>
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">المواصفات الفنية</h3>
 
             <p class="mb-4">
                 <span class="font-medium text-gray-700 dark:text-gray-400 block">نوع الطلب:</span>
@@ -226,7 +226,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
 
         {{-- معلومات الميزانية والوقت --}}
         <div class="p-4 border rounded-lg dark:border-gray-700">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">الميزانية والجدول الزمني
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">الميزانية والجدول الزمني
             </h3>
 
             <p class="mb-4">
@@ -252,7 +252,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
         {{-- روابط الأمثلة --}}
         @if ($specialRequest->examples)
         <div class="p-4 border rounded-lg dark:border-gray-700 md:col-span-2">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">روابط الأمثلة</h3>
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">روابط الأمثلة</h3>
             <a href="{{ $specialRequest->examples }}" target="_blank"
                 class="text-blue-500 hover:text-blue-700 underline break-all">
                 {{ $specialRequest->examples }}
@@ -262,7 +262,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
 
         {{-- معلومات المشروع --}}
         <div class="p-4 border rounded-lg dark:border-gray-700">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">معلومات المشروع</h3>
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">معلومات المشروع</h3>
 
             <p class="mb-4">
                 <span class="font-medium text-gray-700 dark:text-gray-400 block">حالة المشروع:</span>
@@ -285,7 +285,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
 
         {{-- معلومات صاحب الطلب --}}
         <div class="p-4 border rounded-lg dark:border-gray-700">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">معلومات صاحب الطلب</h3>
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">معلومات صاحب الطلب</h3>
 
             <p class="mb-4">
                 <span class="font-medium text-gray-700 dark:text-gray-400 block">الاسم:</span>
@@ -312,7 +312,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
         {{-- الشركاء المسندين --}}
         @if($specialRequest->is_project && $specialRequest->partners->count() > 0)
         <div class="p-4 border rounded-lg dark:border-gray-700 md:col-span-2">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">
                 الشركاء المسندين للمشروع ({{ $specialRequest->partners->count() }})
             </h3>
 
@@ -321,7 +321,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
                 <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
                     <div class="flex items-center mb-3">
                         <div
-                            class="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center font-bold text-lg ml-3">
+                            class="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center font-bold text-lg ml-3">
                             {{ mb_substr($partner->name, 0, 1) }}
                         </div>
                         <div>
@@ -363,11 +363,11 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
             <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <p class="text-sm">
                     <span class="font-medium text-gray-700 dark:text-gray-400">إجمالي نسب الأرباح الموزعة:</span>
-                    <span class="font-bold {{ $totalPercentage > 100 ? 'text-red-600' : 'text-green-600' }}">
+                    <span class="font-bold {{ $totalPercentage > 100 ? 'text-black' : 'text-green-600' }}">
                         {{ $totalPercentage }}%
                     </span>
                     @if($totalPercentage > 100)
-                    <span class="text-red-600 text-xs mr-2">⚠️ تحذير: النسبة الإجمالية تتجاوز 100%</span>
+                    <span class="text-black text-xs mr-2">⚠️ تحذير: النسبة الإجمالية تتجاوز 100%</span>
                     @endif
                 </p>
             </div>
@@ -379,7 +379,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
             </p>
             @if(Auth::user()->role === 'admin')
             <a href="{{ route('special-request.edit', $specialRequest) }}"
-                class="mt-3 inline-block text-red-600 hover:text-red-700 font-medium">
+                class="mt-3 inline-block text-black hover:text-red-700 font-medium">
                 إسناد شركاء للمشروع ←
             </a>
             @endif
@@ -389,7 +389,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
         {{-- النظام المرتبط (إن وجد) --}}
         @if($specialRequest->system)
         <div class="p-4 border rounded-lg dark:border-gray-700 md:col-span-2">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-3 border-b pb-2">النظام المرتبط</h3>
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-3 border-b pb-2">النظام المرتبط</h3>
 
             <div class="flex items-center justify-between">
                 <div>
@@ -401,7 +401,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
                     </p>
                 </div>
                 <a href="{{ route('systems.show', $specialRequest->system) }}"
-                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
+                    class="px-4 py-2 bg-black hover:bg-red-700 text-white rounded-lg transition">
                     عرض النظام
                 </a>
             </div>
@@ -431,7 +431,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
                     class="inline">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
+                    <button type="submit" class="px-4 py-2 bg-black hover:bg-red-700 text-white rounded-lg transition"
                         onclick="return confirm('هل أنت متأكد من حذف هذا الطلب؟ لا يمكن التراجع عن هذا الإجراء!')">
                         🗑️ حذف الطلب
                     </button>

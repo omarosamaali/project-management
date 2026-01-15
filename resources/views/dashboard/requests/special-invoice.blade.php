@@ -129,7 +129,7 @@
 
                             <tr class="hover:bg-gray-50">
                                 <td class="py-3 px-4 font-bold text-gray-700">السعر الإجمالي</td>
-                                <td class="text-center py-3 px-4 text-red-600 font-semibold">
+                                <td class="text-center py-3 px-4 text-black font-semibold">
                                     <div class="flex items-center justify-center gap-1">
                                         {{ $userRequest->budget + $userRequest->budget * 0.079 }}
                                         <x-drhm-icon width="12" height="14" />

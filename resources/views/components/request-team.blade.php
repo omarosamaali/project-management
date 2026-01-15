@@ -66,7 +66,7 @@
                             method="POST" onsubmit="return confirm('هل أنت متأكد من إلغاء إسناد هذا الشريك؟')">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                class="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition">
+                                class="w-8 h-8 flex items-center justify-center text-black hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </form>
@@ -102,7 +102,8 @@
         </div>
     </div>
     @endif
-
+    
+    @if(Auth::user()->role === 'admin')
     <form id="assignPartnersForm"
         action="{{ route('dashboard.special-request.request-assign-partners', $SpecialRequest->id) }}" method="POST"
         class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
@@ -220,6 +221,7 @@
             </a>
         </div>
     </form>
+    @endif
 
     @if($SpecialRequest->is_project == 0)
     <form action="{{ route('dashboard.project_manager.store', $SpecialRequest->id) }}" method="POST"

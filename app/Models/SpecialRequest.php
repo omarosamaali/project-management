@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\RequestFile;
 
 class SpecialRequest extends Model
 {
@@ -24,12 +25,18 @@ class SpecialRequest extends Model
         'payment_type',
         'installments_data',
         'bidding_deadline',
+        'order_number',
     ];
 
     protected $casts = [
         'installments_data' => 'array',
         'is_project' => 'boolean',
     ];
+
+    public function files()
+    {
+        return $this->hasMany(RequestFile::class, 'request_id');
+    }
 
     public function user()
     {

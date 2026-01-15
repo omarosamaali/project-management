@@ -11,7 +11,7 @@
     <div class="mx-auto w-full max-w-4xl">
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg p-6">
             @if(auth()->user()->role === 'admin' || auth()->user()->role === 'partner')
-            <h3 class="text-lg font-bold text-red-600 dark:text-red-400 mb-4 mt-8">تحديث حالة التذكرة (للمسؤول او الشريك
+            <h3 class="text-lg font-bold text-black dark:text-red-400 mb-4 mt-8">تحديث حالة التذكرة (للمسؤول او الشريك
                 فقط من يمكنه تعديل الحالة)</h3>
             <hr class="mb-4">
             <form action="{{ route('dashboard.technical_support.update', $ticket->id) }}" method="POST"
@@ -37,13 +37,13 @@
 
                     </select>
                     @error('status')
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-black dark:text-black">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
                     <button type="submit"
-                        class="w-full flex items-center justify-center text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-500 dark:hover:bg-red-600 focus:outline-none dark:focus:ring-red-800">
+                        class="w-full flex items-center justify-center text-white bg-black hover:bg-red-700 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-red-500 dark:hover:bg-black focus:outline-none dark:focus:ring-red-800">
                         حفظ الحالة الجديدة
                     </button>
                 </div>
@@ -117,7 +117,7 @@
                         class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         placeholder="أضف أي تفاصيل جديدة أو تحديثات حول المشكلة."></textarea>
                     @error('complaint_details')
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-black dark:text-black">{{ $message }}</p>
                     @enderror
                 </div>
 

@@ -190,8 +190,7 @@
                             <span class="ml-3">نوع الخدمة</span>
                         </a>
                     </li>
-                    <span
-                        class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">
+                    <span class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">
                         إدارة الموظفين
                     </span>
                     <li>
@@ -211,11 +210,17 @@
                         </a>
                     </li>
                     <a href="{{ route('dashboard.work-times.index') }}"
-                                            class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                                            <i
-                                                class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white' : '' }} fas fa-clock text-gray-500 pl-2"></i>
-                                            <span class="ml-3">الحضور والإنصراف</span>
-                                        </a>
+                        class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white' : '' }} fas fa-clock text-gray-500 pl-2"></i>
+                        <span class="ml-3">الحضور والإنصراف</span>
+                    </a>
+                    <a href="{{ route('dashboard.adjustments.index') }}"
+                        class="{{ Route::currentRouteName() == 'dashboard.adjustments.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ Route::currentRouteName() == 'dashboard.adjustments.index' ? 'text-white' : '' }} fas fa-percent text-gray-500 pl-2"></i>
+                        <span class="ml-3">الخصومات والمكافات</span>
+                    </a>
                     <span
                         class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-5 border-t">المستخدمين</span>
                     <li>
@@ -388,7 +393,7 @@
                     </a>
                     @endif
 
-                    @if(Auth::user()->role == 'independent_partner')
+                    @if(Auth::user()->role == 'independent_partner' || Auth::user()->role == 'partner' && Auth::user()->can_propose_quotes == 1)
                     <a href="{{ route('dashboard.new_project.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.new_project.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
@@ -397,7 +402,7 @@
                     </a>
                     @endif
 
-                    @if(Auth::user()->role != 'client')
+                    @if(Auth::user()->role != 'client' && Auth::user()->role != 'admin')
                     <a href="{{ route('dashboard.kb.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.kb.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
@@ -432,7 +437,7 @@
 
                     @if(Auth::user()->role == 'admin')
                     <a href="{{ route('dashboard.logos.index') }}"
-                        class="{{ str_contains(Route::currentRouteName(), 'dashboard.sessions') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        class="{{ str_contains(Route::currentRouteName(), 'dashboard.logos') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
                             class="{{ str_contains(Route::currentRouteName(), 'dashboard.logos') ? 'text-white' : '' }} fas fa-handshake text-gray-500 pl-2"></i>
                         <span class="ml-3">شركاء النجاح</span>

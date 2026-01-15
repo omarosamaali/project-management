@@ -39,7 +39,7 @@
             placeholder="أدخل اسم الشريك هنا" required
             class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
         @error('name')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
         @enderror
     </div>
 
@@ -50,7 +50,7 @@
             placeholder="example@domain.com" required
             class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
         @error('email')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
         @enderror
     </div>
 
@@ -74,7 +74,7 @@
         <input type="text" id="password" name="password" placeholder="********"
             class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
         @error('password')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
         @enderror
     </div>
 
@@ -96,7 +96,7 @@
             @endforeach
         </div>
         @error('systems_id')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
         @enderror
         <p class="mt-2 text-sm text-gray-500">اختر نظامًا واحدًا أو أكثر.</p>
     </div>
@@ -104,7 +104,7 @@
     <!-- الخدمات -->
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">
-            الخدمات التي يعمل بها الشريك: <span class="text-red-500">*</span>
+            الخدمات التي يعمل بها الشريك: <span class="text-black">*</span>
         </label>
         <div
             class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
@@ -121,7 +121,7 @@
             @endforeach
         </div>
         @error('services_id')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
         @enderror
         <p class="mt-2 text-sm text-gray-500">
             <i class="fas fa-info-circle text-blue-500"></i>
@@ -136,27 +136,59 @@
             placeholder="مثل: 15.5" step="0.01" required
             class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
         @error('percentage')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+        <span class="text-black text-xs mt-1">{{ $message }}</span>
         @enderror
     </div>
-
-    <!-- هل هو موظف -->
-    <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
-            هل هذا الشريك موظف <span class="text-red-500">*</span>
-        </label>
-        <label class="inline-flex items-center cursor-pointer">
-            <input type="checkbox" name="is_employee" id="is_employee" value="1" class="sr-only peer" {{
-                old('is_employee', $partner->is_employee) ? 'checked' : '' }}>
-            <div
-                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+    <!-- الصلاحيات والنظام المالي -->
+    <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm">
+        <h3 class="text-md font-bold mb-4 text-blue-800 flex items-center gap-2">
+            <i class="fas fa-user-shield"></i> صلاحيات الوصول والإدارة
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            @php
+            $permissions = [
+            'can_view_projects' => 'الاطلاع على المشاريع',
+            'can_view_notes' => 'الاطلاع على الملاحظات',
+            'can_propose_quotes' => 'تقديم عرض سعر',
+            'can_enter_knowledge_bank' => 'إدخال بنك معلومات',
+            'apply_working_hours' => 'تطبيق الحضور والإنصراف',
+            'can_request_meetings' => 'إمكانية طلب اجتماع',
+            'services_screen_available' => 'شاشة الخدمات متوفرة'
+            ];
+            @endphp
+    
+            @foreach($permissions as $name => $label)
+            <div class="flex flex-col space-y-2">
+                <label class="text-sm font-medium text-gray-700">{{ $label }}</label>
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="{{ $name }}" value="1" class="sr-only peer" {{ old($name, $partner->$name)
+                    ? 'checked' : '' }}>
+                    <div
+                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                    </div>
+                </label>
             </div>
-            <span class="ms-3 text-sm font-medium text-gray-900 select-none">متاح</span>
-        </label>
-        @error('is_employee')
-        <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
-        @enderror
+            @endforeach
+            <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        هل هذا الشريك موظف <span class="text-black">*</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="is_employee" id="is_employee" value="1" class="sr-only peer" {{ old('is_employee',
+                            $partner->is_employee) ? 'checked' : '' }}>
+                        <div
+                            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        </div>
+                        <span class="ms-3 text-sm font-medium text-gray-900 select-none">متاح</span>
+                    </label>
+                    @error('is_employee')
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+        </div>
     </div>
+    <!-- هل هو موظف -->
+
 
     <!-- الحقول الإضافية للموظف -->
     <div id="employee_extra_fields"
@@ -373,7 +405,7 @@
                     <!-- أيام الإجازة -->
                     <div class="bg-white p-4 rounded-lg border border-purple-100">
                         <h4 class="text-sm font-semibold mb-3 text-gray-700 flex items-center gap-2">
-                            <i class="fas fa-calendar-times text-red-500"></i> أيام الإجازة الأسبوعية
+                            <i class="fas fa-calendar-times text-black"></i> أيام الإجازة الأسبوعية
                         </h4>
                         <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
                             @php
@@ -392,7 +424,7 @@
                             @foreach($weekDays as $day => $dayName)
                             <div class="flex items-center">
                                 <input type="checkbox" name="vacation_days[]" value="{{ $day }}" id="day_{{ $day }}"
-                                    class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500"
+                                    class="w-4 h-4 text-black bg-gray-100 border-gray-300 rounded focus:ring-red-500"
                                     {{ in_array($day, $vacationDays) ? 'checked' : '' }}>
                                 <label for="day_{{ $day }}" class="mr-2 text-sm font-medium text-gray-700">
                                     {{ $dayName }}
@@ -400,39 +432,6 @@
                             </div>
                             @endforeach
                         </div>
-                    </div>
-                </div>
-
-                <!-- الصلاحيات والنظام المالي -->
-                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm">
-                    <h3 class="text-md font-bold mb-4 text-blue-800 flex items-center gap-2">
-                        <i class="fas fa-user-shield"></i> صلاحيات الوصول والإدارة
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        @php
-                        $permissions = [
-                        'can_view_projects' => 'الاطلاع على المشاريع',
-                        'can_view_notes' => 'الاطلاع على الملاحظات',
-                        'can_propose_quotes' => 'تقديم عرض سعر',
-                        'can_enter_knowledge_bank' => 'إدخال بنك معلومات',
-                        'apply_working_hours' => 'تطبيق الحضور والإنصراف',
-                        'can_request_meetings' => 'إمكانية طلب اجتماع',
-                        'services_screen_available' => 'شاشة الخدمات متوفرة'
-                        ];
-                        @endphp
-
-                        @foreach($permissions as $name => $label)
-                        <div class="flex flex-col space-y-2">
-                            <label class="text-sm font-medium text-gray-700">{{ $label }}</label>
-                            <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" name="{{ $name }}" value="1" class="sr-only peer" {{ old($name,
-                                    $partner->$name) ? 'checked' : '' }}>
-                                <div
-                                    class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                                </div>
-                            </label>
-                        </div>
-                        @endforeach
                     </div>
                 </div>
 

@@ -211,9 +211,9 @@ class User extends Authenticatable
 
     public function myServices()
     {
-        return $this->belongsToMany(MyService::class);
+        return $this->hasMany(MyService::class, 'user_id');
     }
-
+    
     public function myService()
     {
         return $this->hasOne(MyServices::class);

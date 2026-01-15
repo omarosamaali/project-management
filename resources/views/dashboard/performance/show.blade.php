@@ -16,7 +16,6 @@
 
         <!-- بطاقات الإحصائيات السريعة -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- سرعة الرد -->
             <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -84,7 +83,7 @@
             <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-lg border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-3">
                     <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-tasks text-red-600 dark:text-red-400 text-xl"></i>
+                        <i class="fas fa-tasks text-black dark:text-red-400 text-xl"></i>
                     </div>
                     <span class="text-sm font-medium text-gray-500 dark:text-gray-400">عدد المهام</span>
                 </div>
@@ -96,6 +95,71 @@
                 </div>
             </div>
         </div>
+        @if(Auth::user()->role == 'partner')
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-t-4 border-orange-500">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">الالتزام بالوقت (هذا الشهر)</h3>
+                    <i class="fas fa-user-clock text-orange-500 text-2xl"></i>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-400">إجمالي التأخير:</span>
+                        <span class="text-black font-bold">{{ $totalLateMinutes }} دقيقة</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-400">أيام الحضور:</span>
+                        <span class="text-green-600 font-bold">{{ $workStats->where('type', 'حضور')->count() }} يوم</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2 italic border-r-2 border-orange-500 pr-2">
+                        {{ $totalLateMinutes > 60 ? 'لديك تأخير يتجاوز الساعة، يرجى الالتزام بمواعيد الحضور.' : 'أداؤك في الحضور
+                        ممتاز هذا الشهر.' }}
+                    </p>
+                </div>
+            </div>
+        
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-t-4 border-green-500">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">المستحقات الإضافية</h3>
+                    <i class="fas fa-money-bill-wave text-green-500 text-2xl"></i>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-400">إجمالي المكافآت:</span>
+                        <span class="text-green-600 font-bold">+{{ number_format($financials->total_bonuses, 2) }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600 dark:text-gray-400">إجمالي الخصومات:</span>
+                        <span class="text-black font-bold">-{{ number_format($financials->total_deductions, 2) }}</span>
+                    </div>
+                    <div class="pt-2 border-t flex justify-between items-center">
+                        <span class="font-bold text-gray-900 dark:text-white">الصافي الإضافي:</span>
+                        <span
+                            class="text-xl font-black {{ ($financials->total_bonuses - $financials->total_deductions) >= 0 ? 'text-green-600' : 'text-black' }}">
+                            {{ number_format($financials->total_bonuses - $financials->total_deductions, 2) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg border-t-4 border-blue-500">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">توصيات لتحسين دخلك</h3>
+                    <i class="fas fa-lightbulb text-blue-500 text-2xl"></i>
+                </div>
+                <ul class="text-sm space-y-2 text-gray-600 dark:text-gray-400">
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                        <span>تقليل دقائق التأخير يوفر عليك خصومات شهرية.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-blue-500 mt-1"></i>
+                        <span>سرعة الرد الحالية لديك تزيد من فرص حصولك على مكافآت تميز.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- رسم بياني دائري -->

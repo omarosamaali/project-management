@@ -115,7 +115,7 @@
                         'waiting' => ['label' => 'بالانتظار', 'css' => 'bg-gray-100 text-gray-600'],
                         'in_progress' => ['label' => 'قيد الإنجاز', 'css' => 'bg-amber-100 text-amber-600'],
                         'completed' => ['label' => 'منتهية', 'css' => 'bg-green-100 text-green-600'],
-                        'delayed' => ['label' => 'متأخرة', 'css' => 'bg-red-100 text-red-600'],
+                        'delayed' => ['label' => 'متأخرة', 'css' => 'bg-red-100 text-black'],
                         ];
                         $curr = $statusMap[$stage->status] ?? $statusMap['waiting'];
                         @endphp
@@ -134,7 +134,7 @@
                                 method="POST" class="inline">
                                 @csrf @method('DELETE')
                                 <button type="submit" onclick="return confirm('هل أنت متأكد؟')"
-                                    class="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                                    class="p-1.5 text-black hover:bg-red-50 rounded-md transition-colors">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </form>

@@ -121,7 +121,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" onclick="return confirm('هل أنت متأكد من حذف سجل الراتب؟')"
-                                        title="حذف" class="p-2 text-gray-600 hover:text-red-600 transition-colors">
+                                        title="حذف" class="p-2 text-gray-600 hover:text-black transition-colors">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>

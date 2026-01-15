@@ -1,5 +1,5 @@
 <!-- Hero Section -->
-<section class="relative bg-gradient-to-br from-gray-900 via-red-900 to-gray-900 text-white overflow-hidden">
+<section class="relative bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-hidden">
     <!-- Background Pattern -->
     <div class="absolute inset-0 opacity-10">
         <div class="absolute inset-0"
@@ -9,13 +9,13 @@
 
     <!-- Animated Shapes -->
     <div
-        class="absolute top-20 left-10 w-72 h-72 bg-red-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob">
+        class="absolute top-20 left-10 w-72 h-72 bg-black rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob">
     </div>
     <div
         class="absolute top-40 right-10 w-72 h-72 bg-gray-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000">
     </div>
     <div
-        class="absolute -bottom-8 left-40 w-72 h-72 bg-red-800 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000">
+        class="absolute -bottom-8 left-40 w-72 h-72 bg-black rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000">
     </div>
 
     <div class="container mx-auto px-4 py-20 md:py-32 relative z-10">
@@ -25,11 +25,11 @@
             <div class="space-y-8">
                 <!-- Badge -->
                 <div
-                    class="inline-flex items-center gap-2 bg-red-600/20 border border-red-500/30 rounded-full px-4 py-2 backdrop-blur-sm">
+                    class="inline-flex items-center gap-2 bg-black/20 border border-gray-500/30 rounded-full px-4 py-2 backdrop-blur-sm">
                     <span class="relative flex h-3 w-3">
                         <span
-                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gray-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-gray-500"></span>
                     </span>
                     <span class="text-sm font-medium">{{ __('messages.trusted_by_100') }}</span>
                 </div>
@@ -37,7 +37,7 @@
                 <!-- Main Heading -->
                 <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
                     {{ __('messages.hero_title') }}
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">
+                    <span class="">
                         {{ __('messages.hero_highlight') }}
                     </span>
                     {{ __('messages.with_evorq') }}
@@ -51,8 +51,8 @@
                 <!-- Features List -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="flex items-center gap-3">
-                        <div class="flex-shrink-0 w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-black/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -60,8 +60,8 @@
                         <span class="text-gray-200">{{ __('messages.feature_1') }}</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="flex-shrink-0 w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-black/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -69,8 +69,8 @@
                         <span class="text-gray-200">{{ __('messages.feature_2') }}</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="flex-shrink-0 w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-black/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -78,8 +78,8 @@
                         <span class="text-gray-200">{{ __('messages.feature_3') }}</span>
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="flex-shrink-0 w-10 h-10 bg-red-600/20 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="flex-shrink-0 w-10 h-10 bg-black/20 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M5 13l4 4L19 7"></path>
                             </svg>
@@ -126,7 +126,7 @@
                         <img class="w-10 h-10 rounded-full border-2 border-gray-900"
                             src="https://i.pravatar.cc/100?img=4" alt="">
                         <div
-                            class="w-10 h-10 rounded-full border-2 border-gray-900 bg-red-600 flex items-center justify-center text-xs font-bold">
+                            class="w-10 h-10 rounded-full border-2 border-gray-900 bg-black flex items-center justify-center text-xs font-bold">
                             +50
                         </div>
                     </div>
@@ -147,7 +147,7 @@
                 <!-- Main Image Container -->
                 <div class="relative z-10">
                     <div
-                        class="bg-gradient-to-br from-red-600/20 to-transparent backdrop-blur-sm border border-red-500/30 rounded-2xl p-8 shadow-2xl">
+                        class="bg-gradient-to-br from-gray-600/10 to-transparent backdrop-blur-xs border border-black rounded-2xl p-8 shadow-2xl">
                         <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80"
                             alt="Dashboard Preview"
                             class="w-full rounded-lg shadow-2xl transform hover:scale-105 transition-transform duration-500">

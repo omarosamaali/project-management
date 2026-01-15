@@ -41,47 +41,47 @@
                         <!-- اسم النظام بالعربي -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                إسم النظام (بالعربي) <span class="text-red-500">*</span>
+                                إسم النظام (بالعربي) <span class="text-black">*</span>
                             </label>
                             <input type="text" id="name_ar" name="name_ar" required value="{{ old('name_ar', $myService->name_ar) }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="الإسم">
                             @error('name_ar')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                 
                         <!-- اسم النظام بالإنجليزية -->
                         <div>
                             <label class="block text-sm text-left font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                $myService Name (English) <span class="text-red-500">*</span>
+                                $myService Name (English) <span class="text-black">*</span>
                             </label>
                             <input type="text" id="name_en" name="name_en" required dir="ltr"
                                 value="{{ old('name_en', $myService->name_en) }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Name">
                             @error('name_en')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                 
                         <!-- السعر -->
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                السعر الكلي <span class="text-red-500">*</span>
+                                السعر الكلي <span class="text-black">*</span>
                             </label>
                             <input type="number" name="price" required min="0" step="0.01" value="{{ old('price', $myService->price) }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="999">
                             @error('price')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                 
                         <!-- مدة التنفيذ -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                مدة التنفيذ <span class="text-red-500">*</span>
+                                مدة التنفيذ <span class="text-black">*</span>
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="relative">
@@ -105,7 +105,7 @@
                         {{-- مدة الدعم الفني --}}
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                مدة الدعم الفني (بالايام) <span class="text-red-500">*</span>
+                                مدة الدعم الفني (بالايام) <span class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input value="{{ old('support_days', $myService->support_days) }}" type="number" name="support_days"
@@ -113,7 +113,7 @@
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="365 يوم">
                                 @error('support_days')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -139,14 +139,14 @@
                         {{-- مدة الدعم الفني --}}
                         {{-- <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                بداية العداد <span class="text-red-500">*</span>
+                                بداية العداد <span class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input value="{{ $service->counter > 0 ? $service->counter : '0' }}" type="number" name="counter"
                                     required min="0" step="1"
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('counter')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div> --}}
@@ -164,26 +164,26 @@
                         <!-- الوصف بالعربي -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                الوصف بالعربي <span class="text-red-500">*</span>
+                                الوصف بالعربي <span class="text-black">*</span>
                             </label>
                             <textarea id="description_ar" name="description_ar" required rows="4"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="نظام متكامل...">{{ old('description_ar', $myService->description_ar) }}</textarea>
                             @error('description_ar')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                 
                         <!-- الوصف بالإنجليزية -->
                         <div>
                             <label class="block text-sm text-left font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Description (English) <span class="text-red-500">*</span>
+                                Description (English) <span class="text-black">*</span>
                             </label>
                             <textarea id="description_en" name="description_en" required rows="4" dir="ltr"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Integrated $myService...">{{ old('description_en', $myService->description_en) }}</textarea>
                             @error('description_en')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                     </div>
@@ -206,7 +206,7 @@
                                 class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="New Requirement">
                             <button type="button"
-                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -237,7 +237,7 @@
                                 class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="New Feature">
                             <button type="button"
-                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -285,7 +285,7 @@
                             <div id="main_preview_container" class="mt-3 hidden relative w-full h-56">
                                 <img id="main_image_preview" class="w-full h-full object-cover rounded-lg border" />
                                 <button type="button" onclick="removeMainImage()"
-                                    class="absolute top-1 right-1 bg-red-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                    class="absolute top-1 right-1 bg-black text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -303,7 +303,7 @@
                                 <div class="relative existing-image-item" data-index="{{ $index }}">
                                     <img src="{{ asset($image) }}" class="w-full h-20 object-cover rounded border" alt="صورة إضافية">
                                     <button type="button" onclick="deleteImage({{ $index }}, this)"
-                                        class="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                        class="absolute -top-2 -right-2 bg-black text-white w-6 h-6 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                         <i class="fas fa-times text-xs"></i>
                                     </button>
                                     <input type="hidden" name="keep_images[]" value="{{ $index }}" class="keep-image-input">
@@ -346,7 +346,7 @@
                                             {{ $myService->status === 'inactive' ? 'border-red-300 bg-red-50' : 'border-gray-300' }}">
                             <input type="radio" name="status" value="inactive" {{ $myService->status === 'inactive' ?
                             'checked' : '' }}
-                            class="w-5 h-5 text-red-600">
+                            class="w-5 h-5 text-black">
                             <span class="font-medium {{ $myService->status === 'inactive' ? 'text-red-700' : 'text-gray-700' }}">غير
                                 نشط</span>
                         </label>

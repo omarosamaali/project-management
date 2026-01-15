@@ -57,7 +57,7 @@
                     <!-- Systems Button -->
                     <a href="{{ route('system.index') }}" class="px-4 py-2 rounded-lg transition
                             {{ request()->routeIs('system.index')
-                                ? 'bg-red-600 text-white hover:bg-red-700'
+                                ? 'bg-black text-white hover:bg-gray-700'
                                 : 'text-gray-700 hover:bg-gray-100' }}
                         ">
                         {{ __('messages.systems') }}
@@ -65,13 +65,13 @@
                     <!-- Login Button -->
                     @auth
                     <a href="{{ route('special-request.index') }}"
-                        class="{{ request()->routeIs('special-request.index') ? 'bg-red-600 text-white hover:bg-red-700' : 'text-gray-700 hover:bg-gray-100' }} px-4 py-2 rounded-lg transition  flex items-center gap-2 flex-row-reverse">
+                        class="{{ request()->routeIs('special-request.index') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }} px-4 py-2 rounded-lg transition  flex items-center gap-2 flex-row-reverse">
                         {{ __('messages.special_request') }}
                     </a>
                     @endguest
                     <!-- Login Button -->
                     @guest
-                    <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'bg-red-600 text-white hover:bg-red-700' : 'text-gray-700 hover:bg-gray-100' }}
+                    <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }}
                         px-4 py-2 rounded-lg transition  flex items-center gap-2 flex-row-reverse">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -82,7 +82,7 @@
                     </a>
                     @else
                     <a href="{{ route('dashboard') }}"
-                        class="{{ request()->routeIs('login') ? 'bg-red-600 text-white hover:bg-red-700' : 'text-gray-700 hover:bg-gray-100' }}
+                        class="{{ request()->routeIs('login') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }}
                                                                 px-4 py-2 rounded-lg transition  flex items-center gap-2 flex-row-reverse">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -136,7 +136,7 @@
             <div class="px-2 pt-2 pb-3 space-y-1">
                 <!-- Systems Button -->
                 <a href="{{ route('system.index') }}" class="block text-center px-4 py-2 rounded-lg transition {{ request()->routeIs('system.index')
-                                                                    ? 'bg-red-600 text-white hover:bg-red-700'
+                                                                    ? 'bg-black text-white hover:bg-gray-700'
                                                                     : 'text-gray-700 hover:bg-gray-100' }}
                                                             ">
                     {{ __('messages.systems') }}
@@ -144,7 +144,7 @@
 
                 <!-- Login Button -->
                 <a href="{{ route('login') }}"
-                    class="block justify-center text-center {{ request()->routeIs('login') ? 'bg-red-600 text-white hover:bg-red-700' : 'text-gray-700 hover:bg-gray-100' }}
+                    class="block justify-center text-center {{ request()->routeIs('login') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }}
                                                              px-4 py-2 rounded-lg transition  flex items-center gap-2 flex-row-reverse">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

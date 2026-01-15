@@ -119,7 +119,7 @@
                         </div>
 
                         <div>
-                            <label class="text-xs font-semibold text-red-600 dark:text-red-400">الخصم (-)</label>
+                            <label class="text-xs font-semibold text-black dark:text-red-400">الخصم (-)</label>
                             <input type="number" step="0.01" name="deduction_value"
                                 value="{{ old('deduction_value', $salary->deduction_value) }}"
                                 class="calc-input w-full px-4 py-2 border border-red-300 rounded-lg focus:border-red-500">

@@ -161,7 +161,7 @@
     {{-- القسم 4: جميع الصلاحيات --}}
     <div class="pb-6 border-b">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i class="fas fa-user-shield text-red-600"></i> صلاحيات الوصول والإدارة
+            <i class="fas fa-user-shield text-black"></i> صلاحيات الوصول والإدارة
         </h2>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             @php
@@ -212,7 +212,7 @@
             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
                 <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">وقت الانصراف</label>
                 <span class="font-bold text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-sign-out-alt text-red-500"></i> {{ $partner->work_end_time ?? '--:--' }}
+                    <i class="fas fa-sign-out-alt text-black"></i> {{ $partner->work_end_time ?? '--:--' }}
                 </span>
             </div>
             <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
@@ -233,7 +233,7 @@
         @if($partner->vacation_days && count($partner->vacation_days) > 0)
         <div class="mt-4">
             <label class="text-xs text-gray-500 dark:text-gray-400 block mb-2 font-medium">
-                <i class="fas fa-calendar-times text-red-500"></i> أيام الإجازة الأسبوعية:
+                <i class="fas fa-calendar-times text-black"></i> أيام الإجازة الأسبوعية:
             </label>
             <div class="flex flex-wrap gap-2">
                 @php
@@ -280,21 +280,21 @@
             </div>
             <div class="p-3 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-lg">
                 <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">خصم التأخير الصباحي</label>
-                <span class="font-bold text-red-600">
+                <span class="font-bold text-black">
                     <i class="fas fa-minus-circle"></i> {{ $partner->morning_late_deduction ?
                     number_format($partner->morning_late_deduction, 2) : '0.00' }}
                 </span>
             </div>
             <div class="p-3 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-lg">
                 <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">خصم تأخير الاستراحة</label>
-                <span class="font-bold text-red-600">
+                <span class="font-bold text-black">
                     <i class="fas fa-minus-circle"></i> {{ $partner->break_late_deduction ?
                     number_format($partner->break_late_deduction, 2) : '0.00' }}
                 </span>
             </div>
             <div class="p-3 bg-white dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-lg">
                 <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">خصم الخروج المبكر</label>
-                <span class="font-bold text-red-600">
+                <span class="font-bold text-black">
                     <i class="fas fa-minus-circle"></i> {{ $partner->early_leave_deduction ?
                     number_format($partner->early_leave_deduction, 2) : '0.00' }}
                 </span>

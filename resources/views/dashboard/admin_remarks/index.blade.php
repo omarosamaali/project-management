@@ -59,7 +59,7 @@
                                     <form action="{{ route('dashboard.admin_remarks.destroy', $remark) }}" method="POST"
                                         onsubmit="return confirm('هل أنت متأكد؟')">
                                         @csrf @method('DELETE')
-                                        <button class="text-red-600 hover:text-red-800"><i
+                                        <button class="text-black hover:text-red-800"><i
                                                 class="fas fa-trash"></i></button>
                                     </form>
                                 </div>

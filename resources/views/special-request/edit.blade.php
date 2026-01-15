@@ -15,7 +15,7 @@
         @method('PUT') 
 
         <div class="mb-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <h3 class="text-xl font-semibold text-red-600  dark:text-red-400 mb-4 border-b pb-2">1. معلومات
+            <h3 class="text-xl font-semibold text-black  dark:text-red-400 mb-4 border-b pb-2">1. معلومات
                 أساسية
             </h3>
 
@@ -78,7 +78,7 @@
         </div>
 
         <div class="mb-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4 border-b pb-2">2. الميزات
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-4 border-b pb-2">2. الميزات
                 والوظائف</h3>
 
             <div class="mb-4">
@@ -110,7 +110,7 @@
         </div>
 
         <div class="mb-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg">
-            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4 border-b pb-2">3. الميزانية
+            <h3 class="text-xl font-semibold text-black dark:text-red-400 mb-4 border-b pb-2">3. الميزانية
                 والجدول الزمني</h3>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -144,7 +144,7 @@
 
         <div class="flex justify-end mt-6">
             <button type="submit"
-                class="w-full md:w-auto px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out">
+                class="w-full md:w-auto px-6 py-3 bg-black hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-150 ease-in-out">
                 حفظ التعديلات
             </button>
         </div>

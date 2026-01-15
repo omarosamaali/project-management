@@ -37,49 +37,49 @@
                         <!-- اسم النظام بالعربي -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                إسم النظام (بالعربي) <span class="text-red-500">*</span>
+                                إسم النظام (بالعربي) <span class="text-black">*</span>
                             </label>
                             <input type="text" id="name_ar" name="name_ar" required
                                 value="{{ old('name_ar', $system->name_ar) }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="الإسم">
                             @error('name_ar')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
                         <!-- اسم النظام بالإنجليزية -->
                         <div>
                             <label class="block text-sm text-left font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                System Name (English) <span class="text-red-500">*</span>
+                                System Name (English) <span class="text-black">*</span>
                             </label>
                             <input type="text" id="name_en" name="name_en" required dir="ltr"
                                 value="{{ old('name_en', $system->name_en) }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Name">
                             @error('name_en')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
                         <!-- السعر -->
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                السعر الكلي <span class="text-red-500">*</span>
+                                السعر الكلي <span class="text-black">*</span>
                             </label>
                             <input type="number" name="price" required min="0" step="0.01"
                                 value="{{ old('price', $system->price) }}"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="999">
                             @error('price')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
                         <!-- مدة التنفيذ -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                مدة التنفيذ <span class="text-red-500">*</span>
+                                مدة التنفيذ <span class="text-black">*</span>
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="relative">
@@ -105,7 +105,7 @@
                         {{-- مدة الدعم الفني --}}
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                مدة الدعم الفني (بالايام) <span class="text-red-500">*</span>
+                                مدة الدعم الفني (بالايام) <span class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input value="{{ old('support_days', $system->support_days) }}" type="number"
@@ -113,7 +113,7 @@
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     placeholder="365 يوم">
                                 @error('support_days')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -139,14 +139,14 @@
                         {{-- مدة الدعم الفني --}}
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                بداية العداد <span class="text-red-500">*</span>
+                                بداية العداد <span class="text-black">*</span>
                             </label>
                             <div class="relative">
                                 <input value="{{ $service->counter > 0 ? $service->counter : '0' }}" type="number"
                                     name="counter" required min="0" step="1"
                                     class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('counter')
-                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                                <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
                         </div>
@@ -164,26 +164,26 @@
                         <!-- الوصف بالعربي -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                الوصف بالعربي <span class="text-red-500">*</span>
+                                الوصف بالعربي <span class="text-black">*</span>
                             </label>
                             <textarea id="description_ar" name="description_ar" required rows="4"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="نظام متكامل...">{{ old('description_ar', $system->description_ar) }}</textarea>
                             @error('description_ar')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
 
                         <!-- الوصف بالإنجليزية -->
                         <div>
                             <label class="block text-sm text-left font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Description (English) <span class="text-red-500">*</span>
+                                Description (English) <span class="text-black">*</span>
                             </label>
                             <textarea id="description_en" name="description_en" required rows="4" dir="ltr"
                                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="Integrated system...">{{ old('description_en', $system->description_en) }}</textarea>
                             @error('description_en')
-                            <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                            <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                     </div>
@@ -206,7 +206,7 @@
                                 class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="New Requirement">
                             <button type="button"
-                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -237,7 +237,7 @@
                                 class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                 placeholder="New Feature">
                             <button type="button"
-                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -325,7 +325,7 @@
                             {{-- زر الحذف --}}
                             <div class="flex justify-end mt-3">
                                 <button type="button"
-                                    class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
+                                    class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center gap-2">
                                     <i class="fas fa-trash"></i>
                                     حذف الزر
                                 </button>
@@ -376,7 +376,7 @@
                             <div id="main_preview_container" class="mt-3 hidden relative w-full h-56">
                                 <img id="main_image_preview" class="w-full h-full object-cover rounded-lg border" />
                                 <button type="button" onclick="removeMainImage()"
-                                    class="absolute top-1 right-1 bg-red-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                    class="absolute top-1 right-1 bg-black text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -395,7 +395,7 @@
                                     <img src="{{ asset($image) }}" class="w-full h-20 object-cover rounded border"
                                         alt="صورة إضافية">
                                     <button type="button" onclick="deleteImage({{ $index }}, this)"
-                                        class="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                        class="absolute -top-2 -right-2 bg-black text-white w-6 h-6 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                         <i class="fas fa-times text-xs"></i>
                                     </button>
                                     <input type="hidden" name="keep_images[]" value="{{ $index }}"
@@ -421,7 +421,7 @@
                 </div>
 <div class="mb-4">
     <label for="system_external" class="block text-sm font-medium text-gray-700 mb-1">
-        هل النظام خارجي <span class="text-red-500">*</span>
+        هل النظام خارجي <span class="text-black">*</span>
     </label>
     <label class="inline-flex items-center cursor-pointer">
         <input type="checkbox" id="system_external_toggle" name="system_external" value="1" class="sr-only peer" {{
@@ -432,20 +432,20 @@
         <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
     </label>
     @error('system_external')
-    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    <span class="text-black text-xs mt-1">{{ $message }}</span>
     @enderror
 </div>
 
 <div id="external_url_container"
     class="{{ old('system_external', $system->system_external) ? '' : 'hidden' }} mt-4 mb-6">
     <label for="external_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        رابط النظام الخارجي <span class="text-red-500">*</span>
+        رابط النظام الخارجي <span class="text-black">*</span>
     </label>
     <input type="url" name="external_url" id="external_url" value="{{ old('external_url', $system->external_url) }}"
         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
         placeholder="https://example.com">
     @error('external_url')
-    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    <span class="text-black text-xs mt-1">{{ $message }}</span>
     @enderror
 </div>
 
@@ -478,7 +478,7 @@
 
 <div class="mb-4">
     <label for="evorq_onwer" class="block text-sm font-medium text-gray-700 mb-1">
-        هل تملك Evorq النظام<span class="text-red-500">*</span>
+        هل تملك Evorq النظام<span class="text-black">*</span>
     </label>
     <label class="inline-flex items-center cursor-pointer">
 <input type="hidden" name="evorq_onwer" value="0">
@@ -487,23 +487,23 @@
     $system->evorq_onwer) ? 'checked' : '' }}>        <div
             class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
         </div>
-        <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
+        <span class="ms-3 text-sm font-medium text-gray-900 select-none">لا</span>
     </label>
     @error('evorq_onwer')
-    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    <span class="text-black text-xs mt-1">{{ $message }}</span>
     @enderror
 </div>
 
 <div id="onwer_system_container"
     class="{{ old('evorq_onwer', $system->evorq_onwer) ? '' : 'hidden' }} mt-4 mb-6">
     <label for="onwer_system" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        اسم مالك النظام <span class="text-red-500">*</span>
+        اسم مالك النظام <span class="text-black">*</span>
     </label>
     <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system', $system->onwer_system) }}"
         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
         >
     @error('onwer_system')
-    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    <span class="text-black text-xs mt-1">{{ $message }}</span>
     @enderror
 </div>
                 <!-- الحالة -->
@@ -526,7 +526,7 @@
                             {{ $system->status === 'inactive' ? 'border-red-300 bg-red-50' : 'border-gray-300' }}">
                             <input type="radio" name="status" value="inactive" {{ $system->status === 'inactive' ?
                             'checked' : '' }}
-                            class="w-5 h-5 text-red-600">
+                            class="w-5 h-5 text-black">
                             <span
                                 class="font-medium {{ $system->status === 'inactive' ? 'text-red-700' : 'text-gray-700' }}">غير
                                 نشط</span>

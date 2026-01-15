@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('kb_categories', function (Blueprint $table) {
             $table->id();
-            $table->string('icon')->nullable(); // كود الأيقونة أو مسارها
+            $table->string('icon')->nullable();
             $table->string('title');
-            $table->boolean('status')->default(true); // فعال أو غير فعال
+            $table->boolean('status')->default(true);
             $table->timestamps();
         });
     }

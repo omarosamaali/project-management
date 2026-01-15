@@ -99,22 +99,25 @@
                         <tbody class="divide-y divide-gray-200">
                             <tr class="hover:bg-gray-50">
                                 <td class="py-3 px-4 font-medium text-gray-700">المبلغ الأساسي</td>
-                                <td class="text-center py-3 px-4 text-gray-900 font-bold">
-                                    {{ number_format($payment->original_price, 2) }}              <x-drhm-icon width="12" height="14" />
+                                <td class="text-center py-3 px-4 text-gray-900 font-bold flex items-center gap-1">
+                                    {{ number_format($payment->original_price, 2) }}
+                                    <x-drhm-icon width="12" height="14" />
                                 </td>
                                 <td class="py-3 px-4 text-gray-900 text-left">Base Amount</td>
                             </tr>
                             <tr class="hover:bg-gray-50">
                                 <td class="py-3 px-4 font-medium text-gray-700">رسوم بوابة الدفع (7.9% + 2 درهم)</td>
-                                <td class="text-center py-3 px-4 text-orange-600 font-bold">
-                                    {{ number_format($payment->fees, 2) }}              <x-drhm-icon width="12" height="14" />
+                                <td class="text-center py-3 px-4 text-orange-600 font-bold flex items-center gap-1">
+                                    {{ number_format($payment->fees, 2) }}
+                                    <x-drhm-icon width="12" height="14" />
                                 </td>
                                 <td class="py-3 px-4 text-orange-600 text-left">Payment Gateway Fees</td>
                             </tr>
                             <tr class="bg-emerald-50">
                                 <td class="py-4 px-4 font-bold text-gray-800">الإجمالي المدفوع</td>
-                                <td class="text-center py-4 px-4 text-emerald-600 font-bold text-xl">
-                                    {{ number_format($payment->amount, 2) }}              <x-drhm-icon width="12" height="14" />
+                                <td class="text-center py-4 px-4 text-emerald-600 font-bold text-xl flex items-center gap-1">
+                                    {{ number_format($payment->amount, 2) }}
+                                    <x-drhm-icon width="12" height="14" />
                                 </td>
                                 <td class="py-4 px-4 text-emerald-600 font-bold text-left">Total Paid</td>
                             </tr>
@@ -126,9 +129,11 @@
                 <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <p class="text-sm text-blue-800 font-medium">
                         <i class="fas fa-info-circle ml-2"></i>
-                        هذه دفعة جزئية من إجمالي الطلب الخاص ({{ number_format($specialRequest->price, 2) }}              <x-drhm-icon width="12" height="14" />)
+                        هذه دفعة جزئية من إجمالي الطلب الخاص ({{ number_format($specialRequest->price, 2) }}
+                        <x-drhm-icon width="12" height="14" />)
                         <br>
-                        المتبقي: {{ number_format($specialRequest->remaining_amount, 2) }}              <x-drhm-icon width="12" height="14" />
+                        المتبقي: {{ number_format($specialRequest->remaining_amount, 2) }}
+                        <x-drhm-icon width="12" height="14" />
                     </p>
                 </div>
                 @endif

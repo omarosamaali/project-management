@@ -55,7 +55,7 @@
                     </div>
 
                     @error('image')
-                    <span class="text-red-500 text-xs mt-2 block">{{ $message }}</span>
+                    <span class="text-black text-xs mt-2 block">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -67,7 +67,7 @@
                         value="{{ old('name_ar', $service->name_ar) }}"
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     @error('name_ar')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -79,7 +79,7 @@
                         value="{{ old('name_en', $service->name_en) }}"
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out dark:bg-gray-700 dark:text-white dark:border-gray-600">
                     @error('name_en')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -91,14 +91,14 @@
                     <input value="{{ old('evork_commission', $service->evork_commission) }}" type="number" step="0.01" id="evork_commission" name="evork_commission" placeholder="نسبة الشركة" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('evork_commission')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
                 
                 {{-- هل الخدمة متوفرة في شاشة ادخال الخدمات --}}
                 <div>
                     <label for="show_in_partner_screen" class="block text-sm font-medium text-gray-700 mb-1">
-                        هل الخدمة متوفرة في شاشة ادخال الخدمات <span class="text-red-500">*</span>
+                        هل الخدمة متوفرة في شاشة ادخال الخدمات 
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="show_in_partner_screen" name="show_in_partner_screen" value="1" class="sr-only peer"
@@ -109,7 +109,7 @@
                         <span class="ms-3 text-sm font-medium text-gray-900 select-none">متاح</span>
                     </label>
                     @error('show_in_partner_screen')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -135,7 +135,7 @@
                         </label>
                     </div>
                     @error('status')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 

@@ -12,7 +12,7 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        @forelse(($request->requestFiles ?? collect()) as $file)
+        @forelse(($SpecialRequest->requestFiles ?? collect()) as $file)
         <div
             class="group border dark:border-gray-700 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all relative">
             <div class="flex items-start gap-3">
@@ -49,7 +49,7 @@
                     <form action="{{ route('files.destroy', $file->id) }}" method="POST"
                         onsubmit="return confirm('حذف؟')">
                         @csrf @method('DELETE')
-                        <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                        <button class="text-black hover:text-red-700"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
             </div>
@@ -64,9 +64,9 @@
 <div id="addFileModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/50 p-4">
     <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-xl text-right" dir="rtl">
         <h3 class="text-lg font-bold mb-4">رفع ملف جديد</h3>
-        <form action="{{ route('files.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <form action="{{ route('request-files.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
             @csrf
-            <input type="hidden" name="special_request_id" value="{{ $SpecialRequest->id }}">
+            <input type="hidden" name="request_id" value="{{ $SpecialRequest->id }}">
             <input type="text" name="title" placeholder="عنوان الملف" required
                 class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:text-white outline-none">
             <textarea name="description" placeholder="تفاصيل إضافية"

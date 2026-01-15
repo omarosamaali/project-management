@@ -20,12 +20,12 @@
 <div class="p-6 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
-            <i class="fas fa-video text-red-500"></i> الاجتماعات المجدولة
+            <i class="fas fa-video text-black"></i> الاجتماعات المجدولة
         </h2>
 
         @if (auth()->user()->role === 'admin' || $SpecialRequest->projectManager?->user_id == auth()->id())
             <button type="button" onclick="toggleModal('addMeetingModal', true)"
-                class="bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg">
+                class="bg-black text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-700 transition-all shadow-lg">
                 <i class="fas fa-plus ml-1"></i> إضافة اجتماع جديد
             </button>
         @endif
@@ -64,7 +64,7 @@
 
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6" dir="rtl">
                     <div class="flex flex-1 items-start gap-4 text-right">
-                        <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-red-600">
+                        <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow-sm text-black">
                             <i class="fas fa-calendar-alt text-2xl"></i>
                         </div>
                         <div>
@@ -130,7 +130,7 @@
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="declined">
                                     <button
-                                        class="w-full bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold">اعتذار</button>
+                                        class="w-full bg-red-100 text-black px-4 py-2 rounded-xl text-xs font-bold">اعتذار</button>
                                 </form>
                             </div>
                         @endif
@@ -158,7 +158,7 @@
                                     onsubmit="return confirm('هل تريد حذف الاجتماع؟')">
                                     @csrf @method('DELETE')
                                     <button
-                                        class="p-2 text-red-500 bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100">
+                                        class="p-2 text-black bg-red-50 dark:bg-red-900/30 rounded-lg hover:bg-red-100">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -183,7 +183,7 @@
         <div class="flex justify-between items-center mb-6 border-b pb-4 dark:border-gray-700">
             <h3 class="text-xl font-bold dark:text-white">جدولة اجتماع جديد</h3>
             <button onclick="toggleModal('addMeetingModal', false)"
-                class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+                class="text-gray-400 hover:text-black text-2xl">&times;</button>
         </div>
         <form action="{{ route('meetings.store') }}" method="POST" class="space-y-4">
             @csrf
@@ -203,7 +203,7 @@
                         <label
                             class="flex items-center gap-2 cursor-pointer hover:bg-white dark:hover:bg-gray-800 p-1 rounded transition">
                             <input type="checkbox" name="attendees[]" value="{{ $person->id }}"
-                                class="rounded text-red-600">
+                                class="rounded text-black">
                             <span class="text-xs dark:text-gray-300">{{ $person->name }}</span>
                         </label>
                     @endforeach
@@ -231,7 +231,7 @@
 
             <div class="flex gap-2 pt-4">
                 <button type="submit"
-                    class="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold hover:bg-red-700">حفظ
+                    class="flex-1 bg-black text-white py-3 rounded-xl font-bold hover:bg-red-700">حفظ
                     الاجتماع</button>
                 <button type="button" onclick="toggleModal('addMeetingModal', false)"
                     class="flex-1 bg-gray-100 dark:bg-gray-700 dark:text-white py-3 rounded-xl">إلغاء</button>

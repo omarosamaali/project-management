@@ -88,7 +88,8 @@
                                 {{ $loop->iteration }}
                             </td>
                             <td class="px-4 py-3">
-                                {{ $partner->name }}
+                                <span class="{{ $partner->is_employee == '1' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}</span> {{ $partner->name }} rounded-full text-xs px-1">{{ $partner->is_employee == '1' ? 'شريك موظف' : 'شريك
+                                    مستقل' }}</span> {{ $partner->name }}
                             </td>
                             <td class="px-4 py-3">
                                 @php
@@ -152,7 +153,7 @@
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" onclick="return confirm('هل أنت متأكد من الحذف؟')"
-                                                class="block w-full text-right py-2 px-4 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                                class="block w-full text-right py-2 px-4 text-sm text-black hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                                 حذف
                                             </button>
                                         </form>

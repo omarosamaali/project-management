@@ -10,11 +10,18 @@ use Illuminate\Support\Facades\Storage;
 
 class KnowledgeBaseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // عرض كل المعلومات مع بيانات التصنيف والشخص الذي أضافها
-        $knowledges = KnowledgeBase::with(['category', 'user'])->latest()->paginate(10);
-        return view('dashboard.knowledge_base.index', compact('knowledges'));
+        $categories = KbCategory::with(['creator', 'updater'])
+            ->withCount('knowledges')
+            ->where('status', 1)
+            ->get();
+        $query = KnowledgeBase::with(['category', 'user'])->latest();
+        if ($request->has('category_id') && $request->category_id != '') {
+            $query->where('category_id', $request->category_id);
+        }
+        $knowledges = $query->paginate(10)->withQueryString();
+        return view('dashboard.knowledge_base.index', compact('knowledges', 'categories'));
     }
 
     public function create()

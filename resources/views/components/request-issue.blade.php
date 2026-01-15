@@ -7,13 +7,13 @@
         <div>
             <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3">
                 <span class="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    <i class="fas fa-exclamation-triangle text-black"></i>
                 </span>
                 الأخطاء والمعوقات
             </h2>
         </div>
         <button onclick="openAddIssueModal()"
-            class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 shadow-lg transition-all font-bold">
+            class="bg-black hover:bg-red-700 text-white px-6 py-2.5 rounded-xl flex items-center gap-2 shadow-lg transition-all font-bold">
             <i class="fas fa-plus-circle"></i> تسجيل خطأ جديد
         </button>
     </div>
@@ -43,7 +43,7 @@
     {{-- المشاكل غير المحلولة (فوق) --}}
     @if($unresolvedIssues->count() > 0)
     <div class="space-y-4">
-        <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+        <h3 class="text-lg font-bold text-black flex items-center gap-2">
             <i class="fas fa-exclamation-circle"></i> المشاكل قيد المعالجة ({{ $unresolvedIssues->count() }})
         </h3>
 
@@ -107,7 +107,7 @@
                             onsubmit="return confirm('هل أنت متأكد من حذف هذه المشكلة نهائياً؟');">
                             @csrf @method('DELETE')
                             <button type="submit"
-                                class="bg-red-100 text-red-600 p-2 rounded-lg text-xs hover:bg-red-200 transition-colors"
+                                class="bg-red-100 text-black p-2 rounded-lg text-xs hover:bg-red-200 transition-colors"
                                 title="حذف">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -127,7 +127,7 @@
                 @endif
             </div>
 
-            {{-- قسم المحادثات --}}
+            {{-- قسم النقاشات --}}
             <div id="comments-{{ $issue->id }}" class="hidden bg-gray-50 dark:bg-gray-900/30">
                 <div class="p-6 space-y-4 max-h-96 overflow-y-auto">
                     @php
@@ -175,7 +175,7 @@
                                 <form action="{{ route('issue-comments.destroy', $comment->id) }}" method="POST"
                                     onsubmit="return confirm('حذف التعليق؟')">
                                     @csrf @method('DELETE')
-                                    <button class="text-red-500 hover:text-red-700">
+                                    <button class="text-black hover:text-red-700">
                                         <i class="fas fa-trash"></i> حذف
                                     </button>
                                 </form>
@@ -223,7 +223,7 @@
                             <i class="fas fa-edit"></i> تعديل المشكلة
                         </h3>
                         <button onclick="closeEditIssueModal({{ $issue->id }})"
-                            class="text-gray-400 hover:text-red-600 text-2xl">&times;</button>
+                            class="text-gray-400 hover:text-black text-2xl">&times;</button>
                     </div>
                     <form action="{{ route('issues.update', $issue->id) }}" method="POST" enctype="multipart/form-data"
                         class="p-6 space-y-4 text-right" dir="rtl">
@@ -351,10 +351,10 @@
     class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
     <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden">
         <div class="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-red-50 dark:bg-red-900/10">
-            <h3 class="text-xl font-bold text-red-600 flex items-center gap-2">
+            <h3 class="text-xl font-bold text-black flex items-center gap-2">
                 <i class="fas fa-bug"></i> تسجيل مشكلة جديدة
             </h3>
-            <button onclick="closeAddIssueModal()" class="text-gray-400 hover:text-red-600 text-2xl">&times;</button>
+            <button onclick="closeAddIssueModal()" class="text-gray-400 hover:text-black text-2xl">&times;</button>
         </div>
         <form action="{{ route('issues.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
             @csrf
@@ -386,7 +386,7 @@
             </div>
             <div class="flex gap-3 pt-4">
                 <button type="submit"
-                    class="flex-2 bg-red-600 text-white py-3 px-8 rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all">تسجيل
+                    class="flex-2 bg-black text-white py-3 px-8 rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 transition-all">تسجيل
                     المشكلة</button>
                 <button type="button" onclick="closeAddIssueModal()"
                     class="flex-1 bg-gray-100 dark:bg-gray-700 py-3 rounded-xl font-bold dark:text-white">إلغاء</button>

@@ -20,7 +20,7 @@
     @endif
     <div class="container mx-auto px-4">
         <!-- Back Button -->
-        <button onclick="history.back()" class="mb-6 text-red-600 hover:text-red-800 flex items-center gap-2">
+        <button onclick="history.back()" class="mb-6 text-black hover:text-red-800 flex items-center gap-2">
             <i class="fa fa-{{ app()->getLocale() == 'ar' ? 'arrow-right' : 'arrow-left' }}"></i>
             {{ __('messages.back_to_systems') }}
         </button>
@@ -63,7 +63,7 @@
                     <div class="space-y-4 mb-8">
                         <!-- Duration Card -->
                         <div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg">
-                            <i class="fa fa-clock h-6 w-6 text-red-600 mt-1"></i>
+                            <i class="fa fa-clock h-6 w-6 text-black mt-1"></i>
                             <div class="ltr:text-left rtl:text-right">
                                 <h3 class="font-semibold text-gray-800">
                                     {{ __('messages.execution_duration') }}
@@ -127,7 +127,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         @foreach($system->features as $feature)
                         <div class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <div class="h-2 w-2 bg-red-600 rounded-full flex-shrink-0"></div>
+                            <div class="h-2 w-2 bg-black rounded-full flex-shrink-0"></div>
                             <span class="text-gray-700">
                                 {{ app()->getLocale() == 'en' ? $feature['en'] : $feature['ar'] }}
                             </span>

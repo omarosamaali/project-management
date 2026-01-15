@@ -196,16 +196,18 @@
                                 title="عرض التفاصيل">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            @if(Auth::user()->role == 'admin')
                             <form action="{{ route('dashboard.special-request.destroy-special-request', $request) }}"
                                 method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" onclick="return confirm('هل أنت متأكد من الحذف؟')"
-                                    class="block w-full text-right py-2 px-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                                    class="block w-full text-right py-2 px-2 text-sm text-black hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                                     title="حذف">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                     @endforeach
@@ -251,7 +253,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" onclick="return confirm('هل أنت متأكد من الحذف؟')"
-                                        class="block w-full text-right py-2 px-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                        class="block w-full text-right py-2 px-2 text-sm text-black hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -301,7 +303,7 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" onclick="return confirm('هل أنت متأكد من الحذف؟')"
-                                        class="block w-full text-right py-2 px-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                                        class="block w-full text-right py-2 px-2 text-sm text-black hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>

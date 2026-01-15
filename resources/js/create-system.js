@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div class="flex justify-end mt-3">
                     <button type="button"
-                        class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2">
+                        class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center gap-2">
                         <i class="fas fa-trash"></i>
                         حذف الزر
                     </button>
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const removeBtn = document.createElement("button");
             removeBtn.innerHTML = `<i class="fas fa-times"></i>`;
-            removeBtn.className = "absolute top-1 right-1 bg-red-600 text-white w-6 h-6 flex items-center justify-center rounded-full shadow hover:bg-red-700 cursor-pointer";
+            removeBtn.className = "absolute top-1 right-1 bg-black text-white w-6 h-6 flex items-center justify-center rounded-full shadow hover:bg-red-700 cursor-pointer";
 
             // تحديد موقع الملف المراد حذفه بدقة (لتجنب مشاكل ترتيب الملفات)
             removeBtn.onclick = () => {
@@ -250,7 +250,7 @@ function addRequirement() {
         <input type="text" name="requirements_en[]" dir="ltr"
             class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="New Requirement">
-        <button type="button" class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center">
+        <button type="button" class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center justify-center">
             <i class="fas fa-trash"></i>
         </button>
     `;
@@ -285,7 +285,7 @@ function addFeature() {
         <input type="text" name="features_en[]" dir="ltr"
             class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             placeholder="New Feature">
-        <button type="button" class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center">
+        <button type="button" class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center justify-center">
             <i class="fas fa-trash"></i>
         </button>
     `;

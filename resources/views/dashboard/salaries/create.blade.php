@@ -87,7 +87,7 @@
                         </div>
                         <div>
                             <p class="text-[10px] text-gray-500 uppercase">تأخير (دقائق)</p>
-                            <p id="late_minutes_count" class="font-bold text-red-500">0</p>
+                            <p id="late_minutes_count" class="font-bold text-black">0</p>
                         </div>
                         <div>
                             <p class="text-[10px] text-gray-500 uppercase">إضافي (دقائق)</p>
@@ -141,10 +141,10 @@
 
                         {{-- الخصم --}}
                         <div>
-                            <label class="text-xs font-semibold text-red-600 dark:text-red-400">الخصم (-)</label>
+                            <label class="text-xs font-semibold text-black dark:text-red-400">الخصم (-)</label>
                             <div class="relative">
                                 <input type="number" step="0.01" name="deduction_value" id="deduction_value" value="0"
-                                    class="calc-input w-full px-4 py-2 border border-red-300 rounded-lg focus:border-red-500 text-red-600 font-bold">
+                                    class="calc-input w-full px-4 py-2 border border-red-300 rounded-lg focus:border-red-500 text-black font-bold">
                                 <span class="currency-label absolute left-2 top-2 text-[10px] text-red-300">--</span>
                             </div>
                         </div>

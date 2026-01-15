@@ -49,7 +49,7 @@
                     <form action="{{ route('files.destroy', $file->id) }}" method="POST"
                         onsubmit="return confirm('حذف؟')">
                         @csrf @method('DELETE')
-                        <button class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                        <button class="text-black hover:text-red-700"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
             </div>

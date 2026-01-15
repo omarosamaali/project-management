@@ -31,6 +31,7 @@
                             <i class="fas fa-file-alt text-blue-600"></i>
                             {{ $SpecialRequest->title }}
                         </h1>
+                        <span class="text-[13px] text-[#646464] font-bold">{{ $SpecialRequest->project_type }}</span>
                     </div>
                     <div class="flex gap-2">
 
@@ -292,12 +293,6 @@
                     ملفات المشروع
                 </button>
 
-                <button type="button" onclick="openTab(event, 'activities')"
-                    class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
-                    <i class="fas fa-history"></i>
-                    الأنشطة
-                </button>
-
                 <button type="button" onclick="openTab(event, 'meetings')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-video"></i>
@@ -307,7 +302,7 @@
                 <button type="button" onclick="openTab(event, 'chat')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-comments"></i>
-                    المحادثات
+                    النقاشات
                 </button>
 
                 @if($SpecialRequest->is_project == 1)
@@ -317,6 +312,13 @@
                     عروض الاسعار
                 </button>
                 @endif
+
+                <button type="button" onclick="openTab(event, 'activities')"
+                    class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
+                    <i class="fas fa-history"></i>
+                    سجل الاحداث
+                </button>
+                
             </nav>
         </div>
 
@@ -385,7 +387,7 @@
             <div id="offerss" class="tab-content hidden">
                 <x-project-offers :managers="$managers" :SpecialRequest="$SpecialRequest" :partners="$partners" />
             </div>
-            <!-- المحادثات -->
+            <!-- النقاشات -->
             <div id="chat" class="tab-content hidden">
                 <x-project-messages :supports="$supports" :SpecialRequest="$SpecialRequest" />
             </div>
@@ -476,7 +478,7 @@
                             </div>
                             <button type="button" 
                                     onclick="removePaymentRow(this)" 
-                                    class="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">
+                                    class="px-3 py-2 bg-red-500 text-white rounded hover:bg-black transition">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -513,19 +515,19 @@
                 submitBtn.disabled = true;
                 submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 progressBar.classList.remove('bg-blue-600', 'bg-yellow-500');
-                progressBar.classList.add('bg-red-600');
+                progressBar.classList.add('bg-black');
             } else if (total < budget && total > 0) {
                 const remaining = budget - total;
                 warningMsg.classList.remove('hidden');
                 document.getElementById('remaining_amount').textContent = remaining.toFixed(2);
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                progressBar.classList.remove('bg-blue-600', 'bg-red-600');
+                progressBar.classList.remove('bg-blue-600', 'bg-black');
                 progressBar.classList.add('bg-yellow-500');
             } else {
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                progressBar.classList.remove('bg-red-600', 'bg-yellow-500');
+                progressBar.classList.remove('bg-black', 'bg-yellow-500');
                 progressBar.classList.add('bg-blue-600');
             }
         }

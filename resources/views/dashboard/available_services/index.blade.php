@@ -89,7 +89,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                            class="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-xs font-medium">
+                                            class="px-3 py-1.5 bg-black text-white rounded hover:bg-red-700 text-xs font-medium">
                                             <i class="fas fa-trash ml-1"></i>
                                             حذف
                                         </button>

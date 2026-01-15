@@ -1,16 +1,22 @@
 @props(['SpecialRequest', 'partners', 'managers'])
 
 <div class="pt-6 p-6 space-y-8">
+    @if (Auth::user()->role != 'client')
     <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
         <i class="fas fa-tools text-blue-600"></i>
         تعيين فريق العمل
     </h2>
+    @endif
 
     {{-- قسم الشركاء المسندين --}}
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 border">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             <i class="fas fa-users"></i>
+            @if(Auth::user()->role != 'client')
             الشركاء المُسندين للمشروع
+            @else
+            فريق العمل
+            @endif
         </h3>
 
         @php
@@ -100,7 +106,7 @@
                         {{-- غاب --}}
                         <div
                             class="bg-white dark:bg-gray-800 p-2 rounded-lg text-center shadow-sm border-b-2 border-red-500">
-                            <p class="text-[20px] text-red-500 uppercase">غاب</p>
+                            <p class="text-[20px] text-black uppercase">غاب</p>
                             <p class="font-bold text-gray-700 dark:text-gray-200">{{ $absentCount }}</p>
                         </div>
                     </div>
@@ -108,7 +114,7 @@
                     <form action="{{ route('dashboard.special-request.remove-partner', [$SpecialRequest, $partner]) }}"
                         method="POST" onsubmit="return confirm('هل أنت متأكد؟')">
                         @csrf @method('DELETE')
-                        <button type="submit" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition">
+                        <button type="submit" class="p-2 text-black hover:bg-red-50 rounded-lg transition">
                             <i class="fas fa-user-times"></i> الغاء الاسناد
                         </button>
                     </form>
@@ -143,7 +149,7 @@
         </div>
     </div>
     @endif
-
+    @if(Auth::user()->role === 'admin')
     <form id="assignPartnersForm" action="{{ route('dashboard.special-request.assign-partners', $SpecialRequest) }}"
         method="POST" class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
         @csrf
@@ -158,7 +164,6 @@
                 </div>
             </div>
         </div>
-
         {{-- مؤشر المجموع الفوري --}}
         <div id="totalIndicator" class="mb-4 p-4 rounded-lg border transition-all duration-300">
             <div class="flex items-center justify-between">
@@ -198,19 +203,21 @@
                             {{ $partner->name }}
                         </label>
                     </div>
-<div class="flex items-center gap-2">
-    {{-- أضفنا class "percentage-input" للتلاعب بها عبر JS --}}
-    <input type="number" id="percentage_{{ $partner->id }}" name="profit_share_percentage[{{ $partner->id }}]" min="1"
-        max="100" placeholder="%" value="{{ old('profit_share_percentage.' . $partner->id) }}" {{-- هذه الإضافة حاسمة:
-        إذا لم يكن الـ checkbox مختاراً، نعطل الحقل --}} {{ !old('partner_id') || !in_array($partner->id,
-    old('partner_id')) ? 'disabled' : '' }}
-    class="percentage-input w-20 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900
-    dark:text-white text-sm rounded-lg p-1.5"
-    oninput="validateTotal()">
-    <span class="text-gray-600 dark:text-gray-300">%</span>
-</div>
-<script>
-    // أضف هذا الكود في نهاية ملف show.blade.php أو في قسم الـ scripts
+                    <div class="flex items-center gap-2">
+                        {{-- أضفنا class "percentage-input" للتلاعب بها عبر JS --}}
+                        <input type="number" id="percentage_{{ $partner->id }}"
+                            name="profit_share_percentage[{{ $partner->id }}]" min="1" max="100" placeholder="%"
+                            value="{{ old('profit_share_percentage.' . $partner->id) }}" {{-- هذه الإضافة حاسمة: إذا لم
+                            يكن الـ checkbox مختاراً، نعطل الحقل --}} {{ !old('partner_id') || !in_array($partner->id,
+                        old('partner_id')) ? 'disabled' : '' }}
+                        class="percentage-input w-20 bg-gray-50 dark:bg-gray-700 border border-gray-300
+                        dark:border-gray-600 text-gray-900
+                        dark:text-white text-sm rounded-lg p-1.5"
+                        oninput="validateTotal()">
+                        <span class="text-gray-600 dark:text-gray-300">%</span>
+                    </div>
+                    <script>
+                        // أضف هذا الكود في نهاية ملف show.blade.php أو في قسم الـ scripts
     document.querySelectorAll('.partner-checkbox').forEach(checkbox => {
     checkbox.addEventListener('change', function() {
     const partnerId = this.value;
@@ -227,7 +234,7 @@
     validateTotal(); // لتحديث المجموع فوراً
     });
     });
-</script>
+                    </script>
                 </div>
                 @empty
                 <p class="text-center text-gray-500 dark:text-gray-400">لا يوجد شركاء متاحون
@@ -258,39 +265,42 @@
             </a>
         </div>
     </form>
-
+    @endif
+    @if(Auth::user()->role === 'admin')
     @if($SpecialRequest->is_project == 0)
-    <form action="{{ route('dashboard.project_manager.store', $SpecialRequest) }}" method="POST"
+    <form action="{{ route('dashboard.project_manager.store') }}" method="POST"
         class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
         @csrf
-        <h3 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-            تحديد مدير المشروع
-        </h3>
+        <h3 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">تحديد مدير المشروع</h3>
         @forelse($managers as $partner)
         <div class="flex items-center justify-between p-2 border-b last:border-b-0">
             <div class="flex items-center gap-3">
-                <input type="radio" id="manager_{{ $partner->id }}" name="user_id" value="{{ $partner->id }}" {{--
-                    التحقق من القيمة القديمة أو القيمة المسجلة حالياً في قاعدة البيانات --}} {{
-                    (old('user_id')==$partner->id ||
-                (isset($SpecialRequest->projectManager) && $SpecialRequest->projectManager->user_id == $partner->id)) ?
+                <input type="radio" id="manager_{{ $partner->id }}" name="user_id" value="{{ $partner->id }}" {{
+                    (isset($SpecialRequest->projectManager) && $SpecialRequest->projectManager->user_id == $partner->id)
+                ?
                 'checked' : '' }}
-                class="manager-checkbox rounded-full text-blue-600 focus:ring-blue-500"
-                onchange="validateTotal()">
+                class="manager-checkbox rounded-full text-blue-600 focus:ring-blue-500">
 
                 <label for="manager_{{ $partner->id }}" class="text-sm font-medium text-gray-900 dark:text-white">
                     {{ $partner->name }}
                 </label>
             </div>
-            <input type="hidden" name="special_request_id" value="{{ $SpecialRequest->id }}">
         </div>
         @empty
-        <p class="text-center text-gray-500 dark:text-gray-400">لا يوجد شركاء متاحون للإسناد.</p>
+        <p class="text-center text-gray-500">لا يوجد شركاء متاحون للإسناد.</p>
         @endforelse
-        <button type="submit" id="submitBtn"
-            class="px-6 mt-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-            <i class="fas fa-user-check"></i>
+
+        {{-- إرسال ID الطلب بناءً على نوع الكائن المتوفر --}}
+        @if(get_class($SpecialRequest) === 'App\Models\Requests')
+        <input type="hidden" name="request_id" value="{{ $SpecialRequest->id }}">
+        @else
+        <input type="hidden" name="special_request_id" value="{{ $SpecialRequest->id }}">
+        @endif
+
+        <button type="submit" class="px-6 mt-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
             تحديد مدير المشروع
         </button>
-    </form>
+    </form> 
+    @endif
     @endif
 </div>

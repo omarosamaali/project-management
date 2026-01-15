@@ -190,26 +190,18 @@ class RequestsController extends Controller
     }
 
     // app/Http/Controllers/Dashboard/RequestsController.php
-
     public function show($id)
     {
-        // جلب الطلب مع علاقة الشركاء (Partners)
-        $SpecialRequest = Requests::with(['user', 'system', 'client', 'partners'])->findOrFail($id);
-
-        // 1. جلب الـ IDs للشركاء المعينين حالياً للطلب لمنع تكرارهم في قائمة الاختيار
-        $assignedPartnerIds = $SpecialRequest->partners->pluck('id')->toArray();
-
-        // 2. جلب قائمة الشركاء المتاحين للاختيار (الذين لم يتم تعيينهم بعد)
+        $SpecialRequest = Requests::with(['user', 'system', 'client', 'partners', 'requestFiles.user'])
+            ->findOrFail($id);
+            
+            $assignedPartnerIds = $SpecialRequest->partners->pluck('id')->toArray();
         $partners = User::where('role', 'partner')
             ->whereNotIn('id', $assignedPartnerIds)
             ->get();
-
-        // 3. جلب المدراء (Partners who are employees)
         $managers = User::where('role', 'partner')
             ->where('is_employee', 1)
             ->get();
-
-        // 4. جلب بيانات الدعم (Support) كما هي في كودك
         $collection1 = Support::where('request_id', $SpecialRequest->id)
             ->with(['user', 'unreadMessages', 'messages'])
             ->get()
@@ -217,7 +209,6 @@ class RequestsController extends Controller
                 $item->is_technical = false;
                 return $item;
             });
-
         $collection2 = \DB::table('technical_support')
             ->where('request_id', $SpecialRequest->id)
             ->get()
@@ -225,9 +216,7 @@ class RequestsController extends Controller
                 $item->is_technical = true;
                 return $item;
             });
-
         $allSupports = $collection1->concat($collection2)->sortByDesc('created_at');
-
         return view('dashboard.requests.show', [
             'SpecialRequest' => $SpecialRequest,
             'supports'       => $allSupports,

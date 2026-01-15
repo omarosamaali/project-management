@@ -31,45 +31,45 @@
                 <!-- Name -->
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                        الاسم: <span class="text-red-500">*</span>
+                        الاسم: <span class="text-black">*</span>
                     </label>
                     <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="أدخل اسم الشريك هنا"
                         required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('name')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <!-- Email -->
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-                        البريد الإلكتروني: <span class="text-red-500">*</span>
+                        البريد الإلكتروني: <span class="text-black">*</span>
                     </label>
                     <input type="email" id="email" name="email" value="{{ old('email') }}"
                         placeholder="example@domain.com" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('email')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <!-- Password -->
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
-                        كلمة المرور: <span class="text-red-500">*</span>
+                        كلمة المرور: <span class="text-black">*</span>
                     </label>
                     <input type="text" id="password" name="password" placeholder="********" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('password')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <!-- Systems -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        الأنظمة المسؤول عنها: <span class="text-red-500">*</span>
+                        الأنظمة المسؤول عنها: <span class="text-black">*</span>
                     </label>
                     <div
                         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
@@ -87,7 +87,7 @@
                         @endforeach
                     </div>
                     @error('systems_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                     <p class="mt-2 text-sm text-gray-500">
                         <i class="fas fa-info-circle text-blue-500"></i>
@@ -98,7 +98,7 @@
                 <!-- Role -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        الدور: <span class="text-red-500">*</span>
+                        الدور: <span class="text-black">*</span>
                     </label>
                     <div
                         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
@@ -145,7 +145,7 @@
                         </div>
                     </div>
                     @error('systems_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                     <p class="mt-2 text-sm text-gray-500">
                         <i class="fas fa-info-circle text-blue-500"></i>
@@ -197,7 +197,7 @@
                         <!-- حقل البريد الإلكتروني -->
                         <div class="mt-4">
                             <label for="withdrawal_email" class="block text-sm font-medium text-gray-700 mb-2">
-                                البريد الإلكتروني <span class="text-red-500">*</span>
+                                البريد الإلكتروني <span class="text-black">*</span>
                             </label>
                             <input type="text" id="withdrawal_email" name="withdrawal_email" required
                                 placeholder="أدخل البريد الإلكتروني للمحفظة أو PayPal"
@@ -220,13 +220,13 @@
                 <!-- Percentage -->
                 <div>
                     <label for="percentage" class="block text-sm font-medium text-gray-700 mb-1">
-                        نسبة الشريك (%) (يمكن إدخال كسور عشرية): <span class="text-red-500">*</span>
+                        نسبة الشريك (%) (يمكن إدخال كسور عشرية): <span class="text-black">*</span>
                     </label>
                     <input type="number" id="percentage" name="percentage" value="{{ old('percentage') }}"
                         placeholder="مثل: 15.5" step="0.01" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('percentage')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 

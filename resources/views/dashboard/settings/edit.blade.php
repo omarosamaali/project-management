@@ -36,7 +36,7 @@
                         placeholder="أدخل اسم الشريك هنا" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('name')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -46,7 +46,7 @@
                         placeholder="example@domain.com" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('email')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -57,13 +57,13 @@
                     <input type="text" id="password" name="password" placeholder="********"
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('password')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 <!-- Role -->
 <div>
     <label class="block text-sm font-medium text-gray-700 mb-2">
-        الدور: <span class="text-red-500">*</span>
+        الدور: <span class="text-black">*</span>
     </label>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
 
@@ -114,7 +114,7 @@
 
     </div>
     @error('role')
-    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+    <span class="text-black text-xs mt-1">{{ $message }}</span>
     @enderror
     <p class="mt-2 text-sm text-gray-500">
         <i class="fas fa-info-circle text-blue-500"></i>
@@ -140,7 +140,7 @@
                         @endforeach
                     </div>
                     @error('systems_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                     <p class="mt-2 text-sm text-gray-500">اختر نظامًا واحدًا أو أكثر.</p>
                 </div>
@@ -153,7 +153,7 @@
                         required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('percentage')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -204,7 +204,7 @@
                         <!-- حقل البريد الإلكتروني -->
                         <div class="mt-4">
                             <label for="withdrawal_email" class="block text-sm font-medium text-gray-700 mb-2">
-                                البريد الإلكتروني <span class="text-red-500">*</span>
+                                البريد الإلكتروني <span class="text-black">*</span>
                             </label>
                             <input value="{{ old('withdrawal_email', $setting->withdrawal_email) }}" type="text"
                                 id="withdrawal_email" name="withdrawal_email"
@@ -231,7 +231,7 @@
                         placeholder="30"
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('orders')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div> --}}
 

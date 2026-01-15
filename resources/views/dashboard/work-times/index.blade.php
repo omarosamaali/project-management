@@ -99,7 +99,7 @@
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
-                                    class="text-red-600 hover:text-red-900 bg-red-100 p-2 rounded-lg transition">
+                                    class="text-black hover:text-red-900 bg-red-100 p-2 rounded-lg transition">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
@@ -156,7 +156,7 @@
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
-                                    class="text-red-600 hover:text-red-900 bg-red-100 p-2 rounded-lg transition">
+                                    class="text-black hover:text-red-900 bg-red-100 p-2 rounded-lg transition">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>

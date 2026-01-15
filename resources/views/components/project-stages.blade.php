@@ -117,7 +117,7 @@
                         'waiting' => ['label' => 'بالانتظار', 'css' => 'bg-gray-100 text-gray-600'],
                         'in_progress' => ['label' => 'قيد الإنجاز', 'css' => 'bg-amber-100 text-amber-600'],
                         'completed' => ['label' => 'منتهية', 'css' => 'bg-green-100 text-green-600'],
-                        'delayed' => ['label' => 'متأخرة', 'css' => 'bg-red-100 text-red-600'],
+                        'delayed' => ['label' => 'متأخرة', 'css' => 'bg-red-100 text-black'],
                         ];
                         $curr = $statusMap[$stage->status] ?? $statusMap['waiting'];
                         @endphp
@@ -132,11 +132,12 @@
                                 class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            {{-- Delete --}}
                             <form action="{{ route('dashboard.special-request.destroy-stage', $stage->id) }}"
                                 method="POST" class="inline">
                                 @csrf @method('DELETE')
                                 <button type="submit" onclick="return confirm('هل أنت متأكد؟')"
-                                    class="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                                    class="p-1.5 text-black hover:bg-red-50 rounded-md transition-colors">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </form>
@@ -153,7 +154,106 @@
         </table>
     </div>
 </div>
+<div id="addStageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">إضافة مرحلة عمل جديدة</h3>
+            <button onclick="toggleModal('addStageModal', false)" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
 
+        {{-- بداية النموذج --}}
+        <form action="{{ route('dashboard.special-request.store1-stage', $SpecialRequest->id) }}" method="POST"
+            class="p-6 space-y-4">
+            @csrf
+            {{-- حقل العنوان --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">عنوان المرحلة</label>
+                <input type="text" name="title" required
+                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-blue-500">
+            </div>
+
+            {{-- حقل التفاصيل (Details) --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">تفاصيل المرحلة</label>
+                <textarea name="details" rows="3"
+                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-blue-500"
+                    placeholder="اشرح ما سيتم تنفيذه في هذه المرحلة..."></textarea>
+            </div>
+
+            {{-- تاريخ الانتهاء --}}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">تاريخ الانتهاء
+                    المتوقع</label>
+                <input type="date" name="end_date"
+                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-blue-500">
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button type="submit"
+                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-bold transition-all shadow-lg">حفظ
+                    المرحلة</button>
+                <button type="button" onclick="toggleModal('addStageModal', false)"
+                    class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2.5 rounded-lg font-bold">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="editStageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">تعديل المرحلة</h3>
+            <button onclick="toggleModal('editStageModal', false)" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <form id="editStageForm" method="POST" class="p-6 space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">عنوان المرحلة</label>
+                <input type="text" id="edit_title" name="title" required
+                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">التفاصيل</label>
+                <textarea id="edit_details" name="details" rows="3"
+                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white"></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">تاريخ
+                        الانتهاء</label>
+                    <input type="date" id="edit_end_date" name="end_date"
+                        class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الحالة</label>
+                    <select id="edit_status" name="status"
+                        class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="waiting">بالانتظار</option>
+                        <option value="in_progress">قيد الإنجاز</option>
+                        <option value="completed">منتهية</option>
+                        <option value="delayed">متأخرة</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-3 mt-6">
+                <button type="submit"
+                    class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-bold transition-all">تحديث
+                    البيانات</button>
+                <button type="button" onclick="toggleModal('editStageModal', false)"
+                    class="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 py-2.5 rounded-lg font-bold">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
     function toggleModal(modalId, show) {
         const modal = document.getElementById(modalId);

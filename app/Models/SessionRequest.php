@@ -44,4 +44,23 @@ class SessionRequest extends Model
         }
         return null;
     }
+
+    // SessionRequest.php
+    public function getAttendedCountAttribute()
+    {
+        return collect($this->invitees)->where('status', 'attended')->count();
+    }
+
+    public function getAcceptedCountAttribute()
+    {
+        return collect($this->invitees)->where('status', 'accepted')->count();
+    }
+
+    public function canJoinNow()
+    {
+        if (!$this->session_time) return false;
+        $now = now();
+        $startTime = $this->session_time->subMinutes(10);
+        return $now->greaterThanOrEqualTo($startTime);
+    }
 }

@@ -43,7 +43,7 @@
                         class="cursor-not-allowed placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     <input type="hidden" name="order_number" value="{{ $orderNumber }}">
                     @error('order_number')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -56,7 +56,7 @@
                     @endforeach
                 </select>
                 @error('systems_id')
-                <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                <span class="text-black text-xs mt-1">{{ $message }}</span>
                 @enderror
 
                 {{-- العميل --}}
@@ -73,7 +73,7 @@
                     </div>
                     @endforeach
                     @error('client_id')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
                 
@@ -117,7 +117,7 @@
                         <!-- ملغية (أحمر) -->
                         <label
                             class="flex items-center gap-3 p-4 border-2 border-red-300 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100">
-                            <input type="radio" name="status" value="ملغية" class="w-5 h-5 text-red-600">
+                            <input type="radio" name="status" value="ملغية" class="w-5 h-5 text-black">
                             <span class="font-medium text-red-700">ملغية</span>
                         </label>
 
@@ -130,7 +130,7 @@
 
                     </div>
                     @error('status')
-                    <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
+                    <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 

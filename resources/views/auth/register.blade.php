@@ -121,7 +121,7 @@
         <div class="mt-10 text-center">
             <p class="text-gray-600">
                 {{ __('messages.already_registered') }}
-                <a href="{{ route('login') }}" class="text-red-600 hover:text-red-800 font-bold">
+                <a href="{{ route('login') }}" class="text-black hover:text-red-800 font-bold">
                     {{ __('messages.login_here') }}
                 </a>
             </p>
