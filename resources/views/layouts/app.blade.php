@@ -442,7 +442,7 @@
                         class="{{ str_contains(Route::currentRouteName(), 'dashboard.logos') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
                             class="{{ str_contains(Route::currentRouteName(), 'dashboard.logos') ? 'text-white' : '' }} fas fa-handshake text-gray-500 pl-2"></i>
-                        <span class="ml-3">شركاء النجاح</span>
+                        <span class="ml-3">عملاء نفخر بخدمتهم</span>
                     </a>
                     <a href="{{ route('dashboard.sessions.index') }}"
                         class="{{ str_contains(Route::currentRouteName(), 'dashboard.sessions') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">

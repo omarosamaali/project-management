@@ -30,9 +30,7 @@
     .marquee-item {
         flex: 0 0 auto;
         margin: 0 40px;
-        opacity: 0.7;
         transition: all 0.3s ease;
-        filter: grayscale(100%);
     }
 
     .marquee-item:hover {
@@ -42,9 +40,14 @@
     }
 
     .marquee-item img {
-        height: 80px;
-        width: 140px;
-        object-fit: contain;
+        height: 110px;
+            width: 110px;
+            object-fit: contain;
+            border: 1px solid gray;
+            border-radius: 4px;
+            padding: 10px;
+            background: #f3f3f394;
+            min-height: 110px;
     }
 
     @keyframes marquee {
@@ -163,7 +166,7 @@
                 @foreach($logos->concat($logos) as $logo)
                 <div class="marquee-item">
                     <img src="{{ asset('storage/' . $logo->image_path) }}" alt="{{ $logo->name }}"
-                        style="filter: invert(0.3); max-height: 50px;">
+                        style="max-height: 50px;">
                 </div>
                 @endforeach
             </div>

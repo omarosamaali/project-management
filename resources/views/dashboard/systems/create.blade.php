@@ -510,21 +510,285 @@
      * دالة الترجمة باستخدام Google Translate API (غير رسمي)
      * مع معالجة محسّنة للنصوص الطويلة والأسطر المتعددة
      */
-// في حالة CORS blocking، استخدم LibreTranslate أو MyMemory API بدل Google:
+<script>
+    /**
+ * حل مشكلة الترجمة عند النزول لسطر جديد (Enter)
+ * المشكلة: Google API بترجع array من الأسطر، لازم نجمعهم صح
+ */
 
-async function translateText(text, sourceLang, targetLang) {
-const url =
-`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+(function() {
+    'use strict';
 
-try {
-const response = await fetch(url);
-const data = await response.json();
-return data.responseData.translatedText || text;
-} catch (error) {
-console.error('Translation error:', error);
-return text;
-}
-}
+    /**
+     * دالة الترجمة المحسّنة - معالجة خاصة للأسطر المتعددة
+     */
+    async function translateText(text, sourceLang, targetLang) {
+        if (!text || !text.trim()) {
+            return "";
+        }
+
+        const cleanText = text.trim();
+        
+        // استخدام dt=t للحصول على الترجمة الكاملة
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(cleanText)}`;
+        
+        try {
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                console.warn('Translation API error:', response.status);
+                return text;
+            }
+
+            const data = await response.json();
+            
+            /**
+             * 🔥 الحل الأساسي هنا:
+             * Google بتقسم النص لأجزاء في data[0]
+             * كل جزء = [translated, original, ...]
+             * لازم نجمع كل الأجزاء مع الحفاظ على الأسطر الجديدة
+             */
+            if (data && data[0] && Array.isArray(data[0])) {
+                let translatedText = '';
+                
+                for (let i = 0; i < data[0].length; i++) {
+                    const part = data[0][i];
+                    if (part && part[0]) {
+                        translatedText += part[0];
+                    }
+                }
+                
+                // إزالة المسافات الزائدة مع الحفاظ على السطور الجديدة
+                return translatedText.trim() || text;
+            }
+            
+            return text;
+            
+        } catch (error) {
+            console.error('Translation error:', error);
+            return text;
+        }
+    }
+
+    /**
+     * إعداد الترجمة للـ textarea (الوصف)
+     * مع معالجة خاصة للنصوص الطويلة والأسطر المتعددة
+     */
+    function setupTextareaTranslation(sourceId, targetId, fromLang, toLang, delay = 1500) {
+        const sourceTextarea = document.getElementById(sourceId);
+        const targetTextarea = document.getElementById(targetId);
+        
+        if (!sourceTextarea || !targetTextarea) {
+            console.warn(`Textarea not found: ${sourceId} -> ${targetId}`);
+            return;
+        }
+
+        let translationTimer = null;
+        let isTranslating = false;
+
+        sourceTextarea.addEventListener('input', async function(e) {
+            const currentValue = e.target.value;
+            
+            // إلغاء الترجمة السابقة
+            if (translationTimer) {
+                clearTimeout(translationTimer);
+            }
+
+            // عدم الترجمة إذا كان النص فارغًا أو جاري الترجمة
+            if (!currentValue.trim() || isTranslating) {
+                return;
+            }
+
+            // الانتظار حتى يتوقف المستخدم عن الكتابة
+            translationTimer = setTimeout(async () => {
+                isTranslating = true;
+                
+                try {
+                    // عرض مؤشر التحميل (اختياري)
+                    targetTextarea.style.opacity = '0.5';
+                    targetTextarea.placeholder = 'Translating...';
+                    
+                    // الترجمة
+                    const translatedText = await translateText(currentValue, fromLang, toLang);
+                    
+                    // تحديث النص المترجم
+                    if (translatedText) {
+                        targetTextarea.value = translatedText;
+                        
+                        // إطلاق حدث input للتوافق مع frameworks
+                        targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    
+                } catch (error) {
+                    console.error('Textarea translation failed:', error);
+                } finally {
+                    // إزالة مؤشر التحميل
+                    targetTextarea.style.opacity = '1';
+                    targetTextarea.placeholder = targetTextarea.getAttribute('placeholder') || '';
+                    isTranslating = false;
+                }
+            }, delay);
+        });
+
+        // منع التعديل المباشر على الحقل المترجم أثناء الترجمة
+        targetTextarea.addEventListener('focus', function() {
+            if (isTranslating) {
+                sourceTextarea.focus();
+            }
+        });
+    }
+
+    /**
+     * إعداد الترجمة للحقول النصية العادية (Input)
+     */
+    function setupInputTranslation(sourceId, targetId, fromLang, toLang, delay = 1000) {
+        const sourceInput = document.getElementById(sourceId);
+        const targetInput = document.getElementById(targetId);
+        
+        if (!sourceInput || !targetInput) {
+            return;
+        }
+
+        let translationTimer = null;
+
+        sourceInput.addEventListener('input', function(e) {
+            const currentValue = e.target.value.trim();
+            
+            if (translationTimer) {
+                clearTimeout(translationTimer);
+            }
+
+            if (!currentValue) {
+                return;
+            }
+
+            translationTimer = setTimeout(async () => {
+                try {
+                    const translatedText = await translateText(currentValue, fromLang, toLang);
+                    
+                    if (translatedText && translatedText !== targetInput.value) {
+                        targetInput.value = translatedText;
+                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } catch (error) {
+                    console.error('Input translation failed:', error);
+                }
+            }, delay);
+        });
+    }
+
+    /**
+     * إعداد الترجمة للحقول الديناميكية (المميزات والمتطلبات)
+     */
+    function setupDynamicTranslation(containerId, rowClass, arName, enName) {
+        const container = document.getElementById(containerId);
+        
+        if (!container) {
+            return;
+        }
+
+        container.addEventListener('input', function(e) {
+            const isArabic = e.target.name === arName;
+            const isEnglish = e.target.name === enName;
+
+            if (!isArabic && !isEnglish) return;
+
+            const row = e.target.closest(rowClass);
+            if (!row) return;
+
+            const targetInput = row.querySelector(
+                `input[name="${isArabic ? enName : arName}"]`
+            );
+
+            if (!targetInput) return;
+
+            if (e.target.translationTimer) {
+                clearTimeout(e.target.translationTimer);
+            }
+
+            const currentValue = e.target.value.trim();
+            if (!currentValue) return;
+
+            e.target.translationTimer = setTimeout(async () => {
+                try {
+                    const translated = await translateText(
+                        currentValue,
+                        isArabic ? 'ar' : 'en',
+                        isArabic ? 'en' : 'ar'
+                    );
+                    
+                    if (translated && translated !== targetInput.value) {
+                        targetInput.value = translated;
+                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } catch (error) {
+                    console.error('Dynamic translation failed:', error);
+                }
+            }, 1000);
+        });
+    }
+
+    /**
+     * إعداد Toggle
+     */
+    function setupToggle(toggleId, containerId, inputId) {
+        const toggle = document.getElementById(toggleId);
+        const container = document.getElementById(containerId);
+        const input = document.getElementById(inputId);
+        
+        if (!toggle || !container || !input) return;
+
+        function updateVisibility(isChecked) {
+            if (isChecked) {
+                container.classList.remove('hidden');
+                input.setAttribute('required', 'required');
+            } else {
+                container.classList.add('hidden');
+                input.removeAttribute('required');
+            }
+        }
+
+        toggle.addEventListener('change', (e) => updateVisibility(e.target.checked));
+        updateVisibility(toggle.checked);
+    }
+
+    /**
+     * تهيئة كل شيء عند تحميل الصفحة
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Translation system loaded');
+
+        // 1. ترجمة حقول الاسم (Input)
+        setupInputTranslation('name_ar', 'name_en', 'ar', 'en', 800);
+        setupInputTranslation('name_en', 'name_ar', 'en', 'ar', 800);
+
+        // 2. ترجمة حقول الوصف (Textarea) - هنا الحل الأساسي
+        setupTextareaTranslation('description_ar', 'description_en', 'ar', 'en', 1800);
+        setupTextareaTranslation('description_en', 'description_ar', 'en', 'ar', 1800);
+
+        // 3. ترجمة المميزات
+        setupDynamicTranslation(
+            'features-container',
+            '.feature-row',
+            'features_ar[]',
+            'features_en[]'
+        );
+
+        // 4. ترجمة المتطلبات
+        setupDynamicTranslation(
+            'requirements-container',
+            '.requirement-row',
+            'requirements_ar[]',
+            'requirements_en[]'
+        );
+
+        // 5. إعداد Toggles
+        setupToggle('system_external_toggle', 'external_url_container', 'external_url');
+        setupToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
+    });
+
+})();
+</script>
     /**
      * إعداد الترجمة التلقائية لحقول النصوص
      */
