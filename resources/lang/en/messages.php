@@ -92,7 +92,7 @@ return [
     'no_purchases' => 'No Purchases',
     'purchase' => 'Purchase',
     'times' => 'Times',
-    'success_partners' => 'Success Partners',
+    'success_partners' => 'Customers we are proud to serve',
     'country' => 'Country',
     'special_request' => 'Special Request',
 

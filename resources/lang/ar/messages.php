@@ -91,7 +91,7 @@ return [
     'no_purchases' => 'لا يوجد عمليات شراء',
     'purchase' => 'تم الشراء',
     'times' => 'مرات',
-    'success_partners' => 'شركاء نجاح',
+    'success_partners' => 'عملاء نفخر بخدمتهم',
     'country' => 'البلد',
     'special_request' => 'طلب خاص',
 
