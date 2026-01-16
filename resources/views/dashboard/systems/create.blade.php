@@ -510,43 +510,21 @@
      * دالة الترجمة باستخدام Google Translate API (غير رسمي)
      * مع معالجة محسّنة للنصوص الطويلة والأسطر المتعددة
      */
-    async function translateText(text, sourceLang, targetLang) {
-        // التحقق من وجود نص
-        if (!text || !text.trim()) {
-            return "";
-        }
+// في حالة CORS blocking، استخدم LibreTranslate أو MyMemory API بدل Google:
 
-        const cleanText = text.trim();
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(cleanText)}`;
-        
-        try {
-            const response = await fetch(url);
-            
-            // التحقق من نجاح الطلب
-            if (!response.ok) {
-                console.warn('Translation API returned error:', response.status);
-                return text; // إرجاع النص الأصلي عند الفشل
-            }
+async function translateText(text, sourceLang, targetLang) {
+const url =
+`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
 
-            const data = await response.json();
-            
-            // دمج كل أجزاء الترجمة (للنصوص الطويلة متعددة الأسطر)
-            if (data && Array.isArray(data[0])) {
-                const translated = data[0]
-                    .filter(part => part && part[0]) // تصفية الأجزاء الفارغة
-                    .map(part => part[0])
-                    .join('');
-                
-                return translated || text;
-            }
-            
-            return text;
-        } catch (error) {
-            console.error('Translation error:', error);
-            return text; // إرجاع النص الأصلي في حالة الخطأ
-        }
-    }
-
+try {
+const response = await fetch(url);
+const data = await response.json();
+return data.responseData.translatedText || text;
+} catch (error) {
+console.error('Translation error:', error);
+return text;
+}
+}
     /**
      * إعداد الترجمة التلقائية لحقول النصوص
      */
