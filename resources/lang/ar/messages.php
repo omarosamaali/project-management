@@ -94,6 +94,8 @@ return [
     'success_partners' => 'عملاء نفخر بخدمتهم',
     'country' => 'البلد',
     'special_request' => 'طلب خاص',
+    'price' => 'السعر',
+    'get_it_in' => 'احصل عليه خلال',
 
 
 

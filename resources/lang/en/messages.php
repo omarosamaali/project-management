@@ -95,8 +95,8 @@ return [
     'success_partners' => 'Customers we are proud to serve',
     'country' => 'Country',
     'special_request' => 'Special Request',
-
-
+    'price' => 'Price',
+    'get_it_in' => 'Get in',
 
 
 
