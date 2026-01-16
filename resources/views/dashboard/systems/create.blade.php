@@ -496,111 +496,120 @@
                     </button>
                 </div>
             </form>
-
 <script>
     /**
-     * 1. تعريف دالة الترجمة أولاً لضمان وجودها في الذاكرة
-     * تم تحسينها لتدعم تعدد الأسطر (Enter)
+     * دالة الترجمة الأساسية - نسخة مستقرة للإنتاج
      */
     async function translateText(text, sourceLang, targetLang) {
-        if (!text || !text.trim()) return "";
+        if (!text || text.trim().length < 2) return "";
         
+        // استخدام محرك gtx المستقر
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
         
         try {
             const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             
             if (data && data[0]) {
-                // دمج الفقرات والأسطر المترجمة
-                return data[0].map(part => part[0]).join('');
+                // تجميع كل الأسطر المترجمة لضمان عدم ضياع النص بعد الـ Enter
+                return data[0].map(part => part[0]).filter(Boolean).join('');
             }
             return text;
         } catch (error) {
             console.error('Translation error:', error);
-            return text;
+            return text; // في حال الفشل نترك النص كما هو
         }
     }
 
-    /**
-     * 2. تشغيل العمليات عند تحميل الصفحة
-     */
     document.addEventListener('DOMContentLoaded', function () {
+        
+        // قاموس لمنع التداخل (Debounce dictionary)
+        const timers = {};
 
-        // --- أ: ترجمة المميزات والمتطلبات (Event Delegation) ---
-        const handleAutoTranslate = (e, containerId, rowClass, arName, enName) => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
+        /**
+         * محرك الترجمة الذكي للحقول
+         * يمنع التحديث إذا كان الحقل فارغاً أو إذا كان المستخدم لا يزال يكتب
+         */
+        async function runAutoTranslate(sourceId, targetId, sl, tl) {
+            const sourceEl = document.getElementById(sourceId);
+            const targetEl = document.getElementById(targetId);
 
-            const isAr = e.target.name === arName;
-            const isEn = e.target.name === enName;
+            if (!sourceEl || !targetEl) return;
+
+            sourceEl.addEventListener('input', function() {
+                const cacheKey = sourceId;
+                clearTimeout(timers[cacheKey]);
+
+                timers[cacheKey] = setTimeout(async () => {
+                    const originalText = sourceEl.value.trim();
+                    if (originalText.length > 0) {
+                        // إظهار مؤشر بسيط (اختياري) بأن الترجمة جارية
+                        targetEl.placeholder = "Translating..."; 
+                        const result = await translateText(originalText, sl, tl);
+                        if (result) targetEl.value = result;
+                    }
+                }, 1200); // مهلة كافية للكتابة المريحة
+            });
+        }
+
+        // 1. تفعيل ترجمة الاسم والوصف (الأهم)
+        runAutoTranslate('name_ar', 'name_en', 'ar', 'en');
+        runAutoTranslate('name_en', 'name_ar', 'en', 'ar');
+        runAutoTranslate('description_ar', 'description_en', 'ar', 'en');
+        runAutoTranslate('description_en', 'description_ar', 'en', 'ar');
+
+        // 2. تفعيل ترجمة المميزات والمتطلبات (الديناميكية)
+        document.addEventListener('input', async function (e) {
+            const name = e.target.name;
+            // التحقق من اسم الحقل (سواء ميزة أو متطلب)
+            const isAr = name === 'features_ar[]' || name === 'requirements_ar[]';
+            const isEn = name === 'features_en[]' || name === 'requirements_en[]';
 
             if (isAr || isEn) {
-                const row = e.target.closest(rowClass);
-                const targetInput = row.querySelector(`input[name="${isAr ? enName : arName}"]`);
+                const row = e.target.closest('.feature-row, .requirement-row');
+                if (!row) return;
+
+                const targetInput = row.querySelector(isAr ? 'input[dir="ltr"]' : 'input:not([dir="ltr"])');
                 
                 clearTimeout(e.target.timeout);
                 e.target.timeout = setTimeout(async () => {
-                    const value = e.target.value.trim();
-                    if (value) {
-                        targetInput.value = await translateText(value, isAr ? 'ar' : 'en', isAr ? 'en' : 'ar');
+                    const text = e.target.value.trim();
+                    if (text) {
+                        const translated = await translateText(text, isAr ? 'ar' : 'en', isAr ? 'en' : 'ar');
+                        if (targetInput) targetInput.value = translated;
                     }
                 }, 1000);
             }
-        };
-
-        // تطبيق على الحاويين (المميزات والمتطلبات)
-        document.addEventListener('input', function(e) {
-            if (e.target.name === 'features_ar[]' || e.target.name === 'features_en[]') {
-                handleAutoTranslate(e, 'features-container', '.feature-row', 'features_ar[]', 'features_en[]');
-            }
-            if (e.target.name === 'requirements_ar[]' || e.target.name === 'requirements_en[]') {
-                handleAutoTranslate(e, 'requirements-container', '.requirement-row', 'requirements_ar[]', 'requirements_en[]');
-            }
         });
 
-        // --- ب: ترجمة حقول الاسم والوصف ---
-        const setupFieldTranslation = (sourceId, targetId, from, to, delay = 1000) => {
-            const source = document.getElementById(sourceId);
-            const target = document.getElementById(targetId);
-            let timer;
-            if (source && target) {
-                source.addEventListener('input', () => {
-                    clearTimeout(timer);
-                    timer = setTimeout(async () => {
-                        if (source.value.trim()) {
-                            target.value = await translateText(source.value, from, to);
-                        }
-                    }, delay);
-                });
-            }
-        };
-
-        setupFieldTranslation('name_ar', 'name_en', 'ar', 'en');
-        setupFieldTranslation('name_en', 'name_ar', 'en', 'ar');
-        setupFieldTranslation('description_ar', 'description_en', 'ar', 'en', 1300);
-        setupFieldTranslation('description_en', 'description_ar', 'en', 'ar', 1300);
-
-        // --- ج: منطق الـ Toggles (الروابط الخارجية والمالك) ---
-        const setupToggle = (toggleId, containerId, inputId) => {
+        // 3. منطق إظهار/إخفاء الحقول الإضافية (Toggles)
+        function initToggle(toggleId, containerId, inputId) {
             const toggle = document.getElementById(toggleId);
             const container = document.getElementById(containerId);
             const input = document.getElementById(inputId);
-            
-            if (toggle && container && input) {
-                const update = (checked) => {
-                    checked ? container.classList.remove('hidden') : container.classList.add('hidden');
-                    checked ? input.setAttribute('required', 'required') : input.removeAttribute('required');
-                };
-                toggle.addEventListener('change', (e) => update(e.target.checked));
-                update(toggle.checked); // للحالة الابتدائية
-            }
-        };
 
-        setupToggle('system_external_toggle', 'external_url_container', 'external_url');
-        setupToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
+            if (toggle && container) {
+                const toggleAction = () => {
+                    if (toggle.checked) {
+                        container.classList.remove('hidden');
+                        if (input) input.required = true;
+                    } else {
+                        container.classList.add('hidden');
+                        if (input) input.required = false;
+                    }
+                };
+                toggle.addEventListener('change', toggleAction);
+                toggleAction(); // تشغيل عند التحميل لأول مرة
+            }
+        }
+
+        initToggle('system_external_toggle', 'external_url_container', 'external_url');
+        initToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
     });
-</script>        </div>
+</script>
+
+</div>
     </div>
 </section>
 
