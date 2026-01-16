@@ -111,7 +111,8 @@ class SystemController extends Controller
             'counter' => $request->counter,
             'system_external' => $request->has('system_external') ? 1 : 0,
             'external_url' => $request->has('system_external') ? $request->external_url : null,
-            'evorq_onwer' => $request->evorq_onwer, // سيأخذ 0 أو 1 من الحقل المخفي والـ checkbox
+
+            'evorq_onwer' => $request->has('evorq_onwer') ? $request->evorq_onwer : 0,
             'onwer_system' => $request->onwer_system,
 
         ];
@@ -233,7 +234,7 @@ class SystemController extends Controller
             'system_external' => $request->has('system_external') ? 1 : 0,
             'external_url' => $request->has('system_external') ? $request->external_url : null,
 
-            'evorq_onwer'  => $request->evorq_onwer,
+            'evorq_onwer' => $request->has('evorq_onwer') ? $request->evorq_onwer : 0,
             'onwer_system' => $request->onwer_system,
 
         ];
