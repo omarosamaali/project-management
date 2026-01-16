@@ -498,100 +498,218 @@
             </form>
 
 <script>
-    // دالة الترجمة الأساسية
+    /**
+ * نسخة محسّنة من سكريبت الترجمة التلقائية
+ * الحل: دالة واحدة فقط + معالجة أفضل للأخطاء
+ */
+
+(function() {
+    'use strict';
+
+    /**
+     * دالة الترجمة باستخدام Google Translate API (غير رسمي)
+     * مع معالجة محسّنة للنصوص الطويلة والأسطر المتعددة
+     */
     async function translateText(text, sourceLang, targetLang) {
-        if (!text || text.trim().length < 3) return "";
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            if (data && data[0]) {
-                return data[0].map(part => part[0]).filter(Boolean).join('');
-            }
-        } catch (e) { console.error("Translation Error"); }
-        return "";
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const timers = {};
-
-        function setupSafeTranslation(sourceId, targetId, fromLang, toLang) {
-            const source = document.getElementById(sourceId);
-            const target = document.getElementById(targetId);
-
-            if (!source || !target) return;
-
-            source.addEventListener('input', function () {
-                clearTimeout(timers[sourceId]);
-                
-                // منع الترجمة إذا كان المستخدم يكتب حالياً في الحقل المستهدف
-                if (document.activeElement === target) return;
-
-                timers[sourceId] = setTimeout(async () => {
-                    const text = source.value.trim();
-                    if (text.length > 3) {
-                        const translated = await translateText(text, fromLang, toLang);
-                        
-                        // التأكد مرة أخرى أن المستخدم لم ينتقل للكتابة في الحقل الآخر أثناء الطلب
-                        if (translated && document.activeElement !== target) {
-                            target.value = translated;
-                            // إطلاق حدث 'input' يدوياً ليتعرف نظامك (مثل Livewire) على التغيير
-                            target.dispatchEvent(new Event('input', { bubbles: true }));
-                        }
-                    }
-                }, 1500); // زيادة المهلة لضمان استقرار الطلب في السيرفر
-            });
+        // التحقق من وجود نص
+        if (!text || !text.trim()) {
+            return "";
         }
 
-        // تفعيل الترجمة للحقول الثابتة
-        setupSafeTranslation('name_ar', 'name_en', 'ar', 'en');
-        setupSafeTranslation('name_en', 'name_ar', 'en', 'ar');
-        setupSafeTranslation('description_ar', 'description_en', 'ar', 'en');
-        setupSafeTranslation('description_en', 'description_ar', 'en', 'ar');
+        const cleanText = text.trim();
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(cleanText)}`;
+        
+        try {
+            const response = await fetch(url);
+            
+            // التحقق من نجاح الطلب
+            if (!response.ok) {
+                console.warn('Translation API returned error:', response.status);
+                return text; // إرجاع النص الأصلي عند الفشل
+            }
 
-        // ترجمة الحقول الديناميكية (المميزات والمتطلبات)
-        document.addEventListener('input', function (e) {
-            const el = e.target;
-            let from, to, targetSelector;
+            const data = await response.json();
+            
+            // دمج كل أجزاء الترجمة (للنصوص الطويلة متعددة الأسطر)
+            if (data && Array.isArray(data[0])) {
+                const translated = data[0]
+                    .filter(part => part && part[0]) // تصفية الأجزاء الفارغة
+                    .map(part => part[0])
+                    .join('');
+                
+                return translated || text;
+            }
+            
+            return text;
+        } catch (error) {
+            console.error('Translation error:', error);
+            return text; // إرجاع النص الأصلي في حالة الخطأ
+        }
+    }
 
-            if (el.name === 'features_ar[]') { from='ar'; to='en'; targetSelector='input[name="features_en[]"]'; }
-            else if (el.name === 'features_en[]') { from='en'; to='ar'; targetSelector='input[name="features_ar[]"]'; }
-            else if (el.name === 'requirements_ar[]') { from='ar'; to='en'; targetSelector='input[name="requirements_en[]"]'; }
-            else if (el.name === 'requirements_en[]') { from='en'; to='ar'; targetSelector='input[name="requirements_ar[]"]'; }
-            else return;
+    /**
+     * إعداد الترجمة التلقائية لحقول النصوص
+     */
+    function setupFieldTranslation(sourceId, targetId, fromLang, toLang, delay = 1000) {
+        const sourceInput = document.getElementById(sourceId);
+        const targetInput = document.getElementById(targetId);
+        
+        if (!sourceInput || !targetInput) {
+            console.warn(`Translation setup failed: ${sourceId} -> ${targetId}`);
+            return;
+        }
 
-            const row = el.closest('.feature-row, .requirement-row');
-            const targetInput = row.querySelector(targetSelector);
+        let translationTimer = null;
+        let lastTranslatedValue = '';
 
-            if (!targetInput || document.activeElement === targetInput) return;
+        sourceInput.addEventListener('input', function(e) {
+            const currentValue = e.target.value.trim();
+            
+            // إلغاء المؤقت السابق
+            if (translationTimer) {
+                clearTimeout(translationTimer);
+            }
 
-            clearTimeout(el.timeout);
-            el.timeout = setTimeout(async () => {
-                if (el.value.trim().length > 2) {
-                    const res = await translateText(el.value, from, to);
-                    if (res && document.activeElement !== targetInput) {
-                        targetInput.value = res;
+            // عدم الترجمة إذا كان النص فارغًا أو نفس القيمة السابقة
+            if (!currentValue || currentValue === lastTranslatedValue) {
+                return;
+            }
+
+            // تأخير الترجمة حتى يتوقف المستخدم عن الكتابة
+            translationTimer = setTimeout(async () => {
+                try {
+                    const translatedText = await translateText(currentValue, fromLang, toLang);
+                    
+                    // تحديث الحقل المستهدف فقط إذا كانت الترجمة مختلفة
+                    if (translatedText && translatedText !== targetInput.value) {
+                        targetInput.value = translatedText;
+                        lastTranslatedValue = currentValue;
+                        
+                        // إطلاق حدث input للحقل المترجم (للتوافق مع Laravel Livewire إن وُجد)
                         targetInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
+                } catch (error) {
+                    console.error('Translation failed:', error);
                 }
-            }, 1200);
+            }, delay);
         });
+    }
 
-        // كود الـ Toggles الأصلي الخاص بك (مختصر ومستقر)
-        const bindToggle = (tid, cid, iid) => {
-            const t = document.getElementById(tid), c = document.getElementById(cid), i = document.getElementById(iid);
-            if (t && c) {
-                const fn = () => { 
-                    t.checked ? c.classList.remove('hidden') : c.classList.add('hidden');
-                    if(i) t.checked ? i.setAttribute('required', 'required') : i.removeAttribute('required');
-                };
-                t.addEventListener('change', fn);
-                fn();
+    /**
+     * إعداد الترجمة للحقول الديناميكية (المميزات والمتطلبات)
+     */
+    function setupDynamicTranslation(containerId, rowClass, arName, enName) {
+        const container = document.getElementById(containerId);
+        
+        if (!container) {
+            console.warn(`Container not found: ${containerId}`);
+            return;
+        }
+
+        // استخدام Event Delegation لدعم العناصر المضافة ديناميكيًا
+        container.addEventListener('input', function(e) {
+            const isArabic = e.target.name === arName;
+            const isEnglish = e.target.name === enName;
+
+            if (!isArabic && !isEnglish) return;
+
+            const row = e.target.closest(rowClass);
+            if (!row) return;
+
+            const targetInput = row.querySelector(
+                `input[name="${isArabic ? enName : arName}"]`
+            );
+
+            if (!targetInput) return;
+
+            // إلغاء المؤقت السابق لهذا العنصر
+            if (e.target.translationTimer) {
+                clearTimeout(e.target.translationTimer);
             }
-        };
-        bindToggle('system_external_toggle', 'external_url_container', 'external_url');
-        bindToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
+
+            const currentValue = e.target.value.trim();
+            if (!currentValue) return;
+
+            // تأخير الترجمة
+            e.target.translationTimer = setTimeout(async () => {
+                try {
+                    const translated = await translateText(
+                        currentValue,
+                        isArabic ? 'ar' : 'en',
+                        isArabic ? 'en' : 'ar'
+                    );
+                    
+                    if (translated && translated !== targetInput.value) {
+                        targetInput.value = translated;
+                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } catch (error) {
+                    console.error('Dynamic translation failed:', error);
+                }
+            }, 1000);
+        });
+    }
+
+    /**
+     * إعداد Toggle للحقول المشروطة
+     */
+    function setupToggle(toggleId, containerId, inputId) {
+        const toggle = document.getElementById(toggleId);
+        const container = document.getElementById(containerId);
+        const input = document.getElementById(inputId);
+        
+        if (!toggle || !container || !input) return;
+
+        function updateVisibility(isChecked) {
+            if (isChecked) {
+                container.classList.remove('hidden');
+                input.setAttribute('required', 'required');
+            } else {
+                container.classList.add('hidden');
+                input.removeValue('required');
+            }
+        }
+
+        toggle.addEventListener('change', (e) => updateVisibility(e.target.checked));
+        updateVisibility(toggle.checked); // الحالة الأولية
+    }
+
+    /**
+     * تهيئة كل شيء عند تحميل الصفحة
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Translation system initialized');
+
+        // 1. ترجمة حقول الاسم
+        setupFieldTranslation('name_ar', 'name_en', 'ar', 'en', 800);
+        setupFieldTranslation('name_en', 'name_ar', 'en', 'ar', 800);
+
+        // 2. ترجمة حقول الوصف (مهلة أطول للنصوص الطويلة)
+        setupFieldTranslation('description_ar', 'description_en', 'ar', 'en', 1500);
+        setupFieldTranslation('description_en', 'description_ar', 'en', 'ar', 1500);
+
+        // 3. ترجمة المميزات (Features)
+        setupDynamicTranslation(
+            'features-container',
+            '.feature-row',
+            'features_ar[]',
+            'features_en[]'
+        );
+
+        // 4. ترجمة المتطلبات (Requirements)
+        setupDynamicTranslation(
+            'requirements-container',
+            '.requirement-row',
+            'requirements_ar[]',
+            'requirements_en[]'
+        );
+
+        // 5. إعداد Toggles
+        setupToggle('system_external_toggle', 'external_url_container', 'external_url');
+        setupToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
     });
+
+})();
 </script>        </div>
     </div>
 </section>
