@@ -50,13 +50,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.success');
             $cancelUrl = route('payment.cancel');
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createSystemPaymentIntent(
                 $system,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             Payment::create([
@@ -209,14 +209,14 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.special-request.return') . '?special_request_id=' . $specialRequest->id;
             $cancelUrl = route('payment.cancel');
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             // استخدم نفس الدالة اللي شغالة للدفعات الجزئية، بس بنمرر الـ specialRequest كـ "installment" وهمي
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $specialRequest, // نمرر الـ specialRequest بدل الدفعة
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             // حفظ معلومات الدفع
@@ -371,14 +371,14 @@ class ZiinaPaymentController extends Controller
             $successUrl = route('payment.installment.return', ['installment' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
             // أو أي صفحة مناسبة
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             // إنشاء payment intent مع Ziina
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $installment,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             // حفظ معلومات الدفع في جدول payments (أو جدول منفصل لو عايز)

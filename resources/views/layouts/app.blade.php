@@ -271,7 +271,7 @@
                         </a>
                     </li>
                     @endif --}}
-                    @if (Auth::user()->role == 'client')
+                    {{-- @if (Auth::user()->role == 'client')
                     <li>
                         <a href="{{ route('special-request.show') }}"
                             class="{{ Route::currentRouteName() == 'special-request.show' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -280,7 +280,7 @@
                             <span class="ml-3">طلباتي الخاصة</span>
                         </a>
                     </li>
-                    @endif
+                    @endif --}}
                     {{-- القسم المالي --}}
                     @if (Auth::user()->role == 'admin')
                     <span class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-5 border-t">
@@ -317,6 +317,7 @@
                         المشاريع والدعم
                         @endif
                     </span>
+                    @if(Auth::user()->role != 'client')
                     <li>
                         <a href="{{ route('dashboard.support.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.support.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -331,6 +332,7 @@
                             </span>
                         </a>
                     </li>
+                    @endif
                     @endif
                     @if (Auth::user()->role == 'admin' || Auth::user()->role == 'partner')
                     <li>

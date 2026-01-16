@@ -19,133 +19,68 @@ use App\Models\Support;
 
 class RequestsController extends Controller
 {
-    // Index Method
     public function index(Request $request)
     {
         $search = $request->input('search');
         $user = Auth::user();
         $statusFilter = $request->get('status');
-        if ($user->role == 'admin') {
-            $partnerSystemIds = PartnerSystem::where('partner_id', Auth::id())
-                ->pluck('system_id')
-                ->toArray();
-            $allRequestsCount = Requests::whereIn('system_id', $partnerSystemIds)->count();
-            $newRequestsCount = Requests::where('status', 'جديد')
-                ->whereIn('system_id', $partnerSystemIds)
-                ->count();
-            $underProcessRequestsCount = Requests::where('status', 'تحت الاجراء')
-                ->whereIn('system_id', $partnerSystemIds)
-                ->count();
-            $pendingRequestsCount = Requests::where('status', 'معلقة')
-                ->whereIn('system_id', $partnerSystemIds)
-                ->count();
-            $closedRequestsCount = Requests::where('status', 'منتهية')
-                ->whereIn('system_id', $partnerSystemIds)
-                ->count();
-            $requests = Requests::whereIn('system_id', $partnerSystemIds)
-                ->with(['system', 'client'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-            $specialRequests = null;
-        } elseif ($user->role == 'partner') {
-            $partnerSystemIds = PartnerSystem::where('partner_id', Auth::id())
-                ->pluck('system_id')
-                ->toArray();
-            $allRequestsCount = Requests::whereIn('system_id', $partnerSystemIds)->count()
-                + SpecialRequestPartner::where('partner_id', Auth::id())->count();
-            $newRequestsCount = Requests::where('status', 'جديد')
-                ->whereIn('system_id', $partnerSystemIds)->count()
-                + SpecialRequestPartner::where('partner_id', Auth::id())->where('status', 'جديد')->count();
-            $underProcessRequestsCount = Requests::where('status', 'تحت الاجراء')
-                ->whereIn('system_id', $partnerSystemIds)->count()
-                + SpecialRequestPartner::where('partner_id', Auth::id())->where('status', 'تحت الاجراء')->count();
-            $pendingRequestsCount = Requests::where('status', 'معلقة')
-                ->whereIn('system_id', $partnerSystemIds)->count()
-                + SpecialRequestPartner::where('partner_id', Auth::id())->where('status', 'معلقة')->count();
-            $closedRequestsCount = Requests::where('status', 'منتهية')
-                ->whereIn('system_id', $partnerSystemIds)->count()
-                + SpecialRequestPartner::where('partner_id', Auth::id())->where('status', 'منتهية')->count();
-            $requests = Requests::whereIn('system_id', $partnerSystemIds)
-                ->with(['system', 'client'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-            $specialRequests = SpecialRequestPartner::where('partner_id', Auth::id())
-                ->with(['specialRequest.user', 'specialRequest.partners', 'partner'])
-                ->get();
-        } else {
-            $specialRequests = null;
 
-            $allRequests = Requests::query();
-            $allRequestsCount = Requests::where('client_id', Auth::user()->id)->count();
-            $newRequestsCount = Requests::where('client_id', Auth::user()->id)->where('status', 'جديد')->count();
-            $underProcessRequestsCount = Requests::where('client_id', Auth::user()->id)->where('status', 'تحت الاجراء')->count();
-            $pendingRequestsCount = Requests::where('client_id', Auth::user()->id)->where('status', 'معلقة')->count();
-            $closedRequestsCount = Requests::where('client_id', Auth::user()->id)->where('status', 'منتهية')->count();
+        // تحديد المعايير الأساسية بناءً على الدور
+        if ($user->role == 'admin') {
+            $baseRequests = Requests::query();
+            $baseSpecial = SpecialRequest::query();
+        } elseif ($user->role == 'partner') {
+            $systemIds = PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
+            $baseRequests = Requests::whereIn('system_id', $systemIds);
+            // بالنسبة للـ Partner نأخذ الطلبات الخاصة المرتبطة به
+            $specialIds = SpecialRequestPartner::where('partner_id', $user->id)->pluck('special_request_id');
+            $baseSpecial = SpecialRequest::whereIn('id', $specialIds);
+        } else { // client
+            $baseRequests = Requests::where('client_id', $user->id);
+            $baseSpecial = SpecialRequest::where('user_id', $user->id);
         }
 
-        if ($user->role == 'admin') {
-            $systemIds = PartnerSystem::where('partner_id', $user->id)
-                ->pluck('system_id');
-            $requests = Requests::whereIn('system_id', $systemIds)
-                ->with('user', 'system')
-                ->when($statusFilter, function ($query) use ($statusFilter): void {
-                    $query->where('status', $statusFilter);
-                })
-                ->when($search, function ($query) use ($search) {
-                    $query->whereHas('user', function ($q) use ($search) {
-                        $q->where('name', 'like', '%' . $search . '%');
-                    });
-                })
-                ->latest()
-                ->paginate(8);
-            $specialRequests = null;
-        } elseif ($user->role == 'client') {
-            $specialRequests = null;
+        // حساب العدادات (جمع الطلبات العادية + الخاصة)
+        $allRequestsCount = (clone $baseRequests)->count() + (clone $baseSpecial)->count();
 
-            $requests = Requests::where('client_id', $user->id)
-                ->with('user', 'system')
-                ->when($statusFilter, function ($query) use ($statusFilter): void {
-                    $query->where('status', $statusFilter);
-                })
-                ->when($search, function ($query) use ($search) {
-                    $query->whereHas('user', function ($q) use ($search) {
-                        $q->where('name', 'like', '%' . $search . '%');
-                    });
-                })
-                ->latest()
-                ->paginate(8);
-        } elseif ($user->role == 'partner') {
-            $systemIds = PartnerSystem::where('partner_id', $user->id)
-                ->pluck('system_id');
-            $requests = Requests::whereIn('system_id', $systemIds)
-                ->with('user', 'system')
-                ->when($statusFilter, function ($query) use ($statusFilter): void {
-                    $query->where('status', $statusFilter);
-                })
-                ->when($search, function ($query) use ($search) {
-                    $query->whereHas('user', function ($q) use ($search) {
-                        $q->where('name', 'like', '%' . $search . '%');
-                    });
-                })
-                ->latest()
-                ->paginate(8);
-        }
-        $specialRequestss = SpecialRequest::query()
-            ->when($search, function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%")
-                        ->orWhereHas('user', function ($userQuery) use ($search) {
-                            $userQuery->where('name', 'like', "%{$search}%");
-                        });
-                });
-            })
+        $newRequestsCount = (clone $baseRequests)->where('status', 'جديد')->count() +
+            (clone $baseSpecial)->where('status', 'جديد')->count();
+
+        $underProcessRequestsCount = (clone $baseRequests)->where('status', 'تحت الاجراء')->count() +
+            (clone $baseSpecial)->where('status', 'تحت الاجراء')->count();
+
+        $pendingRequestsCount = (clone $baseRequests)->where('status', 'معلقة')->count() +
+            (clone $baseSpecial)->where('status', 'معلقة')->count();
+
+        $closedRequestsCount = (clone $baseRequests)->where('status', 'منتهية')->count() +
+            (clone $baseSpecial)->where('status', 'منتهية')->count();
+
+        // جلب البيانات الفعلية (Pagination)
+        // ملاحظة: يفضل إبقاء الـ requests و الـ specialRequestss منفصلين للعرض في الجداول
+        $requests = (clone $baseRequests)
+            ->with(['system', 'user'])
+            ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
+            ->when($search, fn($q) => $q->whereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%")))
+            ->latest()->paginate(8, ['*'], 'requests_page');
+
+        $specialRequestss = (clone $baseSpecial)
             ->with(['user'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(8)
-            ->withQueryString();
+            ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
+            ->when($search, function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                    ->orWhereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%"));
+            })
+            ->latest()->paginate(8, ['*'], 'special_page');
 
-        return view('dashboard.requests.index', compact('specialRequestss','specialRequests', 'requests', 'allRequestsCount', 'newRequestsCount', 'underProcessRequestsCount', 'pendingRequestsCount', 'closedRequestsCount'));
+        return view('dashboard.requests.index', compact(
+            'requests',
+            'specialRequestss',
+            'allRequestsCount',
+            'newRequestsCount',
+            'underProcessRequestsCount',
+            'pendingRequestsCount',
+            'closedRequestsCount'
+        ));
     }
 
     // Create Method
