@@ -57,6 +57,24 @@
                         {{ __('messages.show_details') }}
                     </a>
                 </div>
+
+                <div
+                    class="mt-4 flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
+                    <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
+                    @if($system->counter > 0)
+                    <span class="text-sm font-medium">
+                        {{ __('messages.purchase') }}
+                        <span class="font-bold text-red-600">
+                            {{ $system->counter }}
+                        </span>
+                        {{ __('messages.times') }}
+                    </span>
+                    @else
+                    <span class="text-sm font-medium">
+                        {{ __('messages.no_purchases') }}
+                    </span>
+                    @endif
+                </div>
             </div>
         </div>
         @endforeach

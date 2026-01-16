@@ -434,7 +434,7 @@
                         هل تملك Evorq النظام <span class="text-black">*</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
-                        
+
                         <input type="checkbox" id="evorq_onwer_toggle" name="evorq_onwer" value="1" class="sr-only peer"
                             {{ old('evorq_onwer') ? 'checked' : '' }}>
                         <div
@@ -446,14 +446,13 @@
                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
-                
+
                 <div id="onwer_system_container" class="{{ old('evorq_onwer') ? '' : 'hidden' }} mt-4 mb-6">
                     <label for="onwer_system" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         اسم مالك النظام <span class="text-black">*</span>
                     </label>
                     <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        >
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
                     @error('onwer_system')
                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
@@ -498,139 +497,110 @@
                 </div>
             </form>
 
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                                                
-                                                // ترجمة المميزات باستخدام Event Delegation
-                                                const featuresContainer = document.getElementById('features-container');
-                                                if (featuresContainer) {
-                                                featuresContainer.addEventListener('input', function (e) {
-                                                // إذا كان الإدخال في حقل عربي
-                                                if (e.target.name === 'features_ar[]') {
-                                                const row = e.target.closest('.feature-row');
-                                                const targetInput = row.querySelector('input[name="features_en[]"]');
-                                                
-                                                clearTimeout(e.target.timeout);
-                                                e.target.timeout = setTimeout(async () => {
-                                                if (e.target.value.trim()) {
-                                                const translated = await translateText(e.target.value, 'ar', 'en');
-                                                targetInput.value = translated;
-                                                }
-                                                }, 1000);
-                                                }
-                                                
-                                                // إذا كان الإدخال في حقل إنجليزي
-                                                if (e.target.name === 'features_en[]') {
-                                                const row = e.target.closest('.feature-row');
-                                                const targetInput = row.querySelector('input[name="features_ar[]"]');
-                                                
-                                                clearTimeout(e.target.timeout);
-                                                e.target.timeout = setTimeout(async () => {
-                                                if (e.target.value.trim()) {
-                                                const translated = await translateText(e.target.value, 'en', 'ar');
-                                                targetInput.value = translated;
-                                                }
-                                                }, 1000);
-                                                }
-                                                });
-                                                }
-                                                
-                                                // باقي الكود للاسم والوصف (شغال صح)
-                                                let nameArTimeout;
-                                                const nameArInput = document.getElementById('name_ar');
-                                                if (nameArInput) {
-                                                nameArInput.addEventListener('input', function(e) {
-                                                clearTimeout(nameArTimeout);
-                                                nameArTimeout = setTimeout(async () => {
-                                                if (e.target.value.trim()) {
-                                                const translated = await translateText(e.target.value, 'ar', 'en');
-                                                document.getElementById('name_en').value = translated;
-                                                }
-                                                }, 1000);
-                                                });
-                                                }
-                                                
-                                                let nameEnTimeout;
-                                                const nameEnInput = document.getElementById('name_en');
-                                                if (nameEnInput) {
-                                                nameEnInput.addEventListener('input', function(e) {
-                                                clearTimeout(nameEnTimeout);
-                                                nameEnTimeout = setTimeout(async () => {
-                                                if (e.target.value.trim()) {
-                                                const translated = await translateText(e.target.value, 'en', 'ar');
-                                                document.getElementById('name_ar').value = translated;
-                                                }
-                                                }, 1000);
-                                                });
-                                                }
-                                                
-                                                let descArTimeout;
-                                                const descArInput = document.getElementById('description_ar');
-                                                if (descArInput) {
-                                                descArInput.addEventListener('input', function(e) {
-                                                clearTimeout(descArTimeout);
-                                                descArTimeout = setTimeout(async () => {
-                                                if (e.target.value.trim()) {
-                                                const translated = await translateText(e.target.value, 'ar', 'en');
-                                                document.getElementById('description_en').value = translated;
-                                                }
-                                                }, 1000);
-                                                });
-                                                }
-                                                
-                                                let descEnTimeout;
-                                                const descEnInput = document.getElementById('description_en');
-                                                if (descEnInput) {
-                                                descEnInput.addEventListener('input', function(e) {
-                                                clearTimeout(descEnTimeout);
-                                                descEnTimeout = setTimeout(async () => {
-                                                if (e.target.value.trim()) {
-                                                const translated = await translateText(e.target.value, 'en', 'ar');
-                                                document.getElementById('description_ar').value = translated;
-                                                }
-                                                }, 1500);
-                                                });
-                                                }
-                                                
-                                                });
-             
-                                document.addEventListener('DOMContentLoaded', function () {
-                                    const toggle = document.getElementById('system_external_toggle');
-                                    const urlContainer = document.getElementById('external_url_container');
-                                    const urlInput = document.getElementById('external_url');
-                                                    const handleToggle = (isChecked) => {
-                                        if (isChecked) {
-                                            urlContainer.classList.remove('hidden');
-                                            urlInput.setAttribute('required', 'required');
-                                        } else {
-                                            urlContainer.classList.add('hidden');
-                                            urlInput.removeAttribute('required');
-                                        }
-                                    };
-                                    toggle.addEventListener('change', function () {
-                                        handleToggle(this.checked);
-                                    });
-                                });
+<script>
+    /**
+     * 1. تعريف دالة الترجمة أولاً لضمان وجودها في الذاكرة
+     * تم تحسينها لتدعم تعدد الأسطر (Enter)
+     */
+    async function translateText(text, sourceLang, targetLang) {
+        if (!text || !text.trim()) return "";
+        
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data && data[0]) {
+                // دمج الفقرات والأسطر المترجمة
+                return data[0].map(part => part[0]).join('');
+            }
+            return text;
+        } catch (error) {
+            console.error('Translation error:', error);
+            return text;
+        }
+    }
 
-                                document.addEventListener('DOMContentLoaded', function () {
-                                                            const toggle = document.getElementById('evorq_onwer_toggle');
-                                                            const urlContainer = document.getElementById('onwer_system_container');
-                                                            const urlInput = document.getElementById('onwer_system');
-                                                            const handleToggle = (isChecked) => {
-                                                            if (isChecked) {
-                                                            urlContainer.classList.remove('hidden');
-                                                            urlInput.setAttribute('required', 'required');
-                                                            } else {
-                                                            urlContainer.classList.add('hidden');
-                                                            urlInput.removeAttribute('required');
-                                                            }
-                                                            };
-                                                            toggle.addEventListener('change', function () {
-                                                            handleToggle(this.checked);
-                                                            });
-                                                            });
-            </script>
-        </div>
+    /**
+     * 2. تشغيل العمليات عند تحميل الصفحة
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // --- أ: ترجمة المميزات والمتطلبات (Event Delegation) ---
+        const handleAutoTranslate = (e, containerId, rowClass, arName, enName) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const isAr = e.target.name === arName;
+            const isEn = e.target.name === enName;
+
+            if (isAr || isEn) {
+                const row = e.target.closest(rowClass);
+                const targetInput = row.querySelector(`input[name="${isAr ? enName : arName}"]`);
+                
+                clearTimeout(e.target.timeout);
+                e.target.timeout = setTimeout(async () => {
+                    const value = e.target.value.trim();
+                    if (value) {
+                        targetInput.value = await translateText(value, isAr ? 'ar' : 'en', isAr ? 'en' : 'ar');
+                    }
+                }, 1000);
+            }
+        };
+
+        // تطبيق على الحاويين (المميزات والمتطلبات)
+        document.addEventListener('input', function(e) {
+            if (e.target.name === 'features_ar[]' || e.target.name === 'features_en[]') {
+                handleAutoTranslate(e, 'features-container', '.feature-row', 'features_ar[]', 'features_en[]');
+            }
+            if (e.target.name === 'requirements_ar[]' || e.target.name === 'requirements_en[]') {
+                handleAutoTranslate(e, 'requirements-container', '.requirement-row', 'requirements_ar[]', 'requirements_en[]');
+            }
+        });
+
+        // --- ب: ترجمة حقول الاسم والوصف ---
+        const setupFieldTranslation = (sourceId, targetId, from, to, delay = 1000) => {
+            const source = document.getElementById(sourceId);
+            const target = document.getElementById(targetId);
+            let timer;
+            if (source && target) {
+                source.addEventListener('input', () => {
+                    clearTimeout(timer);
+                    timer = setTimeout(async () => {
+                        if (source.value.trim()) {
+                            target.value = await translateText(source.value, from, to);
+                        }
+                    }, delay);
+                });
+            }
+        };
+
+        setupFieldTranslation('name_ar', 'name_en', 'ar', 'en');
+        setupFieldTranslation('name_en', 'name_ar', 'en', 'ar');
+        setupFieldTranslation('description_ar', 'description_en', 'ar', 'en', 1300);
+        setupFieldTranslation('description_en', 'description_ar', 'en', 'ar', 1300);
+
+        // --- ج: منطق الـ Toggles (الروابط الخارجية والمالك) ---
+        const setupToggle = (toggleId, containerId, inputId) => {
+            const toggle = document.getElementById(toggleId);
+            const container = document.getElementById(containerId);
+            const input = document.getElementById(inputId);
+            
+            if (toggle && container && input) {
+                const update = (checked) => {
+                    checked ? container.classList.remove('hidden') : container.classList.add('hidden');
+                    checked ? input.setAttribute('required', 'required') : input.removeAttribute('required');
+                };
+                toggle.addEventListener('change', (e) => update(e.target.checked));
+                update(toggle.checked); // للحالة الابتدائية
+            }
+        };
+
+        setupToggle('system_external_toggle', 'external_url_container', 'external_url');
+        setupToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
+    });
+</script>        </div>
     </div>
 </section>
 

@@ -1,10 +1,21 @@
+/**
+ * دالة الترجمة المحسنة - تدعم النصوص الطويلة والأسطر المتعددة
+ */
 async function translateText(text, sourceLang, targetLang) {
+    if (!text.trim()) return "";
+    
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
     
     try {
         const response = await fetch(url);
         const data = await response.json();
-        return data[0][0][0];
+        
+        // جوجل تقسم النص عند الأسطر الجديدة أو الفقرات الطويلة
+        // نقوم بجمع كل الأجزاء (parts) لضمان عدم ضياع أي سطر
+        if (data && data[0]) {
+            return data[0].map(part => part[0]).join('');
+        }
+        return text;
     } catch (error) {
         console.error('Translation error:', error);
         return text;
@@ -12,34 +23,22 @@ async function translateText(text, sourceLang, targetLang) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    
-    // ترجمة المميزات باستخدام Event Delegation
+
+    // 1. ترجمة المميزات (Features)
     const featuresContainer = document.getElementById('features-container');
     if (featuresContainer) {
         featuresContainer.addEventListener('input', function (e) {
-            // إذا كان الإدخال في حقل عربي
-            if (e.target.name === 'features_ar[]') {
+            const isArabic = e.target.name === 'features_ar[]';
+            const isEnglish = e.target.name === 'features_en[]';
+
+            if (isArabic || isEnglish) {
                 const row = e.target.closest('.feature-row');
-                const targetInput = row.querySelector('input[name="features_en[]"]');
+                const targetInput = row.querySelector(`input[name="${isArabic ? 'features_en[]' : 'features_ar[]'}"]`);
                 
                 clearTimeout(e.target.timeout);
                 e.target.timeout = setTimeout(async () => {
                     if (e.target.value.trim()) {
-                        const translated = await translateText(e.target.value, 'ar', 'en');
-                        targetInput.value = translated;
-                    }
-                }, 1000);
-            }
-            
-            // إذا كان الإدخال في حقل إنجليزي
-            if (e.target.name === 'features_en[]') {
-                const row = e.target.closest('.feature-row');
-                const targetInput = row.querySelector('input[name="features_ar[]"]');
-                
-                clearTimeout(e.target.timeout);
-                e.target.timeout = setTimeout(async () => {
-                    if (e.target.value.trim()) {
-                        const translated = await translateText(e.target.value, 'en', 'ar');
+                        const translated = await translateText(e.target.value, isArabic ? 'ar' : 'en', isArabic ? 'en' : 'ar');
                         targetInput.value = translated;
                     }
                 }, 1000);
@@ -47,33 +46,21 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ترجمة المتطلبات باستخدام Event Delegation
+    // 2. ترجمة المتطلبات (Requirements)
     const requirementsContainer = document.getElementById('requirements-container');
     if (requirementsContainer) {
         requirementsContainer.addEventListener('input', function (e) {
-            // إذا كان الإدخال في حقل عربي
-            if (e.target.name === 'requirements_ar[]') {
+            const isArabic = e.target.name === 'requirements_ar[]';
+            const isEnglish = e.target.name === 'requirements_en[]';
+
+            if (isArabic || isEnglish) {
                 const row = e.target.closest('.requirement-row');
-                const targetInput = row.querySelector('input[name="requirements_en[]"]');
+                const targetInput = row.querySelector(`input[name="${isArabic ? 'requirements_en[]' : 'requirements_ar[]'}"]`);
                 
                 clearTimeout(e.target.timeout);
                 e.target.timeout = setTimeout(async () => {
                     if (e.target.value.trim()) {
-                        const translated = await translateText(e.target.value, 'ar', 'en');
-                        targetInput.value = translated;
-                    }
-                }, 1000);
-            }
-            
-            // إذا كان الإدخال في حقل إنجليزي
-            if (e.target.name === 'requirements_en[]') {
-                const row = e.target.closest('.requirement-row');
-                const targetInput = row.querySelector('input[name="requirements_ar[]"]');
-                
-                clearTimeout(e.target.timeout);
-                e.target.timeout = setTimeout(async () => {
-                    if (e.target.value.trim()) {
-                        const translated = await translateText(e.target.value, 'en', 'ar');
+                        const translated = await translateText(e.target.value, isArabic ? 'ar' : 'en', isArabic ? 'en' : 'ar');
                         targetInput.value = translated;
                     }
                 }, 1000);
@@ -81,64 +68,32 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ترجمة الاسم من عربي لإنجليزي
-    let nameArTimeout;
-    const nameArInput = document.getElementById('name_ar');
-    if (nameArInput) {
-        nameArInput.addEventListener('input', function(e) {
-            clearTimeout(nameArTimeout);
-            nameArTimeout = setTimeout(async () => {
-                if (e.target.value.trim()) {
-                    const translated = await translateText(e.target.value, 'ar', 'en');
-                    document.getElementById('name_en').value = translated;
-                }
-            }, 1000);
-        });
-    }
+    // 3. ترجمة حقول "الاسم" (Name)
+    setupAutoTranslation('name_ar', 'name_en', 'ar', 'en');
+    setupAutoTranslation('name_en', 'name_ar', 'en', 'ar');
 
-    // ترجمة الاسم من إنجليزي لعربي
-    let nameEnTimeout;
-    const nameEnInput = document.getElementById('name_en');
-    if (nameEnInput) {
-        nameEnInput.addEventListener('input', function(e) {
-            clearTimeout(nameEnTimeout);
-            nameEnTimeout = setTimeout(async () => {
-                if (e.target.value.trim()) {
-                    const translated = await translateText(e.target.value, 'en', 'ar');
-                    document.getElementById('name_ar').value = translated;
-                }
-            }, 1000);
-        });
-    }
+    // 4. ترجمة حقول "الوصف" (Description) - مع مهلة أطول قليلاً للنصوص الطويلة
+    setupAutoTranslation('description_ar', 'description_en', 'ar', 'en', 1200);
+    setupAutoTranslation('description_en', 'description_ar', 'en', 'ar', 1500);
 
-    // ترجمة الوصف من عربي لإنجليزي
-    let descArTimeout;
-    const descArInput = document.getElementById('description_ar');
-    if (descArInput) {
-        descArInput.addEventListener('input', function(e) {
-            clearTimeout(descArTimeout);
-            descArTimeout = setTimeout(async () => {
-                if (e.target.value.trim()) {
-                    const translated = await translateText(e.target.value, 'ar', 'en');
-                    document.getElementById('description_en').value = translated;
-                }
-            }, 1000);
-        });
-    }
+    /**
+     * دالة مساعدة لربط الحقول ببعضها (Helper Function)
+     */
+    function setupAutoTranslation(sourceId, targetId, fromLang, toLang, delay = 1000) {
+        const sourceInput = document.getElementById(sourceId);
+        const targetInput = document.getElementById(targetId);
+        let timeout;
 
-    // ترجمة الوصف من إنجليزي لعربي
-    let descEnTimeout;
-    const descEnInput = document.getElementById('description_en');
-    if (descEnInput) {
-        descEnInput.addEventListener('input', function(e) {
-            clearTimeout(descEnTimeout);
-            descEnTimeout = setTimeout(async () => {
-                if (e.target.value.trim()) {
-                    const translated = await translateText(e.target.value, 'en', 'ar');
-                    document.getElementById('description_ar').value = translated;
-                }
-            }, 1500);
-        });
+        if (sourceInput && targetInput) {
+            sourceInput.addEventListener('input', function(e) {
+                clearTimeout(timeout);
+                timeout = setTimeout(async () => {
+                    const value = e.target.value.trim();
+                    if (value) {
+                        targetInput.value = await translateText(value, fromLang, toLang);
+                    }
+                }, delay);
+            });
+        }
     }
-
 });
