@@ -102,89 +102,99 @@
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">يوم عمل</p>
                             </div>
-<div>
 
-    <label class="flex text-sm font-medium text-gray-700 mb-2">
-
-        السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span class="text-black">*</span>
-
-    </label>
-
-    <div class="relative">
-
-        <input type="number" name="price" required min="0" step="1"
-            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="999">
-
-        @error('price')
-
-        <span class="text-black text-xs mt-1">{{ $message }}</span>
-
+    <!-- 1. حقل السعر الأصلي اللي المستخدم يكتبه بنفسه -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            السعر الذي تريد عرضه للعميل (قبل خصم العمولة) <span class="text-red-600">*</span>
+        </label>
+        <input type="number" id="original_price_input" name="original_price" required min="0" step="1"
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="اكتب السعر هنا (مثال: 10000)">
+        @error('original_price')
+        <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
         @enderror
-
     </div>
 
-</div>
-                            <!-- السعر الكلي -->
-{{-- نوع الخدمة --}}
-{{-- نوع الخدمة --}}
-<div class="mb-4">
-    <x-input-label for="service_id" :value="__('نوع الخدمة')" />
-    <select id="service_id" name="service_id"
-        class="mt-2 px-4 py-3 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-blue-500 focus:ring-blue-500 rounded-md shadow-sm block w-full"
-        required>
-        <option value="" data-price="0" data-commission="0">-- اختر نوع الخدمة --</option>
-        @foreach ($services as $service)
-        <option value="{{ $service->id }}" data-price="{{ $service->price ?? 0 }}"
-            data-commission="{{ $service->evork_commission ?? 0 }}">
-            {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
-        </option>
-        @endforeach
-    </select>
-</div>
+    <!-- 2. اختيار نوع الخدمة -->
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            نوع الخدمة <span class="text-red-600">*</span>
+        </label>
+        <select id="service_id" name="service_id" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="">-- اختر نوع الخدمة --</option>
+            @foreach ($services as $service)
+            <option value="{{ $service->id }}" data-commission="{{ $service->evork_commission ?? 0 }}">
+                {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
+            </option>
+            @endforeach
+        </select>
+        @error('service_id')
+        <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+        @enderror
+    </div>
 
-{{-- حقل السعر الذي سيظهر فيه السعر بعد الخصم --}}
-<div>
-    <label class="flex text-sm font-medium text-gray-700 mb-2">
-        السعر النهائي (بعد خصم عمولة {{ $service->evork_commission ?? '' }}%)
-    </label>
-    <input type="number" id="total_price_input" name="price" required
-        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-</div>
+    <!-- 3. عرض النتيجة بعد الاختيار -->
+    <div class="col-span-2 md:col-span-1">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            السعر النهائي (بعد خصم عمولة المنصة)
+            <span id="commission_text" class="text-sm text-gray-500"></span>
+        </label>
+        <input type="number" id="final_price_display" readonly
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium" value=""
+            placeholder="سيظهر هنا بعد اختيار النوع">
+    </div>
+
+    <!-- حقل مخفي لإرسال السعر النهائي للداتابيز -->
+    <input type="hidden" name="price" id="final_price_hidden">
+
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-    const serviceSelect = document.getElementById('service_id');
-    const priceInput = document.getElementById('total_price_input');
+document.addEventListener('DOMContentLoaded', () => {
+    const originalInput   = document.getElementById('original_price_input');
+    const serviceSelect   = document.getElementById('service_id');
+    const finalDisplay    = document.getElementById('final_price_display');
+    const finalHidden     = document.getElementById('final_price_hidden');
+    const commissionSpan  = document.getElementById('commission_text');
 
-    serviceSelect.addEventListener('change', function () {
-        // الحصول على الخيار المختار حالياً
-        const selectedOption = this.options[this.selectedIndex];
-        
-        // جلب السعر من خاصية data-price التي أضفناها
-        const servicePrice = selectedOption.getAttribute('data-price');
+    // لو أي عنصر مش موجود → وقف السكريبت واطبع خطأ في الكونسول
+    if (!originalInput || !serviceSelect || !finalDisplay || !finalHidden || !commissionSpan) {
+        console.error('خطأ في السعر النهائي: واحد أو أكتر من العناصر مش موجودة بالـ ID الصحيح');
+        return;
+    }
 
-        // تحديث قيمة حقل السعر الكلي
-        if (servicePrice) {
-            priceInput.value = servicePrice;
-        } else {
-            priceInput.value = '';
+    function updateFinalPrice() {
+        const price = parseFloat(originalInput.value) || 0;
+        const option = serviceSelect.options[serviceSelect.selectedIndex];
+        const commission = option.value ? parseFloat(option.dataset.commission) || 0 : 0;
+
+        if (price <= 0 || !option.value) {
+            finalDisplay.value = '';
+            finalHidden.value = '';
+            commissionSpan.textContent = '';
+            return;
         }
-    });
+
+        const final = price * (1 - commission / 100);
+        finalDisplay.value = final.toFixed(2);
+        finalHidden.value = final.toFixed(2);
+        
+        commissionSpan.textContent = commission > 0 
+            ? `(خصم ${commission}% عمولة)`
+            : '(بدون خصم)';
+    }
+
+    // ربط الحدث على كل حاجة ممكن تتغير
+    originalInput.addEventListener('input', updateFinalPrice);
+    originalInput.addEventListener('change', updateFinalPrice);
+    serviceSelect.addEventListener('change', updateFinalPrice);
+
+    // تشغيل أولي (مهم جدًا لو فيه قيم قديمة)
+    updateFinalPrice();
 });
 </script>
-                            {{-- مدة الدعم الفني --}}
-                            {{-- <div>
-                                <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                    بداية العداد <span class="text-black">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="counter" required min="0" step="1"
-                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    @error('counter')
-                                        <span class="text-black text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div> --}}
+    
                         </div>
                     </div>
 

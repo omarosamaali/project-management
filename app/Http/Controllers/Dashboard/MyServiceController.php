@@ -36,6 +36,7 @@ class MyServiceController extends Controller
             'name_ar' => 'required|string',
             'name_en' => 'required|string',
             'price' => 'required|numeric',
+            'original_price' => 'nullable|numeric',
             'execution_days_from' => 'required|numeric',
             'execution_days_to' => 'required|numeric',
             'description_ar' => 'required|string',
@@ -97,6 +98,7 @@ class MyServiceController extends Controller
             'name_ar' => $request->name_ar,
             'name_en' => $request->name_en,
             'price' => $request->price,
+            'original_price' => $request->original_price,
             'execution_days_from' => $request->execution_days_from,
             'execution_days_to' => $request->execution_days_to,
             'description_ar' => $request->description_ar,
@@ -174,6 +176,7 @@ class MyServiceController extends Controller
             'status' => 'required|in:active,inactive',
             'support_days' => 'required|numeric',
             'service_id' => 'required|exists:services,id',
+            'original_price' => 'nullable|numeric',
         ]);
 
         $requirements = [];
@@ -221,7 +224,7 @@ class MyServiceController extends Controller
             'support_days' => $request->support_days,
             'service_id' => $request->service_id,
             'user_id' => Auth::user()->id,
-
+            'original_price' => $request->original_price,
         ];
 
         if ($request->hasFile('main_image')) {

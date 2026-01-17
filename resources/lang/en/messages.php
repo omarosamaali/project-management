@@ -97,6 +97,7 @@ return [
     'special_request' => 'Special Request',
     'price' => 'Price',
     'get_it_in' => 'Get in',
+    'web' => 'Website',
 
 
 

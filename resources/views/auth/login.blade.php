@@ -5,20 +5,24 @@
 @section('content')
 
 <x-auth-session-status class="mb-4" :status="session('status')" />
-
+    
 <div class="my-10 mx-auto max-w-4xl w-full bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
 
     <!-- جانب الصورة -->
     <div class="hidden md:block relative">
-        <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&h=800&fit=crop"
-            alt="{{ __('messages.login_title') }}" class="w-full h-full object-cover">
+        <img src="{{ asset('assets/images/login.png') }}"
+            alt="{{ __('messages.login_title') }}" class="w-full h-full object-cover"> 
         <div
-            class="absolute inset-0 bg-gradient-to-br from-black/90 to-gray-600/90 flex items-center justify-center p-8">
+            class="absolute inset-0 flex items-center justify-center p-8">
             <div class="text-white text-center">
                 <i class="fas fa-box-open text-8xl mb-6"></i>
                 <h2 class="text-4xl font-bold mb-4">{{ __('messages.welcome_back') }}</h2>
                 <p class="text-xl">{{ __('messages.login_subtitle') }}</p>
             </div>
+            {{-- <div class="absolute bottom-0">
+                <img style="bottom: -68px; position: relative; width: 90%; margin: auto;" src="{{ asset('assets/images/arab.png') }}" alt="">
+                <img src="{{ asset('assets/images/footer.png') }}" alt="">
+            </div> --}}
         </div>
     </div>
 

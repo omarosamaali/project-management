@@ -33,10 +33,10 @@
 
     <!-- جانب الصورة -->
     <div class="hidden md:block relative">
-        <img src="https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=600&h=800&fit=crop"
+        <img src="{{ asset('assets/images/login.png') }}"
             alt="{{ __('messages.register_title') }}" class="w-full h-full object-cover">
         <div
-            class="absolute inset-0 bg-gradient-to-br from-black/90 to-gray-600/90 flex items-center justify-center p-8">
+            class="absolute inset-0 flex items-center justify-center p-8">
             <div class="text-white text-center">
                 <i class="fas fa-user-plus text-8xl mb-6"></i>
                 <h2 class="text-4xl font-bold mb-4">{{ __('messages.create_account') }}</h2>

@@ -23,6 +23,7 @@ class MyService extends Model
         'status',
         'support_days',
         'service_id',
+        'original_price',
     ];
 
     protected $casts = [

@@ -92,6 +92,9 @@
                         {{ __('messages.dashboard') }}
                     </a>
                     @endguest
+                    <a href="https://evorq.com/" class="px-4 py-2 rounded-lg transition">
+                        {{ __('messages.web') }}
+                    </a>
                 </div>
 
                 <!-- Mobile Menu Button -->
