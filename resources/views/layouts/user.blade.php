@@ -158,7 +158,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="">
+    <main>
         @yield('content')
     </main>
 

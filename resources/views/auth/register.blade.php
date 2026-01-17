@@ -36,7 +36,7 @@
         <img src="https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=600&h=800&fit=crop"
             alt="{{ __('messages.register_title') }}" class="w-full h-full object-cover">
         <div
-            class="absolute inset-0 bg-gradient-to-br from-green-600/90 to-red-600/90 flex items-center justify-center p-8">
+            class="absolute inset-0 bg-gradient-to-br from-black/90 to-gray-600/90 flex items-center justify-center p-8">
             <div class="text-white text-center">
                 <i class="fas fa-user-plus text-8xl mb-6"></i>
                 <h2 class="text-4xl font-bold mb-4">{{ __('messages.create_account') }}</h2>
@@ -110,8 +110,8 @@
             </div>
 
             <!-- زر التسجيل -->
-            <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-4 rounded-lg font-bold text-lg 
-                hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl">
+            <button type="submit" class="w-full bg-black text-white py-4 rounded-lg font-bold text-lg 
+                hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl">
                 {{ __('messages.register_button') }}
             </button>
 
@@ -121,7 +121,7 @@
         <div class="mt-10 text-center">
             <p class="text-gray-600">
                 {{ __('messages.already_registered') }}
-                <a href="{{ route('login') }}" class="text-black hover:text-red-800 font-bold">
+                <a href="{{ route('login') }}" class="text-black hover:text-gray-800 font-bold">
                     {{ __('messages.login_here') }}
                 </a>
             </p>

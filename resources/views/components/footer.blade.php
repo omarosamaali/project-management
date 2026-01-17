@@ -208,22 +208,33 @@
             transform: translateY(10px) rotate(-5deg);
         }
     }
+    footer {
+    margin-top: auto !important;
+    }
+    
+    body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    }
+    
+    main, .content, #app > div:first-child {
+    flex: 1 !important;
+    }
 </style>
 
-<div class="bg-black text-white p-4 flex items-center justify-between md:flex-row flex-col text-center">
-
+<footer
+        class="bg-black text-white p-4 flex items-center justify-between md:flex-row flex-col text-center gap-2 mt-auto">
         <div>
             {{ __('messages.all_rights_reserved') }} &copy; {{ date('Y') }}
         </div>
-
-        <div class="" style="text-transform: uppercase">
-            <a href="https://evorq.com/" target="_blank" id="kodoLink">
+    
+        <div style="text-transform: uppercase">
+            <a href="https://evorq.com/" target="_blank" id="kodoLink" class="hover:text-gray-300 transition-colors">
                 {{ __('messages.developed_by') }}
             </a>
         </div>
-
-</div>
-
+    </footer>
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <div class="decorative-elements">
