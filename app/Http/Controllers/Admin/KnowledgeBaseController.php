@@ -7,6 +7,7 @@ use App\Models\KnowledgeBase;
 use App\Models\KbCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 class KnowledgeBaseController extends Controller
 {
@@ -20,7 +21,15 @@ class KnowledgeBaseController extends Controller
         if ($request->has('category_id') && $request->category_id != '') {
             $query->where('category_id', $request->category_id);
         }
-        $knowledges = $query->paginate(10)->withQueryString();
+        if (Auth::user()->role == 'admin') {
+            $knowledges = $query->paginate(10)->withQueryString();
+        } elseif (Auth::user()->role == 'independent_partner') {
+            $knowledges = $query->where('added_by', Auth::user()->id)->paginate(10)->withQueryString();
+        } elseif (Auth::user()->role == 'partner') {
+            $knowledges = $query->paginate(10)->withQueryString();
+        }
+        // $knowledges = $query->paginate(10)->withQueryString();
+
         return view('dashboard.knowledge_base.index', compact('knowledges', 'categories'));
     }
 

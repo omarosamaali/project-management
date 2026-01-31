@@ -28,53 +28,84 @@ class RequestsController extends Controller
         // تحديد المعايير الأساسية بناءً على الدور
         if ($user->role == 'admin') {
             $baseRequests = Requests::query();
-            $baseSpecial = SpecialRequest::query();
+            $baseSpecialRequests = SpecialRequest::query();
+            $basePartnerSpecialRequests = SpecialRequestPartner::query();
         } elseif ($user->role == 'partner') {
+            // طلبات الأنظمة الجاهزة المرتبطة بالشريك
             $systemIds = PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
             $baseRequests = Requests::whereIn('system_id', $systemIds);
-            // بالنسبة للـ Partner نأخذ الطلبات الخاصة المرتبطة به
+
+            // الطلبات الخاصة المرتبطة بالشريك
             $specialIds = SpecialRequestPartner::where('partner_id', $user->id)->pluck('special_request_id');
-            $baseSpecial = SpecialRequest::whereIn('id', $specialIds);
+            $baseSpecialRequests = SpecialRequest::whereIn('id', $specialIds);
+
+            // طلبات الشركاء (SpecialRequestPartner)
+            $basePartnerSpecialRequests = SpecialRequestPartner::where('partner_id', $user->id);
         } else { // client
             $baseRequests = Requests::where('client_id', $user->id);
-            $baseSpecial = SpecialRequest::where('user_id', $user->id);
+            $baseSpecialRequests = SpecialRequest::where('user_id', $user->id);
+            $basePartnerSpecialRequests = SpecialRequestPartner::query()->whereHas('specialRequest', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
         }
 
-        // حساب العدادات (جمع الطلبات العادية + الخاصة)
-        $allRequestsCount = (clone $baseRequests)->count() + (clone $baseSpecial)->count();
+        // حساب العدادات (جمع كل أنواع الطلبات)
+        $allRequestsCount = (clone $baseRequests)->count() +
+            (clone $baseSpecialRequests)->count() +
+            (clone $basePartnerSpecialRequests)->count();
 
         $newRequestsCount = (clone $baseRequests)->where('status', 'جديد')->count() +
-            (clone $baseSpecial)->where('status', 'جديد')->count();
+            (clone $baseSpecialRequests)->where('status', 'جديد')->count() +
+            (clone $basePartnerSpecialRequests)->where('status', 'جديد')->count();
 
         $underProcessRequestsCount = (clone $baseRequests)->where('status', 'تحت الاجراء')->count() +
-            (clone $baseSpecial)->where('status', 'تحت الاجراء')->count();
+            (clone $baseSpecialRequests)->where('status', 'تحت الاجراء')->count() +
+            (clone $basePartnerSpecialRequests)->where('status', 'تحت الاجراء')->count();
 
         $pendingRequestsCount = (clone $baseRequests)->where('status', 'معلقة')->count() +
-            (clone $baseSpecial)->where('status', 'معلقة')->count();
+            (clone $baseSpecialRequests)->where('status', 'معلقة')->count() +
+            (clone $basePartnerSpecialRequests)->where('status', 'معلقة')->count();
 
         $closedRequestsCount = (clone $baseRequests)->where('status', 'منتهية')->count() +
-            (clone $baseSpecial)->where('status', 'منتهية')->count();
+            (clone $baseSpecialRequests)->where('status', 'منتهية')->count() +
+            (clone $basePartnerSpecialRequests)->where('status', 'منتهية')->count();
 
-        // جلب البيانات الفعلية (Pagination)
-        // ملاحظة: يفضل إبقاء الـ requests و الـ specialRequestss منفصلين للعرض في الجداول
+        // جلب البيانات الفعلية مع Pagination
+
+        // 1. طلبات الأنظمة الجاهزة
         $requests = (clone $baseRequests)
-            ->with(['system', 'user'])
+            ->with(['system', 'client'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
-            ->when($search, fn($q) => $q->whereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%")))
-            ->latest()->paginate(8, ['*'], 'requests_page');
+            ->when($search, fn($q) => $q->whereHas('client', fn($sq) => $sq->where('name', 'like', "%$search%")))
+            ->latest()
+            ->paginate(8, ['*'], 'requests_page');
 
-        $specialRequestss = (clone $baseSpecial)
+        // 2. الطلبات الخاصة
+        $specialRequestss = (clone $baseSpecialRequests)
             ->with(['user'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
             ->when($search, function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
                     ->orWhereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%"));
             })
-            ->latest()->paginate(8, ['*'], 'special_page');
+            ->latest()
+            ->paginate(8, ['*'], 'special_page');
+
+        // 3. طلبات الشركاء (للـ Partner فقط)
+        $specialRequests = (clone $basePartnerSpecialRequests)
+            ->with(['specialRequest.user', 'partner'])
+            ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
+            ->when($search, function ($q) use ($search) {
+                $q->where('description', 'like', "%$search%")
+                    ->orWhereHas('specialRequest.user', fn($sq) => $sq->where('name', 'like', "%$search%"));
+            })
+            ->latest()
+            ->paginate(8, ['*'], 'partner_special_page');
 
         return view('dashboard.requests.index', compact(
-            'requests',
-            'specialRequestss',
+            'requests',              // طلبات الأنظمة الجاهزة
+            'specialRequestss',      // الطلبات الخاصة
+            'specialRequests',       // طلبات الشركاء
             'allRequestsCount',
             'newRequestsCount',
             'underProcessRequestsCount',
@@ -82,7 +113,6 @@ class RequestsController extends Controller
             'closedRequestsCount'
         ));
     }
-
     // Create Method
     public function create()
     {

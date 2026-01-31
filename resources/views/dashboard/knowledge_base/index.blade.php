@@ -141,6 +141,7 @@
                         </td>
                         <td class="p-4">
                             <div class="flex gap-2 justify-center">
+                                @if()
                                 <a href="{{ route('dashboard.kb.edit', $kb->id) }}"
                                     class="w-8 h-8 flex items-center justify-center rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 hover:bg-blue-600 hover:text-white transition-all">
                                     <i class="fas fa-edit text-xs"></i>
@@ -154,6 +155,7 @@
                                         <i class="fas fa-trash text-xs"></i>
                                     </button>
                                 </form>
+                                @endif
                             </div>
                         </td>
                     </tr>
