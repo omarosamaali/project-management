@@ -434,46 +434,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
-                    <h3 class="text-md font-bold mb-4 text-green-800 flex items-center gap-2">
-                        <i class="fas fa-calculator"></i> نظام حساب الراتب
-                    </h3>
-                    <div class="flex flex-col space-y-4">
-                        <label class="inline-flex items-center cursor-pointer">
-                            <input type="checkbox" name="apply_salary_scale" id="apply_salary_scale" value="1"
-                                class="sr-only peer" {{ old('apply_salary_scale', $partner->apply_salary_scale) ?
-                            'checked' : '' }}>
-                            <div
-                                class="relative w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-green-600 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all">
-                            </div>
-                            <span class="ms-3 text-sm font-medium text-gray-700">تفعيل حساب الراتب (26 يوم / 8
-                                ساعات)</span>
-                        </label>
-
-                        <div id="salary_details"
-                            class="{{ old('apply_salary_scale', $partner->apply_salary_scale) ? '' : 'hidden' }} grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-lg border border-green-100">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">الراتب الأساسي</label>
-                                <input type="number" name="salary_amount_scale"
-                                    value="{{ old('salary_amount_scale', $partner->salary_amount_scale) }}"
-                                    placeholder="0.00" class="w-full px-3 py-2 border rounded-md">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">العملة</label>
-                                <input type="text" name="salary_currency_scale"
-                                    value="{{ old('salary_currency_scale', $partner->salary_currency_scale) }}"
-                                    placeholder="EGP" class="w-full px-3 py-2 border rounded-md">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">تاريخ التعيين</label>
-                                <input type="date" name="hiring_date_scale"
-                                    value="{{ old('hiring_date_scale', $partner->hiring_date_scale?->format('Y-m-d')) }}"
-                                    class="w-full px-3 py-2 border rounded-md">
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
