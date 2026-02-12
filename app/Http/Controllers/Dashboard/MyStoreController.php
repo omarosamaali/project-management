@@ -14,23 +14,42 @@ class MyStoreController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        
-        if ($search) {
-            if(Auth::user()->role == 'partner' || Auth::user()->role == 'independent_partner'){
-                $systems = MyStore::where('name_ar', 'like', '%' . $search . '%')
-                ->orWhere('name_en', 'like', '%' . $search . '%')->where('user_id', Auth::user()->id)->latest()->paginate(8);
-            } elseif(Auth::user()->role == 'admin'){
-                $systems = MyStore::where('name_ar', 'like', '%' . $search . '%')
-                ->orWhere('name_en', 'like', '%' . $search . '%')->latest()->paginate(8);
-            } 
-        } else {
-            if(Auth::user()->role == 'partner' || Auth::user()->role == 'independent_partner'){
-                $systems = MyStore::where('user_id', Auth::user()->id)->latest()->paginate(8);
-            } elseif(Auth::user()->role == 'admin'){    
-                $systems = MyStore::latest()->paginate(8);
-            }
+        $status = $request->input('status'); // الفلتر الجديد
+
+        // استعلام أساسي بناءً على الدور
+        $query = MyStore::query();
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('user_id', Auth::user()->id);
         }
-        return view('dashboard.my-store.index', compact('systems'));
+
+        // حساب الأعداد للفلترة (قبل تطبيق فلتر الحالة الحالي)
+        $countsQuery = clone $query;
+        $counts = [
+            'all' => $countsQuery->count(),
+            'pending' => (clone $countsQuery)->where('status', 'قيد المراجعة')->count(),
+            'active' => (clone $countsQuery)->where('status', 'نشط')->count(),
+            'rejected' => (clone $countsQuery)->where('status', 'مرفوض')->count(),
+        ];
+
+        // تطبيق البحث
+        $query->when($search, function ($q) use ($search) {
+            $q->where(function ($sub) use ($search) {
+                $sub->where('name_ar', 'like', '%' . $search . '%')
+                    ->orWhere('name_en', 'like', '%' . $search . '%');
+            });
+        });
+
+        // تطبيق فلتر الحالة
+        $query->when($status, function ($q) use ($status) {
+            if ($status == 'pending') $q->where('status', 'قيد المراجعة');
+            if ($status == 'active') $q->where('status', 'نشط');
+            if ($status == 'rejected') $q->where('status', 'مرفوض');
+        });
+
+        $systems = $query->latest()->paginate(8)->withQueryString();
+
+        return view('dashboard.my-store.index', compact('systems', 'counts'));
     }
 
     // Create Method
@@ -392,6 +411,23 @@ class MyStoreController extends Controller
         $system->update($data);
 
         return redirect()->route('dashboard.my-store.index')->with('success', 'تم تحديث المتجر بنجاح');
+    }
+
+    // 
+    public function updateStatus(Request $request, $id)
+    {
+        if (Auth::user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:نشط,مرفوض,قيد المراجعة'
+        ]);
+
+        $system = MyStore::findOrFail($id);
+        $system->update(['status' => $request->status]);
+
+        return back()->with('success', 'تم تحديث حالة المتجر بنجاح');
     }
 
     // Delete Method

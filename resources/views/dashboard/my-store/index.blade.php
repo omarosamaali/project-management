@@ -4,7 +4,34 @@
 
 @section('content')
 <section class="!pl-0 p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my-store.index') }}" second="متجري" />
+    <div class="flex items-center justify-between mb-5">
+        <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my-store.index') }}" second="متجري" />
+        <div class="mb-6 flex flex-wrap gap-3">
+            <a href="{{ route('dashboard.my-store.index', ['status' => 'all']) }}"
+                class="flex items-center px-4 py-2 rounded-lg border transition-all {{ request('status') == 'all' || !request('status') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                <span class="ml-2 font-semibold">الجميع</span>
+                <span class="bg-white/20 px-2 py-0.5 rounded text-xs">{{ $counts['all'] }}</span>
+            </a>
+        
+            <a href="{{ route('dashboard.my-store.index', ['status' => 'pending']) }}"
+                class="flex items-center px-4 py-2 rounded-lg border transition-all {{ request('status') == 'pending' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                <span class="ml-2 font-semibold">قيد الانتظار</span>
+                <span class="bg-black/10 px-2 py-0.5 rounded text-xs">{{ $counts['pending'] }}</span>
+            </a>
+        
+            <a href="{{ route('dashboard.my-store.index', ['status' => 'active']) }}"
+                class="flex items-center px-4 py-2 rounded-lg border transition-all {{ request('status') == 'active' ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                <span class="ml-2 font-semibold">نشط</span>
+                <span class="bg-white/20 px-2 py-0.5 rounded text-xs">{{ $counts['active'] }}</span>
+            </a>
+        
+            <a href="{{ route('dashboard.my-store.index', ['status' => 'rejected']) }}"
+                class="flex items-center px-4 py-2 rounded-lg border transition-all {{ request('status') == 'rejected' ? 'bg-red-600 text-white border-red-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                <span class="ml-2 font-semibold">مرفوض</span>
+                <span class="bg-white/20 px-2 py-0.5 rounded text-xs">{{ $counts['rejected'] }}</span>
+            </a>
+        </div>
+    </div>
     <div class="mx-auto w-full">
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
             <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">

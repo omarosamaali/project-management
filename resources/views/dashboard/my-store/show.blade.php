@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'عرض المتجر')
+@section('title', 'عرض الخدمة')
 
 @section('content')
 <section class="!px-0 p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my-store.index') }}" second="متجري" third="عرض المتجر" />
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my-store.index') }}" second="متجري" third="عرض الخدمة" />
 
     <div class="mx-auto max-w-4xl w-full rounded-xl">
         <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
@@ -44,11 +44,11 @@
                     المعلومات الأساسية
                 </h2>
                 <div class="grid md:grid-cols-2 gap-6 mb-6">
-                    <!-- معلومات مُدخل المتجر -->
+                    <!-- معلومات مُدخل الخدمة -->
                     <div class="md:col-span-2 bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-lg p-4">
                         <h3 class="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
                             <i class="fas fa-user-circle"></i>
-                            معلومات مُدخل المتجر
+                            معلومات مُدخل الخدمة
                         </h3>
                         <div class="grid md:grid-cols-3 gap-4">
                             <!-- اسم المُدخل -->
@@ -80,7 +80,7 @@
                             <!-- تاريخ الإضافة -->
                             <div>
                                 <label class="block text-xs font-medium text-gray-600 mb-1">
-                                    تاريخ إضافة المتجر
+                                    تاريخ إضافة الخدمة
                                 </label>
                                 <div class="flex items-center gap-2 text-sm">
                                     <i class="fas fa-calendar-plus text-blue-600"></i>
@@ -93,20 +93,20 @@
                     </div>
                 </div>
                     <div class="grid md:grid-cols-2 gap-6">
-                        <!-- اسم المتجر -->
+                        <!-- اسم الخدمة -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
-                                إسم المتجر (بالعربي)
+                                إسم الخدمة (بالعربي)
                             </label>
                             <div class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50">
                                 {{ $system->name_ar }}
                             </div>
                         </div>
 
-                        <!-- اسم المتجر بالإنجليزية -->
+                        <!-- اسم الخدمة بالإنجليزية -->
                         <div>
                             <label class="block text-sm text-left font-medium text-gray-700 mb-2">
-                                Store Name (English)
+                                Serivce Name (English)
                             </label>
                             <div class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50" dir="ltr">
                                 {{ $system->name_en }}
@@ -269,7 +269,7 @@
                 </div>
                 @endif
 
-                <!-- أزرار المتجر -->
+                <!-- أزرار الخدمة -->
                 @if(!empty($system->buttons))
                 <div class="border-b pb-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -347,7 +347,7 @@
                         @endforeach
                     </div>
 
-                    <span class="font-bold text-xs text-gray-600">ينصح باضافة روابط لاختبار المتجر او الخدمة</span>
+                    <span class="font-bold text-xs text-gray-600">ينصح باضافة روابط لاختبار الخدمة او الخدمة</span>
                 </div>
                 @endif
 
@@ -405,7 +405,66 @@
                         }
                     </script>
                 </div>
-
+                @if(Auth::user()->role == 'admin')
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                            <i class="fas fa-tasks text-blue-600"></i>
+                            إدارة حالة الخدمة
+                        </h2>
+                        <span class="px-4 py-1 rounded-full text-sm font-bold 
+                            {{ $system->status == 'نشط' ? 'bg-green-100 text-green-700' : '' }}
+                            {{ $system->status == 'مرفوض' ? 'bg-red-100 text-red-700' : '' }}
+                            {{ $system->status == 'قيد المراجعة' ? 'bg-yellow-100 text-yellow-700' : '' }}">
+                            الحالة الحالية: {{ $system->status }}
+                        </span>
+                    </div>
+                
+                    <div class="flex flex-wrap gap-4 justify-center">
+                        <form action="{{ route('dashboard.my-store.update-status', $system->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="status" value="نشط">
+                            <button type="submit" @disabled($system->status == 'نشط')
+                                class="flex items-center gap-2 px-6 py-3 rounded-lg transition shadow-md border-2
+                                {{ $system->status == 'نشط'
+                                ? 'bg-green-50 border-green-600 text-green-700 cursor-not-allowed opacity-80'
+                                : 'bg-green-600 border-transparent text-white hover:bg-green-700' }}">
+                                <i class="fas {{ $system->status == 'نشط' ? 'fa-check-double' : 'fa-check-circle' }}"></i>
+                                {{ $system->status == 'نشط' ? 'تم القبول بنجاح' : 'قبول الخدمة (نشط)' }}
+                            </button>
+                        </form>
+                
+                        <form action="{{ route('dashboard.my-store.update-status', $system->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="status" value="مرفوض">
+                            <button type="submit" @disabled($system->status == 'مرفوض')
+                                class="flex items-center gap-2 px-6 py-3 rounded-lg transition shadow-md border-2
+                                {{ $system->status == 'مرفوض'
+                                ? 'bg-red-50 border-red-600 text-red-700 cursor-not-allowed opacity-80'
+                                : 'bg-red-600 border-transparent text-white hover:bg-red-700' }}">
+                                <i class="fas {{ $system->status == 'مرفوض' ? 'fa-ban' : 'fa-times-circle' }}"></i>
+                                {{ $system->status == 'مرفوض' ? 'الخدمة مرفوضة حالياً' : 'رفض الخدمة' }}
+                            </button>
+                        </form>
+                
+                        <form action="{{ route('dashboard.my-store.update-status', $system->id) }}" method="POST">
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="status" value="قيد المراجعة">
+                            <button type="submit" @disabled($system->status == 'قيد المراجعة')
+                                class="flex items-center gap-2 px-6 py-3 rounded-lg transition shadow-md border-2
+                                {{ $system->status == 'قيد المراجعة'
+                                ? 'bg-yellow-50 border-yellow-500 text-yellow-700 cursor-not-allowed opacity-80'
+                                : 'bg-yellow-500 border-transparent text-white hover:bg-yellow-600' }}">
+                                <i class="fas fa-clock"></i>
+                                {{ $system->status == 'قيد المراجعة' ? 'قيد الانتظار حالياً' : 'إرجاع لقيد المراجعة' }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>

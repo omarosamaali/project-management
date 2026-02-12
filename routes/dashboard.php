@@ -46,6 +46,9 @@ use App\Http\Controllers\MyCoursesController;
 use App\Http\Controllers\EducationalResourceController;
 use App\Models\MyStore;
 
+Route::patch('/dashboard/my-store/{id}/update-status', [MyStoreController::class, 'updateStatus'])
+    ->name('dashboard.my-store.update-status');
+
 Route::post('/send-whatsapp-otp', [App\Http\Controllers\PartnerRegistrationController::class, 'sendOtp'])->name('send.otp');
 Route::post('/send-otp', [PartnerRegistrationController::class, 'sendOtp'])->name('send.whatsapp.otp');
 Route::middleware(['auth'])->group(function () {
