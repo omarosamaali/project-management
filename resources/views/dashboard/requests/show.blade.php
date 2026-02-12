@@ -29,7 +29,18 @@
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
                             <i class="fas fa-file-alt text-blue-600"></i>
-                            {{ $SpecialRequest->title }}
+                            {{ $SpecialRequest->system->name_ar }} -
+                            @if($SpecialRequest->status == 'active')
+                            جديد
+                            @elseif($SpecialRequest->status == 'in_progress')
+                            جاري العمل به
+                            @elseif($SpecialRequest->status == 'pending')
+                            قيد المراجعة
+                            @elseif($SpecialRequest->status == 'completed')
+                            مكتمل
+                            @else
+                            {{ $SpecialRequest->status }}
+                            @endif
                         </h1>
                     </div>
                     <div class="flex gap-2">
@@ -38,12 +49,12 @@
                         <div class="flex gap-2">
                             {{-- زر الأدمن: تحويل أو تسليم --}}
                             @if (auth()->user()->role === 'admin')
-                            <button onclick="openProjectStatusModal()"
+                            {{-- <button onclick="openProjectStatusModal()"
                                 class="px-4 py-2 {{ $SpecialRequest->is_project ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white rounded-lg transition flex items-center gap-2">
                                 <i
                                     class="fas {{ $SpecialRequest->is_project ? 'fa-check-circle' : 'fa-exchange-alt' }}"></i>
                                 {{ $SpecialRequest->is_project ? 'مشروع نشط' : 'تحويل إلى مشروع' }}
-                            </button>
+                            </button> --}}
 
                             {{-- زر تسليم المشروع للأدمن (يظهر فقط إذا كان مشروع ونشط ولم يكتمل بعد) --}}
                             @if ($SpecialRequest->status !== 'completed')
@@ -121,8 +132,7 @@
                                 </h3>
                             </div>
 
-                            <form
-                                action="{{ route('dashboard.special-request.update-project-status', $SpecialRequest) }}"
+                            <form action="{{ route('dashboard.request.update-project-status', $SpecialRequest) }}"
                                 method="POST" class="p-6 space-y-4">
                                 @csrf
 
@@ -291,35 +301,40 @@
                     <i class="fas fa-folder-open"></i>
                     ملفات المشروع
                 </button>
-                
+
                 <button type="button" onclick="openTab(event, 'meetings')"
-                class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
-                <i class="fas fa-video"></i>
+                    class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
+                    <i class="fas fa-video"></i>
                     الاجتماعات
                 </button>
-                
+
                 <button type="button" onclick="openTab(event, 'chat')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-comments"></i>
                     النقاشات
                 </button>
-                
+
                 @if ($SpecialRequest->is_project == 1)
                 <button type="button" onclick="openTab(event, 'offerss')"
-                class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
+                    class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-handshake"></i>
                     عروض الاسعار
                 </button>
                 @endif
-                
-                                <button type="button" onclick="openTab(event, 'activities')"
-                                    class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
-                                    <i class="fas fa-history"></i>
-                                    سجل الاحداث
-                                </button>
+
+                @if(Auth::user()->role != 'client')
+                <button type="button" onclick="openTab(event, 'activities')"
+                    class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
+                    <i class="fas fa-history"></i>
+                    سجل الاحداث
+                </button>
+                @endif
             </nav>
         </div>
-
+<!-- النقاشات -->
+            <div id="chat" class="tab-content hidden">
+                <x-request-messages :supports="$supports" :requestData="$SpecialRequest"  />
+            </div>
         {{-- Tabs Content --}}
         <div class="mt-8">
             {{-- التابة الأولي التفاصيل --}}
@@ -370,7 +385,7 @@
             <div id="files" class="tab-content hidden">
                 <x-request-files :SpecialRequest="$SpecialRequest" />
             </div>
-            
+
             <!-- الأنشطة -->
             <div id="activities" class="tab-content hidden">
                 <x-request-activites :SpecialRequest="$SpecialRequest" />
@@ -385,10 +400,7 @@
             <div id="offerss" class="tab-content hidden">
                 <x-request-offers :managers="$managers" :SpecialRequest="$SpecialRequest" :partners="$partners" />
             </div>
-            <!-- النقاشات -->
-            <div id="chat" class="tab-content hidden">
-                <x-request-messages :supports="$supports" :SpecialRequest="$SpecialRequest" />
-            </div>
+
 
 
         </div>
@@ -397,57 +409,91 @@
     </div>
 </section>
 <script>
-    // --- وظائف التابات (Tabs) ---
-        function openTab(event, tabName) {
-            // إخفاء كل المحتويات
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
-            });
+    // 1. تعريف المتغيرات العامة
+    let paymentCounter = {{ $SpecialRequest->payments->count() }};
 
-            // إزالة التنسيق النشط من كل الأزرار
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('border-blue-600', 'text-blue-600', 'dark:border-blue-500',
-                    'dark:text-blue-400');
-                button.classList.add('border-transparent', 'text-gray-500');
-            });
+    // 2. وظيفة التابات مع الحفظ في المتصفح
+    function openTab(event, tabName) {
+        // حفظ اسم التابة الحالية في ذاكرة المتصفح
+        localStorage.setItem('activeSpecialRequestTab', tabName);
 
-            // إظهار التابة المطلوبة
-            const target = document.getElementById(tabName);
-            if (target) {
-                target.classList.remove('hidden');
-            }
-
-            // تمييز الزر النشط
-            event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
-            event.currentTarget.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500',
-                'dark:text-blue-400');
-        }
-
-        // --- وظائف الدفعات والـ Modals (بقية كودك) ---
-        let paymentCounter = {{ $SpecialRequest->payments->count() }};
-
-        function togglePayments() {
-            const type = document.getElementById('payment_type')?.value;
-            const section = document.getElementById('installments_section');
-            if (section && type) {
-                type === 'installments' ? section.classList.remove('hidden') : section.classList.add('hidden');
-            }
-        }
-
-        // ... (ضع بقية دوال الحسابات addPaymentRow و calculatePaymentsTotal هنا) ...
-
-        // عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', function() {
-            // تفعيل أول تابة تلقائياً (Details)
-            const firstTab = document.querySelector('.tab-button');
-            if (firstTab) firstTab.click();
-
-            // تفعيل حسابات الدفع
-            if (document.getElementById('payment_type')) {
-                togglePayments();
-                calculatePaymentsTotal();
-            }
+        // إخفاء كل المحتويات
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
         });
+
+        // إزالة التنسيق النشط من كل الأزرار
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400', 'border-blue-500');
+            button.classList.add('border-transparent', 'text-gray-500');
+        });
+
+        // إظهار التابة المطلوبة
+        const target = document.getElementById(tabName);
+        if (target) {
+            target.classList.remove('hidden');
+        }
+
+        // تمييز الزر النشط (إذا تم النقر يدوياً)
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
+            event.currentTarget.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
+        } else {
+            // تمييز الزر برمجياً عند تحميل الصفحة
+            const btn = document.querySelector(`button[onclick*="'${tabName}'"]`);
+            if (btn) {
+                btn.classList.remove('border-transparent', 'text-gray-500');
+                btn.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
+            }
+        }
+    }
+
+    // 3. وظائف الحسابات والمودال
+    function togglePayments() {
+        const type = document.getElementById('payment_type')?.value;
+        const section = document.getElementById('installments_section');
+        if (section && type) {
+            type === 'installments' ? section.classList.remove('hidden') : section.classList.add('hidden');
+        }
+        if(typeof calculatePaymentsTotal === "function") calculatePaymentsTotal();
+    }
+
+    // ... (هنا ضع بقية دوال الحسابات addPaymentRow و calculatePaymentsTotal) ...
+
+    // 4. التشغيل عند تحميل الصفحة (حدث واحد فقط)
+    document.addEventListener('DOMContentLoaded', function() {
+        // جلب التابة المحفوظة
+        const savedTab = localStorage.getItem('activeSpecialRequestTab');
+        
+        if (savedTab && document.getElementById(savedTab)) {
+            // فتح التابة المحفوظة
+            openTab(null, savedTab);
+        } else {
+            // فتح أول تابة إذا لم يوجد حفظ سابق
+            const firstTabBtn = document.querySelector('.tab-button');
+            if (firstTabBtn) {
+                const firstTabName = firstTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+                openTab(null, firstTabName);
+            }
+        }
+
+        // تفعيل حسابات الدفع
+        if (document.getElementById('payment_type')) {
+            togglePayments();
+        }
+        
+        if (document.getElementById('price')) {
+            document.getElementById('price').addEventListener('input', calculatePaymentsTotal);
+        }
+    });
+
+    function toggleModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.toggle('hidden');
+            document.body.style.overflow = modal.classList.contains('hidden') ? 'auto' : 'hidden';
+        }
+    }
 </script>
 <script>
     let paymentCounter = {{ $SpecialRequest->payments->count() }};
@@ -539,21 +585,6 @@
             calculatePaymentsTotal();
         });
 
-        function openTab(evt, tabName) {
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.classList.add('hidden'));
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(button => {
-                button.classList.remove('border-blue-500', 'text-blue-600', 'dark:border-blue-500',
-                    'dark:text-blue-400');
-                button.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-            });
-            document.getElementById(tabName).classList.remove('hidden');
-            evt.currentTarget.classList.add('border-blue-500', 'text-blue-600', 'dark:border-blue-500',
-                'dark:text-blue-400');
-            evt.currentTarget.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('.tab-button').click();
         });
@@ -568,24 +599,6 @@
                 document.body.style.overflow = 'auto';
             }
         }
-
-        function openTab(event, tabName) {
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(tab => {
-                tab.classList.add('hidden');
-            });
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(button => {
-                button.classList.remove('border-blue-600', 'text-blue-600', 'dark:border-blue-500',
-                    'dark:text-blue-400');
-                button.classList.add('border-transparent', 'text-gray-500');
-            });
-            document.getElementById(tabName).classList.remove('hidden');
-            event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
-            event.currentTarget.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500',
-                'dark:text-blue-400');
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             const firstTab = document.querySelector('.tab-button');
             if (firstTab) {

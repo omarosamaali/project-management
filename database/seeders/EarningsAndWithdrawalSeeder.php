@@ -65,7 +65,7 @@ class EarningsAndWithdrawalSeeder extends Seeder
                 }
             }
 
-            // ب. طلب سحب حالي قيد الانتظار (Pending)
+            // ب. طلب سحب حالي جديد (Pending)
             $currentAvailableBalance = $partner->fresh()->available_balance; // احصل على الرصيد بعد عمليات السحب الماضية
             if ($currentAvailableBalance >= 250 && rand(0, 1) === 1) {
                 $pendingAmount = $this->faker()->randomFloat(2, 200, $currentAvailableBalance * 0.7);

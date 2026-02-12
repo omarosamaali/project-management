@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Performance;
+use App\Models\WhatsAppMessage;
 use Carbon\Carbon;
 
 class TechnicalSupportController extends Controller
@@ -18,24 +19,14 @@ class TechnicalSupportController extends Controller
     // Index Method
     public function index()
     {
-        if (Auth::user()->role == 'admin') {
-            $technicalSupports = TechnicalSupport::with(['request', 'system', 'client'])
-                ->orderBy('created_at', 'desc')
-                ->paginate(8);
-        } elseif (Auth::user()->role == 'client') {
-            $technicalSupports = TechnicalSupport::with(['request', 'system', 'client'])
-                ->where('client_id', Auth::id())
-                ->orderBy('created_at', 'desc')
-                ->paginate(8);
-        } elseif (Auth::user()->role == 'partner') {
-            $partner = DB::table('partner_system')->where('partner_id', Auth::id())->pluck('system_id')->toArray();
-            $technicalSupports = TechnicalSupport::with(['request', 'system', 'client'])
-                ->whereIn('system_id', $partner)
-                ->orderBy('created_at', 'desc')
-                ->paginate(8);
+        $query = WhatsAppMessage::with('user');
+
+        if (Auth::user()->role !== 'admin') {
+            $query->where('user_id', Auth::id());
         }
 
-        return view('dashboard.technical_support.index', compact('technicalSupports'));
+        $messages = $query->orderBy('created_at', 'desc')->paginate(15);
+        return view('dashboard.technical_support.index', compact('messages'));
     }
 
     // Create Method
@@ -51,9 +42,6 @@ class TechnicalSupportController extends Controller
             })
             ->with('system')
             ->get();
-
-        // 2. جلب سجلات جدول الـ SpecialRequests 
-        // قمنا بتغيير client_id إلى user_id لأنه المرجح في الخطأ
         $specialRequests = SpecialRequest::where('user_id', $userId)
             ->get();
 

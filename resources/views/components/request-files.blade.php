@@ -40,6 +40,7 @@
                 {{-- أزرار التحكم --}}
                 <div class="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     {{-- زر التعديل المعدل --}}
+                    @if(Auth::user()->role === 'admin')
                     <button
                         onclick="openEditFileModal('{{ $file->id }}', '{{ $file->title }}', '{{ $file->description }}')"
                         class="text-blue-500 hover:text-blue-700">
@@ -51,6 +52,7 @@
                         @csrf @method('DELETE')
                         <button class="text-black hover:text-red-700"><i class="fas fa-trash"></i></button>
                     </form>
+                    @endif
                 </div>
             </div>
         </div>

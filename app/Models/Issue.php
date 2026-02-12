@@ -10,6 +10,7 @@ class Issue extends Model
     use HasFactory;
 
     protected $fillable = [
+        'request_id',
         'special_request_id',
         'user_id',
         'title',

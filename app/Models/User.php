@@ -11,9 +11,15 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
     protected $fillable = [
+        'skills',
+        'id_card_path',
+        'verification_video',
         'name',
+        'avatar',
+        'otp',
         'email',
         'password',
+        'whatsapp_verified',
         'role',
         'status',
         'phone',
@@ -249,5 +255,20 @@ class User extends Authenticatable
             ->withPivot('status');
     }
 
-    
+    public function enrolledCourses()
+    {
+        return $this->belongsToMany(Course::class, 'course_user')
+            ->withPivot([
+                'price_paid',
+                'status',
+                'enrolled_at',
+                'expires_at'
+            ])
+            ->withTimestamps();
+    }
+
+    public function whatsappMessages()
+    {
+        return $this->hasMany(WhatsAppMessage::class);
+    }
 }

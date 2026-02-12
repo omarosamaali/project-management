@@ -13,7 +13,31 @@ class IssueController extends Controller {
             'special_request_id' => 'required|exists:special_requests,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'assigned_users' => 'nullable|array', // تم التغيير من string إلى array
+            'assigned_users' => 'nullable|array',
+            'image' => 'nullable|image'
+        ]);
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('issues', 'public');
+        }
+        $data['user_id'] = auth()->id();
+        $data['status'] = 'new';
+        Issue::create($data);
+        \App\Models\ProjectActivity::create([
+            'special_request_id' => $request->special_request_id,
+            'user_id' => auth()->id(),
+            'type' => 'file',
+            'description' => 'تم تسجيل مشكلة جديدة: ' . $request->title,
+        ]);
+        return back()->with('success', 'تم تسجيل المشكلة بنجاح');
+    }
+    public function storeRequest(Request $request)
+    {
+        // تغيير اسم الحقل هنا ليتطابق مع الفورم
+        $data = $request->validate([
+            'request_id' => 'required|exists:requests,id', // تأكد من اسم الجدول
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'assigned_users' => 'nullable|array',
             'image' => 'nullable|image'
         ]);
 
@@ -24,11 +48,12 @@ class IssueController extends Controller {
         $data['user_id'] = auth()->id();
         $data['status'] = 'new';
 
-        // سيقوم لارافل بتحويل المصفوفة إلى JSON تلقائياً بفضل الـ Cast في الموديل
+        // ملاحظة: تأكد أن الموديل Issue يحتوي على حقل special_request_id في الـ fillable
         Issue::create($data);
 
         \App\Models\ProjectActivity::create([
-            'special_request_id' => $request->special_request_id,
+            // نستخدم الحقل الجديد هنا أيضاً للأكتفتي
+            'request_id' => $request->request_id,
             'user_id' => auth()->id(),
             'type' => 'file',
             'description' => 'تم تسجيل مشكلة جديدة: ' . $request->title,

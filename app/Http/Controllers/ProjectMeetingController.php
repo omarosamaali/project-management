@@ -11,17 +11,28 @@ class ProjectMeetingController extends Controller
     // حفظ اجتماع جديد
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'special_request_id' => 'required',
+        $rules = [
             'title' => 'required|string',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
             'meeting_link' => 'nullable|url',
-            'attendees' => 'required|array' // تم تغييرها من user_ids إلى attendees
-        ]);
+            'attendees' => 'required|array'
+        ];
+
+        // إضافة validation فقط لو الحقل موجود ومش فاضي
+        if ($request->filled('special_request_id')) {
+            $rules['special_request_id'] = 'exists:special_requests,id';
+        }
+
+        if ($request->filled('request_id')) {
+            $rules['request_id'] = 'exists:requests,id';
+        }
+
+        $validated = $request->validate($rules);
 
         $meeting = ProjectMeeting::create([
-            'special_request_id' => $validated['special_request_id'],
+            'special_request_id' => $request->special_request_id,
+            'request_id' => $request->request_id,
             'created_by' => auth()->id(),
             'title' => $validated['title'],
             'meeting_link' => $validated['meeting_link'] ?? null,
@@ -29,12 +40,10 @@ class ProjectMeetingController extends Controller
             'end_at' => $validated['end_at'],
         ]);
 
-        // إضافة المشاركين باستخدام الاسم الصحيح
         $meeting->participants()->attach($validated['attendees'], ['status' => 'pending']);
 
         return back()->with('success', 'تم جدولة الاجتماع بنجاح');
     }
-
     // يجب أن يكون الاسم هنا أيضاً $meeting ليطابق الراوت
     public function destroy(ProjectMeeting $meeting)
     {

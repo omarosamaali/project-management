@@ -25,7 +25,7 @@
         {{-- التحقق من صلاحية العرض --}}
         @php
         $canView = auth()->user()->role === 'admin'
-        || auth()->user()->role === 'manager'
+        || auth()->user()->role === 'partner'
         || auth()->id() === $note->user_id
         || (auth()->user()->role === 'client' && $note->visible_to_client);
         @endphp
@@ -158,7 +158,7 @@
                     class="w-full p-3 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none"></textarea>
             </div>
 
-            @if(auth()->user()->role === 'admin')
+            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'partner')
             <div
                 class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <input type="checkbox" name="visible_to_client" id="visible_to_client" value="1"
@@ -221,7 +221,7 @@
                     class="w-full p-3 rounded-lg border border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
             </div>
 
-            @if(auth()->user()->role === 'admin')
+            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'partner')
             <div
                 class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <input type="checkbox" name="visible_to_client" id="edit_visible_to_client" value="1"

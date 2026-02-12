@@ -75,7 +75,7 @@
                             <th scope="col" class="px-4 py-3">الإسم</th>
                             <th scope="col" class="px-4 py-3">السعر</th>
                             <th scope="col" class="px-4 py-3">مدة التنفيذ</th>
-                            <th scope="col" class="px-4 py-3">عدد الطلبات</th>
+                            <th scope="col" class="px-4 py-3">عدد المشاريع</th>
                             <th scope="col" class="px-4 py-3">الأرباح</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>

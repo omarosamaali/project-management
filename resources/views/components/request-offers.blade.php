@@ -86,7 +86,7 @@ here
                             <span
                                 class="text-[10px] uppercase tracking-wider {{ $isAccepted ? 'text-gray-300 dark:text-gray-500' : 'text-gray-400' }}">الحالة</span>
                             <span class="text-[10px] font-bold uppercase tracking-widest">
-                                @if($isAccepted) تم القبول @elseif($isRejected) عرض مستبعد @else قيد الانتظار @endif
+                                @if($isAccepted) تم القبول @elseif($isRejected) عرض مستبعد @else جديد @endif
                             </span>
                         </div>
                     </div>

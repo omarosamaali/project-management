@@ -38,12 +38,14 @@ class NewProject extends Model
     public function getStatusNameAttribute()
     {
         $statuses = [
-            'pending' => 'قيد الانتظار',
+            'pending' => 'جديد',
             'in_review' => 'قيد المراجعة',
             'in_progress' => 'قيد المعالجة',
             'completed' => 'مكتمل',
             'canceled' => 'ملغية',
             'بانتظار الدفع' => 'بانتظار الدفع',
+            'بانتظار عروض الاسعار' => 'بانتظار عروض الاسعار',
+
 
         ];
         return $statuses[$this->status] ?? 'غير محدد';

@@ -29,7 +29,17 @@
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
                             <i class="fas fa-file-alt text-blue-600"></i>
-                            {{ $SpecialRequest->title }}
+                            {{ $SpecialRequest->title }} - @if($SpecialRequest->status == 'active')
+                            جديد
+                            @elseif($SpecialRequest->status == 'in_progress')
+                            جاري العمل به
+                            @elseif($SpecialRequest->status == 'pending')
+                            قيد المراجعة
+                            @elseif($SpecialRequest->status == 'completed')
+                            مكتمل
+                            @else
+                            {{ $SpecialRequest->status }}
+                            @endif
                         </h1>
                         <span class="text-[13px] text-[#646464] font-bold">{{ $SpecialRequest->project_type }}</span>
                     </div>
@@ -239,13 +249,11 @@
                     التفاصيل
                 </button>
 
-                @if($SpecialRequest->is_project == 0)
                 <button type="button" onclick="openTab(event, 'team')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-users"></i>
                     فريق العمل
                 </button>
-                @endif
 
                 <button type="button" onclick="openTab(event, 'stages')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
@@ -305,7 +313,8 @@
                     النقاشات
                 </button>
 
-                @if($SpecialRequest->is_project == 1)
+                
+                @if(Auth::user()->role == 'admin' || 'partner' && $SpecialRequest->is_project == 1)
                 <button type="button" onclick="openTab(event, 'offerss')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-handshake"></i>
@@ -313,16 +322,20 @@
                 </button>
                 @endif
 
+                @if(Auth::user()->role != 'client')
                 <button type="button" onclick="openTab(event, 'activities')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-history"></i>
                     سجل الاحداث
                 </button>
-                
+                @endif
             </nav>
         </div>
 
-        {{-- Tabs Content --}}
+        <div id="offerss" class="tab-content hidden">
+            <x-project-offers :managers="$managers" :SpecialRequest="$SpecialRequest" :partners="$partners" />
+        </div>
+
         <div class="mt-8">
             {{-- التابة الأولي التفاصيل --}}
             <div id="details" class="tab-content">
@@ -362,7 +375,9 @@
                 <x-project-expenses :SpecialRequest="$SpecialRequest" />
             </div>
             @endif
-
+            <div id="chat" class="tab-content hidden">
+                <x-project-messages :supports="$supports" :SpecialRequest="$SpecialRequest" />
+            </div>
             <!-- الأخطاء والمعوقات -->
             <div id="issues" class="tab-content hidden">
                 <x-project-issue :SpecialRequest="$SpecialRequest" />
@@ -384,14 +399,7 @@
             </div>
 
             {{-- عروض الأسعار --}}
-            <div id="offerss" class="tab-content hidden">
-                <x-project-offers :managers="$managers" :SpecialRequest="$SpecialRequest" :partners="$partners" />
-            </div>
-            <!-- النقاشات -->
-            <div id="chat" class="tab-content hidden">
-                <x-project-messages :supports="$supports" :SpecialRequest="$SpecialRequest" />
-            </div>
-
+            {{-- --}}
 
         </div>
 
@@ -399,196 +407,111 @@
     </div>
 </section>
 <script>
-    // --- وظائف التابات (Tabs) ---
+    // 1. تعريف المتغيرات العامة
+    let paymentCounter = {{ $SpecialRequest->payments->count() }};
+    const requestId = {{ $SpecialRequest->id }};
+
+    // 2. دالة فتح التابات مع حفظ الحالة
     function openTab(event, tabName) {
         // إخفاء كل المحتويات
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.add('hidden');
-        });
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
 
-        // إزالة التنسيق النشط من كل الأزرار
+        // إعادة ضبط شكل كل الأزرار
         document.querySelectorAll('.tab-button').forEach(button => {
             button.classList.remove('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
             button.classList.add('border-transparent', 'text-gray-500');
         });
 
-        // إظهار التابة المطلوبة
+        // إظهار المحتوى المختار
         const target = document.getElementById(tabName);
-        if (target) {
-            target.classList.remove('hidden');
-        }
+        if (target) target.classList.remove('hidden');
 
         // تمييز الزر النشط
-        event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
-        event.currentTarget.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
-    }
-
-    // --- وظائف الدفعات والـ Modals (بقية كودك) ---
-    let paymentCounter = {{ $SpecialRequest->payments->count() }};
-    
-    function togglePayments() {
-        const type = document.getElementById('payment_type')?.value;
-        const section = document.getElementById('installments_section');
-        if (section && type) {
-            type === 'installments' ? section.classList.remove('hidden') : section.classList.add('hidden');
+        let currentBtn = event ? event.currentTarget : document.querySelector(`button[onclick*="'${tabName}'"]`);
+        if (currentBtn) {
+            currentBtn.classList.remove('border-transparent', 'text-gray-500');
+            currentBtn.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
         }
+
+        // حفظ اسم التابة في الذاكرة
+        localStorage.setItem('activeTab_' + requestId, tabName);
     }
 
-    // ... (ضع بقية دوال الحسابات addPaymentRow و calculatePaymentsTotal هنا) ...
-
-    // عند تحميل الصفحة
+    // 3. كود التشغيل عند تحميل الصفحة (المنطق الوحيد المطلوب)
     document.addEventListener('DOMContentLoaded', function() {
-        // تفعيل أول تابة تلقائياً (Details)
-        const firstTab = document.querySelector('.tab-button');
-        if (firstTab) firstTab.click();
+        // استرجاع التابة المحفوظة
+        const savedTab = localStorage.getItem('activeTab_' + requestId);
         
-        // تفعيل حسابات الدفع
+        if (savedTab && document.getElementById(savedTab)) {
+            openTab(null, savedTab);
+        } else {
+            // افتح أول تابة لو مفيش حاجة محفوظة
+            const firstTab = document.querySelector('.tab-button');
+            if (firstTab) firstTab.click();
+        }
+
+        // تشغيل دوال الحسابات والدفع
         if(document.getElementById('payment_type')) {
             togglePayments();
             calculatePaymentsTotal();
         }
     });
-</script>
-<script>
-    let paymentCounter = {{ $SpecialRequest->payments->count() }};
 
+    // 4. وظائف الدفع والحسابات (بدون تكرار)
     function togglePayments() {
-            const type = document.getElementById('payment_type').value;
-            const section = document.getElementById('installments_section');
-
-            if (type === 'installments') {
-                section.classList.remove('hidden');
-            } else {
-                section.classList.add('hidden');
-            }
-            calculatePaymentsTotal();
+        const type = document.getElementById('payment_type')?.value;
+        const section = document.getElementById('installments_section');
+        if (section) {
+            type === 'installments' ? section.classList.remove('hidden') : section.classList.add('hidden');
         }
+        calculatePaymentsTotal();
+    }
 
     function addPaymentRow() {
-            const wrapper = document.getElementById('payments_wrapper');
-            const index = paymentCounter++;
-
-            const html = `
-                        <div class="payment-row flex gap-2 items-start bg-white dark:bg-gray-700 p-3 rounded-lg border">
-                            <div class="flex-1">
-                                <input type="text" name="installments[${index}][name]" placeholder="اسم الدفعة (مثال: الدفعة الأولى)"class="payment-name w-full p-2 border rounded text-sm dark:bg-gray-800 dark:text-white"required>
-                            </div>
-                            <div class="w-32">
-                                <input type="number"name="installments[${index}][amount]" placeholder="المبلغ"class="payment-amount w-full p-2 border rounded text-sm dark:bg-gray-800 dark:text-white" step="0.01"min="0.01"required oninput="calculatePaymentsTotal()">
-                            </div>
-                            <button type="button" 
-                                    onclick="removePaymentRow(this)" 
-                                    class="px-3 py-2 bg-red-500 text-white rounded hover:bg-black transition">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    `;
-
-            wrapper.insertAdjacentHTML('beforeend', html);
-            calculatePaymentsTotal();
-        }
-
-    function removePaymentRow(button) {
-            button.closest('.payment-row').remove();
-            calculatePaymentsTotal();
-        }
+        const wrapper = document.getElementById('payments_wrapper');
+        const index = paymentCounter++;
+        const html = `
+            <div class="payment-row flex gap-2 items-start bg-white dark:bg-gray-700 p-3 rounded-lg border">
+                <div class="flex-1">
+                    <input type="text" name="installments[${index}][name]" placeholder="اسم الدفعة" class="w-full p-2 border rounded text-sm dark:bg-gray-800 dark:text-white" required>
+                </div>
+                <div class="w-32">
+                    <input type="number" name="installments[${index}][amount]" class="payment-amount w-full p-2 border rounded text-sm dark:bg-gray-800 dark:text-white" step="0.01" required oninput="calculatePaymentsTotal()">
+                </div>
+                <button type="button" onclick="this.closest('.payment-row').remove(); calculatePaymentsTotal();" class="px-3 py-2 bg-red-500 text-white rounded hover:bg-black transition">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`;
+        wrapper.insertAdjacentHTML('beforeend', html);
+        calculatePaymentsTotal();
+    }
 
     function calculatePaymentsTotal() {
-            const budget = parseFloat(document.getElementById('price').value) || 0;
-            let total = 0;
-            document.querySelectorAll('.payment-amount').forEach(input => {
-                const value = parseFloat(input.value) || 0;
-                total += value;
-            });
+        const priceInput = document.getElementById('price');
+        if(!priceInput) return;
+        
+        const budget = parseFloat(priceInput.value) || 0;
+        let total = 0;
+        document.querySelectorAll('.payment-amount').forEach(input => {
+            total += parseFloat(input.value) || 0;
+        });
+
+        // تحديث الواجهة (Progress bar & totals)
+        if(document.getElementById('installments_total')) {
             document.getElementById('installments_total').textContent = total.toFixed(2);
             document.getElementById('project_budget_display').textContent = budget.toFixed(2);
             const progress = budget > 0 ? (total / budget) * 100 : 0;
-            document.getElementById('payment_progress').style.width = Math.min(progress, 100) + '%';
-            const errorMsg = document.getElementById('payment_error');
-            const warningMsg = document.getElementById('payment_warning');
-            const submitBtn = document.getElementById('submitBtn');
             const progressBar = document.getElementById('payment_progress');
-            errorMsg.classList.add('hidden');
-            warningMsg.classList.add('hidden');
-            if (total > budget) {
-                errorMsg.classList.remove('hidden');
-                submitBtn.disabled = true;
-                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                progressBar.classList.remove('bg-blue-600', 'bg-yellow-500');
-                progressBar.classList.add('bg-black');
-            } else if (total < budget && total > 0) {
-                const remaining = budget - total;
-                warningMsg.classList.remove('hidden');
-                document.getElementById('remaining_amount').textContent = remaining.toFixed(2);
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                progressBar.classList.remove('bg-blue-600', 'bg-black');
-                progressBar.classList.add('bg-yellow-500');
-            } else {
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                progressBar.classList.remove('bg-black', 'bg-yellow-500');
-                progressBar.classList.add('bg-blue-600');
-            }
+            if(progressBar) progressBar.style.width = Math.min(progress, 100) + '%';
         }
-
-    document.getElementById('price').addEventListener('input', calculatePaymentsTotal);
-
-    document.addEventListener('DOMContentLoaded', function() {
-            togglePayments();
-            calculatePaymentsTotal();
-        });
-
-    function openTab(evt, tabName) {
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(content => content.classList.add('hidden'));
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(button => {
-                button.classList.remove('border-blue-500', 'text-blue-600', 'dark:border-blue-500',
-                    'dark:text-blue-400');
-                button.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-            });
-            document.getElementById(tabName).classList.remove('hidden');
-            evt.currentTarget.classList.add('border-blue-500', 'text-blue-600', 'dark:border-blue-500',
-                'dark:text-blue-400');
-            evt.currentTarget.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
-        }
-
-    document.addEventListener('DOMContentLoaded', function() {
-            document.querySelector('.tab-button').click();
-        });
+    }
 
     function toggleModal(modalId) {
         const modal = document.getElementById(modalId);
-        if (modal.classList.contains('hidden')) {
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        } else {
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
+        if (modal) {
+            modal.classList.toggle('hidden');
+            document.body.style.overflow = modal.classList.contains('hidden') ? 'auto' : 'hidden';
         }
     }
-
-    function openTab(event, tabName) {
-        const tabContents = document.querySelectorAll('.tab-content');
-        tabContents.forEach(tab => {
-            tab.classList.add('hidden');
-        });
-        const tabButtons = document.querySelectorAll('.tab-button');
-        tabButtons.forEach(button => {
-            button.classList.remove('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
-            button.classList.add('border-transparent', 'text-gray-500');
-        });
-        document.getElementById(tabName).classList.remove('hidden');
-        event.currentTarget.classList.remove('border-transparent', 'text-gray-500');
-        event.currentTarget.classList.add('border-blue-600', 'text-blue-600', 'dark:border-blue-500', 'dark:text-blue-400');
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const firstTab = document.querySelector('.tab-button');
-        if (firstTab) {
-            firstTab.click();
-        }
-    });
 </script>
 @endsection

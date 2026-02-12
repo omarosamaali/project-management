@@ -237,7 +237,7 @@ $myStatus = $session->getParticipantStatus(auth()->user()->email);
                                 'attended' => 'حضر الاجتماع',
                                 'rejected' => 'تم الرفض',
                                 'absent' => 'غائب/معتذر',
-                                default => 'قيد الانتظار'
+                                default => 'جديد'
                                 };
                                 @endphp
                                 <span

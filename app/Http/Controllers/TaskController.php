@@ -73,19 +73,23 @@ class TaskController extends Controller
 
     public function edit(Task $task)
     {
+        // تحميل العلاقات لجلب الأسماء
+        $task->load(['user', 'stage']);
+
         return response()->json([
-            'id' => $task->id,
-            'title' => $task->title,
-            'details' => $task->details,
-            'user_id' => $task->user_id,
+            'id'               => $task->id,
+            'title'            => $task->title,
+            'details'          => $task->details,
+            'user_id'          => $task->user_id,
+            'user_name'        => $task->user->name ?? 'غير محدد', // إضافة الاسم هنا
             'project_stage_id' => $task->project_stage_id,
-            'start_date' => $task->start_date,
-            'end_date' => $task->end_date ?? null,
-            'status' => $task->status,
-            'special_request_id' => $task->special_request_id
+            'stage_title'      => $task->stage->title ?? 'مهمة عامة', // إضافة عنوان المرحلة هنا
+            'status'           => $task->status,
+            'special_request_id' => $task->special_request_id,
+            'start_date'       => $task->start_date ? date('Y-m-d', strtotime($task->start_date)) : null,
+            'end_date'         => $task->end_date   ? date('Y-m-d', strtotime($task->end_date))   : null,
         ]);
     }
-
     // تحديث المهمة
     public function update(Request $request, Task $task)
     {

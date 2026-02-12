@@ -21,7 +21,7 @@ class SessionRequest extends Model
     public function getStatusNameAttribute()
     {
         $statuses = [
-            'pending' => 'قيد الانتظار',
+            'pending' => 'جديد',
             'in_review' => 'قيد المراجعة',
             'in_progress' => 'قيد المعالجة',
             'completed' => 'مكتمل',

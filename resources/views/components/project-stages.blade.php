@@ -34,7 +34,7 @@
         </div>
 
         <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-100 dark:border-purple-800">
-            <div class="text-purple-600 dark:text-purple-400 text-sm font-medium">إجمالي الساعات</div>
+            <div class="text-purple-600 dark:text-purple-400 text-sm font-medium">الوصف</div>
             <div class="text-2xl font-bold text-purple-900 dark:text-white">{{ $totalHours }} <span
                     class="text-sm">ساعة</span></div>
         </div>
@@ -71,7 +71,6 @@
             <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                 <tr>
                     <th class="p-4 text-sm font-bold">المرحلة</th>
-                    <th class="p-4 text-sm font-bold text-center">الساعات</th>
                     <th class="p-4 text-sm font-bold text-center">المهام (منجزة/كلية)</th>
                     <th class="p-4 text-sm font-bold">نسبة إنجاز المرحلة</th>
                     <th class="p-4 text-sm font-bold">الحالة</th>
@@ -85,7 +84,6 @@
                         <div class="font-bold text-gray-900 dark:text-white">{{ $stage->title }}</div>
                         <div class="text-xs text-gray-400">تنتهي في: {{ $stage->end_date ?? 'لم يحدد' }}</div>
                     </td>
-                    <td class="p-4 text-center font-bold text-blue-600">{{ $stage->hours_count }}</td>
 
                     <td class="p-4 text-center">
                         @php
@@ -126,23 +124,36 @@
                         </span>
                     </td>
                     <td class="p-4 text-center">
-                        @if (in_array(auth()->user()->role, ['admin', 'manager']))
+                            @php
+                            // التحقق مما إذا كان المستخدم الحالي مديرًا لهذا المشروع
+                            $isProjectManager = \App\Models\Project_Manager::where('user_id', auth()->id())
+                            ->where('special_request_id', $SpecialRequest->id)
+                            ->exists();
+                            @endphp
+                            @if(Auth::user()->role != 'client')
+                        @if (in_array(auth()->user()->role, ['admin' || $isProjectManager]))
                         <div class="flex justify-center gap-1">
                             <button onclick='openEditStageModal(@json($stage))'
                                 class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            @endif
+                            @endif
+                            <button onclick='openShowStageModal(@json($stage))'
+                                class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors" title="عرض التفاصيل">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             {{-- Delete --}}
-                            <form action="{{ route('dashboard.special-request.destroy-stage', $stage->id) }}"
-                                method="POST" class="inline">
-                                @csrf @method('DELETE')
-                                <button type="submit" onclick="return confirm('هل أنت متأكد؟')"
-                                    class="p-1.5 text-black hover:bg-red-50 rounded-md transition-colors">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </form>
-                        </div>
-                        @endif
+
+@if (auth()->user()->role === 'admin' || $isProjectManager)
+<form action="{{ route('dashboard.special-request.destroy-stage', $stage->id) }}" method="POST" class="inline">
+    @csrf @method('DELETE')
+    <button type="submit" onclick="return confirm('هل أنت متأكد من حذف هذه المرحلة؟')"
+        class="p-1.5 text-black hover:bg-red-50 rounded-md transition-colors">
+        <i class="fas fa-trash-alt"></i>
+    </button>
+</form>
+@endif                        </div>
                     </td>
                 </tr>
                 @empty
@@ -152,6 +163,54 @@
                 @endforelse
             </tbody>
         </table>
+    </div>
+</div>
+<div id="showStageModal" class="flex fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-gray-100 dark:border-gray-700">
+        <div
+            class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-700/50">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-info-circle text-emerald-500"></i> تفاصيل المرحلة
+            </h3>
+            <button onclick="toggleModal('showStageModal', false)"
+                class="text-gray-400 hover:text-gray-600 transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+            <div>
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">عنوان المرحلة</label>
+                <p id="show_title" class="text-lg font-bold text-gray-900 dark:text-white mt-1"></p>
+            </div>
+
+            <div>
+                <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">تفاصيل العمل</label>
+                <div id="show_details"
+                    class="mt-1 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-700 dark:text-gray-300 text-sm leading-relaxed min-h-[80px]">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400">الحالة</label>
+                    <div id="show_status_badge" class="mt-1">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400">تاريخ الانتهاء</label>
+                    <p id="show_end_date" class="mt-1 font-semibold text-gray-900 dark:text-white"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 dark:bg-gray-700/30 flex justify-end">
+            <button type="button" onclick="toggleModal('showStageModal', false)"
+                class="px-6 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg font-bold hover:bg-gray-300 transition-all">
+                إغلاق
+            </button>
+        </div>
     </div>
 </div>
 <div id="addStageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -200,7 +259,7 @@
         </form>
     </div>
 </div>
-<div id="editStageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+<div id="editStageModal" class="flex fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">تعديل المرحلة</h3>
@@ -267,16 +326,45 @@
             }
         }
     }
+function openShowStageModal(stage) {
+// تعبئة النصوص البسيطة
+document.getElementById('show_title').innerText = stage.title || 'بدون عنوان';
+document.getElementById('show_details').innerText = stage.details || 'لا توجد تفاصيل مضافة لهذه المرحلة.';
+document.getElementById('show_end_date').innerText = stage.end_date || 'غير محدد';
 
-    function openEditStageModal(stage) {
-        const form = document.getElementById('editStageForm');
-        form.action = `/dashboard/stages/${stage.id}`; 
-        
-        document.getElementById('edit_title').value = stage.title || '';
-        document.getElementById('edit_hours_count').value = stage.hours_count || 0;
-        document.getElementById('edit_end_date').value = stage.end_date || '';
-        document.getElementById('edit_status').value = stage.status || 'waiting';
-        
-        toggleModal('editStageModal', true);
-    }
+// تعبئة الشارة (Badge) بناءً على الحالة
+const badgeContainer = document.getElementById('show_status_badge');
+const statusMap = {
+'waiting': { label: 'بالانتظار', css: 'bg-gray-100 text-gray-600' },
+'in_progress': { label: 'قيد الإنجاز', css: 'bg-amber-100 text-amber-600' },
+'completed': { label: 'منتهية', css: 'bg-green-100 text-green-600' },
+'delayed': { label: 'متأخرة', css: 'bg-red-100 text-red-600' }
+};
+
+const status = statusMap[stage.status] || statusMap['waiting'];
+badgeContainer.innerHTML = `<span
+    class="px-3 py-1 rounded-full text-[12px] font-bold ${status.css}">${status.label}</span>`;
+
+toggleModal('showStageModal', true);
+}
+function openEditStageModal(stage) {
+const form = document.getElementById('editStageForm');
+
+// تأكد من أن المسار هنا يطابق المسار الفعلي في ملف web.php
+form.action = `/dashboard/stages/${stage.id}`;
+
+document.getElementById('edit_title').value = stage.title || '';
+
+// تم حذف سطر edit_hours_count لأنه غير موجود في الـ HTML الخاص بك
+// إذا كنت تريد تعديل التفاصيل، أضف السطر التالي:
+if(document.getElementById('edit_details')) {
+document.getElementById('edit_details').value = stage.details || '';
+}
+
+document.getElementById('edit_end_date').value = stage.end_date || '';
+document.getElementById('edit_status').value = stage.status || 'waiting';
+
+toggleModal('editStageModal', true);
+
+}
 </script>

@@ -10,6 +10,7 @@ class Payment extends Model
         'user_id',
         'system_id',
         'payment_id',
+        'course_id', // تأكد من وجود هذا السطر
         'amount',
         'original_price',
         'fees',
@@ -22,8 +23,21 @@ class Payment extends Model
         return $this->belongsTo(User::class);
     }
 
+    // داخل ملف Payment.php
+    public function requestPayment()
+    {
+        // جرب استخدام belongsTo إذا كان جدول payments هو من يحتوي على معرف القسط
+        // أو تأكد من اسم العمود الصحيح في جدول request_payments
+        return $this->belongsTo(RequestPayment::class, 'payment_id');
+    }
     public function system()
     {
         return $this->belongsTo(System::class);
     }
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+    
 }

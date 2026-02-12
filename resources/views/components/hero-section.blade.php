@@ -35,12 +35,8 @@
                 </div>
 
                 <!-- Main Heading -->
-                <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                    {{ __('messages.hero_title') }}
-                    <span class="">
-                        {{ __('messages.hero_highlight') }}
-                    </span>
-                    {{ __('messages.with_evorq') }}
+                <h1 style="line-height: 1.45 !important;" class="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
+                    {{ __('messages.hero_title') }} {{ __('messages.hero_highlight') }} {{ __('messages.with_evorq') }}
                 </h1>
 
                 <!-- Description -->

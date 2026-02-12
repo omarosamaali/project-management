@@ -11,8 +11,9 @@ class ProjectActivity extends Model
 
     // الحقول المسموح بتعبئتها
     protected $fillable = [
-        'special_request_id',
-        'user_id',
+        'special_request_id', // للطلبات الخاصة
+        'request_id',         // للطلبات العادية       
+         'user_id',
         'type',
         'description',
         'properties'
@@ -26,11 +27,17 @@ class ProjectActivity extends Model
     /**
      * العلاقة مع الطلب الخاص (المشروع)
      */
+
     public function specialRequest()
     {
         return $this->belongsTo(SpecialRequest::class, 'special_request_id');
     }
 
+    // علاقة الطلب العادي
+    public function request()
+    {
+        return $this->belongsTo(Requests::class, 'request_id');
+    }
     /**
      * العلاقة مع المستخدم الذي قام بالنشاط
      */

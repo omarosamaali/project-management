@@ -125,7 +125,7 @@
                             class="{{ Route::currentRouteName() == 'dashboard.tasks.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
                                 class="{{ Route::currentRouteName() == 'dashboard.tasks.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
-                            <span class="ml-3">الطلبات</span>
+                            <span class="ml-3">المشاريع</span>
                         </a>
                     </li>
                     @endif
@@ -159,6 +159,17 @@
                         </a>
                     </li>
                     @endif
+                    @if(Auth::user()->role != 'admin')
+                    <li>
+                        <a href="{{ route('dashboard.my_courses.index') }}"
+                            class="{{ Route::currentRouteName() == 'dashboard.my_courses.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ Route::currentRouteName() == 'dashboard.my_courses.index' ? 'text-white' : '' }} fas fa-briefcase text-gray-500 pl-2"></i>
+                            <span class="ml-3">دوراتي</span>
+                        </a>
+                    </li>
+                    @endif
+
                     @if (Auth::user()->role == 'admin')
                     <span
                         class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">الإدارة</span>
@@ -182,6 +193,24 @@
                             <span class="ml-3">الأنظمة</span>
                         </a>
                     </li>
+                    @if(Auth::user()->role == 'admin' || Auth::user()->role == 'partner' || Auth::user()->role == 'independent_partner')
+                                        <li>
+                                            <a href="{{ route('dashboard.my-store.index') }}"
+                                                class="{{ Route::currentRouteName() == 'dashboard.my-store.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                                                <i
+                                                    class="{{ Route::currentRouteName() == 'dashboard.my-store.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
+                                                <span class="ml-3">متجري</span>
+                                            </a>
+                                        </li>
+                                        @endif
+                    <li>
+                        <a href="{{ route('dashboard.courses.index') }}"
+                            class="{{ Route::currentRouteName() == 'dashboard.courses.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ Route::currentRouteName() == 'dashboard.courses.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
+                            <span class="ml-3">الدورات</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('dashboard.services.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.services.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -193,6 +222,14 @@
                     <span class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">
                         إدارة الموظفين
                     </span>
+                    <li>
+                        <a href="{{ route('dashboard.independent-partners.index') }}"
+                            class="{{ Route::currentRouteName() == 'dashboard.independent-partners.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ Route::currentRouteName() == 'dashboard.independent-partners.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
+                            <span class="ml-3">الشركاء المستقلين</span>
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('dashboard.salaries.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.salaries.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -248,16 +285,34 @@
                         </a>
                     </li>
                     @endif
+                    <li>
+                        <a href="{{ route('dashboard.educational_resources.index') }}"
+                            class="{{ Route::currentRouteName() == 'dashboard.educational_resources.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ Route::currentRouteName() == 'dashboard.educational_resources.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
+                            <span class="ml-3">مصادر تعليمية</span>
+                        </a>
+                    </li>
+                    @if(Auth::user()->role == 'independent_partner')
+                    <li>
+                        <a href="{{ route('dashboard.my_services.index') }}"
+                            class="{{ Route::currentRouteName() == 'dashboard.my_services.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ Route::currentRouteName() == 'dashboard.my_services.index' ? 'text-white' : '' }} fas fa-briefcase text-gray-500 pl-2"></i>
+                            <span class="ml-3">خدماتي</span>
+                        </a>
+                    </li>
+                    @endif
                     @if (Auth::user()->role == 'admin' || Auth::user()->role == 'client')
                     <span class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-5
                         {{ Auth::user()->role == 'admin' ? 'border-t' : '' }}
-                        ">الطلبات</span>
+                        ">المشاريع</span>
                     <li>
                         <a href="{{ route('dashboard.requests.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.requests.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
                                 class="{{ Route::currentRouteName() == 'dashboard.requests.index' ? 'text-white' : '' }} fa fa-shopping-cart text-gray-500 pl-2"></i>
-                            <span class="ml-3">الطلبات</span>
+                            <span class="ml-3">المشاريع</span>
                         </a>
                     </li>
                     @endif
@@ -267,7 +322,7 @@
                             class="{{ Route::currentRouteName() == 'dashboard.special-request.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
                                 class="{{ Route::currentRouteName() == 'dashboard.special-request.index' ? 'text-white' : '' }} fa fa-shopping-cart text-gray-500 pl-2"></i>
-                            <span class="ml-3">الطلبات الخاصة</span>
+                            <span class="ml-3">المشاريع الخاصة</span>
                         </a>
                     </li>
                     @endif --}}
@@ -314,7 +369,7 @@
                         @if(Auth::user()->role == 'admin' || Auth::user()->role == 'partner')
                         المهام والدعم
                         @else
-                        المشاريع والدعم
+                        الدعم الفني
                         @endif
                     </span>
                     @if(Auth::user()->role != 'client')
@@ -375,14 +430,14 @@
                     @endif
 
                     {{-- independent partner screens --}}
-                    @if(Auth::user()->role == 'independent_partner')
+                    {{-- @if(Auth::user()->role == 'independent_partner')
                     <a href="{{ route('dashboard.my_service.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.my_service.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
                             class="{{ Route::currentRouteName() == 'dashboard.my_service.index' ? 'text-white' : '' }} fas fa-briefcase text-gray-500 pl-2"></i>
                         <span class="ml-3">شاشة الأعمال</span>
                     </a>
-                    @endif
+                    @endif --}}
 
                     {{-- independent partner screens --}}
                     @if(Auth::user()->role == 'partner' && Auth::user()->is_employee == 1 &&
@@ -395,7 +450,8 @@
                     </a>
                     @endif
 
-                    @if(Auth::user()->role == 'independent_partner' || Auth::user()->role == 'partner' && Auth::user()->can_propose_quotes == 1)
+                    @if(Auth::user()->role == 'independent_partner' || Auth::user()->role == 'partner' &&
+                    Auth::user()->can_propose_quotes == 1)
                     <a href="{{ route('dashboard.new_project.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.new_project.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i

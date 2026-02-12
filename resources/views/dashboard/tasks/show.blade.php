@@ -4,7 +4,7 @@
 
 @section('content')
 <section class="p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}" second="الطلبات" third="عرض الطلب" />
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}" second="المشاريع" third="عرض الطلب" />
 
     <div class="mx-auto max-w-4xl w-full">
         <div class="bg-white dark:bg-gray-800 relative shadow-2xl border rounded-xl overflow-hidden">

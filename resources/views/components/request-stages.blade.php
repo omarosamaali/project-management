@@ -69,7 +69,7 @@
             <thead class="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
                 <tr>
                     <th class="p-4 text-sm font-bold">المرحلة</th>
-                    <th class="p-4 text-sm font-bold text-center">الساعات</th>
+                    {{-- <th class="p-4 text-sm font-bold text-center">الساعات</th> --}}
                     <th class="p-4 text-sm font-bold text-center">المهام (منجزة/كلية)</th>
                     <th class="p-4 text-sm font-bold">نسبة إنجاز المرحلة</th>
                     <th class="p-4 text-sm font-bold">الحالة</th>
@@ -79,11 +79,15 @@
             <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                 @forelse($SpecialRequest->stages as $stage)
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+
                     <td class="p-4">
                         <div class="font-bold text-gray-900 dark:text-white">{{ $stage->title }}</div>
                         <div class="text-xs text-gray-400">تنتهي في: {{ $stage->end_date ?? 'لم يحدد' }}</div>
                     </td>
-                    <td class="p-4 text-center font-bold text-blue-600">{{ $stage->hours_count }}</td>
+{{-- 
+                    <td class="p-4 text-center font-bold text-blue-600">
+                        {{ $stage->hours_count }}
+                    </td> --}}
 
                     <td class="p-4 text-center">
                         @php
@@ -123,21 +127,29 @@
                             {{ $curr['label'] }}
                         </span>
                     </td>
+
                     <td class="p-4 text-center">
-                        @if (in_array(auth()->user()->role, ['admin', 'manager']))
+                        @if (in_array(auth()->user()->role, ['admin', 'partner']))
                         <div class="flex justify-center gap-1">
-                            <button onclick='openEditStageModal(@json($stage))'
-                                class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <form action="{{ route('dashboard.special-request.destroy-stage', $stage->id) }}"
-                                method="POST" class="inline">
+                            <button onclick='openViewStageModal(@json($stage))'
+                            class="p-1.5 text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                            title="عرض التفاصيل">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        @if(Auth::user()->role == 'admin')
+                        <button onclick='openEditStageModal(@json($stage))'
+                            class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                            <form action="{{ route('dashboard.request.destroy-stage', $stage->id) }}" method="POST"
+                                class="inline">
                                 @csrf @method('DELETE')
                                 <button type="submit" onclick="return confirm('هل أنت متأكد؟')"
                                     class="p-1.5 text-black hover:bg-red-50 rounded-md transition-colors">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </form>
+                        @endif
                         </div>
                         @endif
                     </td>
@@ -151,7 +163,38 @@
         </table>
     </div>
 
-    
+
+</div>
+<div id="viewStageModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">تفاصيل المرحلة</h3>
+            <button onclick="toggleModal('viewStageModal', false)" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <span class="block text-xs text-gray-400">اسم المرحلة:</span>
+                <p id="view_title" class="text-lg font-bold text-gray-800 dark:text-white"></p>
+            </div>
+            <div>
+                <span class="block text-xs text-gray-400">التفاصيل:</span>
+                <p id="view_details"
+                    class="text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="block text-xs text-gray-400">تاريخ الانتهاء:</span>
+                    <p id="view_end_date" class="font-semibold text-blue-600"></p>
+                </div>
+                <div>
+                    <span class="block text-xs text-gray-400">الحالة:</span>
+                    <p id="view_status" class="font-semibold"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <div id="addStageModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
@@ -253,18 +296,16 @@
     </div>
 </div>
 <script>
-    function openEditStageModal(stage) {
-    const form = document.getElementById('editStageForm');
-    // تأكد من صحة مسار التعديل في الـ Routes لديك
-    form.action = `/dashboard/special-request/stages/${stage.id}`;
+    // function openEditStageModal(stage) {
+    // const form = document.getElementById('editStageForm');
+    // form.action = `/dashboard/special-request/stages/${stage.id}`;
+    // document.getElementById('edit_title').value = stage.title || '';
+    // document.getElementById('edit_details').value = stage.details || '';
+    // document.getElementById('edit_end_date').value = stage.end_date || '';
+    // document.getElementById('edit_status').value = stage.status || 'waiting';
     
-    document.getElementById('edit_title').value = stage.title || '';
-    document.getElementById('edit_details').value = stage.details || ''; // إضافة حقل التفاصيل
-    document.getElementById('edit_end_date').value = stage.end_date || '';
-    document.getElementById('edit_status').value = stage.status || 'waiting';
-    
-    toggleModal('editStageModal', true);
-    }
+    // toggleModal('editStageModal', true);
+    // }
     // أضف هذا لغلق المودال عند الضغط خارج الصندوق الأبيض
 window.onclick = function(event) {
     const addModal = document.getElementById('addStageModal');
@@ -284,16 +325,30 @@ window.onclick = function(event) {
             }
         }
     }
+function openViewStageModal(stage) {
+document.getElementById('view_title').innerText = stage.title || 'بدون عنوان';
+document.getElementById('view_details').innerText = stage.details || 'لا توجد تفاصيل إضافية';
+document.getElementById('view_end_date').innerText = stage.end_date || 'غير محدد';
 
-    function openEditStageModal(stage) {
-        const form = document.getElementById('editStageForm');
-        form.action = `/dashboard/stages/${stage.id}`; 
-        
-        document.getElementById('edit_title').value = stage.title || '';
-        document.getElementById('edit_hours_count').value = stage.hours_count || 0;
-        document.getElementById('edit_end_date').value = stage.end_date || '';
-        document.getElementById('edit_status').value = stage.status || 'waiting';
-        
-        toggleModal('editStageModal', true);
-    }
+const statusText = {
+'waiting': 'بالانتظار',
+'in_progress': 'قيد الإنجاز',
+'completed': 'منتهية',
+'delayed': 'متأخرة'
+};
+document.getElementById('view_status').innerText = statusText[stage.status] || 'بالانتظار';
+
+toggleModal('viewStageModal', true);
+}
+function openEditStageModal(stage) {
+const form = document.getElementById('editStageForm');
+form.action = `/dashboard/special-request/stages/${stage.id}`;
+
+document.getElementById('edit_title').value = stage.title || '';
+document.getElementById('edit_details').value = stage.details || '';
+document.getElementById('edit_end_date').value = stage.end_date || '';
+document.getElementById('edit_status').value = stage.status || 'waiting';
+
+toggleModal('editStageModal', true);
+}
 </script>

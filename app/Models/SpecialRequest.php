@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\RequestFile;
+use Carbon\Carbon;
+use App\Models\RequestPrice;
 
 class SpecialRequest extends Model
 {
@@ -28,9 +30,22 @@ class SpecialRequest extends Model
         'order_number',
     ];
 
+    // داخل ملف App\Models\SpecialRequest.php
+
+    public function requestFiles()
+    {
+        // تأكد أن الاسم هنا مطابق لما تستدعيه في الـ Blade
+        return $this->hasMany(ProjectFile::class, 'special_request_id');
+    }
+
     protected $casts = [
         'installments_data' => 'array',
         'is_project' => 'boolean',
+        'deadline' => 'datetime',           // ✅ مهم جداً
+        'bidding_deadline' => 'datetime',   // ✅ مهم جداً
+        'created_at' => 'datetime',         // ✅ مهم جداً
+        'updated_at' => 'datetime',         // ✅ مهم جداً
+
     ];
 
     public function files()
@@ -46,12 +61,14 @@ class SpecialRequest extends Model
     public function getStatusNameAttribute()
     {
         return match ($this->status) {
-            'pending' => 'قيد الانتظار',
+            'pending' => 'جديد',
             'in_review' => 'قيد المراجعة',
             'in_progress' => 'قيد المعالجة',
             'completed' => 'مكتمل',
             'canceled' => 'ملغية',
+            'active' => 'جاري العمل به',
             'بانتظار الدفع' => 'بانتظار الدفع',
+            'بانتظار عروض الاسعار' => 'بانتظار عروض الاسعار',
         };
     }
 
@@ -62,7 +79,10 @@ class SpecialRequest extends Model
             'special_request_partner',
             'special_request_id',
             'partner_id'
-        )->withPivot('notes', 'created_at', 'profit_share_percentage')->withTimestamps();
+        )->withPivot('notes', 'created_at', 'profit_share_percentage',
+            'share_type',       // ← لازم يكون موجود
+            'fixed_amount',     // ← لازم يكون موجود
+        )->withTimestamps();
     }
 
     public function assignedPartner()
@@ -168,5 +188,85 @@ class SpecialRequest extends Model
     public function proposals()
     {
         return $this->hasMany(ProjectProposal::class, 'project_id');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(SpecialRequestMessage::class, 'special_request_id');
+    }
+
+
+    // ✅ حساب الساعات المتوقعة من الفرق بين deadline و created_at
+    public function getExpectedHoursAttribute()
+    {
+        if ($this->deadline && $this->created_at) {
+            $start = Carbon::parse($this->created_at);
+            $end = Carbon::parse($this->deadline);
+
+            // حساب الفرق بالساعات
+            return $start->diffInHours($end);
+        }
+        return 0;
+    }
+
+    // ✅ حساب الساعات المستغرقة حتى الآن من created_at إلى الآن
+    public function getSpentHoursAttribute()
+    {
+        if ($this->created_at) {
+            $start = Carbon::parse($this->created_at);
+            $now = Carbon::now();
+
+            // حساب الفرق بالساعات من البداية حتى الآن
+            $hoursSpent = $start->diffInHours($now);
+
+            // إذا كان المشروع مكتمل، نحسب من البداية حتى تاريخ التحديث
+            if (in_array($this->status, ['completed', 'canceled'])) {
+                $end = Carbon::parse($this->updated_at);
+                return $start->diffInHours($end);
+            }
+
+            return $hoursSpent;
+        }
+        return 0;
+    }
+
+    // ✅ حساب نسبة الإنجاز
+    public function getProgressPercentageAttribute()
+    {
+        if ($this->expected_hours > 0) {
+            return min(round(($this->spent_hours / $this->expected_hours) * 100, 1), 100);
+        }
+        return 0;
+    }
+
+    // ✅ الساعات المتبقية
+    public function getRemainingHoursAttribute()
+    {
+        $remaining = $this->expected_hours - $this->spent_hours;
+        return max($remaining, 0);
+    }
+
+    // ✅ حالة المشروع (متأخر أم لا)
+    public function getIsOverdueAttribute()
+    {
+        if ($this->deadline && $this->status != 'completed') {
+            return Carbon::now()->isAfter($this->deadline);
+        }
+        return false;
+    }
+
+    // ✅ عدد الأيام المتبقية
+    public function getRemainingDaysAttribute()
+    {
+        if ($this->deadline && $this->status != 'completed') {
+            $now = Carbon::now();
+            $deadline = Carbon::parse($this->deadline);
+
+            if ($deadline->isFuture()) {
+                return $now->diffInDays($deadline);
+            }
+            return 0;
+        }
+        return 0;
     }
 }

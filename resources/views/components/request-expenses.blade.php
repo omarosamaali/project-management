@@ -71,7 +71,7 @@
                     <i class="fas fa-edit ml-1"></i> تعديل
                 </button>
 
-                <form action="{{ route('expenses.destroy', $expense->id) }}" method="POST"
+                <form action="{{ route('expensesRequests.destroy', $expense->id) }}" method="POST"
                     onsubmit="return confirm('هل أنت متأكد من حذف هذا المصروف؟');" class="inline">
                     @csrf
                     @method('DELETE')
@@ -107,9 +107,9 @@
             <button onclick="closeAddExpenseModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
         </div>
 
-        <form action="{{ route('expenses.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+        <form action="{{ route('expensesRequests.store') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
             @csrf
-            <input type="hidden" name="special_request_id" value="{{ $SpecialRequest->id }}">
+            <input type="hidden" name="request_id" value="{{ $SpecialRequest->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>

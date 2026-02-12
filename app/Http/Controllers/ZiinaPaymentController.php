@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\SpecialRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Course;
 
 class ZiinaPaymentController extends Controller
 {
@@ -50,13 +51,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.success');
             $cancelUrl = route('payment.cancel');
-            // $isTest = config('services.ziina.test_mode', true);
+            $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createSystemPaymentIntent(
                 $system,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
             Payment::create([
@@ -164,12 +165,9 @@ class ZiinaPaymentController extends Controller
     }
 
     // ============================================
-    // دوال الطلبات الخاصة - Special Requests
+    // دوال المشاريع الخاصة - Special Requests
     // ============================================
 
-    /**
-     * إنشاء payment intent للطلب الخاص كاملاً
-     */
     public function createSpecialRequestPayment(Request $request)
     {
         try {
@@ -179,7 +177,6 @@ class ZiinaPaymentController extends Controller
 
             $specialRequest = SpecialRequest::findOrFail($request->special_request_id);
 
-            // التحقق من ملكية المشروع
             if ($specialRequest->user_id !== Auth::id()) {
                 return response()->json([
                     'success' => false,
@@ -187,7 +184,6 @@ class ZiinaPaymentController extends Controller
                 ], 403);
             }
 
-            // التحقق من وجود سعر
             if (!$specialRequest->price || $specialRequest->price <= 0) {
                 return response()->json([
                     'success' => false,
@@ -195,7 +191,6 @@ class ZiinaPaymentController extends Controller
                 ], 400);
             }
 
-            // التحقق من عدم الدفع المسبق
             if ($specialRequest->total_paid >= $specialRequest->price) {
                 return response()->json([
                     'success' => false,
@@ -209,21 +204,19 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.special-request.return') . '?special_request_id=' . $specialRequest->id;
             $cancelUrl = route('payment.cancel');
-            // $isTest = config('services.ziina.test_mode', true);
+            $isTest = config('services.ziina.test_mode', true);
 
-            // استخدم نفس الدالة اللي شغالة للدفعات الجزئية، بس بنمرر الـ specialRequest كـ "installment" وهمي
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
-                $specialRequest, // نمرر الـ specialRequest بدل الدفعة
+                $specialRequest,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
-            // حفظ معلومات الدفع
             $paymentData = [
                 'user_id' => Auth::id(),
                 'special_request_id' => $specialRequest->id,
-                'request_payment_id' => null, // عشان نعرف إنه دفع كامل
+                'request_payment_id' => null,
                 'payment_id' => $response['id'] ?? null,
                 'amount' => $totalAmount,
                 'original_price' => $basePrice,
@@ -235,8 +228,6 @@ class ZiinaPaymentController extends Controller
             ];
 
             \App\Models\Payment::create($paymentData);
-
-            // تحديث حالة المشروع
             $specialRequest->update(['status' => 'بانتظار الدفع']);
 
             return response()->json([
@@ -253,6 +244,7 @@ class ZiinaPaymentController extends Controller
             ], 500);
         }
     }
+
     public function handleReturn(Request $request)
     {
         $paymentIntentId = $request->query('payment_intent_id');
@@ -272,7 +264,6 @@ class ZiinaPaymentController extends Controller
                     $payment->update(['status' => 'completed']);
                     Log::info('تم تحديث حالة الدفع');
 
-                    // تحديث حالة الطلب الخاص
                     $specialRequest = SpecialRequest::find($payment->special_request_id);
                     if ($specialRequest) {
                         $specialRequest->update(['status' => 'in_progress']);
@@ -335,10 +326,8 @@ class ZiinaPaymentController extends Controller
     public function initiateInstallmentPayment(Request $request, $paymentId)
     {
         try {
-            // جلب الدفعة (request_payment)
             $installment = \App\Models\RequestPayment::findOrFail($paymentId);
 
-            // التحقق من أن الدفعة تابعة لطلب خاص
             if (!$installment->special_request_id) {
                 return response()->json([
                     'success' => false,
@@ -348,7 +337,6 @@ class ZiinaPaymentController extends Controller
 
             $specialRequest = $installment->specialRequest;
 
-            // التحقق من ملكية المشروع
             if ($specialRequest->user_id !== Auth::id()) {
                 return response()->json([
                     'success' => false,
@@ -356,7 +344,6 @@ class ZiinaPaymentController extends Controller
                 ], 403);
             }
 
-            // التحقق من أن الدفعة غير مدفوعة
             if ($installment->status === 'paid') {
                 return response()->json([
                     'success' => false,
@@ -365,23 +352,20 @@ class ZiinaPaymentController extends Controller
             }
 
             $basePrice = (float) $installment->amount;
-            $fees = ($basePrice * 0.079) + 2; // 7.9% + 2 AED
+            $fees = ($basePrice * 0.079) + 2;
             $totalAmount = $basePrice + $fees;
 
             $successUrl = route('payment.installment.return', ['installment' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
-            // أو أي صفحة مناسبة
-            // $isTest = config('services.ziina.test_mode', true);
+            $isTest = config('services.ziina.test_mode', true);
 
-            // إنشاء payment intent مع Ziina
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $installment,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
-            // حفظ معلومات الدفع في جدول payments (أو جدول منفصل لو عايز)
             $paymentData = [
                 'user_id' => Auth::id(),
                 'special_request_id' => $specialRequest->id,
@@ -393,12 +377,10 @@ class ZiinaPaymentController extends Controller
                 'status' => 'pending',
                 'payment_method' => 'ziina',
                 'currency' => 'AED',
-                'system_id' => null,  // ← أضف السطر ده
+                'system_id' => null,
             ];
 
             \App\Models\Payment::create($paymentData);
-
-            // تحديث حالة الدفعة إلى pending
             $installment->update(['status' => 'pending']);
 
             return response()->json([
@@ -422,7 +404,7 @@ class ZiinaPaymentController extends Controller
     public function handleInstallmentReturn(Request $request)
     {
         $paymentIntentId = $request->query('payment_intent_id');
-        $installmentId = $request->query('installment_id'); // هتحتاج تمرره في metadata من Ziina
+        $installmentId = $request->query('installment_id');
 
         if (!$paymentIntentId || !$installmentId) {
             return redirect()->route('dashboard')->with('error', 'بيانات الدفع غير كاملة');
@@ -442,9 +424,8 @@ class ZiinaPaymentController extends Controller
                         'paid_at' => now(),
                     ]);
 
-                    // تحديث إجمالي المدفوع في SpecialRequest (لو عندك logic جاهزة)
                     $specialRequest = $installment->specialRequest;
-                    $specialRequest->refreshPaymentStatus(); // أو أي دالة عندك لحساب total_paid
+                    $specialRequest->refreshPaymentStatus();
                 }
 
                 return redirect()
@@ -458,5 +439,210 @@ class ZiinaPaymentController extends Controller
         return redirect()
             ->route('special-request.details', $installment->special_request_id)
             ->with('error', 'فشل في تأكيد الدفع');
+    }
+
+    public function createCoursePayment(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'course_id' => 'required|exists:courses,id'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'بيانات غير صحيحة',
+                'errors' => $e->errors()
+            ], 422);
+        }
+
+        if (!auth()->check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'يجب تسجيل الدخول أولاً'
+            ], 401);
+        }
+
+        try {
+            $course = Course::findOrFail($request->course_id);
+
+            if ($course->students()->where('user_id', auth()->id())->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'أنت مشترك بالفعل في هذه الدورة'
+                ], 400);
+            }
+
+            $basePrice = (float) $course->price;
+            $fees = ($basePrice * 0.079) + 2;
+            $totalAmount = $basePrice + $fees;
+            $successUrl = route('course.payment.success');
+            $cancelUrl  = route('course.payment.cancel');
+
+            $isTest = config('services.ziina.test_mode', true);
+
+            Log::info('إعداد دفع الدورة', [
+                'course_id' => $course->id,
+                'price' => $basePrice,
+                'total' => $totalAmount,
+                'success_url' => $successUrl
+            ]);
+
+            $response = $this->ziinaHandler->createSystemPaymentIntent(
+                $course,
+                $successUrl,
+                $cancelUrl,
+                $isTest
+            );
+
+            Log::info('تم إنشاء payment intent بنجاح للدورة', [
+                'course_id' => $course->id,
+                'payment_id' => $response['id'] ?? null,
+                'redirect_url' => $response['redirect_url'] ?? null
+            ]);
+
+            Payment::create([
+                'user_id'        => auth()->id(),
+                'course_id'      => $course->id,
+                'payment_id'     => $response['id'] ?? null,
+                'amount'         => $totalAmount,
+                'original_price' => $basePrice,
+                'fees'           => round($fees, 2),
+                'status'         => 'pending',
+                'payment_method' => 'ziina',
+                'currency'       => 'AED',
+            ]);
+
+            return response()->json([
+                'success'      => true,
+                'payment_url'  => $response['redirect_url'],
+                'total_amount' => $totalAmount,
+                'fees'         => round($fees, 2),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('فشل إنشاء دفع الدورة', [
+                'error'     => $e->getMessage(),
+                'course_id' => $request->course_id ?? null
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء معالجة الدفع: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function courseSuccess(Request $request)
+    {
+        $paymentIntentId = $request->query('payment_intent_id');
+
+        if (!$paymentIntentId) {
+            \Log::error("payment_intent_id مفقود", ['url' => $request->fullUrl()]);
+            return redirect()->route('system.index')->with('error', 'بيانات الدفع غير مكتملة');
+        }
+
+        try {
+            $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
+            $status = $paymentIntent['status'] ?? '';
+
+            if (in_array($status, ['completed', 'paid', 'succeeded'])) {
+
+                // ✅ استرجع الـ course_id من قاعدة البيانات مش من الـ URL
+                $payment = \App\Models\Payment::where('payment_id', $paymentIntentId)->first();
+
+                if (!$payment || !$payment->course_id) {
+                    \Log::error("سجل الدفع غير موجود", ['payment_intent_id' => $paymentIntentId]);
+                    return redirect()->route('system.index')->with('error', 'سجل الدفع غير موجود');
+                }
+
+                $courseId = $payment->course_id;
+                $user = auth()->user();
+                $course = \App\Models\Course::find($courseId);
+
+                if ($course && $user) {
+                    \App\Models\Payment::where('payment_id', $paymentIntentId)
+                        ->update(['status' => 'completed']);
+
+                    $user->update(['whatsapp_verified' => 1]);
+
+                    if (!$course->students()->where('user_id', $user->id)->exists()) {
+                        $course->students()->attach($user->id, [
+                            'price_paid'  => $course->price,
+                            'status'      => 'active',
+                            'enrolled_at' => now(),
+                        ]);
+
+                        try {
+                            $whatsapp = new \App\Services\WhatsAppOTPService();
+                            $courseName = app()->getLocale() == 'ar' ? $course->name_ar : $course->name_en;
+                            $whatsapp->sendCourseConfirmation(
+                                $user->phone,
+                                $user->name,
+                                $courseName,
+                                $course
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error("عطل في إرسال رسالة الواتساب: " . $e->getMessage());
+                        }
+                    }
+
+                    return redirect()->route('courses.show', $courseId)
+                        ->with('success', 'تم تفعيل الاشتراك بنجاح! سيصلك تأكيد عبر واتساب ✅');
+                }
+            }
+
+            \Log::warning("حالة الدفع غير مكتملة", ['status' => $status]);
+            return redirect()->route('system.index')->with('error', 'فشل التحقق من حالة الدفع');
+        } catch (\Exception $e) {
+            \Log::error('خطأ في courseSuccess: ' . $e->getMessage());
+            return redirect()->route('system.index')->with('error', 'حدث خطأ فني');
+        }
+    }
+
+    private function sendWhatsAppConfirmation($user, $course)
+    {
+        try {
+            // تنظيف رقم الهاتف
+            $phone = str_replace([' ', '+'], '', $user->phone);
+            if (!str_starts_with($phone, '20')) {
+                $phone = '20' . ltrim($phone, '0');
+            }
+
+            $courseName = app()->getLocale() == 'ar' ? $course->name_ar : $course->name_en;
+
+            // إعداد الطلب لـ API 4Jawaly بناءً على الـ JSON المرسل من المدير
+            \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Basic b0ZhZlVyaVZMQkVoTGtab3lkU1FMOXZzYktiUU02OEc1emVqQkJhYjoxd0l5Wjhkd2lTWER6d1ozc0Fhdmp5dUQwWHRvS1R6czNFMU10Wmd5OHlKa1R0Y0FmWFM1Q2JVQ2t2NEs3b3hBRzVvV2dEU3FDcG5ldDhGajJaMUVvWTNkem9pb0xUNFBmaW01',
+                'Content-Type'  => 'application/json',
+                'accept'        => 'application/json',
+            ])->post('https://api-users.4jawaly.com/api/v1/whatsapp/669', [
+                "path" => "message/template",
+                "params" => [
+                    "phone" => $phone,
+                    "template" => "trabar",
+                    "language" => ["policy" => "deterministic", "code" => "ar"],
+                    "namespace" => "d62f7444_aa0b_40b8_8f46_0bb55ef2862e",
+                    "params" => [
+                        [
+                            "type" => "body",
+                            "parameters" => [
+                                ["type" => "text", "text" => $user->name],   // BODY_1: اسم المشترك
+                                ["type" => "text", "text" => $courseName]    // BODY_2: اسم الدورة
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error("فشل إرسال واتساب: " . $e->getMessage());
+        }
+    }
+
+    public function courseCancel(Request $request)
+    {
+        $courseId = $request->query('course_id');
+        Log::info('Course payment cancelled by user', ['course_id' => $courseId]);
+
+        return redirect()->route('courses.show', $courseId ?? 1)
+            ->with('error', 'تم إلغاء عملية الدفع');
     }
 }

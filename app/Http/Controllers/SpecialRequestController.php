@@ -8,9 +8,42 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\SpecialRequest;
 use App\Models\RequestStage;
 use Illuminate\Http\Request;
+use App\Models\RequestBudget;
+use Illuminate\Support\Facades\DB;
 
 class SpecialRequestController extends Controller
 {
+    public function updateBudgetStages(Request $request, $id)
+    {
+        \Log::info('updateBudgetStages reached', [
+            'id' => $id,
+            'user' => auth()->id() ?? 'guest',
+            'input' => $request->all()
+        ]);
+        $specialRequest = SpecialRequest::findOrFail($id);
+        $request->validate([
+            'total_price' => 'required|numeric|min:0',
+            'stages' => 'required|array|min:1',
+            'stages.*.name' => 'required|string',
+            'stages.*.amount' => 'required|numeric|min:0',
+            'stages.*.date' => 'nullable|date',
+        ]);
+        \DB::transaction(function () use ($request, $specialRequest) {
+            $specialRequest->update(['price' => $request->total_price]);
+            RequestBudget::where('parent_request_id', $specialRequest->id)->delete();
+            foreach ($request->stages as $stage) {
+                RequestBudget::create([
+                    'parent_request_id' => $specialRequest->id,
+                    'stage_name'        => $stage['name'],
+                    'stage_amount'      => $stage['amount'],
+                    'expected_date'     => $stage['date'],
+                    'payment_status'    => 'unpaid',
+                ]);
+            }
+        });
+        return back()->with('success', 'تم تحديث الميزانية بنجاح');
+    }
+
     // Index Method
     public function index()
     {
@@ -51,7 +84,7 @@ class SpecialRequestController extends Controller
     // Show Method
     public function show() // بدون parameter
     {
-        // جلب كل الطلبات مع علاقاتها
+        // جلب كل المشاريع مع علاقاتها
         $specialRequests = SpecialRequest::with(['proposals.user', 'partners', 'projectManager'])
             ->where('user_id', Auth::id())->paginate(8); // أو ->paginate(10) لو عايز pagination
 

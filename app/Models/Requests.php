@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Requests extends Model
 {
-    protected $table = 'requests'; // ✅ هذا هو الحل
+    protected $table = 'requests';
 
     protected $fillable = [
         'order_number',
@@ -39,6 +39,21 @@ class Requests extends Model
         return $this->belongsTo(User::class, 'client_id');
     }
 
+    public function installments()
+    {
+        // تأكد من اسم الموديل واسم المفتاح الأجنبي
+        return $this->hasMany(RequestPrice::class, 'request_id');
+    }
+
+    public function getPriceAttribute()
+    {
+        return $this->installments()->sum('amount') ?? 0;
+    }
+
+    public function getInstallmentsCountAttribute()
+    {
+        return $this->installments()->count();
+    }
     public function user(){
         return $this->belongsTo(User::class);
     }
@@ -81,7 +96,7 @@ class Requests extends Model
     {
         return $this->hasMany(RequestNote::class, 'request_id');
     }
-    // إضافة العلاقة للدفعات
+
     public function requestPayments()
     {
         return $this->hasMany(RequestsPayment::class, 'request_id');
@@ -92,27 +107,21 @@ class Requests extends Model
         return $this->hasMany(RequestsExpense::class, 'request_id');
     }
 
-    public function requestFiles() // تأكد من الاسم لاستخدامه في الـ Blade
+    public function requestFiles()
     {
-        // return $this->hasMany(RequestFile::class, 'request_id');
         return $this->hasMany(RequestFile::class, 'request_id');
     }
 
-    // داخل كلاس Request
     public function activities()
     {
-        // لاحظ الربط بـ RequestActivity والـ foreign_key
         return $this->hasMany(RequestActivity::class, 'request_id')->latest();
     }
 
-    // داخل كلاس Request العادي
     public function projectMeetings()
     {
-        // سميتها projectMeetings لتعمل مع نفس كود الـ Blade الذي نسخته
-        return $this->hasMany(RequestMeeting::class, 'request_id');
+        return $this->hasMany(ProjectMeeting::class, 'request_id');
     }
 
-    // داخل موديل Request
     public function proposals()
     {
         return $this->hasMany(RequestProposal::class, 'request_id');
@@ -123,10 +132,13 @@ class Requests extends Model
         return $this->hasMany(RequestsPayment::class, 'request_id');
     }
 
-    // داخل موديل Requests
     public function projectManager()
     {
-        // الطلب الواحد له مدير مشروع واحد
         return $this->hasOne(Project_Manager::class, 'request_id');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(RequestMessage::class, 'request_id');
     }
 }

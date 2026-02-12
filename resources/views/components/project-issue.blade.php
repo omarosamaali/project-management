@@ -35,11 +35,48 @@
     </div>
 
     {{-- فصل المشاكل المحلولة وغير المحلولة --}}
-    @php
-    $unresolvedIssues = $SpecialRequest->issues->where('status', '!=', 'resolved')->sortByDesc('created_at');
-    $resolvedIssues = $SpecialRequest->issues->where('status', 'resolved')->sortByDesc('created_at');
-    @endphp
+  @php
+// تصفية المشاكل لإظهارها فقط للمعنيين
+$currentUserId = auth()->id();
+$userRole = auth()->user()->role;
 
+// جلب المشاكل التي يكون المستخدم الحالي معنياً بها
+$allIssues = $SpecialRequest->issues->filter(function($issue) use ($currentUserId, $userRole) {
+// المسؤول يرى كل شيء
+if ($userRole === 'admin') {
+return true;
+}
+
+// صاحب المشكلة يراها
+if ($issue->user_id == $currentUserId) {
+return true;
+}
+
+// التحقق من المعنيين
+$assignedData = $issue->assigned_users;
+$assignedIds = is_array($assignedData) ? $assignedData : (is_string($assignedData) ? json_decode($assignedData, true) ?:
+[] : []);
+
+// إذا كان المستخدم ضمن المعنيين
+if (in_array($currentUserId, $assignedIds)) {
+return true;
+}
+
+// مدير المشروع يرى المشاكل
+$isProjectManager = \App\Models\Project_Manager::where('user_id', $currentUserId)
+->where('special_request_id', $issue->special_request_id)
+->exists();
+
+if ($isProjectManager) {
+return true;
+}
+
+return false;
+});
+
+$unresolvedIssues = $allIssues->where('status', '!=', 'resolved')->sortByDesc('created_at');
+$resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_at');
+@endphp
     {{-- المشاكل غير المحلولة (فوق) --}}
     @if($unresolvedIssues->count() > 0)
     <div class="space-y-4">
@@ -71,6 +108,7 @@
                                 $assignedData = $issue->assigned_users;
                                 $assignedIds = is_array($assignedData) ? $assignedData : (is_string($assignedData) ?
                                 json_decode($assignedData, true) ?: [] : []);
+                                
                                 $assignedUsers = !empty($assignedIds) ? \App\Models\User::whereIn('id',
                                 $assignedIds)->get() : collect();
                                 @endphp
@@ -96,7 +134,13 @@
                             title="عرض المحادثة">
                             <i class="fas fa-comment-dots"></i>
                         </button>
-
+                        @php
+                        // التحقق مما إذا كان المستخدم الحالي مديرًا لهذا المشروع
+                        $isProjectManager = \App\Models\Project_Manager::where('user_id', auth()->id())
+                        ->where('special_request_id', $SpecialRequest->id)
+                        ->exists();
+                        @endphp
+                        @if($issue->user_id == auth()->id() || auth()->user()->role == 'admin' || $isProjectManager)
                         <button onclick="openEditIssueModal({{ $issue->id }})"
                             class="bg-blue-100 text-blue-600 p-2 rounded-lg text-xs hover:bg-blue-200 transition-colors"
                             title="تعديل">
@@ -112,6 +156,7 @@
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>
+                        @endif
                     </div>
                 </div>
 
@@ -160,17 +205,32 @@
 
                             <div
                                 class="flex gap-2 mt-2 text-xs {{ $comment->user_id == auth()->id() ? 'justify-end' : '' }}">
-                                @if($issue->status != 'resolved')
-                                <form action="{{ route('issue-comments.mark-solution', [$issue->id, $comment->id]) }}"
-                                    method="POST">
-                                    @csrf
-                                    <button
-                                        class="text-green-600 hover:text-green-700 font-bold flex items-center gap-1">
-                                        <i class="fas fa-check"></i> اختيار كحل
-                                    </button>
-                                </form>
-                                @endif
-
+                               {{-- بداية التعديل: التحقق من الصلاحيات لاختيار الحل --}}
+                            @php
+                            // التحقق من مدير المشروع
+                            $isProjectManager = \App\Models\Project_Manager::where('user_id', auth()->id())
+                            ->where('special_request_id', $SpecialRequest->id)
+                            ->exists();
+                            
+                            // التحقق مما إذا كان المستخدم هو من أدخل الخطأ (صاحب المشكلة)
+                            $isIssueCreator = ($issue->user_id == auth()->id());
+                            
+                            // التحقق من الأدمن
+                            $isAdmin = (auth()->user()->role == 'admin');
+                            @endphp
+                            
+                            @if($issue->status != 'resolved')
+                            {{-- السماح فقط لمدير المشروع أو صاحب المشكلة أو الأدمن باختيار الحل --}}
+                            @if($isProjectManager || $isIssueCreator || $isAdmin)
+                            <form action="{{ route('issue-comments.mark-solution', [$issue->id, $comment->id]) }}" method="POST">
+                                @csrf
+                                <button class="text-green-600 hover:text-green-700 font-bold flex items-center gap-1">
+                                    <i class="fas fa-check"></i> اختيار كحل
+                                </button>
+                            </form>
+                            @endif
+                            @endif
+                            {{-- نهاية التعديل --}}
                                 @if($comment->user_id == auth()->id() && !$comment->is_solution)
                                 <form action="{{ route('issue-comments.destroy', $comment->id) }}" method="POST"
                                     onsubmit="return confirm('حذف التعليق؟')">

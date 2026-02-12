@@ -61,7 +61,7 @@
             </div>
 
             <div class="bg-yellow-50 dark:bg-gray-700 p-4 rounded-lg border border-yellow-100">
-                <label class="block text-sm font-medium text-gray-500 mb-1">إجمالي الطلبات</label>
+                <label class="block text-sm font-medium text-gray-500 mb-1">إجمالي المشاريع</label>
                 <span class="text-xl font-bold text-yellow-700">{{ $partner->partner_requests_count ?? 0 }} طلب</span>
             </div>
             <div class="bg-purple-50 dark:bg-gray-700 p-4 rounded-lg border border-purple-100">

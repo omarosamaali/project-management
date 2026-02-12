@@ -138,15 +138,22 @@
                 @endif
 
                     <!-- Action Buttons -->
-                    <div class="flex gap-4">
-                        @auth
-                        @if($is_purchased)
-                        <button
-                            class="flex-1 bg-gradient-to-r from-red-600 to-red-700 text-white py-4 rounded-lg font-bold text-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
-                            <i class="fas fa-shopping-cart"></i>
-                            تم الشراء
+                  <div class="flex gap-4">
+                    @auth
+                    @if($is_purchased)
+                    {{-- حالة تم الشراء مسبقاً --}}
+                    <button disabled
+                        class="flex-1 bg-gray-400 text-white py-4 rounded-lg font-bold text-lg cursor-not-allowed flex items-center justify-center gap-2">
+                        <i class="fas fa-check-circle"></i>
+                        تم الشراء بالفعل
+                    </button>
+                    @elseif($remaining_seats <= 0) {{-- حالة اكتمال المقاعد --}} <button disabled
+                        class="flex-1 bg-gray-200 text-gray-500 py-4 rounded-lg font-bold text-lg cursor-not-allowed border border-gray-300 flex items-center justify-center gap-2">
+                        <i class="fas fa-user-slash"></i>
+                        نعتذر، اكتمل العدد
                         </button>
                         @else
+                        {{-- حالة المقاعد متاحة --}}
                         @if($system->system_external == 0)
                         <button onclick="handlePurchase({{ $system->id }}, {{ $system->price }})"
                             class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
@@ -154,116 +161,22 @@
                             {{ __('messages.buy_now') }}
                         </button>
                         @else
-                        <a href="{{ $system->external_url }}" target="_blank" class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg
-                            hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center
-                            gap-2">
+                        <a href="{{ $system->external_url }}" target="_blank"
+                            class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
                             <i class="fas fa-shopping-cart"></i>
                             {{ __('messages.buy_now') }}
                         </a>
                         @endif
-                        <!-- Modal للتأكيد -->
-                        <div id="purchaseModal"
-                            class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                                <h3 class="text-xl font-bold mb-4">{{ __('messages.confirm_purchase') }}</h3>
-
-                                <div class="space-y-3 mb-6">
-                                    <div class="flex justify-between">
-                                        <span>{{ __('messages.original_price') }}:</span>
-                                        <span id="originalPrice" class="font-bold"></span>
-                                    </div>
-                                    <div class="flex justify-between text-sm text-gray-600">
-                                        <span class="items-center flex">{{ __('messages.payment_fees') }} (7.9% + 2
-                                            <x-drhm-icon width="16" height="16" color="000" />):
-                                        </span>
-                                        <span id="fees"></span>
-                                    </div>
-                                    <div class="flex justify-between text-lg font-bold border-t pt-3">
-                                        <span>{{ __('messages.total') }}:</span>
-                                        <span id="totalPrice"></span>
-                                    </div>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <button onclick="document.getElementById('purchaseModal').classList.add('hidden')"
-                                        class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">
-                                        {{ __('messages.cancel') }}
-                                    </button>
-                                    <button onclick="proceedPayment()" id="payButton"
-                                        class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
-                                        {{ __('messages.proceed_payment') }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <script>
-                            let currentSystemId = null;
-
-function handlePurchase(systemId, price) {
-    currentSystemId = systemId;
-    
-    // حساب الرسوم والإجمالي
-    const fees = (price * 0.079) + 2;
-    const total = price + fees;
-    
-    // عرض التفاصيل في المودال
-    document.getElementById('originalPrice').textContent = price.toFixed(2) + ' AED';
-    document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
-    document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
-    
-    // إظهار المودال
-    document.getElementById('purchaseModal').classList.remove('hidden');
-}
-
-async function proceedPayment() {
-    const payButton = document.getElementById('payButton');
-    payButton.disabled = true;
-    payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
-    
-    try {
-        const response = await fetch('/payment/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                system_id: currentSystemId
-            })
-        });
-        
-        const data = await response.json();
-        
-        console.log('Response:', data); // للـ debugging
-        
-        if (response.ok && data.success) {
-            // إعادة توجيه للصفحة الدفع
-            window.location.href = data.payment_url;
-        } else {
-            alert(data.message || 'حدث خطأ في عملية الدفع');
-            console.error('Payment error:', data);
-            payButton.disabled = false;
-            payButton.innerHTML = 'متابعة الدفع';
-        }
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('حدث خطأ في عملية الدفع');
-        payButton.disabled = false;
-        payButton.innerHTML = 'متابعة الدفع';
-    }
-}
-                        </script>
                         @endif
                         @else
+                        {{-- في حالة عدم تسجيل الدخول --}}
                         <a href="{{ route('login') }}"
                             class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
                             <i class="fas fa-shopping-cart"></i>
                             {{ __('messages.buy_now') }}
                         </a>
                         @endauth
-                    </div>
-
+                </div>
                     @if(!empty($system->buttons))
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
                         @foreach($system->buttons as $button)

@@ -71,7 +71,7 @@
 
                         <div class="bg-yellow-50 dark:bg-gray-700 p-4 rounded-lg">
                             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">إجمالي عدد
-                                الطلبات</label>
+                                المشاريع</label>
                             <div class="flex items-center gap-1">
                                 <span class="text-2xl font-bold text-yellow-700 dark:text-yellow-400">
                                     {{ number_format($setting->orders ?? 0) }}

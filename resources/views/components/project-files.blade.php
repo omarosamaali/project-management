@@ -12,7 +12,8 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        @forelse(($request->requestFiles ?? collect()) as $file)
+        {{-- @forelse(($request->requestFiles ?? collect()) as $file) --}}
+        @forelse(($SpecialRequest->requestFiles ?? collect()) as $file)
         <div
             class="group border dark:border-gray-700 p-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-900 transition-all relative">
             <div class="flex items-start gap-3">

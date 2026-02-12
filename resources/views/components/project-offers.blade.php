@@ -1,138 +1,73 @@
 @props(['SpecialRequest', 'partners', 'managers'])
 
+@php
+    $user = auth()->user();
+    if($user->role === 'partner' || $user->role === 'independent_partner') {
+        $proposals = $SpecialRequest->proposals
+            ->where('user_id', $user->id)
+            ->where('status', 'accepted');
+    } else {
+        $proposals = $SpecialRequest->proposals;
+    }
+@endphp
+
 <div class="space-y-6 px-4">
-    <div class="flex items-center justify-between border-b pb-4 border-gray-200 dark:border-gray-700">
+    <div class="mt-4 flex items-center justify-between border-b pb-4 border-gray-200 dark:border-gray-700">
         <h3 class="text-lg font-bold text-black dark:text-white flex items-center gap-2">
             <i class="fas fa-file-invoice-dollar"></i>
             عروض الأسعار المقدمة
             <span class="bg-black dark:bg-white text-white dark:text-black text-[10px] px-2 py-0.5 rounded">
-                {{ $SpecialRequest->proposals->count() }}
+                {{ $proposals->count() }}
             </span>
         </h3>
     </div>
 
     <div class="grid gap-4">
-        @forelse($SpecialRequest->proposals as $proposal)
-        @php
-        $isAccepted = $proposal->status === 'accepted';
-        $isRejected = $proposal->status === 'rejected';
-        @endphp
+        @forelse($proposals as $proposal)
+            @php
+                $isAccepted = $proposal->status === 'accepted';
+            @endphp
 
-        <div class="transition-all duration-300 relative border rounded-lg p-5 
-            {{ $isAccepted ? 'bg-black text-white border-black dark:bg-white dark:text-black scale-[1.02] shadow-lg' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700' }}
-            {{ $isRejected ? 'opacity-50 grayscale' : '' }}">
+            <div class="transition-all duration-300 relative border rounded-lg p-5 
+                {{ $isAccepted ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700' : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700' }}">
 
-            {{-- علامة الصح للعرض المقبول --}}
-            @if($isAccepted)
-            <div
-                class="m-6 absolute -top-3 -right-3 w-8 h-8 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center border-4 border-white dark:border-gray-900 shadow-sm">
-                <i class="fas fa-check text-xs"></i>
-            </div>
-            @endif
+                {{-- علامة القبول --}}
+                @if($isAccepted)
+                <div class="absolute -top-3 -right-3 w-8 h-8 bg-black dark:bg-white text-white dark:text-black rounded-full flex items-center justify-center border-4 border-white dark:border-gray-900 shadow-sm">
+                    <i class="fas fa-check text-xs"></i>
+                </div>
+                @endif
 
-            <div class="flex flex-col md:flex-row items-start justify-between gap-6">
-                <div class="flex-1">
-                    {{-- معلومات المستخدم --}}
-                    <div class="flex items-center gap-3 mb-4">
-                        <div
-                            class="w-10 h-10 border rounded flex items-center justify-center
-                            {{ $isAccepted ? 'bg-white/10 border-white/20' : 'bg-gray-100 dark:bg-gray-800 border-gray-200' }}">
-                            <i
-                                class="fas fa-user {{ $isAccepted ? 'text-white dark:text-black' : 'text-black dark:text-white' }}"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-sm">
-                                <span class="ml-1 px-1 !text-xs font-normal rounded-xl
-                                    
-                                     {{ $proposal->user->is_employee == 1 ? 'bg-green-600 text-green-50' : 'bg-blue-600 text-blue-50' }}
-                                ">
-                                    @if($proposal->user->is_employee == 1)
-                                    موظف
-                                    @else
-                                    مستقل
-                                    @endif
-                                </span>
-                                {{ $proposal->user->name ?? 'مستخدم' }}
-                            </h4>
-                            <span
-                                class="text-[10px] {{ $isAccepted ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400' }}">
-                                <i class="far fa-clock ml-1"></i> {{ $proposal->created_at ?
-                                $proposal->created_at->diffForHumans() : 'منذ فترة' }}
-                            </span>
+                {{-- معلومات العرض --}}
+                <div class="flex flex-col md:flex-row items-start justify-between gap-6">
+                    <div class="flex-1">
+                        <h4 class="font-bold">{{ $proposal->user->name }}</h4>
+                        <p class="text-sm italic">{!! nl2br(e(strip_tags($proposal->proposal_details))) !!}</p>
+                        <div class="flex gap-4 mt-2">
+                            <span>قيمة العرض: {{ number_format($proposal->budget_to, 2) }}</span>
+                            <span>مدة التنفيذ: {{ $proposal->execution_time }} يوم</span>
+                            <span>الحالة: {{ $isAccepted ? 'تم القبول' : 'جديد' }}</span>
                         </div>
                     </div>
-                    <div
-                                            class="flex flex-wrap gap-6 border-t pt-4 {{ $isAccepted ? 'border-white/10 dark:border-black/10' : 'border-gray-50 dark:border-gray-800' }}">
-                                            <div class="flex flex-col">
-                                                <span
-                                                    class="text-[10px] uppercase tracking-wider {{ $isAccepted ? 'text-gray-300 dark:text-gray-500' : 'text-gray-400' }}">قيمة
-                                                    العرض</span>
-                                                <span class="text-md font-black flex items-center gap-1">{{
-                                                    number_format($proposal->budget_to, 2) }}
-                                                    <svg xmlns="http://www.w3.org/2000/svg" version="1.2" width="14" height="14" viewBox="0 0 1000 1000">
-                                                        <title>Layer copy</title>
-                                                        <style>
-                                                            .s0 {
-                                                                fill: #000
-                                                            }
-                                                        </style>
-                                                        <path id="Layer copy" class="s0"
-                                                            d="m88.3 1c0.4 0.6 2.6 3.3 4.7 5.9 15.3 18.2 26.8 47.8 33 85.1 4.1 24.5 4.3 32.2 4.3 125.6v87h-41.8c-38.2 0-42.6-0.2-50.1-1.7-11.8-2.5-24-9.2-32.2-17.8-6.5-6.9-6.3-7.3-5.9 13.6 0.5 17.3 0.7 19.2 3.2 28.6 4 14.9 9.5 26 17.8 35.9 11.3 13.6 22.8 21.2 39.2 26.3 3.5 1 10.9 1.4 37.1 1.6l32.7 0.5v43.3 43.4l-46.1-0.3-46.3-0.3-8-3.2c-9.5-3.8-13.8-6.6-23.1-14.9l-6.8-6.1 0.4 19.1c0.5 17.7 0.6 19.7 3.1 28.7 8.7 31.8 29.7 54.5 57.4 61.9 6.9 1.9 9.6 2 38.5 2.4l30.9 0.4v89.6c0 54.1-0.3 94-0.8 100.8-0.5 6.2-2.1 17.8-3.5 25.9-6.5 37.3-18.2 65.4-35 83.6l-3.4 3.7h169.1c101.1 0 176.7-0.4 187.8-0.9 19.5-1 63-5.3 72.8-7.4 3.1-0.6 8.9-1.5 12.7-2.1 8.1-1.2 21.5-4 40.8-8.9 27.2-6.8 52-15.3 76.3-26.1 7.6-3.4 29.4-14.5 35.2-18 3.1-1.8 6.8-4 8.2-4.7 3.9-2.1 10.4-6.3 19.9-13.1 4.7-3.4 9.4-6.7 10.4-7.4 4.2-2.8 18.7-14.9 25.3-21 25.1-23.1 46.1-48.8 62.4-76.3 2.3-4 5.3-9 6.6-11.1 3.3-5.6 16.9-33.6 18.2-37.8 0.6-1.9 1.4-3.9 1.8-4.3 2.6-3.4 17.6-50.6 19.4-60.9 0.6-3.3 0.9-3.8 3.4-4.3 1.6-0.3 24.9-0.3 51.8-0.1 53.8 0.4 53.8 0.4 65.7 5.9 6.7 3.1 8.7 4.5 16.1 11.2 9.7 8.7 8.8 10.1 8.2-11.7-0.4-12.8-0.9-20.7-1.8-23.9-3.4-12.3-4.2-14.9-7.2-21.1-9.8-21.4-26.2-36.7-47.2-44l-8.2-3-33.4-0.4-33.3-0.5 0.4-11.7c0.4-15.4 0.4-45.9-0.1-61.6l-0.4-12.6 44.6-0.2c38.2-0.2 45.3 0 49.5 1.1 12.6 3.5 21.1 8.3 31.5 17.8l5.8 5.4v-14.8c0-17.6-0.9-25.4-4.5-37-7.1-23.5-21.1-41-41.1-51.8-13-7-13.8-7.2-58.5-7.5-26.2-0.2-39.9-0.6-40.6-1.2-0.6-0.6-1.1-1.6-1.1-2.4 0-0.8-1.5-7.1-3.5-13.9-23.4-82.7-67.1-148.4-131-197.1-8.7-6.7-30-20.8-38.6-25.6-3.3-1.9-6.9-3.9-7.8-4.5-4.2-2.3-28.3-14.1-34.3-16.6-3.6-1.6-8.3-3.6-10.4-4.4-35.3-15.3-94.5-29.8-139.7-34.3-7.4-0.7-17.2-1.8-21.7-2.2-20.4-2.3-48.7-2.6-209.4-2.6-135.8 0-169.9 0.3-169.4 1zm330.7 43.3c33.8 2 54.6 4.6 78.9 10.5 74.2 17.6 126.4 54.8 164.3 117 3.5 5.8 18.3 36 20.5 42.1 10.5 28.3 15.6 45.1 20.1 67.3 1.1 5.4 2.6 12.6 3.3 16 0.7 3.3 1 6.4 0.7 6.7-0.5 0.4-100.9 0.6-223.3 0.5l-222.5-0.2-0.3-128.5c-0.1-70.6 0-129.3 0.3-130.4l0.4-1.9h71.1c39 0 78 0.4 86.5 0.9zm297.5 350.3c0.7 4.3 0.7 77.3 0 80.9l-0.6 2.7-227.5-0.2-227.4-0.3-0.2-42.4c-0.2-23.3 0-42.7 0.2-43.1 0.3-0.5 97.2-0.8 227.7-0.8h227.2zm-10.2 171.7c0.5 1.5-1.9 13.8-6.8 33.8-5.6 22.5-13.2 45.2-20.9 62-3.8 8.6-13.3 27.2-15.6 30.7-1.1 1.6-4.3 6.7-7.1 11.2-18 28.2-43.7 53.9-73 72.9-10.7 6.8-32.7 18.4-38.6 20.2-1.2 0.3-2.5 0.9-3 1.3-0.7 0.6-9.8 4-20.4 7.8-19.5 6.9-56.6 14.4-86.4 17.5-19.3 1.9-22.4 2-96.7 2h-76.9v-129.7-129.8l220.9-0.4c121.5-0.2 221.6-0.5 222.4-0.7 0.9-0.1 1.8 0.5 2.1 1.2z" />
-                                                    </svg>
-                                                </span>
-                                            </div>
-                                            <div class="flex flex-col">
-                                                <span
-                                                    class="text-[10px] uppercase tracking-wider {{ $isAccepted ? 'text-gray-300 dark:text-gray-500' : 'text-gray-400' }}">مدة
-                                                    التنفيذ</span>
-                                                <span class="text-sm font-black">{{ $proposal->execution_time }} يوم</span>
-                                            </div>
-                                            <div class="flex flex-col">
-                                                <span
-                                                    class="text-[10px] uppercase tracking-wider {{ $isAccepted ? 'text-gray-300 dark:text-gray-500' : 'text-gray-400' }}">الحالة</span>
-                                                <span class="text-[10px] font-bold uppercase tracking-widest">
-                                                    @if($isAccepted) تم القبول @elseif($isRejected) عرض مستبعد @else قيد الانتظار @endif
-                                                </span>
-                                            </div>
-                                        </div>
-                    {{-- تفاصيل العرض --}}
-                   <div
-                    class="text-sm leading-relaxed mb-6 italic {{ $isAccepted ? 'text-gray-100 dark:text-gray-800' : 'text-gray-800 dark:text-gray-300' }}">
-                    "{!! nl2br(e(strip_tags(html_entity_decode($proposal->proposal_details)))) !!}"
-                </div>
-                </div>
-
-                {{-- أزرار التحكم --}}
-                <div class="flex flex-col justify-center gap-2 min-w-[120px]">
-                    @if($proposal->status == 'pending')
-                    <form action="{{ route('proposals.accept', $proposal->id) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                            class="w-full px-4 py-2 bg-black dark:bg-white text-white dark:text-black text-xs font-bold rounded hover:opacity-80 transition shadow-sm">
-                            قبول العرض
-                        </button>
-                    </form>
-
-                    <form action="{{ route('proposals.reject', $proposal->id) }}" method="POST">
-                        @csrf
-                        <button type="submit"
-                            class="w-full px-4 py-2 bg-transparent border border-gray-200 dark:border-gray-700 text-gray-400 hover:text-black dark:hover:text-white hover:border-black dark:hover:border-white text-xs font-bold rounded transition">
-                            استبعاد
-                        </button>
-                    </form>
+                    @if($proposal->status != 'accepted')
+                    @if(!in_array($user->role, ['partner', 'independent_partner']) && $proposal->status === 'pending')
+                        <div class="flex flex-col gap-2 min-w-[120px]">
+                            <form action="{{ route('proposals.accept', $proposal->id) }}" method="POST">
+                                @csrf
+                                <button class="w-full px-4 py-2 bg-black text-white rounded text-xs">قبول العرض</button>
+                            </form>
+                            <form action="{{ route('proposals.reject', $proposal->id) }}" method="POST">
+                                @csrf
+                                <button class="w-full px-4 py-2 border border-gray-200 rounded text-xs">استبعاد</button>
+                            </form>
+                        </div>
                     @endif
-
-                    @if($isRejected)
-                    <span class="text-center text-[10px] font-bold text-gray-400 uppercase tracking-tighter italic">
-                        تم استبعاد هذا العرض
-                    </span>
                     @endif
                 </div>
             </div>
-        </div>
         @empty
         <div class="text-center py-12 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-xl">
-            <p class="text-gray-400 text-sm">لا توجد عروض مقدمة حالياً.</p>
+            <p class="text-gray-400 text-sm">لا توجد عروض حالياً.</p>
         </div>
         @endforelse
     </div>

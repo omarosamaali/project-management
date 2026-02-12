@@ -61,7 +61,7 @@ class WithdrawalRequest extends Model
 
     public function getStatusNameAttribute(){
         return match ($this->status) {
-            'pending' => 'قيد الانتظار',
+            'pending' => 'جديد',
             'completed' => 'مكتمل',
             'rejected' => 'مرفوض',
             'processing' => 'قيد المعالجة',

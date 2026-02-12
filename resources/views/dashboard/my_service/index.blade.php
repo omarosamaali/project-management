@@ -107,11 +107,13 @@
                             اختر جميع الخدمات التي تستطيع تقديمها بجودة عالية
                         </p>
                     </div>
+                    @if(Auth::user()->role === 'independent_partner' && Auth::user()->status === 'active')
                     <button type="submit"
                         class="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors duration-200 flex items-center justify-center shadow-lg hover:shadow-xl">
                         <i class="fas fa-save ml-2"></i>
                         حفظ خدماتي
                     </button>
+                    @endif
                 </div>
             </div>
         </form>

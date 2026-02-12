@@ -24,88 +24,53 @@ class RequestsController extends Controller
         $search = $request->input('search');
         $user = Auth::user();
         $statusFilter = $request->get('status');
-
-        // تحديد المعايير الأساسية بناءً على الدور
         if ($user->role == 'admin') {
             $baseRequests = Requests::query();
             $baseSpecialRequests = SpecialRequest::query();
             $basePartnerSpecialRequests = SpecialRequestPartner::query();
         } elseif ($user->role == 'partner') {
-            // طلبات الأنظمة الجاهزة المرتبطة بالشريك
             $systemIds = PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
             $baseRequests = Requests::whereIn('system_id', $systemIds);
-
-            // الطلبات الخاصة المرتبطة بالشريك
-            $specialIds = SpecialRequestPartner::where('partner_id', $user->id)->pluck('special_request_id');
-            $baseSpecialRequests = SpecialRequest::whereIn('id', $specialIds);
-
-            // طلبات الشركاء (SpecialRequestPartner)
+            $assignedSpecialIds = SpecialRequestPartner::where('partner_id', $user->id)
+                ->whereNotNull('special_request_id')
+                ->pluck('special_request_id');
+            $baseSpecialRequests = SpecialRequest::whereIn('id', $assignedSpecialIds);
             $basePartnerSpecialRequests = SpecialRequestPartner::where('partner_id', $user->id);
-        } else { // client
+        } else {
             $baseRequests = Requests::where('client_id', $user->id);
             $baseSpecialRequests = SpecialRequest::where('user_id', $user->id);
-            $basePartnerSpecialRequests = SpecialRequestPartner::query()->whereHas('specialRequest', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            });
+            $basePartnerSpecialRequests = SpecialRequestPartner::whereRaw('1 = 0');
         }
-
-        // حساب العدادات (جمع كل أنواع الطلبات)
-        $allRequestsCount = (clone $baseRequests)->count() +
-            (clone $baseSpecialRequests)->count() +
-            (clone $basePartnerSpecialRequests)->count();
-
+        $allRequestsCount = (clone $baseRequests)->count() + (clone $baseSpecialRequests)->count();
         $newRequestsCount = (clone $baseRequests)->where('status', 'جديد')->count() +
-            (clone $baseSpecialRequests)->where('status', 'جديد')->count() +
-            (clone $basePartnerSpecialRequests)->where('status', 'جديد')->count();
-
+            (clone $baseSpecialRequests)->where('status', 'جديد')->count();
         $underProcessRequestsCount = (clone $baseRequests)->where('status', 'تحت الاجراء')->count() +
-            (clone $baseSpecialRequests)->where('status', 'تحت الاجراء')->count() +
-            (clone $basePartnerSpecialRequests)->where('status', 'تحت الاجراء')->count();
-
+            (clone $baseSpecialRequests)->where('status', 'تحت الاجراء')->count();
         $pendingRequestsCount = (clone $baseRequests)->where('status', 'معلقة')->count() +
-            (clone $baseSpecialRequests)->where('status', 'معلقة')->count() +
-            (clone $basePartnerSpecialRequests)->where('status', 'معلقة')->count();
-
+            (clone $baseSpecialRequests)->where('status', 'معلقة')->count();
         $closedRequestsCount = (clone $baseRequests)->where('status', 'منتهية')->count() +
-            (clone $baseSpecialRequests)->where('status', 'منتهية')->count() +
-            (clone $basePartnerSpecialRequests)->where('status', 'منتهية')->count();
-
-        // جلب البيانات الفعلية مع Pagination
-
-        // 1. طلبات الأنظمة الجاهزة
-        $requests = (clone $baseRequests)
-            ->with(['system', 'client'])
+            (clone $baseSpecialRequests)->where('status', 'منتهية')->count();
+        $requests = $baseRequests->with(['system', 'client'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
             ->when($search, fn($q) => $q->whereHas('client', fn($sq) => $sq->where('name', 'like', "%$search%")))
             ->latest()
             ->paginate(8, ['*'], 'requests_page');
-
-        // 2. الطلبات الخاصة
-        $specialRequestss = (clone $baseSpecialRequests)
-            ->with(['user'])
+        $specialRequestss = $baseSpecialRequests->with(['user'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
             ->when($search, function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
                     ->orWhereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%"));
-            })
-            ->latest()
-            ->paginate(8, ['*'], 'special_page');
+            })->latest()->paginate(8, ['*'], 'special_page');
 
-        // 3. طلبات الشركاء (للـ Partner فقط)
-        $specialRequests = (clone $basePartnerSpecialRequests)
-            ->with(['specialRequest.user', 'partner'])
+        $specialRequests = $basePartnerSpecialRequests->with(['specialRequest.user', 'partner'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
-            ->when($search, function ($q) use ($search) {
-                $q->where('description', 'like', "%$search%")
-                    ->orWhereHas('specialRequest.user', fn($sq) => $sq->where('name', 'like', "%$search%"));
-            })
             ->latest()
             ->paginate(8, ['*'], 'partner_special_page');
 
         return view('dashboard.requests.index', compact(
-            'requests',              // طلبات الأنظمة الجاهزة
-            'specialRequestss',      // الطلبات الخاصة
-            'specialRequests',       // طلبات الشركاء
+            'requests',
+            'specialRequestss',
+            'specialRequests',
             'allRequestsCount',
             'newRequestsCount',
             'underProcessRequestsCount',
@@ -113,6 +78,7 @@ class RequestsController extends Controller
             'closedRequestsCount'
         ));
     }
+
     // Create Method
     public function create()
     {
@@ -157,34 +123,31 @@ class RequestsController extends Controller
     // app/Http/Controllers/Dashboard/RequestsController.php
     public function show($id)
     {
-        $SpecialRequest = Requests::with(['user', 'system', 'client', 'partners', 'requestFiles.user'])
-            ->findOrFail($id);
-            
-            $assignedPartnerIds = $SpecialRequest->partners->pluck('id')->toArray();
+        $SpecialRequest = Requests::with([
+            'user',
+            'system',
+            'client',
+            'partners',
+            'requestFiles.user',
+            'projectMeetings.participants',
+            'messages.user'
+        ])->findOrFail($id);
+
+        $assignedPartnerIds = $SpecialRequest->partners->pluck('id')->toArray();
         $partners = User::where('role', 'partner')
             ->whereNotIn('id', $assignedPartnerIds)
             ->get();
+
         $managers = User::where('role', 'partner')
             ->where('is_employee', 1)
             ->get();
-        $collection1 = Support::where('request_id', $SpecialRequest->id)
-            ->with(['user', 'unreadMessages', 'messages'])
-            ->get()
-            ->map(function ($item) {
-                $item->is_technical = false;
-                return $item;
-            });
-        $collection2 = \DB::table('technical_support')
-            ->where('request_id', $SpecialRequest->id)
-            ->get()
-            ->map(function ($item) {
-                $item->is_technical = true;
-                return $item;
-            });
-        $allSupports = $collection1->concat($collection2)->sortByDesc('created_at');
+
+        // استخدم نظام الرسائل الجديد
+        $supports = $SpecialRequest->messages()->with('user')->oldest()->get();
+
         return view('dashboard.requests.show', [
             'SpecialRequest' => $SpecialRequest,
-            'supports'       => $allSupports,
+            'supports'       => $supports,
             'partners'       => $partners,
             'managers'       => $managers,
         ]);
@@ -295,7 +258,7 @@ class RequestsController extends Controller
 
         return view('dashboard.requests.special-invoice', compact('userRequest'));
     }
-    
+
 
     // Destroy Method
     public function destroy($id)
@@ -405,7 +368,7 @@ class RequestsController extends Controller
         $userRequest = Requests::findOrFail($id);
 
         DB::transaction(function () use ($request, $userRequest) {
-            // تحديث السعر الأساسي في جدول الطلبات العادية
+            // تحديث السعر الأساسي في جدول المشاريع العادية
             $userRequest->update([
                 'price' => $request->price,
                 'payment_type' => $request->payment_type,

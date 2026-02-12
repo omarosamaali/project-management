@@ -20,4 +20,9 @@ class Expenses extends Model
     {
         return $this->belongsTo(SpecialRequest::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

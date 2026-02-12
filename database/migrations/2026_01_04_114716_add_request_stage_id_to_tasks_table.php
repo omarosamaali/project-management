@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('tasks', function (Blueprint $table) {
-            // إضافة العمود الذي يربط المهمة بمراحل الطلبات العادية
+            // إضافة العمود الذي يربط المهمة بمراحل المشاريع العادية
             $table->foreignId('request_stage_id')->nullable()->after('project_stage_id')->constrained('request_stages')->cascadeOnDelete();
         });
     }

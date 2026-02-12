@@ -36,4 +36,14 @@ class Meeting extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    // داخل App\Models\Meeting.php
+
+    public function participants()
+    {
+        // الربط مع جدول المستخدمين عبر جدول meeting_participants مع جلب عمود الحالة status
+        return $this->belongsToMany(User::class, 'meeting_participants', 'project_meeting_id', 'user_id')
+            ->withPivot('status')
+            ->withTimestamps();
+    }
 }

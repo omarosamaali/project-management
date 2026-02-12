@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'الطلبات')
+@section('title', 'المشاريع')
 
 @section('content')
 <style>
@@ -19,7 +19,7 @@
     }
 </style>
 <section class="p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}" second="الطلبات" third="إضافة طلب" />
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}" second="المشاريع" third="إضافة طلب" />
     <div class="mx-auto max-w-4xl w-full rounded-xl">
         <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
             @foreach ($errors->all() as $error)

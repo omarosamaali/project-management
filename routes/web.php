@@ -1,26 +1,80 @@
 <?php
 
 use App\Http\Controllers\Dashboard\RequestsController;
+use App\Http\Controllers\Dashboard\SpecialRequestMessageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SpecialRequestController;
 use App\Http\Controllers\SystemController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ZiinaPaymentController;
 use App\Http\Controllers\ProjectMeetingController;
+use App\Http\Controllers\ProjectBudgetController;
+use App\Http\Controllers\RequestMessageController;
+use App\Http\Controllers\Auth\OTPController;
+use App\Http\Controllers\CourseController;
 
-// مسارات الاجتماعات
 
+Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(function () {
 
+    // راوت تحديث حالة الحضور (Toggle)
+    Route::post('/payments/{payment}/toggle-attendance', [CourseController::class, 'toggleAttendance'])
+        ->name('courses.toggle-attendance');
+
+    // راوت عرض الشهادة
+    Route::get('/payments/{payment}/certificate', [CourseController::class, 'showCertificate'])
+        ->name('courses.certificate');
+});
+Route::post('/resend-otp/{type}', [App\Http\Controllers\Auth\OTPController::class, 'resend'])->name('otp.resend');    
 Route::middleware(['auth'])->group(function () {
-    Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequest, $payment) {
-        $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequest);
-        $payment = \App\Models\Payment::findOrFail($payment);
+    // صفحة الـ OTP
+    Route::get('/verify-otp', [OTPController::class, 'showVerifyPage'])->name('otp.verify');
+    Route::post('/verify-otp/whatsapp', [OTPController::class, 'verifyWhatsapp'])->name('otp.whatsapp.check');
+    Route::post('/verify-otp/email', [OTPController::class, 'verifyEmail'])->name('otp.email.check');
+});
 
-        $installment = $payment->requestPayment; // علاقة hasOne أو belongsTo
+// تطبيق الحماية على صفحات الداشبورد
+Route::middleware(['auth', \App\Http\Middleware\CheckOtpVerification::class])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+});
+
+Route::post('/request-messages', [RequestMessageController::class, 'store'])
+    ->name('dashboard.request-messages.store');
+
+Route::post('special-request-messages/store', [SpecialRequestMessageController::class, 'store'])
+    ->name('dashboard.special-request-messages.store');
+
+Route::post('/requests/{id}/update-budget', [ProjectBudgetController::class, 'updateBudget'])->name('requests.update-budget');
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequestId, $paymentId) {
+        $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
+        $payment = \App\Models\Payment::findOrFail($paymentId);
+        $installmentId = request()->get('installment_id');
+        $installment = null;
+        if ($installmentId) {
+            $installment = \App\Models\RequestPayment::find($installmentId);
+        }
+
+        if (!$installment) {
+            $installment = \App\Models\RequestPayment::where('special_request_id', $specialRequest->id)
+                ->where('status', 'paid')
+                ->orderBy('paid_at', 'desc')
+                ->first();
+        }
 
         return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
     })->name('special-request.payment.invoice')->middleware('auth');
-// دفع دفعة جزئية من Special Request
+
+    
+    Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequestId, $paymentId) {
+        $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
+        $payment = \App\Models\Payment::findOrFail($paymentId);
+        $installment = \App\Models\RequestPayment::where('id', $payment->payment_id)->first();
+        return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
+    })->name('special-request.payment.invoice')->middleware('auth');
+
     Route::post('/payments/{payment}/ziina-pay', [ZiinaPaymentController::class, 'initiateInstallmentPayment'])
         ->name('ziina.installment.pay')
         ->middleware(['auth', \App\Http\Middleware\SetLocale::class]);  // هنا الكلاس الكامل

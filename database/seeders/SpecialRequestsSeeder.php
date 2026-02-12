@@ -48,7 +48,7 @@ class SpecialRequestsSeeder extends Seeder
             $clientIds[] = $user->id;
         }
 
-        // 3. إنشاء بيانات الطلبات الخاصة
+        // 3. إنشاء بيانات المشاريع الخاصة
         $requestsData = [
             // ===================================
             // طلبات العميل الأول (أبي بكر) - 3 طلبات
@@ -135,7 +135,7 @@ class SpecialRequestsSeeder extends Seeder
             ],
         ];
 
-        // 4. إدخال الطلبات إلى قاعدة البيانات
+        // 4. إدخال المشاريع إلى قاعدة البيانات
         foreach ($requestsData as $request) {
             SpecialRequest::create($request);
         }

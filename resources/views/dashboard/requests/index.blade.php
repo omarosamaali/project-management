@@ -1,17 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'الطلبات')
+@section('title', 'المشاريع')
 
 @section('content')
 
 <section class="!pl-0 p-3 sm:p-5">
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}"
-        second="{{ url()->current() == route('dashboard.tasks.index') ? 'مهامي' : 'الطلبات' }}" />
+        second="{{ url()->current() == route('dashboard.tasks.index') ? 'مهامي' : 'المشاريع' }}" />
     <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {{-- All Requests --}}
         <a href="{{ url()->current() }}" class="flex bg-black justify-between rounded-lg">
             <div class="p-4 pr-6 flex flex-col justify-between">
-                <h1 class="text-md font-bold text-white whitespace-nowrap">جميع الطلبات</h1>
+                <h1 class="text-md font-bold text-white whitespace-nowrap">جميع المشاريع</h1>
                 <p class="text-2xl flex items-center text-white">
                     {{ $allRequestsCount }} @if($requests->count() >= 10) طلب @else طلبات @endif
                 </p>
@@ -114,6 +114,16 @@
                         </div>
                     </form>
                 </div>
+                <div class="!ml-0">
+                    <a href="{{ route('dashboard.requests.create-request') }}"
+                        class="text-xs flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        إضافة طلب جديد ( للأدمن فقط )
+                    </a>
+                </div>
             </div>
             @endif
 
@@ -152,7 +162,7 @@
                             </th>
                         </tr>
                     </thead>
-               
+
                     @foreach($specialRequestss as $request)
                     <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td scope="row" class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
@@ -175,12 +185,6 @@
                             {{ $request->status_name }}
                         </td>
                         <td class="px-4 py-3 flex items-center justify-end">
-                            @if(Auth::user()->role == 'admin' || Auth::user()->role == 'client')
-                            <a href="{{ route('dashboard.requests.special-invoice', $request->id) }}"
-                                class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                <i class="fas fa-file-invoice"></i>
-                            </a>
-                            @endif
                             <a href="{{ route('dashboard.special-request.show', $request->id) }}"
                                 class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                                 title="عرض التفاصيل">
@@ -201,39 +205,33 @@
                         </td>
                     </tr>
                     @endforeach
+
                     @if(Auth::user()->role == 'partner')
                     @foreach ($specialRequests as $specialRequest)
                     <tbody>
                         <tr class="border-b dark:border-gray-700">
                             <td scope="row"
                                 class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $specialRequest->order_number }}
+                                {{ $specialRequest->request->order_number }}
                             </td>
                             <td class="px-4 py-3">
-                                {{ $specialRequest->specialRequest?->user?->name ?? 'غير محدد' }} </td>
+                                {{ $specialRequest->partner?->name ?? 'غير محدد' }} </td>
                             <td class="px-4 py-3">
-                                <span class="{{ $specialRequest->specialRequest?->is_project ? 'bg-green-700 text-green-200' 
-                                    : 'bg-red-900 text-red-100' }} text-sm rounded-xl px-1.5">
-                                    {{ $specialRequest->specialRequest?->is_project ? 'مشروع' : 'نظام خاص' }}
-                                </span>&nbsp;{{ $specialRequest->specialRequest?->project_type }}
+                                <span class="bg-gray-900 text-white text-sm rounded-xl px-1.5">
+                                    {{ $specialRequest->request?->is_project ? 'مشروع' : 'نظام جاهز' }}
+                                </span>&nbsp;{{ $specialRequest->request?->system->name_ar }}
                             </td>
                             <td class="px-4 py-3">
                                 {{ $specialRequest->created_at->format('Y-m-d') }}
                             </td>
                             <td class="text-right px-4 py-3">
-                                {{ Str::limit($specialRequest->description, 30) }}
+                                {{ Str::limit($specialRequest->request?->system->description_ar, 30) }}
                             </td>
                             <td class="text-right px-4 py-3">
                                 طلب خاص
                             </td>
                             <td class="px-4 py-3 flex items-center justify-end">
-                                @if(Auth::user()->role == 'admin' || Auth::user()->role == 'client')
-                                <a href="{{ route('dashboard.specialRequest.invoice', $specialRequest->id) }}"
-                                    class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                    <i class="fas fa-file-invoice"></i>
-                                </a>
-                                @endif
-                                <a href="{{ route('dashboard.special-request.show', $specialRequest->id) }}"
+                                <a href="{{ route('dashboard.requests.show', $specialRequest->request->id) }}"
                                     class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                     <i class="fas fa-eye"></i>
                                 </a>
@@ -253,6 +251,7 @@
                     </tbody>
                     @endforeach
                     @endif
+
                     @foreach($requests as $request)
                     <tbody>
                         <tr class="border-b dark:border-gray-700">
@@ -277,12 +276,6 @@
                                 {{ $request->status_label }}
                             </td>
                             <td class="px-4 py-3 flex items-center justify-end">
-                                @if(Auth::user()->role == 'admin' || Auth::user()->role == 'client')
-                                <a href="{{ route('dashboard.requests.invoice', $request->id) }}"
-                                    class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                    <i class="fas fa-file-invoice"></i>
-                                </a>
-                                @endif
                                 <a href="{{ route('dashboard.requests.show', $request->id) }}"
                                     class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                     <i class="fas fa-eye"></i>

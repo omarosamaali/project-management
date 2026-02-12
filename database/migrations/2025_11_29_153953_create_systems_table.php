@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name_ar');
             $table->string('name_en');
             $table->integer('counter')->default(0);
-            
             $table->boolean('system_external')->default(false);
             $table->string('external_url')->nullable();
             $table->foreignId('service_id')->nullable()->constrained('services')->onDelete('cascade');

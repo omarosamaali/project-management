@@ -81,8 +81,6 @@ class ZiinaSystemPaymentHandler
         return in_array($paymentIntent['status'] ?? '', ['completed', 'paid', 'succeeded']);
     }
 
-
-
     public function createSystemPaymentIntent($system, $successUrl, $cancelUrl, $isTest = true)
     {
         try {
@@ -126,9 +124,9 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            // if ($isTest || app()->environment('local', 'testing')) {
-            //     $data['test'] = true;
-            // }
+            if ($isTest || app()->environment('local', 'testing')) {
+                $data['test'] = true;
+            }
 
             Log::info('Creating Ziina payment intent for system', [
                 'system_id' => $system->id,
@@ -137,7 +135,7 @@ class ZiinaSystemPaymentHandler
                 'fees' => $fees,
                 'total_price' => $totalPrice,
                 'message' => $message,
-                // 'test_mode' => $isTest
+                'test_mode' => $isTest
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);
@@ -151,6 +149,91 @@ class ZiinaSystemPaymentHandler
             Log::error('Failed to create Ziina payment intent for system', [
                 'system_id' => $system->id ?? null,
                 'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * ✅ إنشاء payment intent للكورسات - دالة منفصلة
+     */
+    public function createCoursePaymentIntent($course, $successUrl, $cancelUrl, $isTest = true)
+    {
+        try {
+            if (!$course) {
+                throw new Exception('Course data is missing');
+            }
+
+            $basePrice = $course->price ?? 0;
+            $fees = ($basePrice * 0.079) + 2;
+            $totalPrice = $basePrice + $fees;
+
+            if ($totalPrice < 2) {
+                throw new Exception("Course price ($totalPrice AED) is below minimum (2 AED)");
+            }
+
+            $amountInFils = (int)($totalPrice * 100);
+
+            // استخدام اسم الكورس
+            $courseName = $course->name_ar ?? $course->name_en ?? 'دورة تدريبية';
+            $courseName = mb_substr($courseName, 0, 80);
+
+            $message = "اشتراك في الدورة: {$courseName}";
+
+            if (mb_strlen($message) < 10) {
+                $message .= " - تسجيل في دورة";
+            }
+
+            $data = [
+                'amount' => $amountInFils,
+                'currency_code' => 'AED',
+                'message' => $message,
+                'success_url' => $successUrl, // ✅ الـ URL بالفعل يحتوي على placeholder
+                'cancel_url' => $cancelUrl,
+                'metadata' => [
+                    'course_id' => (string)$course->id,
+                    'course_name' => $courseName,
+                    'customer_id' => (string)(auth()->id() ?? 'guest'),
+                    'base_price' => $basePrice,
+                    'fees' => round($fees, 2),
+                    'total_price' => $totalPrice,
+                    'type' => 'course_enrollment',
+                    'environment' => app()->environment()
+                ]
+            ];
+
+            if ($isTest || app()->environment('local', 'testing')) {
+                $data['test'] = true;
+            }
+
+            Log::info('Creating Ziina payment intent for course', [
+                'course_id' => $course->id,
+                'amount' => $amountInFils,
+                'base_price' => $basePrice,
+                'fees' => $fees,
+                'total_price' => $totalPrice,
+                'message' => $message,
+                'success_url' => $successUrl,
+                'test_mode' => $isTest
+            ]);
+
+            $response = $this->makeApiCall('/payment_intent', 'POST', $data);
+
+            if (!isset($response['redirect_url'])) {
+                throw new Exception('Payment intent created but no redirect URL received');
+            }
+
+            Log::info('✅ Course payment intent created successfully', [
+                'payment_intent_id' => $response['id'] ?? null,
+                'redirect_url' => $response['redirect_url'] ?? null
+            ]);
+
+            return $response;
+        } catch (Exception $e) {
+            Log::error('Failed to create Ziina payment intent for course', [
+                'course_id' => $course->id ?? null,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
             throw $e;
         }
@@ -204,9 +287,9 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            // if ($isTest || app()->environment('local', 'testing')) {
-            //     $data['test'] = true;
-            // }
+            if ($isTest || app()->environment('local', 'testing')) {
+                $data['test'] = true;
+            }
 
             Log::info('Creating Ziina payment intent for special request', [
                 'special_request_id' => $specialRequest->id,
@@ -215,7 +298,7 @@ class ZiinaSystemPaymentHandler
                 'fees' => $fees,
                 'total_price' => $totalPrice,
                 'message' => $message,
-                // 'test_mode' => $isTest
+                'test_mode' => $isTest
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);

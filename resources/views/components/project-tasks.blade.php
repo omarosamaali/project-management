@@ -72,7 +72,7 @@ $stats = [
     </div>
 
     {{-- زر الإضافة --}}
-    @if (in_array(auth()->user()->role, ['admin', 'manager']))
+    @if (in_array(auth()->user()->role, ['admin', 'partner']))
     <div class="flex justify-end">
         <button onclick="document.getElementById('addTaskModal').classList.remove('hidden')"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md">
@@ -112,7 +112,7 @@ $stats = [
                         <td class="p-4 text-center text-sm font-medium dark:text-gray-200">{{ $task->user->name }}</td>
                         <td class="p-4 text-center">
                             <div class="text-[10px] text-gray-500">{{ $task->start_date }}</div>
-                            <div class="text-[10px] text-gray-400 font-bold">إلى {{ $task->end_date }}</div>
+                            <div class="text-[10px] text-gray-400 font-bold">إلى {{ $task->end_date ?? '-' }}</div>
                         </td>
                         <td class="p-4 text-center">
                             @php
@@ -130,15 +130,31 @@ $stats = [
                         </td>
                         <td class="p-4 text-center">
                             <div class="flex items-center justify-center gap-2">
-                                <button onclick="openEditModal({{ $task->id }})"
-                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><i
-                                        class="fas fa-edit"></i></button>
-                                <form action="{{ route('tasks.destroy', $task->id) }}" method="POST"
-                                    onsubmit="return confirm('حذف المهمة؟')">
+                                {{-- زر عرض التفاصيل --}}
+                                <button onclick="openShowModal({{ $task->id }})" class="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                                    title="عرض التفاصيل">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                @php
+                                // التحقق مما إذا كان المستخدم الحالي مديرًا لهذا المشروع
+                                $isProjectManager = \App\Models\Project_Manager::where('user_id', auth()->id())
+                                ->where('special_request_id', $SpecialRequest->id)
+                                ->exists();
+                                @endphp
+                                @if(Auth::user()->role != 'client')
+                                @if (in_array(auth()->user()->role, ['admin' || $isProjectManager]))
+                                <button onclick="openEditModal({{ $task->id }})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                        
+                                <form action="{{ route('tasks.destroy', $task->id) }}" method="POST" onsubmit="return confirm('حذف المهمة؟')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="p-2 text-black hover:bg-red-50 rounded-lg"><i
-                                            class="fas fa-trash-alt"></i></button>
+                                    <button type="submit" class="p-2 text-black hover:bg-red-50 rounded-lg">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </form>
+                                @endif
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -152,7 +168,75 @@ $stats = [
         </div>
     </div>
 </div>
+{{-- مودال عرض التفاصيل --}}
+<div id="showTaskModal"
+    class="fixed inset-0 z-[70] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="mx-auto bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+        <div
+            class="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-green-50 dark:bg-green-900/20">
+            <h3 class="text-lg font-bold dark:text-white flex items-center gap-2">
+                <i class="fas fa-eye text-green-600"></i> تفاصيل المهمة
+            </h3>
+            <button type="button" onclick="closeShowModal()"
+                class="text-2xl hover:text-black text-gray-400">&times;</button>
+        </div>
 
+        <div class="p-6 space-y-4">
+            {{-- العنوان --}}
+            <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">عنوان المهمة</label>
+                <div id="show_title" class="text-lg font-bold dark:text-white"></div>
+            </div>
+
+            {{-- المرحلة والمسؤول --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">المرحلة</label>
+                    <div id="show_stage" class="font-medium dark:text-white"></div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">المسؤول عن
+                        المهمة</label>
+                    <div id="show_user" class="font-medium dark:text-white"></div>
+                </div>
+            </div>
+
+            {{-- التواريخ --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">تاريخ البداية</label>
+                    <div id="show_start_date" class="font-medium dark:text-white"></div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">تاريخ التسليم</label>
+                    <div id="show_end_date" class="font-medium dark:text-white">
+                        {{ $task->end_date ?? '-' }}
+                    </div>
+                </div>
+            </div>
+
+            {{-- الحالة --}}
+            <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">حالة المهمة</label>
+                <span id="show_status" class="inline-block px-4 py-2 rounded-full text-sm font-bold"></span>
+            </div>
+
+            {{-- التفاصيل --}}
+            <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl">
+                <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">التفاصيل</label>
+                <div id="show_details" class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{{ $task->details ?? '-' }}</div>
+            </div>
+
+            {{-- زر الإغلاق --}}
+            <div class="flex justify-end pt-4 border-t dark:border-gray-700">
+                <button type="button" onclick="closeShowModal()"
+                    class="px-8 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors font-bold">
+                    إغلاق
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {{-- مودال الإضافة (تم إزالة خيار الحالة ليكون تلقائياً) --}}
 <div id="addTaskModal"
     class="fixed inset-0 z-[70] hidden flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -316,41 +400,178 @@ $stats = [
         </form>
     </div>
 </div>
+{{-- استبدل الـ <script>
+    كامله في آخر الـ file بهذا --}}
 <script>
-function openEditModal(taskId) {
-fetch(`/tasks/${taskId}/edit`)
+    // ✅ فتح modal التعديل
+    function openEditModal(taskId) {
+        fetch(`/tasks/${taskId}/edit`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('فشل الطلب: ' + response.status);
+            return response.json();
+        })
+        .then(task => {
+            console.log('Task data received:', task);
+
+            const modal = document.getElementById('editTaskModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            requestAnimationFrame(() => {
+                const titleInput = modal.querySelector('#edit_title');
+                const detailsInput = modal.querySelector('#edit_details');
+                if (titleInput) titleInput.value = task.title || '';
+                if (detailsInput) detailsInput.value = task.details || '';
+
+                const userSelect = modal.querySelector('#edit_user_id');
+                const stageSelect = modal.querySelector('#edit_project_stage_id');
+                if (userSelect) userSelect.value = task.user_id || '';
+                if (stageSelect) stageSelect.value = task.project_stage_id || '';
+
+                const startDate = modal.querySelector('#edit_start_date');
+                const endDate = modal.querySelector('#edit_end_date');
+                if (startDate) startDate.value = task.start_date || '';
+                if (endDate) endDate.value = task.end_date || '';
+
+                const statusSelect = modal.querySelector('#edit_status');
+                if (statusSelect) statusSelect.value = task.status || 'بالانتظار';
+
+                const form = modal.querySelector('#editTaskForm');
+                if (form) form.action = `/tasks/${taskId}`;
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching task:', error);
+            alert('خطأ في جلب بيانات المهمة: ' + error.message);
+        });
+    }
+
+    function closeEditModal() {
+        const modal = document.getElementById('editTaskModal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+
+    // ✅ فتح modal العرض
+function openShowModal(taskId) {
+fetch(`/tasks/${taskId}/edit`, {
+headers: {
+'Accept': 'application/json',
+'X-Requested-With': 'XMLHttpRequest'
+}
+})
 .then(response => response.json())
 .then(task => {
-// تعبئة كافة الحقول بالبيانات القادمة من السيرفر
-document.getElementById('edit_title').value = task.title;
-document.getElementById('edit_details').value = task.details || '';
-document.getElementById('edit_user_id').value = task.user_id;
-document.getElementById('edit_project_stage_id').value = task.project_stage_id || '';
-document.getElementById('edit_status').value = task.status;
-
-// معالجة التواريخ (قص الجزء الخاص بالوقت إذا وجد)
-if(task.start_date) document.getElementById('edit_start_date').value = task.start_date.split(' ')[0];
-if(task.end_date) document.getElementById('edit_end_date').value = task.end_date.split(' ')[0];
-
-// تحديث رابط الأكشن للفورم
-document.getElementById('editTaskForm').action = `/tasks/${taskId}`;
-
-// إظهار المودال
-const modal = document.getElementById('editTaskModal');
+const modal = document.getElementById('showTaskModal');
 modal.classList.remove('hidden');
 modal.style.display = 'flex';
+
+// 1. تعبئة النصوص الأساسية
+document.getElementById('show_title').innerText = task.title || 'بدون عنوان';
+document.getElementById('show_details').innerText = task.details || 'لا توجد تفاصيل مضافة.';
+
+// 2. إصلاح التواريخ (التأكد من مطابقة الأسماء مع الكنترولر)
+document.getElementById('show_start_date').innerText = task.start_date || 'غير محدد';
+document.getElementById('show_end_date').innerText = task.end_date || 'غير محدد';
+
+// 3. عرض الأسماء (المسؤول والمرحلة)
+document.getElementById('show_user').innerText = task.user_name || 'غير محدد';
+document.getElementById('show_stage').innerText = task.stage_title || 'مهمة عامة';
+
+// 4. تحديث حالة المهمة ولونها
+const statusElement = document.getElementById('show_status');
+statusElement.innerText = task.status;
+
+const statusClasses = {
+'منتهية': 'bg-green-100 text-green-700',
+'قيد الإنجاز': 'bg-blue-100 text-blue-700',
+'متأخرة': 'bg-red-100 text-red-700',
+'بالانتظار': 'bg-gray-100 text-gray-600'
+};
+
+statusElement.className = 'inline-block px-4 py-2 rounded-full text-sm font-bold ' +
+(statusClasses[task.status] || 'bg-gray-100 text-gray-600');
 })
 .catch(error => {
 console.error('Error:', error);
-alert('خطأ في جلب بيانات المهمة');
+alert('حدث خطأ أثناء تحميل البيانات');
 });
-}
+}    function closeShowModal() {
+        const modal = document.getElementById('showTaskModal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+</script>
+<script>
+    function openEditModal(taskId) {
+        fetch(`/tasks/${taskId}/edit`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('فشل الطلب: ' + response.status);
+            return response.json();
+        })
+        .then(task => {
+            console.log('Task data received:', task);
 
-function closeEditModal() {
-const modal = document.getElementById('editTaskModal');
-modal.classList.add('hidden');
-modal.style.display = 'none';
-}
+            // ✅ أولاً: إظهار المودال
+            const modal = document.getElementById('editTaskModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            // ✅ ثانياً: بعد ما المودال يظهر، املأ الحقول
+            requestAnimationFrame(() => {
+                // العنوان والتفاصيل
+                const titleInput = modal.querySelector('#edit_title');
+                const detailsInput = modal.querySelector('#edit_details');
+                if (titleInput) titleInput.value = task.title || '';
+                if (detailsInput) detailsInput.value = task.details || '';
+
+                // المسؤول والمرحلة
+                const userSelect = modal.querySelector('#edit_user_id');
+                const stageSelect = modal.querySelector('#edit_project_stage_id');
+                if (userSelect) userSelect.value = task.user_id || '';
+                if (stageSelect) stageSelect.value = task.project_stage_id || '';
+
+                // التواريخ
+                const startDate = modal.querySelector('#edit_start_date');
+                const endDate = modal.querySelector('#edit_end_date');
+                if (startDate) startDate.value = task.start_date || '';
+                if (endDate) endDate.value = task.end_date || '';
+
+                // الحالة
+                const statusSelect = modal.querySelector('#edit_status');
+                if (statusSelect) statusSelect.value = task.status || 'بالانتظار';
+
+                // تحديث الـ action
+                const form = modal.querySelector('#editTaskForm');
+                if (form) form.action = `/tasks/${taskId}`;
+
+                // تأكيد إن كل شيء اتملأ
+                console.log('Form filled:', {
+                    title: titleInput?.value,
+                    details: detailsInput?.value,
+                    user_id: userSelect?.value,
+                    stage_id: stageSelect?.value,
+                    start_date: startDate?.value,
+                    end_date: endDate?.value,
+                    status: statusSelect?.value
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching task:', error);
+            alert('خطأ في جلب بيانات المهمة: ' + error.message);
+        });
+    }
 
     function closeEditModal() {
         const modal = document.getElementById('editTaskModal');

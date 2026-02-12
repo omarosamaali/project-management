@@ -17,6 +17,7 @@
     input[type="number"] {
         -moz-appearance: textfield;
     }
+
 </style>
 <section class="!px-0 p-3 sm:p-5">
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.systems.index') }}" second="الأنظمة" third="إضافة نظام" />
@@ -25,8 +26,7 @@
 
             {{-- display all errors --}}
             @foreach ($errors->all() as $error)
-            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
-                role="alert">
+            <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
                 <div class="flex items-center gap-2">
                     <i class="fas fa-times-circle"></i>
                     <span class="font-medium">{{ $error }}</span>
@@ -34,8 +34,7 @@
             </div>
             @endforeach
 
-            <form action="{{ route('dashboard.systems.store') }}" method="POST" enctype="multipart/form-data"
-                class="space-y-8">
+            <form action="{{ route('dashboard.systems.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
                 @csrf
                 <!-- معلومات أساسية -->
                 <div class="border-b pb-6">
@@ -50,9 +49,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 إسم النظام (بالعربي) <span class="text-black">*</span>
                             </label>
-                            <input type="text" id="name_ar" name="name_ar" required
-                                class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="الإسم">
+                            <input type="text" id="name_ar" name="name_ar" required class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="الإسم">
                             @error('name_ar')
                             <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -63,9 +60,7 @@
                             <label class="block text-sm text-left font-medium text-gray-700 mb-2">
                                 System Name (English)
                             </label>
-                            <input required type="text" id="name_en" name="name_en" dir="ltr"
-                                class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Name">
+                            <input required type="text" id="name_en" name="name_en" dir="ltr" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Name">
                             @error('name_en')
                             <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -74,13 +69,10 @@
                         <!-- السعر الكلي -->
                         <div>
                             <label class="flex text-sm font-medium text-gray-700 mb-2">
-                                السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span
-                                    class="text-black">*</span>
+                                السعر الكلي (<img src="{{ asset('assets/images/drhm-icon.svg') }}" />) <span class="text-black">*</span>
                             </label>
                             <div class="relative">
-                                <input type="number" name="price" required min="0" step="1"
-                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="999">
+                                <input type="number" name="price" required min="0" step="1" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="999">
                                 @error('price')
                                 <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -94,21 +86,15 @@
                             </label>
                             <div class="grid grid-cols-2 gap-2">
                                 <div class="relative">
-                                    <input type="number" name="execution_days_from" required min="0"
-                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="10">
-                                    <span
-                                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">من</span>
+                                    <input type="number" name="execution_days_from" required min="0" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="10">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">من</span>
                                     @error('execution_days_from')
                                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                                     @enderror
                                 </div>
                                 <div class="relative">
-                                    <input type="number" name="execution_days_to" required min="0"
-                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="15">
-                                    <span
-                                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">إلى</span>
+                                    <input type="number" name="execution_days_to" required min="0" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="15">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">إلى</span>
                                     @error('execution_days_to')
                                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                                     @enderror
@@ -123,9 +109,7 @@
                                 مدة الدعم الفني (بالايام) <span class="text-black">*</span>
                             </label>
                             <div class="relative">
-                                <input type="number" name="support_days" required min="0" step="1"
-                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="365 يوم">
+                                <input type="number" name="support_days" required min="0" step="1" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="365 يوم">
                                 @error('support_days')
                                 <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -135,8 +119,7 @@
                         {{-- نوع الخدمة --}}
                         <div class="mb-4">
                             <x-input-label for="service_id" :value="__('نوع الخدمة')" />
-                            <select id="service_id" name="service_id"
-                                class="mt-2 px-4 py-3 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300
+                            <select id="service_id" name="service_id" class="mt-2 px-4 py-3 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300
                                 focus:border-blue-500 focus:ring-blue-500 dark:focus:ring-blue-600 rounded-md shadow-sm block w-full" required>
                                 <option class="text-gray-500">-- اختر نوع الخدمة --</option>
                                 @foreach ($services as $service)
@@ -154,8 +137,7 @@
                                 بداية العداد <span class="text-black">*</span>
                             </label>
                             <div class="relative">
-                                <input type="number" name="counter" required min="0" step="1"
-                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <input type="number" name="counter" required min="0" step="1" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 @error('counter')
                                 <span class="text-black text-xs mt-1">{{ $message }}</span>
                                 @enderror
@@ -177,9 +159,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 الوصف بالعربي <span class="text-black">*</span>
                             </label>
-                            <textarea name="description_ar" id="description_ar" required rows="4"
-                                class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="نظام متكامل لإدارة المبيعات والمخزون، والعطاءات مع نظام محاسبي مبسط وواجهة سهلة الاستخدام"></textarea>
+                            <textarea name="description_ar" id="description_ar" required rows="4" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="نظام متكامل لإدارة المبيعات والمخزون، والعطاءات مع نظام محاسبي مبسط وواجهة سهلة الاستخدام"></textarea>
                             @error('description_ar')
                             <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -190,9 +170,7 @@
                             <label class="block text-sm text-left font-medium text-gray-700 mb-2">
                                 Description (English)
                             </label>
-                            <textarea required name="description_en" id="description_en" rows="4" dir="ltr"
-                                class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Integrated system for sales and inventory management..."></textarea>
+                            <textarea required name="description_en" id="description_en" rows="4" dir="ltr" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Integrated system for sales and inventory management..."></textarea>
                             @error('description_en')
                             <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
@@ -209,25 +187,19 @@
 
                     <div id="requirements-container" class="space-y-3">
                         <div class="flex gap-2 requirement-row">
-                            <input type="text" name="requirements_ar[]"
-                                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="متطلب جديد">
-                            <input type="text" name="requirements_en[]" dir="ltr"
-                                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="New Requirement">
+                            <input type="text" name="requirements_ar[]" class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="متطلب جديد">
+                            <input type="text" name="requirements_en[]" dir="ltr" class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="New Requirement">
                             @error('requirements_ar.*')
                             <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
-                            <button type="button"
-                                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
+                            <button type="button" class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
 
                     </div>
 
-                    <button type="button"
-                        class="add-requirement-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <button type="button" class="add-requirement-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                         <i class="fas fa-plus"></i>
                         إضافة متطلب
                     </button>
@@ -243,24 +215,18 @@
                     <div id="features-container" class="space-y-3">
                         <!-- Feature 1 -->
                         <div class="flex gap-2 feature-row">
-                            <input type="text" name="features_ar[]"
-                                class="feature-ar-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="لوحة تحكم احترافية">
-                            <input type="text" name="features_en[]" dir="ltr"
-                                class="feature-en-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                placeholder="Professional Dashboard">
+                            <input type="text" name="features_ar[]" class="feature-ar-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="لوحة تحكم احترافية">
+                            <input type="text" name="features_en[]" dir="ltr" class="feature-en-input placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Professional Dashboard">
                             @error('features_ar.*')
                             <span class="text-black text-xs mt-1">{{ $message }}</span>
                             @enderror
-                            <button type="button"
-                                class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
+                            <button type="button" class="remove-feature-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
                     </div>
 
-                    <button type="button"
-                        class="add-feature-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <button type="button" class="add-feature-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                         <i class="fas fa-plus"></i>
                         إضافة ميزة
                     </button>
@@ -282,9 +248,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         محتوى الزر (عربي)
                                     </label>
-                                    <input type="text" name="buttons_text_ar[]"
-                                        class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        placeholder="اطلب الآن">
+                                    <input type="text" name="buttons_text_ar[]" class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="اطلب الآن">
                                 </div>
 
                                 <!-- محتوى الزر بالإنجليزي -->
@@ -292,9 +256,7 @@
                                     <label class="block text-sm text-left font-medium text-gray-700 mb-2">
                                         Button Text (English)
                                     </label>
-                                    <input type="text" name="buttons_text_en[]" dir="ltr"
-                                        class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Order Now">
+                                    <input type="text" name="buttons_text_en[]" dir="ltr" class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Order Now">
                                 </div>
                             </div>
 
@@ -304,9 +266,7 @@
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         رابط الزر
                                     </label>
-                                    <input type="url" name="buttons_link[]" dir="ltr"
-                                        class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                        placeholder="https://example.com">
+                                    <input type="url" name="buttons_link[]" dir="ltr" class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="https://example.com">
                                 </div>
 
                                 <!-- اللون -->
@@ -315,19 +275,15 @@
                                         لون الزر
                                     </label>
                                     <div class="flex gap-2">
-                                        <input type="color" name="buttons_color[]" value="#3B82F6"
-                                            class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
-                                        <input type="text" name="buttons_color_hex[]" value="#3B82F6" dir="ltr"
-                                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                            placeholder="#3B82F6" readonly>
+                                        <input type="color" name="buttons_color[]" value="#3B82F6" class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
+                                        <input type="text" name="buttons_color_hex[]" value="#3B82F6" dir="ltr" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="#3B82F6" readonly>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- زر الحذف -->
                             <div class="flex justify-end mt-3">
-                                <button type="button"
-                                    class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center gap-2">
+                                <button type="button" class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-black flex items-center gap-2">
                                     <i class="fas fa-trash"></i>
                                     حذف الزر
                                 </button>
@@ -335,8 +291,7 @@
                         </div>
                     </div>
 
-                    <button type="button"
-                        class="add-button-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <button type="button" class="add-button-btn mt-4 flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                         <i class="fas fa-plus"></i>
                         إضافة زر جديد
                     </button>
@@ -356,10 +311,8 @@
                                 الصورة الرئيسية <span class="text-black">*</span>
                             </label>
 
-                            <div
-                                class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
-                                <input id="main_image_input" type="file" name="main_image" accept="image/*" required
-                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
+                                <input id="main_image_input" type="file" name="main_image" accept="image/*" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                                 <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
                                 <p class="text-sm text-gray-600">اضغط أو اسحب الصورة هنا</p>
                             </div>
@@ -370,8 +323,7 @@
                             <div id="main_preview_container" class="mt-3 hidden relative w-full h-56">
                                 <img id="main_image_preview" class="w-full h-full object-cover rounded-lg border" />
                                 <!-- زر حذف -->
-                                <button onclick="removeMainImage()"
-                                    class="absolute top-1 right-1 bg-black text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
+                                <button onclick="removeMainImage()" class="absolute top-1 right-1 bg-black text-white w-7 h-7 flex items-center justify-center rounded-full shadow hover:bg-red-700">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -383,10 +335,8 @@
                                 صور إضافية
                             </label>
 
-                            <div
-                                class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
-                                <input id="extra_images_input" type="file" name="images[]" accept="image/*" multiple
-                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <div class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition">
+                                <input id="extra_images_input" type="file" name="images[]" accept="image/*" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
                                 <i class="fas fa-images text-4xl text-gray-400 mb-2"></i>
                                 <p class="text-sm text-gray-600">يمكنك اختيار عدة صور</p>
                             </div>
@@ -405,10 +355,8 @@
                         هل النظام خارجي <span class="text-black">*</span>
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="system_external_toggle" name="system_external" value="1"
-                            class="sr-only peer" {{ old('system_external') ? 'checked' : '' }}>
-                        <div
-                            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        <input type="checkbox" id="system_external_toggle" name="system_external" value="1" class="sr-only peer" {{ old('system_external') ? 'checked' : '' }}>
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
                         </div>
                         <span class="ms-3 text-sm font-medium text-gray-900 select-none">نعم</span>
                     </label>
@@ -421,9 +369,7 @@
                     <label for="external_url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         رابط النظام الخارجي <span class="text-black">*</span>
                     </label>
-                    <input type="url" name="external_url" id="external_url" value="{{ old('external_url') }}"
-                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="https://example.com">
+                    <input type="url" name="external_url" id="external_url" value="{{ old('external_url') }}" class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" placeholder="https://example.com">
                     @error('external_url')
                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
@@ -435,10 +381,8 @@
                     </label>
                     <label class="inline-flex items-center cursor-pointer">
 
-                        <input type="checkbox" id="evorq_onwer_toggle" name="evorq_onwer" value="1" class="sr-only peer"
-                            {{ old('evorq_onwer') ? 'checked' : '' }}>
-                        <div
-                            class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                        <input type="checkbox" id="evorq_onwer_toggle" name="evorq_onwer" value="1" class="sr-only peer" {{ old('evorq_onwer') ? 'checked' : '' }}>
+                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
                         </div>
                         <span class="ms-3 text-sm font-medium text-gray-900 select-none">لا</span>
                     </label>
@@ -451,8 +395,7 @@
                     <label for="onwer_system" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         اسم مالك النظام <span class="text-black">*</span>
                     </label>
-                    <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system') }}"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                    <input type="text" name="onwer_system" id="onwer_system" value="{{ old('onwer_system') }}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
                     @error('onwer_system')
                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
@@ -466,13 +409,11 @@
                     </h2>
 
                     <div class="flex gap-4">
-                        <label
-                            class="flex items-center gap-3 p-4 border-2 border-green-300 bg-green-50 rounded-lg cursor-pointer">
+                        <label class="flex items-center gap-3 p-4 border-2 border-green-300 bg-green-50 rounded-lg cursor-pointer">
                             <input type="radio" name="status" value="active" checked class="w-5 h-5 text-green-600">
                             <span class="font-medium text-green-700">نشط</span>
                         </label>
-                        <label
-                            class="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <label class="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                             <input type="radio" name="status" value="inactive" class="w-5 h-5 text-gray-600">
                             <span class="font-medium text-gray-700">غير نشط</span>
                         </label>
@@ -484,13 +425,11 @@
 
                 <!-- الأزرار -->
                 <div class="flex gap-4 pt-4">
-                    <button type="submit"
-                        class="flex-1 bg-blue-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl">
                         <i class="fas fa-save ml-2"></i>
                         حفظ النظام
                     </button>
-                    <button type="reset"
-                        class="px-8 bg-gray-200 text-gray-700 py-4 rounded-lg font-bold hover:bg-gray-300 transition">
+                    <button type="reset" class="px-8 bg-gray-200 text-gray-700 py-4 rounded-lg font-bold hover:bg-gray-300 transition">
                         <i class="fas fa-redo ml-2"></i>
                         إعادة تعيين
                     </button>
@@ -499,295 +438,301 @@
 
             <script>
                 /**
- * نسخة محسّنة من سكريبت الترجمة التلقائية
- * الحل: دالة واحدة فقط + معالجة أفضل للأخطاء
- */
+                 * نسخة محسّنة من سكريبت الترجمة التلقائية
+                 * الحل: دالة واحدة فقط + معالجة أفضل للأخطاء
+                 */
 
-(function() {
-    'use strict';
+                (function() {
+                        'use strict';
 
-    /**
-     * دالة الترجمة باستخدام Google Translate API (غير رسمي)
-     * مع معالجة محسّنة للنصوص الطويلة والأسطر المتعددة
-     */
-    /**
- * حل مشكلة الترجمة عند النزول لسطر جديد (Enter)
- * المشكلة: Google API بترجع array من الأسطر، لازم نجمعهم صح
- */
+                        /**
+                         * دالة الترجمة باستخدام Google Translate API (غير رسمي)
+                         * مع معالجة محسّنة للنصوص الطويلة والأسطر المتعددة
+                         */
+                        /**
+                         * حل مشكلة الترجمة عند النزول لسطر جديد (Enter)
+                         * المشكلة: Google API بترجع array من الأسطر، لازم نجمعهم صح
+                         */
 
-(function() {
-    'use strict';
+                        (function() {
+                            'use strict';
 
-    /**
-     * دالة الترجمة المحسّنة - معالجة خاصة للأسطر المتعددة
-     */
-    async function translateText(text, sourceLang, targetLang) {
-        if (!text || !text.trim()) {
-            return "";
-        }
+                            /**
+                             * دالة الترجمة المحسّنة - معالجة خاصة للأسطر المتعددة
+                             */
+                            async function translateText(text, sourceLang, targetLang) {
+                                if (!text || !text.trim()) {
+                                    return "";
+                                }
 
-        const cleanText = text.trim();
-        
-        // استخدام dt=t للحصول على الترجمة الكاملة
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(cleanText)}`;
-        
-        try {
-            const response = await fetch(url);
-            
-            if (!response.ok) {
-                console.warn('Translation API error:', response.status);
-                return text;
-            }
+                                const cleanText = text.trim();
 
-            const data = await response.json();
-            
-            /**
-             * 🔥 الحل الأساسي هنا:
-             * Google بتقسم النص لأجزاء في data[0]
-             * كل جزء = [translated, original, ...]
-             * لازم نجمع كل الأجزاء مع الحفاظ على الأسطر الجديدة
-             */
-            if (data && data[0] && Array.isArray(data[0])) {
-                let translatedText = '';
-                
-                for (let i = 0; i < data[0].length; i++) {
-                    const part = data[0][i];
-                    if (part && part[0]) {
-                        translatedText += part[0];
-                    }
-                }
-                
-                // إزالة المسافات الزائدة مع الحفاظ على السطور الجديدة
-                return translatedText.trim() || text;
-            }
-            
-            return text;
-            
-        } catch (error) {
-            console.error('Translation error:', error);
-            return text;
-        }
-    }
+                                // استخدام dt=t للحصول على الترجمة الكاملة
+                                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(cleanText)}`;
 
-    /**
-     * إعداد الترجمة للـ textarea (الوصف)
-     * مع معالجة خاصة للنصوص الطويلة والأسطر المتعددة
-     */
-    function setupTextareaTranslation(sourceId, targetId, fromLang, toLang, delay = 1500) {
-        const sourceTextarea = document.getElementById(sourceId);
-        const targetTextarea = document.getElementById(targetId);
-        
-        if (!sourceTextarea || !targetTextarea) {
-            console.warn(`Textarea not found: ${sourceId} -> ${targetId}`);
-            return;
-        }
+                                try {
+                                    const response = await fetch(url);
 
-        let translationTimer = null;
-        let isTranslating = false;
+                                    if (!response.ok) {
+                                        console.warn('Translation API error:', response.status);
+                                        return text;
+                                    }
 
-        sourceTextarea.addEventListener('input', async function(e) {
-            const currentValue = e.target.value;
-            
-            // إلغاء الترجمة السابقة
-            if (translationTimer) {
-                clearTimeout(translationTimer);
-            }
+                                    const data = await response.json();
 
-            // عدم الترجمة إذا كان النص فارغًا أو جاري الترجمة
-            if (!currentValue.trim() || isTranslating) {
-                return;
-            }
+                                    /**
+                                     * 🔥 الحل الأساسي هنا:
+                                     * Google بتقسم النص لأجزاء في data[0]
+                                     * كل جزء = [translated, original, ...]
+                                     * لازم نجمع كل الأجزاء مع الحفاظ على الأسطر الجديدة
+                                     */
+                                    if (data && data[0] && Array.isArray(data[0])) {
+                                        let translatedText = '';
 
-            // الانتظار حتى يتوقف المستخدم عن الكتابة
-            translationTimer = setTimeout(async () => {
-                isTranslating = true;
-                
-                try {
-                    // عرض مؤشر التحميل (اختياري)
-                    targetTextarea.style.opacity = '0.5';
-                    targetTextarea.placeholder = 'Translating...';
-                    
-                    // الترجمة
-                    const translatedText = await translateText(currentValue, fromLang, toLang);
-                    
-                    // تحديث النص المترجم
-                    if (translatedText) {
-                        targetTextarea.value = translatedText;
-                        
-                        // إطلاق حدث input للتوافق مع frameworks
-                        targetTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                    
-                } catch (error) {
-                    console.error('Textarea translation failed:', error);
-                } finally {
-                    // إزالة مؤشر التحميل
-                    targetTextarea.style.opacity = '1';
-                    targetTextarea.placeholder = targetTextarea.getAttribute('placeholder') || '';
-                    isTranslating = false;
-                }
-            }, delay);
-        });
+                                        for (let i = 0; i < script data[0].length; i++) {
+                                            const part = data[0][i];
+                                            if (part && part[0]) {
+                                                translatedText += part[0];
+                                            }
+                                        }
 
-        // منع التعديل المباشر على الحقل المترجم أثناء الترجمة
-        targetTextarea.addEventListener('focus', function() {
-            if (isTranslating) {
-                sourceTextarea.focus();
-            }
-        });
-    }
+                                        // إزالة المسافات الزائدة مع الحفاظ على السطور الجديدة
+                                        return translatedText.trim() || text;
+                                    }
 
-    /**
-     * إعداد الترجمة للحقول النصية العادية (Input)
-     */
-    function setupInputTranslation(sourceId, targetId, fromLang, toLang, delay = 1000) {
-        const sourceInput = document.getElementById(sourceId);
-        const targetInput = document.getElementById(targetId);
-        
-        if (!sourceInput || !targetInput) {
-            return;
-        }
+                                    return text;
 
-        let translationTimer = null;
+                                } catch (error) {
+                                    console.error('Translation error:', error);
+                                    return text;
+                                }
+                            }
 
-        sourceInput.addEventListener('input', function(e) {
-            const currentValue = e.target.value.trim();
-            
-            if (translationTimer) {
-                clearTimeout(translationTimer);
-            }
+                            /**
+                             * إعداد الترجمة للـ textarea (الوصف)
+                             * مع معالجة خاصة للنصوص الطويلة والأسطر المتعددة
+                             */
+                            function setupTextareaTranslation(sourceId, targetId, fromLang, toLang, delay = 1500) {
+                                const sourceTextarea = document.getElementById(sourceId);
+                                const targetTextarea = document.getElementById(targetId);
 
-            if (!currentValue) {
-                return;
-            }
+                                if (!sourceTextarea || !targetTextarea) {
+                                    console.warn(`Textarea not found: ${sourceId} -> ${targetId}`);
+                                    return;
+                                }
 
-            translationTimer = setTimeout(async () => {
-                try {
-                    const translatedText = await translateText(currentValue, fromLang, toLang);
-                    
-                    if (translatedText && translatedText !== targetInput.value) {
-                        targetInput.value = translatedText;
-                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                } catch (error) {
-                    console.error('Input translation failed:', error);
-                }
-            }, delay);
-        });
-    }
+                                let translationTimer = null;
+                                let isTranslating = false;
 
-    /**
-     * إعداد الترجمة للحقول الديناميكية (المميزات والمتطلبات)
-     */
-    function setupDynamicTranslation(containerId, rowClass, arName, enName) {
-        const container = document.getElementById(containerId);
-        
-        if (!container) {
-            return;
-        }
+                                sourceTextarea.addEventListener('input', async function(e) {
+                                    const currentValue = e.target.value;
 
-        container.addEventListener('input', function(e) {
-            const isArabic = e.target.name === arName;
-            const isEnglish = e.target.name === enName;
+                                    // إلغاء الترجمة السابقة
+                                    if (translationTimer) {
+                                        clearTimeout(translationTimer);
+                                    }
 
-            if (!isArabic && !isEnglish) return;
+                                    // عدم الترجمة إذا كان النص فارغًا أو جاري الترجمة
+                                    if (!currentValue.trim() || isTranslating) {
+                                        return;
+                                    }
 
-            const row = e.target.closest(rowClass);
-            if (!row) return;
+                                    // الانتظار حتى يتوقف المستخدم عن الكتابة
+                                    translationTimer = setTimeout(async () => {
+                                        isTranslating = true;
 
-            const targetInput = row.querySelector(
-                `input[name="${isArabic ? enName : arName}"]`
-            );
+                                        try {
+                                            // عرض مؤشر التحميل (اختياري)
+                                            targetTextarea.style.opacity = '0.5';
+                                            targetTextarea.placeholder = 'Translating...';
 
-            if (!targetInput) return;
+                                            // الترجمة
+                                            const translatedText = await translateText(currentValue, fromLang, toLang);
 
-            if (e.target.translationTimer) {
-                clearTimeout(e.target.translationTimer);
-            }
+                                            // تحديث النص المترجم
+                                            if (translatedText) {
+                                                targetTextarea.value = translatedText;
 
-            const currentValue = e.target.value.trim();
-            if (!currentValue) return;
+                                                // إطلاق حدث input للتوافق مع frameworks
+                                                targetTextarea.dispatchEvent(new Event('input', {
+                                                    bubbles: true
+                                                }));
+                                            }
 
-            e.target.translationTimer = setTimeout(async () => {
-                try {
-                    const translated = await translateText(
-                        currentValue,
-                        isArabic ? 'ar' : 'en',
-                        isArabic ? 'en' : 'ar'
-                    );
-                    
-                    if (translated && translated !== targetInput.value) {
-                        targetInput.value = translated;
-                        targetInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                } catch (error) {
-                    console.error('Dynamic translation failed:', error);
-                }
-            }, 1000);
-        });
-    }
+                                        } catch (error) {
+                                            console.error('Textarea translation failed:', error);
+                                        } finally {
+                                            // إزالة مؤشر التحميل
+                                            targetTextarea.style.opacity = '1';
+                                            targetTextarea.placeholder = targetTextarea.getAttribute('placeholder') || '';
+                                            isTranslating = false;
+                                        }
+                                    }, delay);
+                                });
 
-    /**
-     * إعداد Toggle
-     */
-    function setupToggle(toggleId, containerId, inputId) {
-        const toggle = document.getElementById(toggleId);
-        const container = document.getElementById(containerId);
-        const input = document.getElementById(inputId);
-        
-        if (!toggle || !container || !input) return;
+                                // منع التعديل المباشر على الحقل المترجم أثناء الترجمة
+                                targetTextarea.addEventListener('focus', function() {
+                                    if (isTranslating) {
+                                        sourceTextarea.focus();
+                                    }
+                                });
+                            }
 
-        function updateVisibility(isChecked) {
-            if (isChecked) {
-                container.classList.remove('hidden');
-                input.setAttribute('required', 'required');
-            } else {
-                container.classList.add('hidden');
-                input.removeAttribute('required');
-            }
-        }
+                            /**
+                             * إعداد الترجمة للحقول النصية العادية (Input)
+                             */
+                            function setupInputTranslation(sourceId, targetId, fromLang, toLang, delay = 1000) {
+                                const sourceInput = document.getElementById(sourceId);
+                                const targetInput = document.getElementById(targetId);
 
-        toggle.addEventListener('change', (e) => updateVisibility(e.target.checked));
-        updateVisibility(toggle.checked);
-    }
+                                if (!sourceInput || !targetInput) {
+                                    return;
+                                }
 
-    /**
-     * تهيئة كل شيء عند تحميل الصفحة
-     */
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ Translation system loaded');
+                                let translationTimer = null;
 
-        // 1. ترجمة حقول الاسم (Input)
-        setupInputTranslation('name_ar', 'name_en', 'ar', 'en', 800);
-        setupInputTranslation('name_en', 'name_ar', 'en', 'ar', 800);
+                                sourceInput.addEventListener('input', function(e) {
+                                    const currentValue = e.target.value.trim();
 
-        // 2. ترجمة حقول الوصف (Textarea) - هنا الحل الأساسي
-        setupTextareaTranslation('description_ar', 'description_en', 'ar', 'en', 1800);
-        setupTextareaTranslation('description_en', 'description_ar', 'en', 'ar', 1800);
+                                    if (translationTimer) {
+                                        clearTimeout(translationTimer);
+                                    }
 
-        // 3. ترجمة المميزات
-        setupDynamicTranslation(
-            'features-container',
-            '.feature-row',
-            'features_ar[]',
-            'features_en[]'
-        );
+                                    if (!currentValue) {
+                                        return;
+                                    }
 
-        // 4. ترجمة المتطلبات
-        setupDynamicTranslation(
-            'requirements-container',
-            '.requirement-row',
-            'requirements_ar[]',
-            'requirements_en[]'
-        );
+                                    translationTimer = setTimeout(async () => {
+                                        try {
+                                            const translatedText = await translateText(currentValue, fromLang, toLang);
 
-        // 5. إعداد Toggles
-        setupToggle('system_external_toggle', 'external_url_container', 'external_url');
-        setupToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
-    });
+                                            if (translatedText && translatedText !== targetInput.value) {
+                                                targetInput.value = translatedText;
+                                                targetInput.dispatchEvent(new Event('input', {
+                                                    bubbles: true
+                                                }));
+                                            }
+                                        } catch (error) {
+                                            console.error('Input translation failed:', error);
+                                        }
+                                    }, delay);
+                                });
+                            }
 
-})();
-            </script>
+                            /**
+                             * إعداد الترجمة للحقول الديناميكية (المميزات والمتطلبات)
+                             */
+                            function setupDynamicTranslation(containerId, rowClass, arName, enName) {
+                                const container = document.getElementById(containerId);
+
+                                if (!container) {
+                                    return;
+                                }
+
+                                container.addEventListener('input', function(e) {
+                                    const isArabic = e.target.name === arName;
+                                    const isEnglish = e.target.name === enName;
+
+                                    if (!isArabic && !isEnglish) return;
+
+                                    const row = e.target.closest(rowClass);
+                                    if (!row) return;
+
+                                    const targetInput = row.querySelector(
+                                        `input[name="${isArabic ? enName : arName}"]`
+                                    );
+
+                                    if (!targetInput) return;
+
+                                    if (e.target.translationTimer) {
+                                        clearTimeout(e.target.translationTimer);
+                                    }
+
+                                    const currentValue = e.target.value.trim();
+                                    if (!currentValue) return;
+
+                                    e.target.translationTimer = setTimeout(async () => {
+                                        try {
+                                            const translated = await translateText(
+                                                currentValue
+                                                , isArabic ? 'ar' : 'en'
+                                                , isArabic ? 'en' : 'ar'
+                                            );
+
+                                            if (translated && translated !== targetInput.value) {
+                                                targetInput.value = translated;
+                                                targetInput.dispatchEvent(new Event('input', {
+                                                    bubbles: true
+                                                }));
+                                            }
+                                        } catch (error) {
+                                            console.error('Dynamic translation failed:', error);
+                                        }
+                                    }, 1000);
+                                });
+                            }
+
+                            /**
+                             * إعداد Toggle
+                             */
+                            function setupToggle(toggleId, containerId, inputId) {
+                                const toggle = document.getElementById(toggleId);
+                                const container = document.getElementById(containerId);
+                                const input = document.getElementById(inputId);
+
+                                if (!toggle || !container || !input) return;
+
+                                function updateVisibility(isChecked) {
+                                    if (isChecked) {
+                                        container.classList.remove('hidden');
+                                        input.setAttribute('required', 'required');
+                                    } else {
+                                        container.classList.add('hidden');
+                                        input.removeAttribute('required');
+                                    }
+                                }
+
+                                toggle.addEventListener('change', (e) => updateVisibility(e.target.checked));
+                                updateVisibility(toggle.checked);
+                            }
+
+                            /**
+                             * تهيئة كل شيء عند تحميل الصفحة
+                             */
+                            document.addEventListener('DOMContentLoaded', function() {
+                                console.log('✅ Translation system loaded');
+
+                                // 1. ترجمة حقول الاسم (Input)
+                                setupInputTranslation('name_ar', 'name_en', 'ar', 'en', 800);
+                                setupInputTranslation('name_en', 'name_ar', 'en', 'ar', 800);
+
+                                // 2. ترجمة حقول الوصف (Textarea) - هنا الحل الأساسي
+                                setupTextareaTranslation('description_ar', 'description_en', 'ar', 'en', 1800);
+                                setupTextareaTranslation('description_en', 'description_ar', 'en', 'ar', 1800);
+
+                                // 3. ترجمة المميزات
+                                setupDynamicTranslation(
+                                    'features-container'
+                                    , '.feature-row'
+                                    , 'features_ar[]'
+                                    , 'features_en[]'
+                                );
+
+                                // 4. ترجمة المتطلبات
+                                setupDynamicTranslation(
+                                    'requirements-container'
+                                    , '.requirement-row'
+                                    , 'requirements_ar[]'
+                                    , 'requirements_en[]'
+                                );
+
+                                // 5. إعداد Toggles
+                                setupToggle('system_external_toggle', 'external_url_container', 'external_url');
+                                setupToggle('evorq_onwer_toggle', 'onwer_system_container', 'onwer_system');
+                            });
+
+                        })();
+
             /**
             * إعداد الترجمة التلقائية لحقول النصوص
             */

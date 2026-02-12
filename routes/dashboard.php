@@ -17,6 +17,7 @@ use App\Http\Controllers\Dashboard\LogoController;
 use App\Http\Controllers\TaskController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ExpensesController;
+use App\Http\Controllers\ExpensesRequestController;
 use App\Http\Controllers\IssueController;
 use App\Http\Controllers\ProjectFileController;
 use App\Http\Controllers\MeetingController;
@@ -34,14 +35,51 @@ use App\Http\Controllers\RequestFileController;
 use App\Http\Controllers\PartnerSystemController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\AdminRemarkController;
+use App\Http\Controllers\CreateRequestController;
 use App\Http\Controllers\Dashboard\AdjustmentController;
+use App\Http\Controllers\Dashboard\IndependentPartnerController;
+use App\Http\Controllers\Dashboard\MyStoreController;
+use App\Http\Controllers\ProjectMeetingController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\ZiinaPaymentController;
+use App\Http\Controllers\MyCoursesController;
+use App\Http\Controllers\EducationalResourceController;
+use App\Models\MyStore;
+
+Route::post('/send-whatsapp-otp', [App\Http\Controllers\PartnerRegistrationController::class, 'sendOtp'])->name('send.otp');
+Route::post('/send-otp', [PartnerRegistrationController::class, 'sendOtp'])->name('send.whatsapp.otp');
+Route::middleware(['auth'])->group(function () {
+    Route::get('project-meetings', [ProjectMeetingController::class, 'index'])
+        ->name('meetings.index');
+    Route::post('project-meetings', [ProjectMeetingController::class, 'store'])
+        ->name('meetings.store');
+    Route::patch('project-meetings/{meeting}', [ProjectMeetingController::class, 'update'])
+        ->name('meetings.update');
+    Route::delete('project-meetings/{meeting}', [ProjectMeetingController::class, 'destroy'])
+        ->name('meetings.destroy');
+    Route::patch('project-meetings/{meeting}/status', [ProjectMeetingController::class, 'updateStatus'])
+        ->name('meetings.updateStatus');
+});
 
 // ملف web.php
-Route::post('/special-request/{special_request}/add-note', [SpecialRequestController::class, 'addNote'])
-    ->name('dashboard.special-request.add-note');
+Route::middleware(['auth'])->group(function () {
     
-Route::prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::post('/project-meetings', [ProjectMeetingController::class, 'store'])->name('meetings.store');
+    Route::patch('/project-meetings/{meeting}/status', [ProjectMeetingController::class, 'updateStatus'])->name('meetings.updateStatus');
+    
+    Route::get('dashboard.requests.create-request', [CreateRequestController::class, 'createRequest'])
+    ->name('dashboard.requests.create-request');
+    
+    Route::post('dashboard.requests.post-request', [CreateRequestController::class, 'postRequest'])
+    ->name('dashboard.requests.post-request');
+    
+    Route::post('/special-request/{special_request}/add-note', [SpecialRequestController::class, 'addNote'])
+    ->name('dashboard.special-request.add-note');
+});
+    
+Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('work-times', WorkTimeController::class);
+    Route::resource('educational_resources', EducationalResourceController::class);
 
     Route::post('special-request/{specialRequest}/store-stage', [SpecialRequestController::class, 'storeStage'])
         ->name('special-request.store-stage');
@@ -57,7 +95,6 @@ Route::post('sessions/{session}/update-status', [SessionRequestController::class
     ->name('dashboard.sessions.updateStatus');
     
 // مسارات الأخطاء (Issues)
-Route::post('/issues', [IssueController::class, 'store'])->name('issues.store');
 Route::put('/issues/{issue}', [IssueController::class, 'update'])->name('issues.update');
 Route::delete('/issues/{issue}', [IssueController::class, 'destroy'])->name('issues.destroy');
 Route::patch('/issues/{issue}/status', [IssueController::class, 'updateStatus'])->name('issues.update-status');
@@ -71,21 +108,23 @@ Route::delete('/comments/{comment}', [IssueCommentController::class, 'destroy'])
 // Knowledge Base
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('kb_categories', KbCategoryController::class);
+    Route::resource('my_courses', MyCoursesController::class);
     Route::resource('kb', KnowledgeBaseController::class);
     Route::resource('sessions', SessionRequestController::class)->names('sessions');
 });
-
+Route::get('/dashboard/payment/invoice/{payment_id}', [MyCoursesController::class, 'showInvoice'])->name('dashboard.payment.invoice');
 // My Services
 Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(function () {
     Route::get('/{id}/payments', [SystemController::class, 'payments'])->name('systems.payments');
-
     Route::resource('available_services', AvailableServiceController::class)->names('available_services');
     Route::get('/my-services', [MyServicesController::class, 'index'])->name('my_service.index');
     Route::post('/my-services', [MyServicesController::class, 'store'])->name('my_service.store');
     Route::get('/my-services/show', [MyServicesController::class, 'show'])->name('my_service.show');
 });
 
-
+Route::name('dashboard.')->prefix('dashboard')->group(function () {
+    Route::resource('courses', CourseController::class);
+});
 // System Routes
 Route::middleware('auth')->group(function () {
     Route::resource('logos', LogoController::class)->names('dashboard.logos');
@@ -101,6 +140,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('project_manager', ProjectManagerController::class)->names('dashboard.project_manager');
     Route::post('new_project/{id}/proposal', [NewProjectController::class, 'storeProposal'])->name('dashboard.new_project.store_proposal');
     Route::resource('systems', SystemController::class)->names('dashboard.systems');
+    Route::resource('my-store', MyStoreController::class)->names('dashboard.my-store');
+    // Route::resource('courses', CourseController::class)->names('dashboard.courses');
+    Route::get('courses/{course}/payments', [CourseController::class, 'payments'])
+        ->name('dashboard.courses.payments');
+    // دفع الدورة (إنشاء payment intent)
+    Route::post('/course/payment/create', [ZiinaPaymentController::class, 'createCoursePayment'])->name('course.payment.create');
+    Route::get('/course/payment/success', [ZiinaPaymentController::class, 'courseSuccess'])->name('course.payment.success');
+    Route::get('/course/payment/cancel', [ZiinaPaymentController::class, 'courseCancel'])->name('course.payment.cancel');
+        
+    Route::get('/courses/{course}', [CourseController::class, 'userShow'])->name('courses.show');
     Route::resource('partners', PartnerController::class)->names('dashboard.partners');
     Route::resource('clients', ClientController::class)->names('dashboard.clients');
     Route::resource('requests', RequestsController::class)->names('dashboard.requests');
@@ -116,6 +165,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('salaries', SalaryController::class)->names('dashboard.salaries');
     Route::resource('dashboard/admin-remarks', AdminRemarkController::class)->names('dashboard.admin_remarks');
     Route::resource('adjustments', AdjustmentController::class)->names('dashboard.adjustments');
+    Route::resource('dashboard/independent-partners', IndependentPartnerController::class)
+        ->names('dashboard.independent-partners');
 });
 Route::get('/dashboard/salaries/fetch-attendance/{user_id}', [SalaryController::class, 'fetchAttendance'])->name('salaries.fetchAttendance');
 // Register Partner
@@ -142,17 +193,23 @@ Route::middleware('auth')->group(function () {
 
     // Issues
     Route::post('/issues/store', [IssueController::class, 'store'])->name('issues.store');
+    Route::post('/issues-request/store', [IssueController::class, 'storeRequest'])->name('issues-request.store');
+
     Route::patch('/issues/{issue}/status', [IssueController::class, 'updateStatus'])->name('issues.update-status');
     Route::put('/issues/{issue}', [IssueController::class, 'update'])->name('issues.update');
     Route::delete('/issues/{issue}', [IssueController::class, 'destroy'])->name('issues.destroy');
 
     // Expenses
     Route::resource('expenses', ExpensesController::class);
+    Route::resource('expensesRequests', ExpensesRequestController::class);
 
-    // Special Request
+    // Special Requesst
     Route::post('/special-request/{specialRequest}/update-project-status', [SpecialRequestController::class, 'updateProjectStatus'])
         ->name('dashboard.special-request.update-project-status');
 
+    Route::post('/request/{specialRequest}/update-project-status', [SpecialRequestController::class, 'updateRequestStatus'])
+        ->name('dashboard.request.update-project-status');
+    
     // Tasks
     Route::post('/tasks/store', [TaskController::class, 'store'])->name('tasks.store');
     Route::post('/tasks/request-store', [TaskController::class, 'requestStore'])->name('tasks.request-store');
@@ -163,13 +220,18 @@ Route::middleware('auth')->group(function () {
     // Special Request
     Route::post('/special-requests/{specialRequest}/add-stage', [SpecialRequestController::class, 'addStage'])
         ->name('dashboard.special-request.add-stage');
-
+    Route::put('/dashboard/special-request/stages/{stage}', [SpecialRequestController::class, 'updateRequestStage'])
+        ->name('dashboard.request.update-stage');
     // Stages
     Route::put('/dashboard/stages/{stage}', [SpecialRequestController::class, 'updateStage'])
         ->name('dashboard.special-request.update-stage');
+
     Route::delete('/stages/{stage}', [SpecialRequestController::class, 'destroyStage'])
         ->name('dashboard.special-request.destroy-stage');
 
+    Route::delete('/request-stages/{stage}', [SpecialRequestController::class, 'destroyRequestStage'])
+        ->name('dashboard.request.destroy-stage');
+        
     // Budgets
     Route::post('/special-request/{specialRequest}/update-budget', [SpecialRequestController::class, 'updateProjectBudget'])
         ->name('dashboard.special-request.update-budget');
@@ -200,7 +262,13 @@ Route::middleware('auth')->group(function () {
     
     Route::post('special-request/{specialRequest}/request-assign-partners', [SpecialRequestController::class, 'requestAssignPartners'])->name('dashboard.special-request.request-assign-partners');
 
-    Route::delete('special-request/{specialRequest}/partner/{partner}', [SpecialRequestController::class, 'removePartner'])->name('dashboard.special-request.remove-partner');
+    Route::delete('special-request/{specialRequest}/partner/{partner}', [SpecialRequestController::class, 'removePartner'])
+    ->name('dashboard.special-request.remove-partner');
+
+    // تأكد أن الاسم هنا {partner} وليس {partner_id} أو أي اسم آخر
+    Route::delete('/requests/{specialRequest}/partners/{partner}', [SpecialRequestController::class, 'removePartnerRequest'])
+        ->name('dashboard.request.remove-partner');
+
     Route::get('performance', PerformanceController::class)->name('dashboard.performance.show');
     Route::get('requests/{request}/invoice', [RequestsController::class, 'invoice'])->name('dashboard.requests.invoice');
     Route::get('requests/{request}/special-invoice', [RequestsController::class, 'specialInvoice'])

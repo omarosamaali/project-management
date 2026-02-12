@@ -39,7 +39,7 @@ class ProjectProposal extends Model
     public function getStatusLabelAttribute()
     {
         return match ($this->status) {
-            'pending'  => 'قيد الانتظار',
+            'pending'  => 'جديد',
             'accepted' => 'تم القبول',
             'rejected' => 'مرفوض',
             default    => $this->status,

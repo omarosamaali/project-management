@@ -73,7 +73,7 @@
                             <th scope="col" class="px-4 py-3">الإسم</th>
                             <th scope="col" class="px-4 py-3">الانظمة</th>
                             <th scope="col" class="px-4 py-3">النسبة</th>
-                            <th scope="col" class="px-4 py-3">عدد الطلبات</th>
+                            <th scope="col" class="px-4 py-3">عدد المشاريع</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
                             </th>

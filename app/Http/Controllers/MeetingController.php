@@ -10,37 +10,22 @@ class MeetingController extends Controller
 {
     public function store(Request $request)
     {
-        $request->validate([
-            'title' => 'required',
-            'start_at' => 'required',
-            'end_at' => 'required',
-        ]);
-
-        // 1. جلب المختارين من الـ Checkboxes (إذا وجدوا)
-        $attendees = $request->input('attendees', []);
-
-        // 2. معالجة الأسماء المكتوبة يدوياً (إذا وجدت)
-        if ($request->manual_attendees) {
-            $manual = explode(',', $request->manual_attendees);
-            // دمج المصفوفات وتنظيف الفراغات
-            $attendees = array_merge($attendees, array_map('trim', $manual));
-        }
-
-        // 3. حذف القيم المكررة أو الفارغة
-        $attendees = array_unique(array_filter($attendees));
-
-        // 4. الحفظ
-        Meeting::create([
+        // 1. إنشاء الاجتماع
+        $meeting = Meeting::create([
             'special_request_id' => $request->special_request_id,
-            'user_id' => auth()->id(),
+            'created_by' => auth()->id(),
             'title' => $request->title,
-            'attendees' => $attendees, // ستتحول لـ JSON تلقائياً بفضل الـ Cast
             'meeting_link' => $request->meeting_link,
             'start_at' => $request->start_at,
             'end_at' => $request->end_at,
         ]);
 
-        return back()->with('success', 'تم جدولة الاجتماع بنجاح');
+        // 2. ربط الحضور في جدول meeting_participants (هنا السر)
+        if ($request->has('attendees')) {
+            $meeting->participants()->attach($request->attendees);
+        }
+
+        return back()->with('success', 'تم جدولة الاجتماع وإرسال الدعوات');
     }
 
     public function update(Request $request, Meeting $meeting)

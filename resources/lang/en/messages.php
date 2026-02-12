@@ -98,9 +98,11 @@ return [
     'price' => 'Price',
     'get_it_in' => 'Get in',
     'web' => 'Website',
-
-
-
+    'course_duration' => 'Course Duration',
+    "متبقي"=>"Only",
+    "مقعد فقط! سارع بالحجز"=>"seats left! Book now",
+    "نعتذر، اكتملت المقاعد بالكامل"=>"Sorry, all seats are fully booked",
+    "الإقبال شديد حالياً"=>"High demand right now"
 
 
 

@@ -1,16 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'الطلبات')
+@section('title', 'المشاريع')
 
 @section('content')
 
 <section class="!pl-0 p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}" second="الطلبات" />
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.requests.index') }}" second="المشاريع" />
     <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {{-- All Requests --}}
         <a href="{{ url()->current() }}" class="flex bg-black justify-between rounded-lg">
             <div class="p-4 pr-6 flex flex-col justify-between">
-                <h1 class="text-md font-bold text-white whitespace-nowrap">جميع الطلبات</h1>
+                <h1 class="text-md font-bold text-white whitespace-nowrap">جميع المشاريع</h1>
                 <p class="text-2xl flex items-center text-white">
                     {{ $allRequestsCount }} @if($requests->count() >= 10) طلب @else طلبات @endif
                 </p>

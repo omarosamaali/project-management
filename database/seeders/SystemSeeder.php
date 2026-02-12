@@ -259,7 +259,7 @@ class SystemSeeder extends Seeder
                 'execution_days_from' => 18,
                 'support_days' => 365,
                 'execution_days_to' => 35,
-                'description_ar' => 'نظام شامل لإدارة المطاعم والطلبات والمخزون والتوصيل',
+                'description_ar' => 'نظام شامل لإدارة المطاعم والمشاريع والمخزون والتوصيل',
                 'description_en' => 'Comprehensive restaurant, order, inventory and delivery management system',
                 'requirements' => [
                     ['ar' => 'قاعدة بيانات MySQL', 'en' => 'MySQL Database'],
@@ -267,7 +267,7 @@ class SystemSeeder extends Seeder
                     ['ar' => 'طابعة حرارية للمطبخ', 'en' => 'Thermal printer for kitchen'],
                 ],
                 'features' => [
-                    ['ar' => 'إدارة الطلبات والطاولات', 'en' => 'Order and table management'],
+                    ['ar' => 'إدارة المشاريع والطاولات', 'en' => 'Order and table management'],
                     ['ar' => 'قائمة طعام رقمية', 'en' => 'Digital menu'],
                     ['ar' => 'نظام التوصيل', 'en' => 'Delivery system'],
                     ['ar' => 'تقارير المبيعات والأرباح', 'en' => 'Sales and profit reports'],
@@ -390,7 +390,7 @@ class SystemSeeder extends Seeder
                     ['ar' => 'إدارة المنتجات والفئات', 'en' => 'Product and category management'],
                     ['ar' => 'بوابات دفع متعددة', 'en' => 'Multiple payment gateways'],
                     ['ar' => 'نظام الشحن والتوصيل', 'en' => 'Shipping and delivery system'],
-                    ['ar' => 'إدارة الطلبات والمرتجعات', 'en' => 'Order and return management'],
+                    ['ar' => 'إدارة المشاريع والمرتجعات', 'en' => 'Order and return management'],
                     ['ar' => 'كوبونات وعروض خاصة', 'en' => 'Coupons and special offers'],
                 ],
                 // أزرار جديدة ومختلفة

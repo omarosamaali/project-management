@@ -20,6 +20,8 @@ class SpecialRequestPartner extends Model
         'notes',
         'status',
         'profit_share_percentage',
+        'share_type',
+        'fixed_amount',
     ];
 
     public function specialRequest(): BelongsTo
@@ -27,6 +29,11 @@ class SpecialRequestPartner extends Model
         return $this->belongsTo(SpecialRequest::class);
     }
 
+    public function request(): BelongsTo
+    {
+        return $this->belongsTo(Requests::class);
+    }
+    
     public function partner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'partner_id');

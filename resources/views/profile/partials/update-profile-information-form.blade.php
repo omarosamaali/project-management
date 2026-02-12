@@ -99,8 +99,7 @@
         {{-- role --}}
         <div>
             <x-input-label for="role" value="الصلاحية" />
-            <div id="role" name="role" type="text" class="rounded border-gray-300 mt-1 block w-full">{{ $user->role_name
-                }}</div>
+            <div id="role" name="role" type="text" class="rounded border-gray-300 mt-1 block w-full">{{ $user->role }}</div>
             <x-input-error class="mt-2" :messages="$errors->get('role')" />
         </div>
 

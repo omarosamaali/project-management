@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expenses;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ExpensesController extends Controller
@@ -25,7 +26,7 @@ class ExpensesController extends Controller
             $validated['image'] = $path;
         }
 
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = Auth::user()->id;
 
         Expenses::create($validated);
         \App\Models\ProjectActivity::create([
@@ -36,7 +37,34 @@ class ExpensesController extends Controller
         ]);
         return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
     }
+    public function storeRequest(Request $request)
+    {
+        $validated = $request->validate([
+            'request_id' => 'required|exists:requests,id',
+            'title'              => 'required|string|max:255',
+            'price'              => 'required|numeric|min:0',
+            'date'               => 'required|date',
+            'description'        => 'nullable|string',
+            'image'              => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
 
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('expenses', 'public');
+            $validated['image'] = $path;
+        }
+
+        $validated['user_id'] = Auth::user()->id;
+
+        Expenses::create($validated);
+        \App\Models\ProjectActivity::create([
+            'request_id' => $request->request_id,
+            'user_id' => auth()->id(),
+            'type' => 'file', // أو status, invoice, etc
+            'description' => 'تم اضافة مصروف جديد',
+        ]);
+        return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
+    }
+    
     // تحديث مصروف موجود
     public function update(Request $request, Expenses $expense)
     {
