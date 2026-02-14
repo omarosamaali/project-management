@@ -104,6 +104,7 @@ return [
     "نعتذر، اكتملت المقاعد بالكامل"=>"Sorry, all seats are fully booked",
     "الإقبال شديد حالياً"=>"High demand right now",
     'related_courses' => 'Related Courses',
+    'related_systems' => 'Related Systems',
     'free' => 'Free Course'
 
 

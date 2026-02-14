@@ -441,7 +441,8 @@
             </div>
         </div>
     </div>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+    @if($related_courses && $related_courses->count() > 0)
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div>
             <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-graduation-cap"></i> {{ __('messages.related_courses') }}</h5>
         </div>
@@ -555,7 +556,8 @@
             </div>
     @endforeach
     </div>
-</div>
+        </div>
+    @endif
     <!-- JavaScript -->
     <script>
         let currentItemId = null;

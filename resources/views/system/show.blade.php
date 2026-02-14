@@ -29,7 +29,7 @@
             <div class="grid md:grid-cols-2 gap-8">
 
                 <!-- Image Section -->
-                <div class="relative h-96 md:h-full order-1 md:order-none">
+                <div class="h-full md:h-[600px] lg:h-[700px] max-h-[700px]">
                     <img src="{{ asset($system->main_image) }}"
                         alt="{{ app()->getLocale() == 'en' ? $system->name_en : $system->name_ar }}"
                         class="w-full h-full object-cover" />
@@ -306,118 +306,120 @@ async function proceedPayment() {
             </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-                <div>
-                    <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-graduation-cap"></i> {{
-                        __('messages.related_courses') }}</h5>
-                </div>
-                <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    @foreach($related_systems as $item)
-                    <div class="system-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
-                        data-service="{{ $item->service_id }}">
-            
-                        <div class="relative h-48 overflow-hidden">
-                            <!-- Badge للتمييز بين نظام ودورة -->
-                            <span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full shadow text-white flex items-center gap-1
-                            bg-blue-600">
-            
-                                <i class="fas fa-code"></i>
-                                <span>خدمة</span>
+    </div>
+    @if($related_systems && count($related_systems) > 0)
+    <div class="mt-5 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            <div>
+                <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-graduation-cap"></i> {{
+                    __('messages.related_systems') }}</h5>
+            </div>
+            <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($related_systems as $item)
+                <div class="system-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+                    data-service="{{ $item->service_id }}">
+        
+                    <div class="relative h-48 overflow-hidden">
+                        <!-- Badge للتمييز بين نظام ودورة -->
+                        <span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full shadow text-white flex items-center gap-1
+                        bg-blue-600">
+        
+                            <i class="fas fa-code"></i>
+                            <span>خدمة</span>
+                        </span>
+        
+                        <!-- اسم الخدمة -->
+                        @if($item->service_id)
+                        <span class="absolute top-2 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded">
+                            {{ $item->service->name_ar }}
+                        </span>
+                        @endif
+        
+                        <img src="{{ asset($system->main_image) }}"
+                            alt="{{ $item->name_ar }}" class="w-full h-full object-cover">
+                    </div>
+        
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-2xl font-bold text-gray-800 mb-3 ltr:text-left rtl:text-right">
+                            {{ app()->getLocale() == 'en' ? $item->name_en : $item->name_ar }}
+                        </h3>
+        
+                        <p class="text-gray-600 mb-4 line-clamp-2 ltr:text-left rtl:text-right">
+                            {{ app()->getLocale() == 'en' ? $item->description_en : $item->description_ar }}
+                        </p>
+        
+                        <!-- السعر -->
+                        <div class="mb-4">
+                            <span class="text-xl font-bold text-black flex gap-2 items-center justify-center">
+                                @if($item->price > 0)
+                                {{ __('messages.price') }} {{ number_format($item->price) }}
+                                <x-drhm-icon width="12" height="14" />
+                                @else
+                                {{ __('messages.free') }}
+                                @endif
                             </span>
-            
-                            <!-- اسم الخدمة -->
-                            @if($item->service_id)
-                            <span class="absolute top-2 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded">
-                                {{ $item->service->name_ar }}
-                            </span>
-                            @endif
-            
-                            <img src="{{ $item->main_image }}"
-                                alt="{{ $item->name_ar }}" class="w-full h-full object-cover">
                         </div>
-            
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-2xl font-bold text-gray-800 mb-3 ltr:text-left rtl:text-right">
-                                {{ app()->getLocale() == 'en' ? $item->name_en : $item->name_ar }}
-                            </h3>
-            
-                            <p class="text-gray-600 mb-4 line-clamp-2 ltr:text-left rtl:text-right">
-                                {{ app()->getLocale() == 'en' ? $item->description_en : $item->description_ar }}
-                            </p>
-            
-                            <!-- السعر -->
-                            <div class="mb-4">
-                                <span class="text-xl font-bold text-black flex gap-2 items-center justify-center">
-                                    @if($item->price > 0)
-                                    {{ __('messages.price') }} {{ number_format($item->price) }}
-                                    <x-drhm-icon width="12" height="14" />
+        
+                        <!-- معلومات إضافية حسب النوع -->
+                        @if($item->type === 'system')
+                        <p class="text-center text-sm text-gray-500 mb-4">
+                            {{ __('messages.get_it_in') }} {{ $item->execution_days_to }} {{ __('messages.day') }}
+                        </p>
+                        <div
+                            class="flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
+                            <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
+                            @if($item->counter > 0)
+                            <span class="text-sm font-medium">
+                                {{ __('messages.purchase') }}
+                                <span class="font-bold text-red-600">{{ $item->counter }}</span>
+                                {{ __('messages.times') }}
+                            </span>
+                            @else
+                            <span class="text-sm font-medium">{{ __('messages.no_purchases') }}</span>
+                            @endif
+                        </div>
+                        @else
+                        <p class="text-center text-sm text-gray-500 mb-4">
+                            {{ __('messages.course_duration') }} {{ $item->count_days }} {{ __('messages.day') }}
+                        </p>
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div
+                                class="flex items-center justify-center gap-2 {{ $item->total_participants <= 3 ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200' }} py-2.5 px-4 rounded-lg border shadow-sm">
+                                {{-- أيقونة المقاعد تعطي إيحاء بمكان حقيقي --}}
+                                <i class="fas fa-chair text-lg"></i>
+        
+                                <span class="text-sm font-bold">
+                                    @if($item->total_participants > 0)
+                                    {{ __('متبقي') }} {{ $item->total_participants }} {{ __('مقعد فقط! سارع بالحجز') }}
                                     @else
-                                    {{ __('messages.free') }}
+                                    {{ __('نعتذر، اكتملت المقاعد بالكامل') }}
                                     @endif
                                 </span>
                             </div>
-            
-                            <!-- معلومات إضافية حسب النوع -->
-                            @if($item->type === 'system')
-                            <p class="text-center text-sm text-gray-500 mb-4">
-                                {{ __('messages.get_it_in') }} {{ $item->execution_days_to }} {{ __('messages.day') }}
-                            </p>
-                            <div
-                                class="flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
-                                <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
-                                @if($item->counter > 0)
-                                <span class="text-sm font-medium">
-                                    {{ __('messages.purchase') }}
-                                    <span class="font-bold text-red-600">{{ $item->counter }}</span>
-                                    {{ __('messages.times') }}
+        
+                            @if($item->total_participants > 0 && $item->total_participants <= 5) <div
+                                class="flex justify-center">
+                                <span class="flex h-2 w-2">
+                                    <span
+                                        class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                                 </span>
-                                @else
-                                <span class="text-sm font-medium">{{ __('messages.no_purchases') }}</span>
-                                @endif
-                            </div>
-                            @else
-                            <p class="text-center text-sm text-gray-500 mb-4">
-                                {{ __('messages.course_duration') }} {{ $item->count_days }} {{ __('messages.day') }}
-                            </p>
-                            <div class="flex flex-col gap-2 mb-4">
-                                <div
-                                    class="flex items-center justify-center gap-2 {{ $item->total_participants <= 3 ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200' }} py-2.5 px-4 rounded-lg border shadow-sm">
-                                    {{-- أيقونة المقاعد تعطي إيحاء بمكان حقيقي --}}
-                                    <i class="fas fa-chair text-lg"></i>
-            
-                                    <span class="text-sm font-bold">
-                                        @if($item->total_participants > 0)
-                                        {{ __('متبقي') }} {{ $item->total_participants }} {{ __('مقعد فقط! سارع بالحجز') }}
-                                        @else
-                                        {{ __('نعتذر، اكتملت المقاعد بالكامل') }}
-                                        @endif
-                                    </span>
-                                </div>
-            
-                                @if($item->total_participants > 0 && $item->total_participants <= 5) <div
-                                    class="flex justify-center">
-                                    <span class="flex h-2 w-2">
-                                        <span
-                                            class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
-                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                    </span>
-                                    <span class="text-[10px] text-red-500 mr-2 font-bold uppercase">الإقبال شديد حالياً</span>
-                            </div>
-                            @endif
-                        </div> @endif
-            
-                        <div class="mt-auto">
-                            <a href="{{ $item->route }}"
-                                class="block text-center w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition">
-                                {{ __('messages.show_details') }}
-                            </a>
+                                <span class="text-[10px] text-red-500 mr-2 font-bold uppercase">الإقبال شديد حالياً</span>
                         </div>
+                        @endif
+                    </div> @endif
+        
+                    <div class="mt-auto">
+                        <a href="{{ $item->route }}"
+                            class="block text-center w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition">
+                            {{ __('messages.show_details') }}
+                        </a>
                     </div>
                 </div>
-                @endforeach
             </div>
-            </div>
-    </div>
+            @endforeach
+        </div>
+        </div>
+        @endif
     
 </section>
 
