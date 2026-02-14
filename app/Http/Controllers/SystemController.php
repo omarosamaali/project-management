@@ -88,7 +88,11 @@ class SystemController extends Controller
         ->where('system_id', $system->id)
         ->exists();
         
-        $related_systems = System::where('service_id', $system->service_id)->get();
+        $related_systems = System::where('service_id', $system->service_id)
+            ->where('id', '!=', $system->id)
+            ->where('status', 'active')
+            ->limit(6)
+        ->get();
         return view('system.show', compact('system', 'is_purchased', 'remaining_seats', 'related_systems'));
     }
 
