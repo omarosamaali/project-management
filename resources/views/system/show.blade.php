@@ -174,8 +174,8 @@
                                         <span id="originalPrice" class="font-bold"></span>
                                     </div>
                                     <div class="flex justify-between text-sm text-gray-600">
-                                        <span class="items-center flex">{{ __('messages.payment_fees') }} (7.9% + 2
-                                            <x-drhm-icon width="16" height="16" color="000" />):
+                                        <span class="items-center flex gap-1">{{ __('messages.payment_fees') }} ( 7.9% + 2
+                                            <x-drhm-icon width="12" height="12" />)
                                         </span>
                                         <span id="fees"></span>
                                     </div>

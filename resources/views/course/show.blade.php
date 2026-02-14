@@ -420,7 +420,7 @@
                     <span id="originalPrice" class="font-bold"></span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-600">
-                    <span>رسوم الدفع (7.9% + 2 درهم):</span>
+                    <span>رسوم الدفع (7.9% + 2 <x-drhm-icon width="12" height="12" />):</span>
                     <span id="fees"></span>
                 </div>
                 <div class="flex justify-between text-lg font-bold border-t pt-3">
@@ -598,9 +598,9 @@
 
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('priceLabel').textContent = type === 'course' ? 'سعر الدورة:' : 'سعر النظام:';
-            document.getElementById('originalPrice').textContent = price.toFixed(2) + ' درهم';
-            document.getElementById('fees').textContent = fees.toFixed(2) + ' درهم';
-            document.getElementById('totalPrice').textContent = total.toFixed(2) + ' درهم';
+            document.getElementById('originalPrice').textContent = price.toFixed(2) + ' AED';
+            document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
+            document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
 
             document.getElementById('paymentModal').classList.remove('hidden');
         }
