@@ -32,7 +32,7 @@
 
                     <!-- Image Section - ارتفاع ثابت -->
                     <div class="relative h-[500px] md:h-auto md:sticky md:top-0 md:self-start order-1 md:order-none">
-                        <div class="h-full md:h-[600px] lg:h-[700px]">
+                        <div class="h-full md:h-[600px] lg:h-[700px] max-h-[700px]">
                             <img src="{{ Storage::url($course->main_image) }}" alt="{{ $course->name_ar }}"
                                 class="w-full h-full object-cover" />
                         </div>
