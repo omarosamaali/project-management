@@ -310,7 +310,7 @@ async function proceedPayment() {
     @if($related_systems && count($related_systems) > 0)
     <div class="mt-5 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
             <div>
-                <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-graduation-cap"></i> {{
+                <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-code"></i> {{
                     __('messages.related_systems') }}</h5>
             </div>
             <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
