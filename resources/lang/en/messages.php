@@ -102,7 +102,9 @@ return [
     "متبقي"=>"Only",
     "مقعد فقط! سارع بالحجز"=>"seats left! Book now",
     "نعتذر، اكتملت المقاعد بالكامل"=>"Sorry, all seats are fully booked",
-    "الإقبال شديد حالياً"=>"High demand right now"
+    "الإقبال شديد حالياً"=>"High demand right now",
+    'related_courses' => 'Related Courses',
+    'free' => 'Free Course'
 
 
 

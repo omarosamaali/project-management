@@ -215,8 +215,10 @@ class CourseController extends Controller
 
     public function userShow(Course $course)
     {
+        $serivce_id = $course->service_id;
+        $related_courses = Course::where('service_id', $serivce_id)->get();
         $is_enrolled = $course->isUserEnrolled();
-        return view('course.show', compact('course', 'is_enrolled'));
+        return view('course.show', compact('course', 'is_enrolled', 'related_courses'));
     }
 
     public function toggleAttendance($paymentId)

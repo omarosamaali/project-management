@@ -51,13 +51,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.success');
             $cancelUrl = route('payment.cancel');
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createSystemPaymentIntent(
                 $system,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             Payment::create([
@@ -204,13 +204,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.special-request.return') . '?special_request_id=' . $specialRequest->id;
             $cancelUrl = route('payment.cancel');
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $specialRequest,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             $paymentData = [
@@ -357,13 +357,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.installment.return', ['installment' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $installment,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             $paymentData = [
@@ -465,6 +465,7 @@ class ZiinaPaymentController extends Controller
         try {
             $course = Course::findOrFail($request->course_id);
 
+            // التحقق من الاشتراك السابق
             if ($course->students()->where('user_id', auth()->id())->exists()) {
                 return response()->json([
                     'success' => false,
@@ -472,13 +473,63 @@ class ZiinaPaymentController extends Controller
                 ], 400);
             }
 
+            // التحقق من المقاعد المتاحة
+            $current_enrolled = Payment::where('course_id', $course->id)
+                ->where('status', '!=', 'failed')
+                ->count();
+
+            $actual_remaining = ($course->counter ?? 0) - $current_enrolled;
+
+            if ($actual_remaining <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'عذراً، اكتمل العدد ولا توجد مقاعد شاغرة'
+                ], 400);
+            }
+
             $basePrice = (float) $course->price;
+
+            // ✅ إذا كانت الدورة مجانية، اشترك مباشرة بدون دفع
+            if ($basePrice == 0) {
+                // إنشاء سجل دفع مجاني
+                $payment = Payment::create([
+                    'user_id'        => auth()->id(),
+                    'course_id'      => $course->id,
+                    'payment_id'     => 'FREE-' . time() . '-' . auth()->id(),
+                    'amount'         => 0,
+                    'original_price' => 0,
+                    'fees'           => 0,
+                    'status'         => 'completed',
+                    'payment_method' => 'free',
+                    'currency'       => 'AED',
+                ]);
+
+                // إضافة المستخدم للدورة
+                $course->students()->attach(auth()->id(), [
+                    'enrolled_at' => now()
+                ]);
+
+                Log::info('اشتراك مجاني في الدورة', [
+                    'user_id' => auth()->id(),
+                    'course_id' => $course->id,
+                    'payment_id' => $payment->id
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'is_free' => true,
+                    'message' => 'تم اشتراكك في الدورة بنجاح! 🎉',
+                    'redirect_url' => route('courses.show', $course->id)
+                ]);
+            }
+
+            // ✅ إذا كانت الدورة مدفوعة، استمر بعملية الدفع
             $fees = ($basePrice * 0.079) + 2;
             $totalAmount = $basePrice + $fees;
             $successUrl = route('course.payment.success');
             $cancelUrl  = route('course.payment.cancel');
 
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             Log::info('إعداد دفع الدورة', [
                 'course_id' => $course->id,
@@ -491,7 +542,7 @@ class ZiinaPaymentController extends Controller
                 $course,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             Log::info('تم إنشاء payment intent بنجاح للدورة', [
@@ -514,6 +565,7 @@ class ZiinaPaymentController extends Controller
 
             return response()->json([
                 'success'      => true,
+                'is_free'      => false,
                 'payment_url'  => $response['redirect_url'],
                 'total_amount' => $totalAmount,
                 'fees'         => round($fees, 2),

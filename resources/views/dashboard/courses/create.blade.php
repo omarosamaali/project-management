@@ -819,7 +819,6 @@
         </div>
     </div>
 </section>
-
 <script>
     (function() {
     'use strict';
@@ -950,23 +949,36 @@
         });
     }
 
-    // ========== Dynamic Add/Remove ==========
+    // ========== Dynamic Add/Remove - النسخة المُحسنة ==========
     function setupDynamicRows(containerId, addBtnClass, removeBtnClass, rowClass, createRowFn) {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        document.addEventListener('click', (e) => {
-            if (e.target.closest(`.${addBtnClass}`)) {
-                e.preventDefault();
-                container.insertAdjacentHTML('beforeend', createRowFn());
-            }
-        });
+        // متغير للتأكد من عدم إضافة الـ listener أكثر من مرة
+        if (container.dataset.initialized) return;
+        container.dataset.initialized = 'true';
 
-        container.addEventListener('click', (e) => {
-            if (e.target.closest(`.${removeBtnClass}`)) {
+        // البحث عن زر الإضافة
+        const addButton = document.querySelector(`.${addBtnClass}`);
+        
+        if (addButton && !addButton.dataset.hasListener) {
+            addButton.dataset.hasListener = 'true';
+            addButton.addEventListener('click', function(e) {
                 e.preventDefault();
-                const row = e.target.closest(`.${rowClass}`);
-                if (row && container.querySelectorAll(`.${rowClass}`).length > 1) {
+                e.stopPropagation();
+                container.insertAdjacentHTML('beforeend', createRowFn());
+            });
+        }
+
+        // حذف الصفوف
+        container.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest(`.${removeBtnClass}`);
+            if (removeBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                const row = removeBtn.closest(`.${rowClass}`);
+                const allRows = container.querySelectorAll(`.${rowClass}`);
+                if (row && allRows.length > 1) {
                     row.remove();
                 }
             }
@@ -1030,21 +1042,21 @@
         });
     }
 
-    // ========== Row Templates ==========
-    const createRequirementRow = () => `
-        <div class="flex gap-2 requirement-row">
-            <input type="text" name="requirements_ar[]"
-                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="متطلب بالعربي">
-            <input type="text" name="requirements_en[]" dir="ltr"
-                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Requirement in English">
-            <button type="button"
-                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-    `;
+    // // ========== Row Templates ==========
+    // const createRequirementRow = () => `
+    //     <div class="flex gap-2 requirement-row">
+    //         <input type="text" name="requirements_ar[]"
+    //             class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+    //             placeholder="متطلب بالعربي">
+    //         <input type="text" name="requirements_en[]" dir="ltr"
+    //             class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+    //             placeholder="Requirement in English">
+    //         <button type="button"
+    //             class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+    //             <i class="fas fa-trash"></i>
+    //         </button>
+    //     </div>
+    // `;
 
     const createFeatureRow = () => `
         <div class="flex gap-2 feature-row">

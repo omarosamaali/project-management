@@ -79,17 +79,17 @@ class SystemController extends Controller
     public function show(System $system)
     {
         $system->load(['partners', 'service']);
-
+        
         // حساب المقاعد المتبقية
         $capacity = $system->counter ?? 0;
         $enrolled = \App\Models\Payment::where('system_id', $system->id)->count();
         $remaining_seats = $capacity - $enrolled;
-
         $is_purchased = Requests::where('client_id', Auth::id())
-            ->where('system_id', $system->id)
-            ->exists();
-
-        return view('system.show', compact('system', 'is_purchased', 'remaining_seats'));
+        ->where('system_id', $system->id)
+        ->exists();
+        
+        $related_systems = System::where('service_id', $system->service_id)->get();
+        return view('system.show', compact('system', 'is_purchased', 'remaining_seats', 'related_systems'));
     }
 
     

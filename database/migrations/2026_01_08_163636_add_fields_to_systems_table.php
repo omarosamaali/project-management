@@ -23,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('systems', function (Blueprint $table) {
-            $table->dropColumn(['evorq_onwer', 'onwer_system_container']);
+            // ✅ صحح الاسم هنا
+            $table->dropColumn(['evorq_onwer', 'onwer_system']);
         });
     }
 };
