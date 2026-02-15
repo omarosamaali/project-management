@@ -569,7 +569,8 @@
                             <span class="text-[10px] text-red-500 mr-2 font-bold uppercase">الإقبال شديد حالياً</span>
                     </div>
                     @endif
-                </div> @endif
+                </div>
+                 @endif
             
                 <div class="mt-auto">
                     <a href="{{ $item->route }}"

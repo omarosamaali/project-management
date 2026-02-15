@@ -50,7 +50,7 @@ class SystemController extends Controller
             ];
         })
             // 3. دمج ومعالجة الدورات
-            ->merge($courses->map(function ($course) {
+            ->concat($courses->map(function ($course) {
                 $total_capacity = $course->counter ?? 0;
                 $current_payments = $course->payments_count ?? 0;
                 $remaining = $total_capacity - $current_payments;

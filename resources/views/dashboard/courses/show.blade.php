@@ -335,13 +335,13 @@
                 <!-- المشتركين -->
                 <div class="my-12">
                     <div class="flex items-center justify-between mb-6">
-                        <h2 class="pt-6 text-2xl font-bold flex items-center gap-3">
-                            <i class="fas fa-users text-indigo-600 text-2xl"></i>
-                            قائمة المشتركين في الدورة
-                        </h2>
-                        <span class="text-lg font-medium text-gray-600 dark:text-gray-400">
-                            إجمالي: {{ $course->payments?->count() ?? 0 }} مشترك
-                        </span>
+                       <h2 class="pt-6 text-2xl font-bold flex items-center gap-3">
+                        <i class="fas fa-users text-indigo-600 text-2xl"></i>
+                        قائمة المشتركين في الدورة
+                    </h2>
+                    <span class="text-lg font-medium text-gray-600 dark:text-gray-400">
+                        إجمالي: {{ $course->payments()->where('status', 'completed')->count() }} مشترك
+                    </span>
                     </div>
 
                     @if($course->payments?->count() > 0)

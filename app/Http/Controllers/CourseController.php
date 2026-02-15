@@ -103,13 +103,16 @@ class CourseController extends Controller
 
         return redirect()->route('dashboard.courses.index')->with('success', 'تم إضافة الدورة بنجاح.');
     }
-
     public function show(Course $course)
     {
-        $course->load(['payments.user']);
+        // فلترة الـ payments أثناء الـ eager loading
+        $course->load(['payments' => function ($query) {
+            $query->whereIn('status', ['completed', 'success', 'paid'])
+                ->with('user');
+        }]);
+
         return view('dashboard.courses.show', compact('course'));
     }
-
     public function edit(Course $course)
     {
         $services = Service::all();
@@ -216,12 +219,27 @@ class CourseController extends Controller
 
     public function userShow(Course $course)
     {
+        // حساب total_participants للـ course الحالي
+        $course->loadCount(['payments' => function ($query) {
+            $query->whereIn('status', ['completed', 'success', 'paid']);
+        }]);
+        $course->total_participants = ($course->payments_count ?? 0) + ($course->counter ?? 0);
+
         $serivce_id = $course->service_id;
+
+        // جلب الدورات المرتبطة مع العدد
         $related_courses = Course::where('service_id', $serivce_id)
             ->where('id', '!=', $course->id)
             ->where('status', 'active')
+            ->withCount(['payments' => function ($query) {
+                $query->whereIn('status', ['completed', 'success', 'paid']);
+            }])
             ->limit(6)
-            ->get();
+            ->get()
+            ->each(function ($item) {
+                // إضافة total_participants لكل عنصر
+                $item->total_participants = ($item->payments_count ?? 0) + ($item->counter ?? 0);
+            });
 
         $is_enrolled = $course->isUserEnrolled();
 
