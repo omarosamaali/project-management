@@ -207,7 +207,7 @@
                                     <i class="fas fa-play-circle text-green-600 mt-1 text-xl"></i>
                                     <div class="ltr:text-left rtl:text-right flex-1">
                                         <h3 class="font-semibold text-gray-800 mb-2">
-                                            تاريخ ووقت البداية
+                                            تاريخ البداية والنهاية
                                         </h3>
                                         <div class="space-y-1">
                                             <p class="text-gray-700 flex items-center gap-2">
@@ -217,9 +217,9 @@
                                                                                                 MMMM YYYY') }}</span>
                                             </p>
                                             <p class="text-gray-700 flex items-center gap-2">
-                                                <i class="fas fa-clock text-green-500"></i>
-                                                <span
-                                                    class="font-bold">{{ \Carbon\Carbon::parse($course->start_date)->format('h:i A') }}</span>
+                                                <i class="fas fa-calendar text-red-500"></i>
+                                                <span class="font-bold">{{ \Carbon\Carbon::parse($course->end_date)->locale('ar')->isoFormat('dddd، D
+                                                    MMMM YYYY') }}</span>
                                             </p>
                                         </div>
                                     </div>
@@ -232,15 +232,14 @@
                                     <i class="fas fa-stop-circle text-red-600 mt-1 text-xl"></i>
                                     <div class="ltr:text-left rtl:text-right flex-1">
                                         <h3 class="font-semibold text-gray-800 mb-2">
-                                            تاريخ ووقت النهاية
+                                            وقت البداية والنهاية
                                         </h3>
                                         <div class="space-y-1">
+                                            
                                             <p class="text-gray-700 flex items-center gap-2">
-                                                <i class="fas fa-calendar text-red-500"></i>
-                                                <span
-                                                    class="font-bold">{{ \Carbon\Carbon::parse($course->end_date)->locale('ar')->isoFormat('dddd، D
-                                                                                                MMMM YYYY') }}</span>
-                                            </p>
+                                                                                            <i class="fas fa-clock text-green-500"></i>
+                                                                                            <span class="font-bold">{{ \Carbon\Carbon::parse($course->start_date)->format('h:i A') }}</span>
+                                                                                        </p>
                                             <p class="text-gray-700 flex items-center gap-2">
                                                 <i class="fas fa-clock text-red-500"></i>
                                                 <span
