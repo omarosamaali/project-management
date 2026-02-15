@@ -128,6 +128,8 @@ Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(func
 Route::name('dashboard.')->prefix('dashboard')->group(function () {
     Route::resource('courses', CourseController::class);
 });
+Route::get('/courses/{course}', [CourseController::class, 'userShow'])->name('courses.show');
+
 // System Routes
 Route::middleware('auth')->group(function () {
     Route::resource('logos', LogoController::class)->names('dashboard.logos');
@@ -152,7 +154,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/course/payment/success', [ZiinaPaymentController::class, 'courseSuccess'])->name('course.payment.success');
     Route::get('/course/payment/cancel', [ZiinaPaymentController::class, 'courseCancel'])->name('course.payment.cancel');
         
-    Route::get('/courses/{course}', [CourseController::class, 'userShow'])->name('courses.show');
     Route::get('/stores/{store}', [CourseController::class, 'userShowStore'])->name('stores.show');
     Route::resource('partners', PartnerController::class)->names('dashboard.partners');
     Route::resource('clients', ClientController::class)->names('dashboard.clients');
