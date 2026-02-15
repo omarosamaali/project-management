@@ -15,6 +15,7 @@ class Payment extends Model
         'original_price',
         'fees',
         'status',
+        'store_id',
         'payment_method',
     ];
 
@@ -39,5 +40,9 @@ class Payment extends Model
     {
         return $this->belongsTo(Course::class);
     }
-    
+
+    public function store()
+    {
+        return $this->belongsTo(MyStore::class);
+    }
 }

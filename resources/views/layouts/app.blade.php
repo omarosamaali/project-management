@@ -193,14 +193,13 @@
                             <span class="ml-3">الأنظمة</span>
                         </a>
                     </li>
-                    @if(Auth::user()->role == 'admin' || Auth::user()->role == 'partner' || Auth::user()->role ==
-                    'independent_partner')
+                    @if(Auth::user()->role == 'admin')
                     <li>
                         <a href="{{ route('dashboard.my-store.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.my-store.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
                                 class="{{ Route::currentRouteName() == 'dashboard.my-store.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
-                            <span class="ml-3">متجري</span>
+                            <span class="ml-3">المتاجر</span>
                         </a>
                     </li>
                     @endif

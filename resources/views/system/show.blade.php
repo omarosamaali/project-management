@@ -174,7 +174,8 @@
                                         <span id="originalPrice" class="font-bold"></span>
                                     </div>
                                     <div class="flex justify-between text-sm text-gray-600">
-                                        <span class="items-center flex gap-1">{{ __('messages.payment_fees') }} ( 7.9% + 2
+                                        <span class="items-center flex gap-1">{{ __('messages.payment_fees') }} ( 7.9% +
+                                            2
                                             <x-drhm-icon width="12" height="12" />)
                                         </span>
                                         <span id="fees"></span>
@@ -197,65 +198,73 @@
                                 </div>
                             </div>
                         </div>
-                        <script>
-                            let currentSystemId = null;
+<script>
+    // اجعل المتغيرات والدوال معرفة عالمياً (Global) لضمان وصول الأزرار إليها
+    let currentSystemId = null;
 
-function handlePurchase(systemId, price) {
-    currentSystemId = systemId;
-    
-    // حساب الرسوم والإجمالي
-    const fees = (price * 0.079) + 2;
-    const total = price + fees;
-    
-    // عرض التفاصيل في المودال
-    document.getElementById('originalPrice').textContent = price.toFixed(2) + ' AED';
-    document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
-    document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
-    
-    // إظهار المودال
-    document.getElementById('purchaseModal').classList.remove('hidden');
-}
+    function handlePurchase(systemId, price) {
+        console.log("Purchase handled for ID:", systemId); // للتأكد في الكونسول
+        currentSystemId = systemId;
+        
+        // حساب الرسوم (7.9% + 2 درهم)
+        const fees = (parseFloat(price) * 0.079) + 2;
+        const total = parseFloat(price) + fees;
+        
+        // تحديث النصوص في الـ Modal
+        document.getElementById('originalPrice').textContent = parseFloat(price).toFixed(2) + ' AED';
+        document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
+        document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
+        
+        // إظهار المودال
+        const modal = document.getElementById('purchaseModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
 
-async function proceedPayment() {
-    const payButton = document.getElementById('payButton');
-    payButton.disabled = true;
-    payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
-    
-    try {
-        const response = await fetch('/payment/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                system_id: currentSystemId
-            })
-        });
+    async function proceedPayment() {
+        const payButton = document.getElementById('payButton');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        if (!csrfToken) {
+            alert('CSRF Token not found! Please check your head tag.');
+            return;
+        }
+
+        payButton.disabled = true;
+        payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
         
-        const data = await response.json();
-        
-        console.log('Response:', data); // للـ debugging
-        
-        if (response.ok && data.success) {
-            // إعادة توجيه للصفحة الدفع
-            window.location.href = data.payment_url;
-        } else {
-            alert(data.message || 'حدث خطأ في عملية الدفع');
-            console.error('Payment error:', data);
+        try {
+            const response = await fetch('/payment/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    system_id: currentSystemId,
+                    type: 'system' // ضروري جداً لتخطي الـ validation
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                window.location.href = data.payment_url;
+            } else {
+                alert(data.message || 'حدث خطأ في عملية الدفع');
+                payButton.disabled = false;
+                payButton.innerHTML = 'متابعة الدفع';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('فشل الاتصال بالخادم');
             payButton.disabled = false;
             payButton.innerHTML = 'متابعة الدفع';
         }
-    } catch (error) {
-        console.error('Payment error:', error);
-        alert('حدث خطأ في عملية الدفع');
-        payButton.disabled = false;
-        payButton.innerHTML = 'متابعة الدفع';
     }
-}
-                        </script>
-                        @endif
+</script>                        @endif
                         @else
                         <a href="{{ route('login') }}"
                             class="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-4 rounded-lg font-bold text-lg hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2">
@@ -309,118 +318,118 @@ async function proceedPayment() {
     </div>
     @if($related_systems && count($related_systems) > 0)
     <div class="mt-5 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-            <div>
-                <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-code"></i> {{
-                    __('messages.related_systems') }}</h5>
-            </div>
-            <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($related_systems as $item)
-                <div class="system-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
-                    data-service="{{ $item->service_id }}">
-        
-                    <div class="relative h-48 overflow-hidden">
-                        <!-- Badge للتمييز بين نظام ودورة -->
-                        <span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full shadow text-white flex items-center gap-1
+        <div>
+            <h5 class="text-center font-bold text-lg lg:text-4xl pb-5"><i class="fas fa-code"></i> {{
+                __('messages.related_systems') }}</h5>
+        </div>
+        <div id="systems-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($related_systems as $item)
+            <div class="system-card bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 flex flex-col"
+                data-service="{{ $item->service_id }}">
+
+                <div class="relative h-48 overflow-hidden">
+                    <!-- Badge للتمييز بين نظام ودورة -->
+                    <span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full shadow text-white flex items-center gap-1
                         bg-blue-600">
-        
-                            <i class="fas fa-code"></i>
-                            <span>خدمة</span>
+
+                        <i class="fas fa-code"></i>
+                        <span>خدمة</span>
+                    </span>
+
+                    <!-- اسم الخدمة -->
+                    @if($item->service_id)
+                    <span class="absolute top-2 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded">
+                        {{ $item->service->name_ar }}
+                    </span>
+                    @endif
+
+                    <img src="{{ asset($system->main_image) }}" alt="{{ $item->name_ar }}"
+                        class="w-full h-full object-cover">
+                </div>
+
+                <div class="p-6 flex flex-col flex-grow">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3 ltr:text-left rtl:text-right">
+                        {{ app()->getLocale() == 'en' ? $item->name_en : $item->name_ar }}
+                    </h3>
+
+                    <p class="text-gray-600 mb-4 line-clamp-2 ltr:text-left rtl:text-right">
+                        {{ app()->getLocale() == 'en' ? $item->description_en : $item->description_ar }}
+                    </p>
+
+                    <!-- السعر -->
+                    <div class="mb-4">
+                        <span class="text-xl font-bold text-black flex gap-2 items-center justify-center">
+                            @if($item->price > 0)
+                            {{ __('messages.price') }} {{ number_format($item->price) }}
+                            <x-drhm-icon width="12" height="14" />
+                            @else
+                            {{ __('messages.free') }}
+                            @endif
                         </span>
-        
-                        <!-- اسم الخدمة -->
-                        @if($item->service_id)
-                        <span class="absolute top-2 left-2 bg-gray-800 text-white text-xs px-2 py-1 rounded">
-                            {{ $item->service->name_ar }}
-                        </span>
-                        @endif
-        
-                        <img src="{{ asset($system->main_image) }}"
-                            alt="{{ $item->name_ar }}" class="w-full h-full object-cover">
                     </div>
-        
-                    <div class="p-6 flex flex-col flex-grow">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-3 ltr:text-left rtl:text-right">
-                            {{ app()->getLocale() == 'en' ? $item->name_en : $item->name_ar }}
-                        </h3>
-        
-                        <p class="text-gray-600 mb-4 line-clamp-2 ltr:text-left rtl:text-right">
-                            {{ app()->getLocale() == 'en' ? $item->description_en : $item->description_ar }}
-                        </p>
-        
-                        <!-- السعر -->
-                        <div class="mb-4">
-                            <span class="text-xl font-bold text-black flex gap-2 items-center justify-center">
-                                @if($item->price > 0)
-                                {{ __('messages.price') }} {{ number_format($item->price) }}
-                                <x-drhm-icon width="12" height="14" />
+
+                    <!-- معلومات إضافية حسب النوع -->
+                    @if($item->type === 'system')
+                    <p class="text-center text-sm text-gray-500 mb-4">
+                        {{ __('messages.get_it_in') }} {{ $item->execution_days_to }} {{ __('messages.day') }}
+                    </p>
+                    <div
+                        class="flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
+                        <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
+                        @if($item->counter > 0)
+                        <span class="text-sm font-medium">
+                            {{ __('messages.purchase') }}
+                            <span class="font-bold text-red-600">{{ $item->counter }}</span>
+                            {{ __('messages.times') }}
+                        </span>
+                        @else
+                        <span class="text-sm font-medium">{{ __('messages.no_purchases') }}</span>
+                        @endif
+                    </div>
+                    @else
+                    <p class="text-center text-sm text-gray-500 mb-4">
+                        {{ __('messages.course_duration') }} {{ $item->count_days }} {{ __('messages.day') }}
+                    </p>
+                    <div class="flex flex-col gap-2 mb-4">
+                        <div
+                            class="flex items-center justify-center gap-2 {{ $item->total_participants <= 3 ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200' }} py-2.5 px-4 rounded-lg border shadow-sm">
+                            {{-- أيقونة المقاعد تعطي إيحاء بمكان حقيقي --}}
+                            <i class="fas fa-chair text-lg"></i>
+
+                            <span class="text-sm font-bold">
+                                @if($item->total_participants > 0)
+                                {{ __('متبقي') }} {{ $item->total_participants }} {{ __('مقعد فقط! سارع بالحجز') }}
                                 @else
-                                {{ __('messages.free') }}
+                                {{ __('نعتذر، اكتملت المقاعد بالكامل') }}
                                 @endif
                             </span>
                         </div>
-        
-                        <!-- معلومات إضافية حسب النوع -->
-                        @if($item->type === 'system')
-                        <p class="text-center text-sm text-gray-500 mb-4">
-                            {{ __('messages.get_it_in') }} {{ $item->execution_days_to }} {{ __('messages.day') }}
-                        </p>
-                        <div
-                            class="flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
-                            <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
-                            @if($item->counter > 0)
-                            <span class="text-sm font-medium">
-                                {{ __('messages.purchase') }}
-                                <span class="font-bold text-red-600">{{ $item->counter }}</span>
-                                {{ __('messages.times') }}
+
+                        @if($item->total_participants > 0 && $item->total_participants <= 5) <div
+                            class="flex justify-center">
+                            <span class="flex h-2 w-2">
+                                <span
+                                    class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                             </span>
-                            @else
-                            <span class="text-sm font-medium">{{ __('messages.no_purchases') }}</span>
-                            @endif
-                        </div>
-                        @else
-                        <p class="text-center text-sm text-gray-500 mb-4">
-                            {{ __('messages.course_duration') }} {{ $item->count_days }} {{ __('messages.day') }}
-                        </p>
-                        <div class="flex flex-col gap-2 mb-4">
-                            <div
-                                class="flex items-center justify-center gap-2 {{ $item->total_participants <= 3 ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200' }} py-2.5 px-4 rounded-lg border shadow-sm">
-                                {{-- أيقونة المقاعد تعطي إيحاء بمكان حقيقي --}}
-                                <i class="fas fa-chair text-lg"></i>
-        
-                                <span class="text-sm font-bold">
-                                    @if($item->total_participants > 0)
-                                    {{ __('متبقي') }} {{ $item->total_participants }} {{ __('مقعد فقط! سارع بالحجز') }}
-                                    @else
-                                    {{ __('نعتذر، اكتملت المقاعد بالكامل') }}
-                                    @endif
-                                </span>
-                            </div>
-        
-                            @if($item->total_participants > 0 && $item->total_participants <= 5) <div
-                                class="flex justify-center">
-                                <span class="flex h-2 w-2">
-                                    <span
-                                        class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-red-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                </span>
-                                <span class="text-[10px] text-red-500 mr-2 font-bold uppercase">الإقبال شديد حالياً</span>
-                        </div>
-                        @endif
-                    </div> @endif
-        
-                    <div class="mt-auto">
-                        <a href="{{ $item->route }}"
-                            class="block text-center w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition">
-                            {{ __('messages.show_details') }}
-                        </a>
+                            <span class="text-[10px] text-red-500 mr-2 font-bold uppercase">الإقبال شديد حالياً</span>
                     </div>
+                    @endif
+                </div> @endif
+
+                <div class="mt-auto">
+                    <a href="{{ $item->route }}"
+                        class="block text-center w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition">
+                        {{ __('messages.show_details') }}
+                    </a>
                 </div>
             </div>
-            @endforeach
         </div>
-        </div>
-        @endif
-    
+        @endforeach
+    </div>
+    </div>
+    @endif
+
 </section>
 
 @endsection

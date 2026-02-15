@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class MyStore extends Model
 {
@@ -54,10 +55,20 @@ class MyStore extends Model
 
     public function payments()
     {
-        return $this->hasMany(Payment::class, 'system_id');
+        return $this->hasMany(Payment::class, 'store_id');
     }
 
     public function user(){
         return $this->belongsTo(User::class);
+    }
+
+    public function isUserEnrolled()
+    {
+        if (!Auth::check()) return false;
+
+        return $this->payments()
+            ->where('user_id', Auth::id())
+            ->whereIn('status', ['completed', 'success', 'paid', 'active', 'pending'])
+            ->exists();
     }
 }

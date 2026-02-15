@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\WithdrawalRequest;
+use App\Models\Payment;
+use App\Models\Requests;
+use App\Models\System;
 
 class User extends Authenticatable
 {

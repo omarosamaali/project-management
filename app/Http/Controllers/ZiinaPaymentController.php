@@ -11,81 +11,140 @@ use App\Models\SpecialRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Course;
+use App\Models\MyStore;
+use Illuminate\Support\Facades\Http;
 
 class ZiinaPaymentController extends Controller
 {
     private $ziinaHandler;
-
     public function __construct()
     {
         $this->ziinaHandler = new ZiinaSystemPaymentHandler();
     }
 
+
+    /**
+     * توليد رابط الدفع من بوابة Ziina
+     */
+    private function generateZiinaLink($payment, $total, $title)
+    {
+        $apiKey = env('ZIINA_API_KEY');
+        $baseUrl = 'https://api-v2.ziina.com/api/payment_intent';
+
+        // استخدام UUID أو رقم عشوائي مع الوقت لضمان عدم التكرار نهائياً
+        $reference = 'PAY-' . $payment->id . '-' . bin2hex(random_bytes(4));
+
+        $response = Http::withToken($apiKey)
+            ->post($baseUrl, [
+                'amount' => (int) round($total * 100), // استخدام round لضمان رقم صحيح
+                'currency_code' => 'AED',
+                'message' => 'Payment for: ' . substr($title, 0, 100), // تأكد أن العنوان ليس طويلاً جداً
+                'external_reference' => $reference,
+                'success_url' => route('payment.success', ['payment_id' => $payment->id]),
+                'cancel_url'  => route('payment.cancel',  ['payment_id' => $payment->id]),
+            ]);
+
+        if ($response->successful()) {
+            $data = $response->json();
+            $payment->update(['payment_id' => $data['id']]);
+            return $data['redirect_url'];
+        }
+
+        Log::error('Ziina API Error: ' . $response->body());
+        throw new \Exception('فشل الاتصال ببوابة الدفع');
+    }
+    
     public function createPayment(Request $request)
     {
+        // 1. التحقق من البيانات المطلوبة (Validation)
         try {
             $validated = $request->validate([
-                'system_id' => 'required|exists:systems,id'
+                'type'      => 'required|in:system,store,course',
+                'system_id' => 'required_if:type,system|exists:systems,id',
+                'store_id'  => 'required_if:type,store|exists:my_stores,id',
+                'course_id' => 'required_if:type,course|exists:courses,id',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'بيانات غير صحيحة',
-                'errors' => $e->errors()
+                'message' => 'بيانات الطلب غير مكتملة',
+                'errors'  => $e->errors()
             ], 422);
         }
 
+        // 2. التأكد من تسجيل الدخول
         if (!auth()->check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'يجب تسجيل الدخول أولاً'
-            ], 401);
+            return response()->json(['success' => false, 'message' => 'يجب تسجيل الدخول أولاً'], 401);
         }
 
         try {
-            $system = System::findOrFail($request->system_id);
+            $user = auth()->user();
+            $item = null;
+            $systemId = null;
+            $storeId  = null;
+            $courseId = null;
 
-            $basePrice = (float) $system->price;
+            // 3. تحديد العنصر المراد شراؤه بناءً على النوع
+            if ($request->type === 'system') {
+                $item = System::findOrFail($request->system_id);
+                $systemId = $item->id;
+            } elseif ($request->type === 'store') {
+                $item = \App\Models\MyStore::findOrFail($request->store_id);
+                $storeId = $item->id;
+            } elseif ($request->type === 'course') {
+                $item = \App\Models\Course::findOrFail($request->course_id);
+                $courseId = $item->id;
+            }
+
+            // 4. حساب الحسبة المالية (نفس معادلة الكود القديم 7.9% + 2 درهم)
+            $basePrice = (float) $item->price;
             $fees = ($basePrice * 0.079) + 2;
             $totalAmount = $basePrice + $fees;
 
+            // 5. استخدام الـ Handler القديم (هذا هو سر النجاح)
             $successUrl = route('payment.success');
-            $cancelUrl = route('payment.cancel');
-            // $isTest = config('services.ziina.test_mode', true);
+            $cancelUrl  = route('payment.cancel');
+            $isTest     = config('services.ziina.test_mode', true);
 
+            // ملاحظة: الـ Handler يتوقع كائن (Object) يحتوي على السعر والبيانات
             $response = $this->ziinaHandler->createSystemPaymentIntent(
-                $system,
+                $item,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
+            // 6. حفظ عملية الدفع في قاعدة البيانات
+            // ملاحظة: تأكد أن جدول payments يحتوي على أعمدة store_id و course_id
             Payment::create([
-                'user_id' => auth()->id(),
-                'system_id' => $system->id,
-                'payment_id' => $response['id'] ?? null,
-                'amount' => $totalAmount,
+                'user_id'        => $user->id,
+                'system_id'      => $systemId,
+                'store_id'       => $storeId,
+                'course_id'      => $courseId,
+                'payment_id'     => $response['id'] ?? null,
+                'amount'         => $totalAmount,
                 'original_price' => $basePrice,
-                'fees' => round($fees, 2),
-                'status' => 'pending',
+                'fees'           => round($fees, 2),
+                'status'         => 'pending',
                 'payment_method' => 'ziina',
             ]);
 
+            // 7. الرد بالنجاح ورابط الدفع
             return response()->json([
-                'success' => true,
-                'payment_url' => $response['redirect_url'],
+                'success'      => true,
+                'payment_url'  => $response['redirect_url'],
                 'total_amount' => $totalAmount,
-                'fees' => round($fees, 2),
+                'fees'         => round($fees, 2),
             ]);
         } catch (\Exception $e) {
-            Log::error('Payment creation failed', [
-                'error' => $e->getMessage(),
-                'system_id' => $request->system_id
+            Log::error('خطأ أثناء إنشاء عملية الدفع: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'request' => $request->all()
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'حدث خطأ أثناء معالجة الدفع: ' . $e->getMessage()
+                'message' => 'حدث خطأ في الاتصال ببوابة الدفع: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -93,40 +152,65 @@ class ZiinaPaymentController extends Controller
     public function success(Request $request)
     {
         $paymentIntentId = $request->query('payment_intent_id');
-        $systemId = $request->query('system_id');
 
-        Log::info('بدء معالجة العودة من الدفع', ['id' => $paymentIntentId]);
+        try {
+            $payment = \App\Models\Payment::where('payment_id', $paymentIntentId)->first();
+            $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
 
-        if ($paymentIntentId) {
-            try {
-                $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
-                $payment = Payment::where('payment_id', $paymentIntentId)->first();
+            if ($payment && in_array($paymentIntent['status'], ['completed', 'paid'])) {
+                $payment->update(['status' => 'completed']);
 
-                if ($payment && ($paymentIntent['status'] === 'completed' || $paymentIntent['status'] === 'paid')) {
-                    $payment->update(['status' => 'completed']);
-                    Log::info('تم تحديث حالة الدفع في جدول Payments');
+                if ($payment->store_id) {
+                    $store = \DB::table('my_stores')->where('id', $payment->store_id)->first();
 
-                    $payment->user->systems()->syncWithoutDetaching([$payment->system_id]);
+                    if ($store) {
+                        $lastSystemId = \DB::table('systems')->max('id');
+                        $newSystemId = max(1000, ($lastSystemId + 1));
 
-                    try {
-                        $newRequest = \App\Models\Requests::create([
-                            'order_number' => 'REQ-' . strtoupper(substr($paymentIntentId, 0, 8)),
-                            'system_id'    => $payment->system_id,
+                        // تجهيز البيانات مع مراعاة كل الحقول الإجبارية في جدول systems
+                        $systemData = [
+                            'id'                  => $newSystemId,
+                            'name_ar'             => $store->name_ar ?? 'متجر جديد',
+                            'name_en'             => $store->name_en ?? 'New Store',
+                            'price'               => $payment->original_price,
+                            'execution_days_from' => $store->execution_days_from ?? 0,
+                            'execution_days_to'   => $store->execution_days_to ?? 0,
+                            'support_days'        => $store->support_days ?? 30,
+                            'description_ar'      => $store->description_ar ?? '',
+                            'description_en'      => $store->description_en ?? '',
+                            'main_image'          => $store->image ?? 'default_system.png', // حل مشكلة الصورة
+                            'counter'             => 0,
+                            'system_external'     => 0,
+                            'external_url'        => null,
+                            'service_id'          => $store->service_id ?? null,
+                            'created_at'          => now(),
+                            'updated_at'          => now(),
+                        ];
+
+                        // إدخال البيانات في جدول systems
+                        \DB::table('systems')->insert($systemData);
+
+                        // ربط النظام الجديد بالمستخدم (الجدول الوسيط partner_system)
+                        $payment->user->systems()->syncWithoutDetaching([$newSystemId]);
+
+                        // إنشاء السجل في جدول requests
+                        \App\Models\Requests::create([
+                            'order_number' => 'REQ-STR-' . strtoupper(substr($paymentIntentId, 0, 8)),
+                            'system_id'    => $newSystemId,
                             'client_id'    => $payment->user_id,
-                            'status'       => 'جديد',
+                            'status'       => 'new',
                         ]);
 
-                        Log::info('تم إنشاء الطلب بنجاح في جدول requests', ['id' => $newRequest->id]);
-                    } catch (\Exception $e) {
-                        Log::error('فشل إنشاء السجل في جدول requests: ' . $e->getMessage());
+                        \Log::info("تم بنجاح إنشاء النظام {$newSystemId} والطلب للمستخدم {$payment->user_id}");
                     }
                 }
-            } catch (\Exception $e) {
-                Log::error('خطأ عام في دالة success: ' . $e->getMessage());
             }
-        }
 
-        return redirect()->route('dashboard.requests.index')->with('success', 'تمت عملية الدفع بنجاح');
+            return redirect()->route('dashboard.requests.index')->with('success', 'تم تفعيل المتجر بنجاح!');
+        } catch (\Exception $e) {
+            \Log::error('خطأ في عملية النقل والربط: ' . $e->getMessage());
+            return redirect()->route('dashboard')->with('error', 'حدث خطأ في قاعدة البيانات: ' . $e->getMessage());
+        }
     }
 
     public function cancel(Request $request)
@@ -164,10 +248,6 @@ class ZiinaPaymentController extends Controller
         return response()->json(['success' => true]);
     }
 
-    // ============================================
-    // دوال المشاريع الخاصة - Special Requests
-    // ============================================
-
     public function createSpecialRequestPayment(Request $request)
     {
         try {
@@ -204,13 +284,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.special-request.return') . '?special_request_id=' . $specialRequest->id;
             $cancelUrl = route('payment.cancel');
-            // $isTest = config('services.ziina.test_mode', true);
+            $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $specialRequest,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
             $paymentData = [
@@ -357,13 +437,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.installment.return', ['installment' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
-            // $isTest = config('services.ziina.test_mode', true);
+            $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $installment,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
             $paymentData = [
@@ -529,7 +609,7 @@ class ZiinaPaymentController extends Controller
             $successUrl = route('course.payment.success');
             $cancelUrl  = route('course.payment.cancel');
 
-            // $isTest = config('services.ziina.test_mode', true);
+            $isTest = config('services.ziina.test_mode', true);
 
             Log::info('إعداد دفع الدورة', [
                 'course_id' => $course->id,
@@ -542,7 +622,7 @@ class ZiinaPaymentController extends Controller
                 $course,
                 $successUrl,
                 $cancelUrl,
-                // $isTest
+                $isTest
             );
 
             Log::info('تم إنشاء payment intent بنجاح للدورة', [

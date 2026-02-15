@@ -5,26 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Logo;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Requests;
-use App\Models\Service;
+use App\Models\MyStore;
 use App\Models\System;
-use App\Models\Course; // ← أضف هذا السطر
+use App\Models\Service;
+use App\Models\Course;
 
 class SystemController extends Controller
 {
     public function index()
     {
-        // 1. جلب الأنظمة مع عد المدفوعات
+        // 1. جلب البيانات من الداتابيز
         $systems = System::where('status', 'active')
             ->withCount('payments')
             ->with(['service'])
             ->get();
 
-        // 2. جلب الدورات مع عد المدفوعات (العلاقة اسمها payments في موديل Course)
         $courses = Course::where('status', 'active')
             ->withCount('payments')
             ->with(['service'])
             ->get();
 
+        $stores = MyStore::where('status', 'نشط')
+            ->withCount('payments')
+            ->with(['service'])
+            ->get();
+
+        // 2. معالجة الأنظمة
         $items = $systems->map(function ($system) {
             return (object) [
                 'type' => 'system',
@@ -42,39 +48,56 @@ class SystemController extends Controller
                 'counter' => $system->counter ?? 0,
                 'route' => route('system.show', $system),
             ];
-        })->merge($courses->map(function ($course) {
+        })
+            // 3. دمج ومعالجة الدورات
+            ->merge($courses->map(function ($course) {
+                $total_capacity = $course->counter ?? 0;
+                $current_payments = $course->payments_count ?? 0;
+                $remaining = $total_capacity - $current_payments;
+                return (object) [
+                    'type' => 'course',
+                    'id' => $course->id,
+                    'service_id' => $course->service_id,
+                    'name_ar' => $course->name_ar,
+                    'name_en' => $course->name_en,
+                    'description_ar' => $course->description_ar,
+                    'description_en' => $course->description_en,
+                    'main_image' => $course->main_image,
+                    'price' => $course->price,
+                    'service_name_ar' => $course->service?->name_ar,
+                    'total_participants' => $remaining > 0 ? $remaining : 0,
+                    'count_days' => $course->count_days ?? 0,
+                    'route' => route('courses.show', $course),
+                ];
+            }))
+            // 4. دمج ومعالجة المتاجر (الإضافة الجديدة)
+            // ... الكود السابق للأنظمة والدورات ...
 
-            // --- الحسبة الصحيحة (عملية طرح) ---
-            $total_capacity = $course->counter ?? 0; // القيمة 5 من قاعدة البيانات
-            $current_payments = $course->payments_count ?? 0; // القيمة 1 من جدول المدفوعات
+            ->merge($stores->map(function ($store) {
+                return (object) [
+                    'type' => 'store',
+                    'id' => $store->id,
+                    'service_id' => $store->service_id,
+                    'name_ar' => $store->name_ar,
+                    'name_en' => $store->name_en,
+                    'description_ar' => $store->description_ar,
+                    'description_en' => $store->description_en,
+                    'main_image' => $store->main_image,
+                    'price' => $store->price,
+                    'original_price' => $store->original_price, // أضفناه لأنه موجود في الموديل
+                    'service_name_ar' => $store->service?->name_ar,
+                    'total_participants' => $store->payments_count ?? 0,
+                    'execution_days' => $store->execution_days, // أيام التنفيذ
+                    'support_days' => $store->support_days,     // أيام الدعم
+                    'route' => route('stores.show', $store->id), // تأكد من وجود المسار في web.php
+                ];
+            }));
 
-            // تم إضافة الـ $ المفقودة هنا لتعريف المتغير بشكل صحيح
-            $remaining = $total_capacity - $current_payments;
-
-            return (object) [
-                'type' => 'course',
-                'id' => $course->id,
-                'service_id' => $course->service_id,
-                'name_ar' => $course->name_ar,
-                'name_en' => $course->name_en,
-                'description_ar' => $course->description_ar,
-                'description_en' => $course->description_en,
-                'main_image' => $course->main_image,
-                'price' => $course->price,
-                'service_name_ar' => $course->service?->name_ar,
-                // نرسل النتيجة النهائية (4) لتظهر في المتصفح
-                'total_participants' => $remaining > 0 ? $remaining : 0,
-                'count_days' => $course->count_days ?? 0,
-                'route' => route('courses.show', $course),
-            ];
-        }));
-
-        $logos = \App\Models\Logo::all();
-        $services = \App\Models\Service::where('status', 'active')->get();
+        $logos = Logo::all();
+        $services = Service::where('status', 'active')->get();
 
         return view('system.index', compact('items', 'logos', 'services'));
     }
-
     // في SystemController.php
     public function show(System $system)
     {

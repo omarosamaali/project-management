@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\MyStore;
 use App\Models\Service;
 use App\Models\Payment;
 use Illuminate\Http\Request;
@@ -223,6 +224,18 @@ class CourseController extends Controller
         ->get();
         $is_enrolled = $course->isUserEnrolled();
         return view('course.show', compact('course', 'is_enrolled', 'related_courses'));
+    }
+    
+    public function userShowStore(MyStore $store)
+    {
+        $serivce_id = $store->service_id;
+        $related_stores = MyStore::where('service_id', $serivce_id)
+        ->where('id', '!=', $store->id)
+        ->where('status', 'نشط')
+        ->limit(6)
+        ->get();
+        $is_enrolled = $store->isUserEnrolled();
+        return view('store.show', compact('store', 'is_enrolled', 'related_stores'));
     }
 
     public function toggleAttendance($paymentId)

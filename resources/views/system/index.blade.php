@@ -92,16 +92,12 @@
             data-service="{{ $item->service_id }}">
 
             <div class="relative h-48 overflow-hidden">
-                <!-- Badge للتمييز بين نظام ودورة -->
                 <span class="absolute top-2 right-2 px-3 py-1 text-xs font-bold rounded-full shadow text-white flex items-center gap-1
-    {{ $item->type === 'system' ? 'bg-black' : 'bg-blue-600' }}">
-
-                    @if($item->type === 'system')
-                    {{-- أيقونة البرمجة / الكود --}}
+                    {{ $item->type === 'system' ? 'bg-black' : 'bg-blue-600' }}">
+                    @if($item->type === 'system' || $item->type === 'store')
                     <i class="fas fa-code"></i>
                     <span>خدمة</span>
                     @else
-                    {{-- أيقونة الدورة التعليمية --}}
                     <i class="fas fa-graduation-cap"></i>
                     <span>دورة</span>
                     @endif
@@ -114,7 +110,7 @@
                 </span>
                 @endif
 
-                <img src="{{ $item->type === 'system' ? asset($item->main_image) : Storage::url($item->main_image) }}"
+                <img src="{{ $item->type === 'system' || $item->type === 'store' ? asset($item->main_image) : Storage::url($item->main_image) }}"
                     alt="{{ $item->name_ar }}" class="w-full h-full object-cover">
             </div>
 
@@ -157,9 +153,26 @@
                     <span class="text-sm font-medium">{{ __('messages.no_purchases') }}</span>
                     @endif
                 </div>
+                @elseif($item->type === 'store')
+                <p class="text-center text-sm text-gray-500 mb-4">
+                    {{ __('messages.get_it_in') }} {{ $item->execution_days }} {{ __('messages.day') }}
+                </p>
+                <div
+                    class="flex items-center justify-center gap-2 text-gray-600 bg-gray-50 py-2.5 px-4 rounded-lg border border-gray-200">
+                    <i class="fa-solid fa-shopping-bag text-red-600 text-lg"></i>
+                    {{-- @if($item->counter > 0)
+                    <span class="text-sm font-medium">
+                        {{ __('messages.purchase') }}
+                        <span class="font-bold text-red-600">{{ $item->counter ?? 0 }}</span>
+                        {{ __('messages.times') }}
+                    </span>
+                    @else --}}
+                    <span class="text-sm font-medium">{{ __('messages.no_purchases') }}</span>
+                    {{-- @endif --}}
+                </div>
                 @else
                 <p class="text-center text-sm text-gray-500 mb-4">
-                    {{ __('messages.course_duration') }} {{ $item->count_days }} {{ __('messages.day') }}
+                    {{ __('messages.course_duration') }} {{ $item->count_days ?? 0 }} {{ __('messages.day') }}
                 </p>
                 <div class="flex flex-col gap-2 mb-4">
                     <div
