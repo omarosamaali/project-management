@@ -65,7 +65,7 @@
                         <button type="button" onclick="openDescriptionModal()"
                             class="mb-4 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition shadow-md hover:shadow-lg">
                             <i class="fas fa-book-open"></i>
-                            <span>{{ __('اقرأ الوصف الكامل') }}</span>
+                            <span>{{ app()->getLocale() == 'en' ? 'Read full description' : 'اضغط هنا لـ قراءة الوصف بالكامل' }}</span>
                         </button>
 
                         <!-- Modal -->
