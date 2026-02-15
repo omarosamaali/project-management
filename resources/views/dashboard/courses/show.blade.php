@@ -89,30 +89,61 @@
                         </dl>
                     </div>
 
-                    <!-- Card: Dates -->
-                    <div
-                        class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-600">
-                            <i class="fas fa-calendar-alt"></i>
-                            التواريخ
-                        </h3>
+<!-- Card: Dates -->
+<div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
+    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-600">
+        <i class="fas fa-calendar-alt"></i>
+        التواريخ
+    </h3>
 
-                        <dl class="space-y-3 text-sm">
-                            <div class="flex justify-between">
-                                <dt class="text-gray-600 dark:text-gray-400">تاريخ البداية</dt>
-                                <dd class="font-medium">{{ $course->start_date->format('Y-m-d h:i:A') }}</dd>
-                            </div>
-                            <div class="flex justify-between">
-                                <dt class="text-gray-600 dark:text-gray-400">تاريخ النهاية</dt>
-                                <dd class="font-medium">{{ $course->end_date->format('Y-m-d h:i:A') }}</dd>
-                            </div>
-                            <div class="flex justify-between">
-                                <dt class="text-gray-600 dark:text-gray-400">آخر موعد للتسجيل</dt>
-                                <dd class="font-medium">{{ $course->last_date->format('Y-m-d h:i:A') }}</dd>
-                            </div>
-                        </dl>
-                    </div>
+    <dl class="space-y-3 text-sm">
+        <div class="flex justify-between">
+            <dt class="text-gray-600 dark:text-gray-400">تاريخ البداية</dt>
+            <dd class="font-medium">{{ $course->start_date->format('Y-m-d h:i:A') }}</dd>
+        </div>
+        <div class="flex justify-between">
+            <dt class="text-gray-600 dark:text-gray-400">تاريخ النهاية</dt>
+            <dd class="font-medium">{{ $course->end_date->format('Y-m-d h:i:A') }}</dd>
+        </div>
+        <div class="flex justify-between">
+            <dt class="text-gray-600 dark:text-gray-400">آخر موعد للتسجيل</dt>
+            <dd class="font-medium">{{ $course->last_date->format('Y-m-d h:i:A') }}</dd>
+        </div>
 
+        <hr class="border-gray-300 dark:border-gray-600">
+
+        <div class="flex justify-between">
+            <dt class="text-gray-600 dark:text-gray-400">عدد أيام الدورة</dt>
+            <dd class="font-bold text-blue-600">{{ $course->count_days }} يوم</dd>
+        </div>
+
+        @if ($course->rest_days && count($course->rest_days) > 0)
+        <div class="pt-2">
+            <dt class="text-gray-600 dark:text-gray-400 mb-2">أيام الإجازة</dt>
+            <dd class="flex flex-wrap gap-1.5">
+                @php
+                $daysArabic = [
+                'sunday' => 'الأحد',
+                'monday' => 'الإثنين',
+                'tuesday' => 'الثلاثاء',
+                'wednesday' => 'الأربعاء',
+                'thursday' => 'الخميس',
+                'friday' => 'الجمعة',
+                'saturday' => 'السبت'
+                ];
+                @endphp
+                @foreach($course->rest_days as $day)
+                <span
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded text-xs font-medium">
+                    <i class="fas fa-ban text-[10px]"></i>
+                    {{ $daysArabic[$day] ?? $day }}
+                </span>
+                @endforeach
+            </dd>
+        </div>
+        @endif
+    </dl>
+</div>
                     <!-- Card: Location -->
                     <div
                         class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-5 border border-gray-200 dark:border-gray-700">

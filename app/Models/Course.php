@@ -33,6 +33,7 @@ class Course extends Model
         'end_date',
         'last_date',
         'status',
+        'rest_days',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Course extends Model
         'last_date' => 'datetime',
         'counter' => 'integer',
         'count_days' => 'integer',
+        'rest_days' => 'array',
     ];
 
     public function service()
@@ -75,5 +77,25 @@ class Course extends Model
                 'enrolled_at',
                 'expires_at'
             ])->withTimestamps();
+    }
+
+    public function getActualCourseDaysAttribute()
+    {
+        if (!$this->start_date || !$this->end_date) {
+            return 0;
+        }
+        $start = $this->start_date;
+        $end = $this->end_date;
+        $restDays = $this->rest_days ?? [];
+        $totalDays = 0;
+        $current = $start->copy();
+        while ($current->lte($end)) {
+            $dayName = strtolower($current->format('l'));
+            if (!in_array($dayName, $restDays)) {
+                $totalDays++;
+            }
+            $current->addDay();
+        }
+        return $totalDays;
     }
 }

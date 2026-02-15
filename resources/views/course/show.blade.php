@@ -201,57 +201,83 @@
                                 </div>
                             </div>
 
-                            <!-- Start Date & Time -->
-                            @if ($course->start_date)
-                                <div class="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                                    <i class="fas fa-play-circle text-green-600 mt-1 text-xl"></i>
-                                    <div class="ltr:text-left rtl:text-right flex-1">
-                                        <h3 class="font-semibold text-gray-800 mb-2">
-                                            تاريخ البداية والنهاية
-                                        </h3>
-                                        <div class="space-y-1">
-                                            <p class="text-gray-700 flex items-center gap-2">
-                                                <i class="fas fa-calendar text-green-500"></i>
-                                                <span
-                                                    class="font-bold">{{ \Carbon\Carbon::parse($course->start_date)->locale('ar')->isoFormat('dddd، D
-                                                                                                MMMM YYYY') }}</span>
-                                            </p>
-                                            <p class="text-gray-700 flex items-center gap-2">
-                                                <i class="fas fa-calendar text-red-500"></i>
-                                                <span class="font-bold">{{ \Carbon\Carbon::parse($course->end_date)->locale('ar')->isoFormat('dddd، D
-                                                    MMMM YYYY') }}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
+<!-- Start Date & Time -->
+@if ($course->start_date)
+<div class="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+    <i class="fas fa-play-circle text-green-600 mt-1 text-xl"></i>
+    <div class="ltr:text-left rtl:text-right flex-1">
+        <h3 class="font-semibold text-gray-800 mb-2">
+            تاريخ البداية والنهاية
+        </h3>
+        <div class="space-y-1">
+            <p class="text-gray-700 flex items-center gap-2">
+                <i class="fas fa-calendar text-green-500"></i>
+                <span class="font-bold">{{ \Carbon\Carbon::parse($course->start_date)->locale('ar')->isoFormat('dddd، D
+                    MMMM YYYY') }}</span>
+            </p>
+            <p class="text-gray-700 flex items-center gap-2">
+                <i class="fas fa-calendar text-red-500"></i>
+                <span class="font-bold">{{ \Carbon\Carbon::parse($course->end_date)->locale('ar')->isoFormat('dddd، D
+                    MMMM YYYY') }}</span>
+            </p>
+        </div>
+    </div>
+</div>
+@endif
 
-                            <!-- End Date & Time -->
-                            @if ($course->end_date)
-                                <div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
-                                    <i class="fas fa-stop-circle text-red-600 mt-1 text-xl"></i>
-                                    <div class="ltr:text-left rtl:text-right flex-1">
-                                        <h3 class="font-semibold text-gray-800 mb-2">
-                                            وقت البداية والنهاية
-                                        </h3>
-                                        <div class="space-y-1">
-                                            
-                                            <p class="text-gray-700 flex items-center gap-2">
-                                                                                            <i class="fas fa-clock text-green-500"></i>
-                                                                                            <span class="font-bold">{{ \Carbon\Carbon::parse($course->start_date)->format('h:i A') }}</span>
-                                                                                        </p>
-                                            <p class="text-gray-700 flex items-center gap-2">
-                                                <i class="fas fa-clock text-red-500"></i>
-                                                <span
-                                                    class="font-bold">{{ \Carbon\Carbon::parse($course->end_date)->format('h:i
-                                                                                                A') }}</span>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
+<!-- End Date & Time -->
+@if ($course->end_date)
+<div class="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
+    <i class="fas fa-stop-circle text-red-600 mt-1 text-xl"></i>
+    <div class="ltr:text-left rtl:text-right flex-1">
+        <h3 class="font-semibold text-gray-800 mb-2">
+            وقت البداية والنهاية
+        </h3>
+        <div class="space-y-1">
+            <p class="text-gray-700 flex items-center gap-2">
+                <i class="fas fa-clock text-green-500"></i>
+                <span class="font-bold">{{ \Carbon\Carbon::parse($course->start_date)->format('h:i A') }}</span>
+            </p>
+            <p class="text-gray-700 flex items-center gap-2">
+                <i class="fas fa-clock text-red-500"></i>
+                <span class="font-bold">{{ \Carbon\Carbon::parse($course->end_date)->format('h:i A') }}</span>
+            </p>
+        </div>
+    </div>
+</div>
+@endif
 
-                            <!-- Last Registration Date -->
+<!-- Rest Days (أيام الإجازة) -->
+@if ($course->rest_days && count($course->rest_days) > 0)
+<div class="flex items-start gap-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+    <i class="fas fa-calendar-times text-yellow-600 mt-1 text-xl"></i>
+    <div class="ltr:text-left rtl:text-right flex-1">
+        <h3 class="font-semibold text-gray-800 mb-2">
+            أيام الإجازة
+        </h3>
+        <div class="flex flex-wrap gap-2">
+            @php
+            $daysArabic = [
+            'sunday' => 'الأحد',
+            'monday' => 'الإثنين',
+            'tuesday' => 'الثلاثاء',
+            'wednesday' => 'الأربعاء',
+            'thursday' => 'الخميس',
+            'friday' => 'الجمعة',
+            'saturday' => 'السبت'
+            ];
+            @endphp
+            @foreach($course->rest_days as $day)
+            <span
+                class="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium border border-yellow-300">
+                <i class="fas fa-ban text-xs"></i>
+                {{ $daysArabic[$day] ?? $day }}
+            </span>
+            @endforeach
+        </div>
+    </div>
+</div>
+@endif                            <!-- Last Registration Date -->
                             @if ($course->last_date)
                                 <div class="flex items-start gap-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
                                     <i class="fas fa-hourglass-end text-orange-600 mt-1 text-xl"></i>

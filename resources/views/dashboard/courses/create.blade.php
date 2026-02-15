@@ -193,95 +193,320 @@
                         </div>
 
                         <!-- Dates Section -->
-                        <div class="mt-8 pt-6 border-t">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-calendar text-blue-600"></i>
-                                التواريخ
-                            </h3>
-                            <div class="grid md:grid-cols-3 gap-6">
-                                <!-- Start Date -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ ووقت
-                                        البداية</label>
-                                    <input type="datetime-local" name="start_date" id="start_date" required
-                                        value="{{ old('start_date', isset($course) ? $course->start_date?->format('Y-m-d\TH:i') : '') }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                </div>
+<!-- Dates Section -->
+<div class="mt-8 pt-6 border-t">
+    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <i class="fas fa-calendar-alt text-blue-600"></i>
+        التواريخ وأيام الدورة
+    </h3>
 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">تاريخ ووقت
-                                        النهاية</label>
-                                    <input type="datetime-local" name="end_date" id="end_date" required
-                                        value="{{ old('end_date', isset($course) ? $course->end_date?->format('Y-m-d\TH:i') : '') }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                </div>
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+        <!-- تاريخ البداية -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                تاريخ ووقت البداية <span class="text-red-600">*</span>
+            </label>
+            <input type="datetime-local" id="start_date" name="start_date"
+                value="{{ old('start_date', isset($course) ? $course->start_date?->format('Y-m-d\TH:i') : '') }}"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('start_date') border-red-500 @enderror"
+                required>
+            @error('start_date')
+            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+            @enderror
+        </div>
 
-                                <!-- Last Registration Date -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        آخر موعد للتسجيل <span class="text-red-600">*</span>
-                                    </label>
-                                    <input type="date" name="last_date" id="last_date" required
-                                        value="{{ old('last_date') }}"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    @error('last_date')
-                                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                    @enderror
-                                </div>
+        <!-- تاريخ النهاية -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                تاريخ ووقت النهاية <span class="text-red-600">*</span>
+            </label>
+            <input type="datetime-local" id="end_date" name="end_date"
+                value="{{ old('end_date', isset($course) ? $course->end_date?->format('Y-m-d\TH:i') : '') }}"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('end_date') border-red-500 @enderror"
+                required>
+            @error('end_date')
+            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+            @enderror
+        </div>
 
-                                <!-- Count Days -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">عدد أيام الدورة
-                                        (تلقائي)</label>
-                                    <input type="number" name="count_days" id="count_days" readonly
-                                        value="{{ old('count_days') }}"
-                                        class="bg-gray-50 w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-500 cursor-not-allowed">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <script>
-                            const startDateInput = document.getElementById('start_date');
-                            const endDateInput = document.getElementById('end_date');
-                            const countDaysInput = document.getElementById('count_days');
-                        
-                            function calculateDays() {
-                                if (startDateInput.value && endDateInput.value) {
-                                    const startDate = startDateInput.value.split('T')[0];
-                                    const endDate = endDateInput.value.split('T')[0];
-                        
-                                    const start = new Date(startDate);
-                                    const end = new Date(endDate);
-                        
-                                    const diffTime = end - start;
-                                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                                    countDaysInput.value = diffDays >= 0 ? diffDays : 0;
-                                }
-                            }
-                        
-                            startDateInput.addEventListener('change', function () {
-                                // منع تاريخ النهاية يبقى قبل البداية
-                                endDateInput.min = startDateInput.value;
-                                if (endDateInput.value && endDateInput.value < startDateInput.value) {
-                                    endDateInput.value = startDateInput.value;
-                                }
-                                calculateDays();
-                            });
-                        
-                            endDateInput.addEventListener('change', function () {
-                                if (endDateInput.value < startDateInput.value) {
-                                    endDateInput.value = startDateInput.value;
-                                }
-                                calculateDays();
-                            });
-                        
-                            window.addEventListener('DOMContentLoaded', function () {
-                                if (startDateInput.value) {
-                                    endDateInput.min = startDateInput.value;
-                                }
-                                calculateDays();
-                            });
-                        </script>
+        <!-- آخر موعد للتسجيل -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                آخر موعد للتسجيل <span class="text-red-600">*</span>
+            </label>
+            <input type="datetime-local" id="last_date" name="last_date"
+                value="{{ old('last_date', isset($course) ? $course->last_date?->format('Y-m-d\TH:i') : '') }}"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('last_date') border-red-500 @enderror"
+                required>
+            @error('last_date')
+            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+            @enderror
+        </div>
+    </div>
+
+    <!-- أيام الراحة -->
+    <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            أيام الراحة (اختياري)
+        </label>
+        <p class="text-xs text-gray-500 mb-3" id="rest-days-hint">
+            اختر تاريخ البداية والنهاية أولاً لعرض الأيام المتاحة
+        </p>
+
+        <div id="rest-days-container" class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200"
+            style="display: none !important;">
+            <!-- سيتم إنشاء الـ checkboxes ديناميكياً بواسطة JavaScript -->
+        </div>
+    </div>
+
+    <!-- عرض الحسابات -->
+    <div class="grid md:grid-cols-3 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                إجمالي الأيام بين التاريخين
+            </label>
+            <input type="text" id="total_days_display" readonly value="0"
+                class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                عدد أيام الراحة
+            </label>
+            <input type="text" id="rest_days_count_display" readonly value="0"
+                class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                عدد أيام الدورة الفعلية <span class="text-red-600">*</span>
+            </label>
+            <input type="number" id="count_days" name="count_days"
+                value="{{ old('count_days', isset($course) ? $course->count_days : 0) }}" readonly
+                class="w-full px-4 py-3 bg-blue-50 border border-blue-300 rounded-lg text-blue-700 font-semibold @error('count_days') border-red-500 @enderror"
+                required>
+            @error('count_days')
+            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+            @enderror
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript لحساب الأيام تلقائياً -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const restDaysContainer = document.getElementById('rest-days-container');
+    const restDaysHint = document.getElementById('rest-days-hint');
+    const totalDaysDisplay = document.getElementById('total_days_display');
+    const restDaysCountDisplay = document.getElementById('rest_days_count_display');
+    const countDaysInput = document.getElementById('count_days');
+
+    // أسماء الأيام بالعربية والإنجليزية
+    const daysMap = {
+        'sunday': 'الأحد',
+        'monday': 'الإثنين',
+        'tuesday': 'الثلاثاء',
+        'wednesday': 'الأربعاء',
+        'thursday': 'الخميس',
+        'friday': 'الجمعة',
+        'saturday': 'السبت'
+    };
+
+    // الأيام المحددة مسبقاً (للتحرير)
+    const preSelectedDays = @json(old('rest_days', isset($course) ? $course->rest_days : []));
+
+    // دالة للحصول على اسم اليوم بالإنجليزية من تاريخ
+    function getDayName(date) {
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        return days[date.getDay()];
+    }
+
+    // دالة لإنشاء checkboxes بناءً على الأيام الموجودة
+    function generateRestDaysCheckboxes(startDate, endDate, recalculate = true) {
+        // الحصول على الأيام الفريدة بين التاريخين
+        const uniqueDays = new Set();
+        let currentDate = new Date(startDate);
+        const end = new Date(endDate);
+
+        while (currentDate <= end) {
+            const dayName = getDayName(currentDate);
+            uniqueDays.add(dayName);
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // تحويل Set إلى Array مرتب حسب ترتيب أيام الأسبوع
+        const daysOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const sortedDays = daysOrder.filter(day => uniqueDays.has(day));
+
+        // حفظ الاختيارات الحالية قبل المسح
+        const currentSelections = [];
+        const currentCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox:checked');
+        currentCheckboxes.forEach(cb => currentSelections.push(cb.value));
+
+        // مسح المحتوى القديم
+        restDaysContainer.innerHTML = '';
+
+        // إنشاء checkbox لكل يوم
+        sortedDays.forEach(dayValue => {
+            const isChecked = currentSelections.includes(dayValue) || preSelectedDays.includes(dayValue);
+            
+            const checkboxHtml = `
+                <label class="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition ${isChecked ? 'border-blue-500 bg-blue-50' : ''}">
+                    <input class="rest-day-checkbox w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" 
+                           type="checkbox" 
+                           name="rest_days[]" 
+                           value="${dayValue}" 
+                           id="rest_day_${dayValue}"
+                           ${isChecked ? 'checked' : ''}>
+                    <span class="text-sm font-medium text-gray-700 ${isChecked ? 'text-blue-700' : ''}">
+                        ${daysMap[dayValue]}
+                    </span>
+                </label>
+            `;
+            
+            restDaysContainer.insertAdjacentHTML('beforeend', checkboxHtml);
+        });
+
+        // إضافة event listeners للـ checkboxes الجديدة
+        const newCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox');
+        newCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // تحديث ستايل الـ label
+                const label = this.closest('label');
+                if (this.checked) {
+                    label.classList.add('border-blue-500', 'bg-blue-50');
+                    label.querySelector('span').classList.add('text-blue-700');
+                } else {
+                    label.classList.remove('border-blue-500', 'bg-blue-50');
+                    label.querySelector('span').classList.remove('text-blue-700');
+                }
+                recalculateRestDays();
+            });
+        });
+
+        // إظهار الـ container
+        restDaysContainer.style.display = 'flex';
+        restDaysHint.textContent = `حدد أيام الأسبوع التي لن تكون فيها دورة (سيتم خصمها من إجمالي الأيام)`;
+        
+        if (recalculate) {
+            recalculateRestDays();
+        }
+    }
+
+    // دالة منفصلة لإعادة حساب أيام الراحة فقط
+    function recalculateRestDays() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!startDate || !endDate) {
+            return;
+        }
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // حساب إجمالي الأيام
+        const diffTime = Math.abs(end - start);
+        const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        // الحصول على أيام الراحة المحددة
+        const restDayCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox');
+        const selectedRestDays = Array.from(restDayCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
+        // حساب عدد أيام الراحة ضمن الفترة
+        let restDaysCount = 0;
+        let currentDate = new Date(start);
+
+        while (currentDate <= end) {
+            const dayName = getDayName(currentDate);
+            if (selectedRestDays.includes(dayName)) {
+                restDaysCount++;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        // حساب أيام الدورة الفعلية
+        const actualCourseDays = totalDays - restDaysCount;
+
+        // تحديث الحقول
+        totalDaysDisplay.value = totalDays;
+        restDaysCountDisplay.value = restDaysCount;
+        countDaysInput.value = actualCourseDays;
+    }
+
+    // دالة لحساب عدد الأيام
+    function calculateDays() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (!startDate || !endDate) {
+            totalDaysDisplay.value = '0';
+            restDaysCountDisplay.value = '0';
+            countDaysInput.value = '0';
+            restDaysContainer.style.display = 'none';
+            restDaysHint.textContent = 'اختر تاريخ البداية والنهاية أولاً لعرض الأيام المتاحة';
+            return;
+        }
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (end < start) {
+            alert('تاريخ النهاية يجب أن يكون بعد تاريخ البداية');
+            totalDaysDisplay.value = '0';
+            restDaysCountDisplay.value = '0';
+            countDaysInput.value = '0';
+            restDaysContainer.style.display = 'none';
+            return;
+        }
+
+        // إنشاء checkboxes بناءً على الأيام الموجودة
+        generateRestDaysCheckboxes(start, end, true);
+    }
+
+    // إضافة مستمعات الأحداث
+    startDateInput.addEventListener('change', calculateDays);
+    endDateInput.addEventListener('change', calculateDays);
+
+    // حساب عند تحميل الصفحة (للتحرير)
+    if (startDateInput.value && endDateInput.value) {
+        calculateDays();
+    }
+});
+</script>
+
+<style>
+    #rest-days-container {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    #rest-days-container .form-check {
+        background: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        border: 2px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+    #rest-days-container .form-check:hover {
+        border-color: #0d6efd;
+    }
+
+    #rest-days-container .form-check-input:checked~.form-check-label {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .bg-light {
+        background-color: #e9ecef !important;
+    }
+</style>
 
                         <!-- Location Section -->
                         <div class="mt-8 pt-6 border-t">
@@ -1041,22 +1266,6 @@
             }
         });
     }
-
-    // // ========== Row Templates ==========
-    // const createRequirementRow = () => `
-    //     <div class="flex gap-2 requirement-row">
-    //         <input type="text" name="requirements_ar[]"
-    //             class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-    //             placeholder="متطلب بالعربي">
-    //         <input type="text" name="requirements_en[]" dir="ltr"
-    //             class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-    //             placeholder="Requirement in English">
-    //         <button type="button"
-    //             class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
-    //             <i class="fas fa-trash"></i>
-    //         </button>
-    //     </div>
-    // `;
 
     const createFeatureRow = () => `
         <div class="flex gap-2 feature-row">
