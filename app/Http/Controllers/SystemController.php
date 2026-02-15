@@ -67,30 +67,35 @@ class SystemController extends Controller
                     'service_name_ar' => $course->service?->name_ar,
                     'total_participants' => $remaining > 0 ? $remaining : 0,
                     'count_days' => $course->count_days ?? 0,
+                    'start_date' => $course->start_date,
+                    'end_date' => $course->end_date,
                     'route' => route('courses.show', $course),
                 ];
             }))
             // 4. دمج ومعالجة المتاجر (الإضافة الجديدة)
             // ... الكود السابق للأنظمة والدورات ...
 
-            ->merge($stores->map(function ($store) {
-                return (object) [
-                    'type' => 'store',
-                    'id' => $store->id,
-                    'service_id' => $store->service_id,
-                    'name_ar' => $store->name_ar,
-                    'name_en' => $store->name_en,
-                    'description_ar' => $store->description_ar,
-                    'description_en' => $store->description_en,
-                    'main_image' => $store->main_image,
-                    'price' => $store->price,
-                    'original_price' => $store->original_price, // أضفناه لأنه موجود في الموديل
-                    'service_name_ar' => $store->service?->name_ar,
-                    'total_participants' => $store->payments_count ?? 0,
-                    'execution_days' => $store->execution_days, // أيام التنفيذ
-                    'support_days' => $store->support_days,     // أيام الدعم
-                    'route' => route('stores.show', $store->id), // تأكد من وجود المسار في web.php
-                ];
+            ->concat($stores->map(function ($store) {
+
+
+                $obj = new \stdClass();
+                $obj->type = 'store';
+                $obj->id = $store->id;
+                $obj->service_id = $store->service_id;
+                $obj->name_ar = $store->name_ar;
+                $obj->name_en = $store->name_en;
+                $obj->description_ar = $store->description_ar;
+                $obj->description_en = $store->description_en;
+                $obj->main_image = $store->main_image;
+                $obj->price = $store->price;
+                $obj->original_price = $store->original_price;
+                $obj->service_name_ar = $store->service?->name_ar;
+                $obj->total_participants = $store->payments_count ?? 0;
+                $obj->execution_days = $store->execution_days;
+                $obj->support_days = $store->support_days;
+                $obj->route = route('stores.show', $store->id);
+
+                return $obj;
             }));
 
         $logos = Logo::all();

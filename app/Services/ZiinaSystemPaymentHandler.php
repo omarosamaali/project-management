@@ -124,9 +124,9 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            if ($isTest || app()->environment('local', 'testing')) {
-                $data['test'] = true;
-            }
+            // if ($isTest || app()->environment('local', 'testing')) {
+            //     $data['test'] = true;
+            // }
 
             Log::info('Creating Ziina payment intent for system', [
                 'system_id' => $system->id,
@@ -135,7 +135,7 @@ class ZiinaSystemPaymentHandler
                 'fees' => $fees,
                 'total_price' => $totalPrice,
                 'message' => $message,
-                'test_mode' => $isTest
+                // 'test_mode' => $isTest
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);
@@ -202,9 +202,9 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            if ($isTest || app()->environment('local', 'testing')) {
-                $data['test'] = true;
-            }
+            // if ($isTest || app()->environment('local', 'testing')) {
+            //     $data['test'] = true;
+            // }
 
             Log::info('Creating Ziina payment intent for course', [
                 'course_id' => $course->id,
@@ -214,7 +214,7 @@ class ZiinaSystemPaymentHandler
                 'total_price' => $totalPrice,
                 'message' => $message,
                 'success_url' => $successUrl,
-                'test_mode' => $isTest
+                // 'test_mode' => $isTest
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);
@@ -287,9 +287,9 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            if ($isTest || app()->environment('local', 'testing')) {
-                $data['test'] = true;
-            }
+            // if ($isTest || app()->environment('local', 'testing')) {
+            //     $data['test'] = true;
+            // }
 
             Log::info('Creating Ziina payment intent for special request', [
                 'special_request_id' => $specialRequest->id,
@@ -298,7 +298,7 @@ class ZiinaSystemPaymentHandler
                 'fees' => $fees,
                 'total_price' => $totalPrice,
                 'message' => $message,
-                'test_mode' => $isTest
+                // 'test_mode' => $isTest
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);

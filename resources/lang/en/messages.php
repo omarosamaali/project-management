@@ -105,7 +105,8 @@ return [
     "الإقبال شديد حالياً"=>"High demand right now",
     'related_courses' => 'Related Courses',
     'related_systems' => 'Related Systems',
-    'free' => 'Free Course'
+    'free' => 'Free Course',
+    'hour' => 'Hours',
 
 
 

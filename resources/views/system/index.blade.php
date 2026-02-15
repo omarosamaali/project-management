@@ -171,10 +171,27 @@
                     {{-- @endif --}}
                 </div>
                 @else
-                <p class="text-center text-sm text-gray-500 mb-4">
-                    {{ __('messages.course_duration') }} {{ $item->count_days ?? 0 }} {{ __('messages.day') }}
-                </p>
-                <div class="flex flex-col gap-2 mb-4">
+<p class="text-center text-sm text-gray-500 mb-4">
+    {{ __('messages.course_duration') }}
+    @php
+    $countDays = $item->count_days ?? 0;
+
+    if ($countDays >= 1) {
+    echo $countDays . ' ' . __('messages.day');
+    } else {
+    // احسب الساعات من التواريخ
+    $start = \Carbon\Carbon::parse($item->start_date);
+    $end = \Carbon\Carbon::parse($item->end_date);
+    $hours = $start->diffInHours($end);
+
+    if ($hours > 0) {
+    echo $hours . ' ' . __('messages.hour');
+    } else {
+    echo '1 ' . __('messages.hour');
+    }
+    }
+    @endphp
+</p>                <div class="flex flex-col gap-2 mb-4">
                     <div
                         class="flex items-center justify-center gap-2 {{ $item->total_participants <= 3 ? 'text-red-600 bg-red-50 border-red-200' : 'text-orange-600 bg-orange-50 border-orange-200' }} py-2.5 px-4 rounded-lg border shadow-sm">
                         {{-- أيقونة المقاعد تعطي إيحاء بمكان حقيقي --}}

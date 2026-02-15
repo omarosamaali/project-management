@@ -15,9 +15,9 @@ class SystemController extends Controller
         $search = $request->input('search');
         if ($search) {
             $systems = System::where('name_ar', 'like', '%' . $search . '%')
-            ->orWhere('name_en', 'like', '%' . $search . '%')->latest()->paginate(8);
+            ->orWhere('name_en', 'like', '%' . $search . '%')->where('id', '<', 999)->latest()->paginate(8);
         } else {
-            $systems = System::latest()->paginate(8);
+            $systems = System::where('id', '<', 999)->latest()->paginate(8);
         }
         return view('dashboard.systems.index', compact('systems'));
     }

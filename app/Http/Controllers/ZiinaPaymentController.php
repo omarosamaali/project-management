@@ -104,14 +104,14 @@ class ZiinaPaymentController extends Controller
             // 5. استخدام الـ Handler القديم (هذا هو سر النجاح)
             $successUrl = route('payment.success');
             $cancelUrl  = route('payment.cancel');
-            $isTest     = config('services.ziina.test_mode', true);
+            // $isTest     = config('services.ziina.test_mode', true);
 
             // ملاحظة: الـ Handler يتوقع كائن (Object) يحتوي على السعر والبيانات
             $response = $this->ziinaHandler->createSystemPaymentIntent(
                 $item,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             // 6. حفظ عملية الدفع في قاعدة البيانات
@@ -185,6 +185,7 @@ class ZiinaPaymentController extends Controller
                             'service_id'          => $store->service_id ?? null,
                             'created_at'          => now(),
                             'updated_at'          => now(),
+                            'status'              => 'inactive',
                         ];
 
                         // إدخال البيانات في جدول systems
@@ -284,13 +285,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.special-request.return') . '?special_request_id=' . $specialRequest->id;
             $cancelUrl = route('payment.cancel');
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $specialRequest,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             $paymentData = [
@@ -437,13 +438,13 @@ class ZiinaPaymentController extends Controller
 
             $successUrl = route('payment.installment.return', ['installment' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             $response = $this->ziinaHandler->createInstallmentPaymentIntent(
                 $installment,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             $paymentData = [
@@ -609,7 +610,7 @@ class ZiinaPaymentController extends Controller
             $successUrl = route('course.payment.success');
             $cancelUrl  = route('course.payment.cancel');
 
-            $isTest = config('services.ziina.test_mode', true);
+            // $isTest = config('services.ziina.test_mode', true);
 
             Log::info('إعداد دفع الدورة', [
                 'course_id' => $course->id,
@@ -622,7 +623,7 @@ class ZiinaPaymentController extends Controller
                 $course,
                 $successUrl,
                 $cancelUrl,
-                $isTest
+                // $isTest
             );
 
             Log::info('تم إنشاء payment intent بنجاح للدورة', [
