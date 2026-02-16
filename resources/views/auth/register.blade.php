@@ -78,7 +78,7 @@
             <!-- رقم الجوال -->
             <div>
                 <x-input-label for="phone" :value="__('messages.phone')" />
-                <x-text-input id="phone" class="placeholder-gray-500 block mt-1 w-full rtl:text-right" type="number"
+                <x-text-input id="phone" class="placeholder-gray-500 block mt-1 w-full rtl:text-right" type="tel"
                     name="phone" :value="old('phone')" required />
                 <x-input-error :messages="$errors->get('phone')" class="mt-2" />
             </div>

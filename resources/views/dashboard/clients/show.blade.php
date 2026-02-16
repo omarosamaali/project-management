@@ -66,7 +66,7 @@
                             </div>
                         </div>
 
-                        {{-- <div class="bg-yellow-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <div class="bg-yellow-50 dark:bg-gray-700 p-4 rounded-lg">
                             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">
                                 رقم الهاتف</label>
                             <div class="flex items-center gap-1">
@@ -74,7 +74,7 @@
                                     {{ $client->phone }}
                                 </span>
                             </div>
-                        </div> --}}
+                        </div>
                     </div>
                 </div>
 
