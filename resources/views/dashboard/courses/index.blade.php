@@ -107,10 +107,35 @@
                                     <x-drhm-icon width="12" height="14" />
                                 </div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-600">
-                                {{ $course->count_days }}
-                                <span class="text-xs">يوم</span>
-                            </td>
+                           <td class="px-4 py-3 text-sm text-gray-600">
+                            @if($course->count_days > 0)
+                            {{ $course->count_days }}
+                            <span class="text-xs">يوم</span>
+                            @else
+                            @php
+                            // حساب الفرق بالساعات والدقائق
+                            $start = \Carbon\Carbon::parse($course->start_date);
+                            $end = \Carbon\Carbon::parse($course->end_date);
+                            $hours = $start->diffInHours($end);
+                            $minutes = $start->diffInMinutes($end) % 60;
+                            @endphp
+                        
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-blue-600">
+                                    @if($hours > 0)
+                                    {{ $hours }} ساعة
+                                    @endif
+                                    @if($minutes > 0)
+                                    {{ $minutes }} دقيقة
+                                    @endif
+                                    @if($hours == 0 && $minutes == 0)
+                                    أقل من دقيقة
+                                    @endif
+                                </span>
+                                <span class="text-[10px] text-gray-400">(دورة يوم واحد)</span>
+                            </div>
+                            @endif
+                        </td>
                             <td class="px-4 py-3 font-medium text-blue-600">
                             {{ $course->students?->count() ?? 0 }}
                             </td>

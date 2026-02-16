@@ -192,7 +192,7 @@
 
                         </div>
 
-                        <!-- Dates Section -->
+                        
 <!-- Dates Section -->
 <div class="mt-8 pt-6 border-t">
     <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -303,179 +303,116 @@
     const restDaysCountDisplay = document.getElementById('rest_days_count_display');
     const countDaysInput = document.getElementById('count_days');
 
-    // أسماء الأيام بالعربية والإنجليزية
     const daysMap = {
-        'sunday': 'الأحد',
-        'monday': 'الإثنين',
-        'tuesday': 'الثلاثاء',
-        'wednesday': 'الأربعاء',
-        'thursday': 'الخميس',
-        'friday': 'الجمعة',
-        'saturday': 'السبت'
+        'sunday': 'الأحد', 'monday': 'الإثنين', 'tuesday': 'الثلاثاء',
+        'wednesday': 'الأربعاء', 'thursday': 'الخميس', 'friday': 'الجمعة', 'saturday': 'السبت'
     };
 
-    // الأيام المحددة مسبقاً (للتحرير)
     const preSelectedDays = @json(old('rest_days', isset($course) ? $course->rest_days : []));
 
-    // دالة للحصول على اسم اليوم بالإنجليزية من تاريخ
     function getDayName(date) {
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         return days[date.getDay()];
     }
 
-    // دالة لإنشاء checkboxes بناءً على الأيام الموجودة
-    function generateRestDaysCheckboxes(startDate, endDate, recalculate = true) {
-        // الحصول على الأيام الفريدة بين التاريخين
-        const uniqueDays = new Set();
-        let currentDate = new Date(startDate);
-        const end = new Date(endDate);
-
-        while (currentDate <= end) {
-            const dayName = getDayName(currentDate);
-            uniqueDays.add(dayName);
-            currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        // تحويل Set إلى Array مرتب حسب ترتيب أيام الأسبوع
-        const daysOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const sortedDays = daysOrder.filter(day => uniqueDays.has(day));
-
-        // حفظ الاختيارات الحالية قبل المسح
-        const currentSelections = [];
-        const currentCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox:checked');
-        currentCheckboxes.forEach(cb => currentSelections.push(cb.value));
-
-        // مسح المحتوى القديم
-        restDaysContainer.innerHTML = '';
-
-        // إنشاء checkbox لكل يوم
-        sortedDays.forEach(dayValue => {
-            const isChecked = currentSelections.includes(dayValue) || preSelectedDays.includes(dayValue);
-            
-            const checkboxHtml = `
-                <label class="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition ${isChecked ? 'border-blue-500 bg-blue-50' : ''}">
-                    <input class="rest-day-checkbox w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" 
-                           type="checkbox" 
-                           name="rest_days[]" 
-                           value="${dayValue}" 
-                           id="rest_day_${dayValue}"
-                           ${isChecked ? 'checked' : ''}>
-                    <span class="text-sm font-medium text-gray-700 ${isChecked ? 'text-blue-700' : ''}">
-                        ${daysMap[dayValue]}
-                    </span>
-                </label>
-            `;
-            
-            restDaysContainer.insertAdjacentHTML('beforeend', checkboxHtml);
-        });
-
-        // إضافة event listeners للـ checkboxes الجديدة
-        const newCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox');
-        newCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                // تحديث ستايل الـ label
-                const label = this.closest('label');
-                if (this.checked) {
-                    label.classList.add('border-blue-500', 'bg-blue-50');
-                    label.querySelector('span').classList.add('text-blue-700');
-                } else {
-                    label.classList.remove('border-blue-500', 'bg-blue-50');
-                    label.querySelector('span').classList.remove('text-blue-700');
-                }
-                recalculateRestDays();
-            });
-        });
-
-        // إظهار الـ container
-        restDaysContainer.style.display = 'flex';
-        restDaysHint.textContent = `حدد أيام الأسبوع التي لن تكون فيها دورة (سيتم خصمها من إجمالي الأيام)`;
-        
-        if (recalculate) {
-            recalculateRestDays();
-        }
+    // تصفير الوقت للمقارنة بالأيام فقط
+    function resetTime(date) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
     }
 
-    // دالة منفصلة لإعادة حساب أيام الراحة فقط
     function recalculateRestDays() {
-        const startDate = startDateInput.value;
-        const endDate = endDateInput.value;
+        if (!startDateInput.value || !endDateInput.value) return;
 
-        if (!startDate || !endDate) {
-            return;
-        }
+        const start = resetTime(new Date(startDateInput.value));
+        const end = resetTime(new Date(endDateInput.value));
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        // حساب إجمالي الأيام
+        // حساب الفرق (إذا كان نفس اليوم سيكون الناتج 0)
         const diffTime = Math.abs(end - start);
-        const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
 
-        // الحصول على أيام الراحة المحددة
-        const restDayCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox');
-        const selectedRestDays = Array.from(restDayCheckboxes)
-            .filter(checkbox => checkbox.checked)
-            .map(checkbox => checkbox.value);
+        const selectedRestDays = Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked'))
+                                     .map(cb => cb.value);
 
-        // حساب عدد أيام الراحة ضمن الفترة
         let restDaysCount = 0;
-        let currentDate = new Date(start);
-
-        while (currentDate <= end) {
-            const dayName = getDayName(currentDate);
-            if (selectedRestDays.includes(dayName)) {
-                restDaysCount++;
+        if (totalDays > 0) {
+            let currentDate = new Date(start);
+            // نبدأ من اليوم التالي لأن اليوم الأول هو يوم البداية
+            currentDate.setDate(currentDate.getDate() + 1); 
+            while (currentDate <= end) {
+                const dayName = getDayName(currentDate);
+                if (selectedRestDays.includes(dayName)) {
+                    restDaysCount++;
+                }
+                currentDate.setDate(currentDate.getDate() + 1);
             }
-            currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // حساب أيام الدورة الفعلية
         const actualCourseDays = totalDays - restDaysCount;
 
-        // تحديث الحقول
         totalDaysDisplay.value = totalDays;
         restDaysCountDisplay.value = restDaysCount;
         countDaysInput.value = actualCourseDays;
     }
 
-    // دالة لحساب عدد الأيام
-    function calculateDays() {
-        const startDate = startDateInput.value;
-        const endDate = endDateInput.value;
+    function generateRestDaysCheckboxes(startDate, endDate) {
+        const uniqueDays = new Set();
+        let currentDate = resetTime(new Date(startDate));
+        const end = resetTime(new Date(endDate));
 
-        if (!startDate || !endDate) {
-            totalDaysDisplay.value = '0';
-            restDaysCountDisplay.value = '0';
-            countDaysInput.value = '0';
-            restDaysContainer.style.display = 'none';
-            restDaysHint.textContent = 'اختر تاريخ البداية والنهاية أولاً لعرض الأيام المتاحة';
-            return;
+        // إضافة كل الأيام في الفترة للمجموعة
+        while (currentDate <= end) {
+            uniqueDays.add(getDayName(currentDate));
+            currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const daysOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const sortedDays = daysOrder.filter(day => uniqueDays.has(day));
+
+        const currentSelections = Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked'))
+                                       .map(cb => cb.value);
+
+        restDaysContainer.innerHTML = '';
+        sortedDays.forEach(dayValue => {
+            const isChecked = currentSelections.includes(dayValue) || preSelectedDays.includes(dayValue);
+            const checkboxHtml = `
+                <label class="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition ${isChecked ? 'border-blue-500 bg-blue-50' : ''}">
+                    <input class="rest-day-checkbox w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" 
+                           type="checkbox" name="rest_days[]" value="${dayValue}" ${isChecked ? 'checked' : ''}>
+                    <span class="text-sm font-medium text-gray-700 ${isChecked ? 'text-blue-700' : ''}">${daysMap[dayValue]}</span>
+                </label>`;
+            restDaysContainer.insertAdjacentHTML('beforeend', checkboxHtml);
+        });
+
+        restDaysContainer.querySelectorAll('.rest-day-checkbox').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const label = this.closest('label');
+                label.classList.toggle('border-blue-500', this.checked);
+                label.classList.toggle('bg-blue-50', this.checked);
+                recalculateRestDays();
+            });
+        });
+
+        restDaysContainer.style.display = 'flex';
+        recalculateRestDays();
+    }
+
+    function calculateDays() {
+        if (!startDateInput.value || !endDateInput.value) {
+            totalDaysDisplay.value = '0'; restDaysCountDisplay.value = '0'; countDaysInput.value = '0';
+            restDaysContainer.style.display = 'none'; return;
+        }
+        const start = resetTime(new Date(startDateInput.value));
+        const end = resetTime(new Date(endDateInput.value));
 
         if (end < start) {
-            alert('تاريخ النهاية يجب أن يكون بعد تاريخ البداية');
-            totalDaysDisplay.value = '0';
-            restDaysCountDisplay.value = '0';
-            countDaysInput.value = '0';
-            restDaysContainer.style.display = 'none';
-            return;
+            alert('تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية'); return;
         }
-
-        // إنشاء checkboxes بناءً على الأيام الموجودة
-        generateRestDaysCheckboxes(start, end, true);
+        generateRestDaysCheckboxes(start, end);
     }
 
-    // إضافة مستمعات الأحداث
     startDateInput.addEventListener('change', calculateDays);
     endDateInput.addEventListener('change', calculateDays);
-
-    // حساب عند تحميل الصفحة (للتحرير)
-    if (startDateInput.value && endDateInput.value) {
-        calculateDays();
-    }
+    if (startDateInput.value && endDateInput.value) calculateDays();
 });
 </script>
 
