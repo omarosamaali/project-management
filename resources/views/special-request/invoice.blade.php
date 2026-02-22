@@ -48,10 +48,10 @@
                         بيانات العميل / Customer Details
                     </h3>
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
-                        <p class="font-bold text-black">{{ Auth::user()->name }}</p>
-                        <p class="text-gray-700 text-sm">{{ Auth::user()->phone ?? '-' }}</p>
-                        <p class="text-gray-700 text-sm">{{ Auth::user()->email }}</p>
-                        <p class="text-gray-700 text-sm">{{ Auth::user()->country_name ?? '-' }}</p>
+                        <p class="font-bold text-black">{{ $specialRequest->user->name ?? '-' }}</p>
+                        <p class="text-gray-700 text-sm">{{ $specialRequest->user->phone ?? '-' }}</p>
+                        <p class="text-gray-700 text-sm">{{ $specialRequest->user->email ?? '-' }}</p>
+                        <p class="text-gray-700 text-sm">{{ $specialRequest->user->country ?? '-' }}</p>
                     </div>
                 </div>
 
@@ -67,11 +67,13 @@
                             $payment->created_at->format('Y-m-d H:i') : now()->format('Y-m-d H:i') }}</p>
                         <p class="text-gray-700 text-sm"><strong>طريقة الدفع:</strong> (بوابة دفع إلكترونية)</p>
                         @if($installment)
-                        <p class="text-gray-700 text-sm"><strong>نوع الدفع:</strong> دفعة جزئية - {{
+                        <p class="text-gray-700 text-sm"><strong>نوع الدفع:</strong> {{
                             $installment->payment_name }}</p>
                         @else
-                        <p class="text-gray-700 text-sm"><strong>نوع الدفع:</strong> دفع كامل للطلب الخاص</p>
-                        @endif
+{{-- <p class="text-gray-700 text-sm">
+    <strong>نوع الدفع:</strong> {{ $$installment->payment_name ?? 'غير محدد' }}
+</p>   --}}
+                      @endif
                     </div>
                 </div>
             </div>
@@ -106,7 +108,7 @@
                                 <td class="py-3 px-4 text-black">المبلغ الأساسي</td>
                                 <td class="text-center py-3 px-4 text-black font-bold">
                                     <div class="flex items-center gap-1 justify-center">
-                                        <span dir="ltr">{{ number_format($baseAmount, 2) }}</span>
+<span dir="ltr">{{ number_format($baseAmount, 2) }}</span>
                                         <span class="text-xs">
                                            <svg width="{{ $width ?? 14 }}" height="{{ $height ?? 14 }}" xmlns="http://www.w3.org/2000/svg" width="1000"
                                             height="870" viewBox="0 0 1000 870" fill="none">

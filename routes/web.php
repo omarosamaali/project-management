@@ -50,33 +50,34 @@ Route::post('special-request-messages/store', [SpecialRequestMessageController::
 Route::post('/requests/{id}/update-budget', [ProjectBudgetController::class, 'updateBudget'])->name('requests.update-budget');
 Route::middleware(['auth'])->group(function () {
 
+    // Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequestId, $paymentId) {
+    //     $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
+    //     $payment = \App\Models\Payment::findOrFail($paymentId);
+    //     $installmentId = request()->get('installment_id');
+    //     $installment = null;
+    //     if ($installmentId) {
+    //         $installment = \App\Models\RequestPayment::find($installmentId);
+    //     }
+
+    //     if (!$installment) {
+    //         $installment = \App\Models\RequestPayment::where('special_request_id', $specialRequest->id)
+    //             ->where('status', 'paid')
+    //             ->orderBy('paid_at', 'desc')
+    //             ->first();
+    //     }
+
+    //     return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
+    // })->name('special-request.payment.invoice')->middleware('auth');
+
     Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequestId, $paymentId) {
         $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
         $payment = \App\Models\Payment::findOrFail($paymentId);
-        $installmentId = request()->get('installment_id');
-        $installment = null;
-        if ($installmentId) {
-            $installment = \App\Models\RequestPayment::find($installmentId);
-        }
-
-        if (!$installment) {
-            $installment = \App\Models\RequestPayment::where('special_request_id', $specialRequest->id)
-                ->where('status', 'paid')
-                ->orderBy('paid_at', 'desc')
-                ->first();
-        }
+        $installment = \App\Models\RequestPayment::find(request('installment_id')); // 👈 هنا
 
         return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
     })->name('special-request.payment.invoice')->middleware('auth');
 
     
-    Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequestId, $paymentId) {
-        $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
-        $payment = \App\Models\Payment::findOrFail($paymentId);
-        $installment = \App\Models\RequestPayment::where('id', $payment->payment_id)->first();
-        return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
-    })->name('special-request.payment.invoice')->middleware('auth');
-
     Route::post('/payments/{payment}/ziina-pay', [ZiinaPaymentController::class, 'initiateInstallmentPayment'])
         ->name('ziina.installment.pay')
         ->middleware(['auth', \App\Http\Middleware\SetLocale::class]);  // هنا الكلاس الكامل

@@ -27,8 +27,6 @@ class Payment extends Model
     // داخل ملف Payment.php
     public function requestPayment()
     {
-        // جرب استخدام belongsTo إذا كان جدول payments هو من يحتوي على معرف القسط
-        // أو تأكد من اسم العمود الصحيح في جدول request_payments
         return $this->belongsTo(RequestPayment::class, 'payment_id');
     }
     public function system()
@@ -44,5 +42,11 @@ class Payment extends Model
     public function store()
     {
         return $this->belongsTo(MyStore::class);
+    }
+    // App\Models\Payment.php
+
+    public function specialRequest()
+    {
+        return $this->belongsTo(SpecialRequest::class, 'special_request_id');
     }
 }
