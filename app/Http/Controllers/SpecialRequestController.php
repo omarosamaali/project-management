@@ -13,6 +13,16 @@ use Illuminate\Support\Facades\DB;
 
 class SpecialRequestController extends Controller
 {
+    public function markPaymentAsPaid(\App\Models\RequestPayment $payment)
+    {
+        $payment->update([
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        return back()->with('success', 'تم تحويل الدفعة إلى مدفوعة بنجاح ✅');
+    }
+    
     public function updateBudgetStages(Request $request, $id)
     {
         \Log::info('updateBudgetStages reached', [

@@ -173,7 +173,6 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 dark:text-gray-300">العنوان</label>
                    <div class="mb-4">
-                    <label class="block text-sm font-bold mb-2">عنوان المصروف</label>
                     <input type="text" name="title" id="edit_expense_title" required
                         class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>

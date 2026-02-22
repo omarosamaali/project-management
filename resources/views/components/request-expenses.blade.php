@@ -158,9 +158,7 @@
     <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
         <div
             class="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <i class="fas fa-edit text-blue-600"></i> تعديل المصروف
-            </h3>
+           
             <button onclick="closeEditExpenseModal()"
                 class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
         </div>
@@ -173,7 +171,6 @@
                 <div>
                     <label class="block text-sm font-medium mb-2 dark:text-gray-300">العنوان</label>
                    <div class="mb-4">
-                    <label class="block text-sm font-bold mb-2">عنوان المصروف</label>
                     <input type="text" name="title" id="edit_expense_title" required
                         class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
                 </div>

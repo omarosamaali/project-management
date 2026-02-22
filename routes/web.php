@@ -13,6 +13,8 @@ use App\Http\Controllers\RequestMessageController;
 use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\CourseController;
 
+Route::patch('special-request/payment/{payment}/mark-paid', [SpecialRequestController::class, 'markPaymentAsPaid'])
+    ->name('special-request.payment.mark-paid');
 
 Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(function () {
 

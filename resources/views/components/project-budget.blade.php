@@ -152,21 +152,28 @@
                         @php
                         $paidPayment = \App\Models\Payment::where('status', 'completed')->latest()->first();
                         @endphp
-                        @if($paidPayment)
                         <div class="flex flex-col items-end gap-2">
-                            {{-- زر معاينة الفاتورة مع تمرير ID القسط مباشرة --}}
-                            @php
-                            // البحث عن آخر دفعة مكتملة
-                            $paidPayment = \App\Models\Payment::where('status', 'completed')
-                            ->latest()
-                            ->first();
-                            @endphp
+                    
+                            {{-- ✅ زر تحويل الحالة إلى paid --}}
+                            @if($payment->status !== 'paid')
+                            <form action="{{ route('special-request.payment.mark-paid', ['payment' => $payment->id]) }}" method="POST"
+                                onsubmit="return confirm('هل أنت متأكد من تحويل هذه الدفعة إلى مدفوعة؟')">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit"
+                                    class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-bold transition-colors flex items-center gap-2 shadow">
+                                    <i class="fas fa-check-circle"></i>
+                                    تحويل إلى مدفوعة
+                                </button>
+                            </form>
+                            @endif
+                    
+                            {{-- فاتورة --}}
                             @if($paidPayment)
-                            {{-- تمرير ID القسط الحالي في الرابط --}}
                             <a href="{{ route('special-request.payment.invoice', [
                                 'specialRequest' => $SpecialRequest->id, 
                                 'payment' => $paidPayment->id,
-                                'installment_id' => $payment->id  {{-- هنا المفتاح! --}}
+                                'installment_id' => $payment->id
                             ]) }}" target="_blank"
                                 class="px-4 py-2 bg-emerald-100 dark:bg-emerald-700 text-emerald-700 dark:text-white rounded-lg text-sm font-medium hover:bg-emerald-200 dark:hover:bg-emerald-600 transition-colors flex items-center gap-2">
                                 <i class="fas fa-file-invoice"></i>
@@ -176,9 +183,6 @@
                             <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">لا توجد فاتورة متاحة</span>
                             @endif
                         </div>
-                        @else
-                        <span class="text-xs text-gray-500">جاري معالجة الدفع أو البيانات غير مكتملة</span>
-                        @endif
                     </div>
                     @endif
                 </div>
