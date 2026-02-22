@@ -137,6 +137,7 @@
     </div>
     @else
     {{-- Empty State --}}
+    @if(Auth::user()->role == 'admin')
     <div class="flex flex-col items-center justify-center py-20">
         <div class="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-6">
             <i class="fas fa-video text-6xl text-gray-400 dark:text-gray-500"></i>
@@ -149,6 +150,7 @@
             <span>إضافة فيديو جديد</span>
         </a>
     </div>
+    @endif
     @endif
 </section>
 
