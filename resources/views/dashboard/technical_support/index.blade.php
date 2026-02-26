@@ -1,148 +1,233 @@
 @extends('layouts.app')
 
-@section('title', 'رسائل الواتساب')
+@section('title', 'تذاكر الدعم الفني')
 
 @section('content')
 
 <section class="!pl-0 p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard') }}" second="رسائل الواتساب" />
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard') }}" second="تذاكر الدعم الفني" />
 
-    <div class="mx-auto w-full">
+    <div class="mx-auto w-full space-y-5">
+
+        {{-- ════════════════════════════════════════
+        بانر الدعم الفني النشط
+        ════════════════════════════════════════ --}}
+        @if(isset($activeRequests) && $activeRequests->isNotEmpty())
+        <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2">
+                <i class="fas fa-shield-alt text-blue-500"></i>
+                مدة الدعم الفني المتبقية لمشاريعك
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                @foreach($activeRequests as $req)
+                @php
+                $remaining = $req->support_remaining_days;
+                $total = $req->system->support_days ?? 1;
+                $percent = $req->support_percentage;
+                $color = $req->support_color;
+                $colorMap = [
+                'green' => ['border'=>'border-green-200 dark:border-green-700','num'=>'text-green-600
+                dark:text-green-400','bar'=>'bg-green-500'],
+                'yellow' => ['border'=>'border-yellow-200 dark:border-yellow-700','num'=>'text-yellow-500
+                dark:text-yellow-400','bar'=>'bg-yellow-400'],
+                'red' => ['border'=>'border-red-200 dark:border-red-700','num'=>'text-red-500
+                dark:text-red-400','bar'=>'bg-red-500'],
+                'gray' => ['border'=>'border-gray-200
+                dark:border-gray-600','num'=>'text-gray-400','bar'=>'bg-gray-400'],
+                ];
+                $c = $colorMap[$color] ?? $colorMap['gray'];
+                @endphp
+                <div class="border {{ $c['border'] }} rounded-xl p-3 flex flex-col gap-2 bg-gray-50 dark:bg-gray-750">
+                    <div class="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">
+                        {{ $req->system->name_ar ?? ('مشروع #' . $req->id) }}
+                    </div>
+                    <div class="flex items-end gap-1.5">
+                        <span class="text-3xl font-black tabular-nums leading-none {{ $c['num'] }}">
+                            {{ max(0, $remaining) }}
+                        </span>
+                        <span class="text-xs text-gray-400 pb-0.5">يوم / {{ $total }}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1 overflow-hidden">
+                        <div class="{{ $c['bar'] }} h-1 rounded-full" style="width:{{ $percent }}%"></div>
+                    </div>
+                    @if($req->support_start_date)
+                    <div class="text-xs text-gray-400">
+                        ينتهي: {{ $req->support_start_date->copy()->addDays($total)->format('Y/m/d') }}
+                    </div>
+                    @endif
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- ════════════════════════════════════════
+        جدول التذاكر
+        ════════════════════════════════════════ --}}
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
 
-            {{-- بحث (اختياري للأدمن) --}}
-            @if(Auth::user()->role === 'admin')
-            <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+            {{-- شريط الأدوات --}}
+            <div class="flex flex-col md:flex-row items-center justify-between gap-3 p-4">
                 <div class="w-full md:w-1/2">
-                    <form action="{{ route('dashboard.technical_support.index') }}" method="GET" class="flex items-center">
-                        <label for="search" class="sr-only">بحث</label>
-                        <div class="relative w-full">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                @if(request()->search == null)
-                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                    fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <form action="{{ route('dashboard.technical_support.index') }}" method="GET">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
                                         clip-rule="evenodd" />
                                 </svg>
-                                @else
-                                <a href="{{ route('dashboard.technical_support.index') }}">
-                                    <i class="fa-solid fa-arrow-rotate-right w-5 h-5 text-gray-500 relative z-50"></i>
-                                </a>
-                                @endif
                             </div>
-                            <input value="{{ request()->search }}" type="text" id="search" name="search"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                placeholder="ابحث برقم الهاتف أو اسم المستخدم" />
+                            <input type="text" name="search" value="{{ request()->search }}"
+                                placeholder="ابحث بالموضوع أو اسم العميل..."
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-blue-500 focus:border-blue-500">
                         </div>
                     </form>
                 </div>
+                <a href="{{ route('dashboard.technical_support.create') }}"
+                    class="flex items-center gap-2 text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-4 py-2 transition">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path clip-rule="evenodd" fill-rule="evenodd"
+                            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
+                    </svg>
+                    إضافة تذكرة
+                </a>
             </div>
-            @endif
 
-            <div class="overflow-x-auto">
+            {{-- Alerts --}}
+            <div class="px-4">
                 @if(session('success'))
-                <div class="mx-4 p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 border border-green-200">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle"></i>
-                        <span class="font-medium">{{ session('success') }}</span>
-                    </div>
+                <div
+                    class="mb-4 p-3 text-sm text-green-800 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:text-green-300 dark:border-green-700 flex items-center gap-2">
+                    <i class="fas fa-check-circle"></i> {{ session('success') }}
                 </div>
                 @endif
-
                 @if(session('error'))
-                <div class="mx-4 p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 border border-red-200">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-times-circle"></i>
-                        <span class="font-medium">{{ session('error') }}</span>
-                    </div>
+                <div
+                    class="mb-4 p-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:text-red-300 dark:border-red-700 flex items-center gap-2">
+                    <i class="fas fa-times-circle"></i> {{ session('error') }}
                 </div>
                 @endif
+            </div>
 
+            {{-- الجدول --}}
+            <div class="overflow-x-auto">
                 <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
-                            <th scope="col" class="px-4 py-3">#</th>
-                            <th scope="col" class="px-4 py-3">المستخدم</th>
-                            <th scope="col" class="px-4 py-3">رقم الهاتف</th>
-                            <th scope="col" class="px-4 py-3">المحتوى</th>
-                            <th scope="col" class="px-4 py-3">النوع</th>
-                            <th scope="col" class="px-4 py-3">الحالة</th>
-                            <th scope="col" class="px-4 py-3">تاريخ الإرسال</th>
+                            <th class="px-4 py-3">#</th>
                             @if(Auth::user()->role === 'admin')
-                            <th scope="col" class="px-4 py-3">الإجراءات</th>
+                            <th class="px-4 py-3">العميل</th>
                             @endif
+                            <th class="px-4 py-3">المشروع</th>
+                            <th class="px-4 py-3">الموضوع</th>
+                            <th class="px-4 py-3">الحالة</th>
+                            <th class="px-4 py-3">تاريخ الفتح</th>
+                            <th class="px-4 py-3">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($messages as $message)
-                        <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                                {{ $message->id }}
+                        @forelse($tickets as $ticket)
+                        <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition">
+
+                            {{-- الرقم --}}
+                            <td class="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
+                                #{{ $ticket->id }}
                             </td>
-                            <td class="px-4 py-3">
-                                {{ $message->user ? $message->user->name : 'غير مسجل' }}
-                            </td>
-                            <td class="px-4 py-3">
-                                {{ $message->phone }}
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="max-w-xs truncate" title="{{ $message->message_content }}">
-                                    {{ Str::limit($message->message_content ?? '—', 60) }}
-                                </div>
-                            </td>
-                            <td class="px-4 py-3">
-                                @if($message->type === 'outgoing')
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">صادر</span>
-                                @else
-                                    <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">وارد</span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3">
-                                @php
-                                    $statusClass = match ($message->status) {
-                                        'sent'    => 'bg-green-100 text-green-800',
-                                        'delivered' => 'bg-emerald-100 text-emerald-800',
-                                        'failed'  => 'bg-red-100 text-red-800',
-                                        'pending' => 'bg-yellow-100 text-yellow-800',
-                                        default   => 'bg-gray-100 text-gray-800',
-                                    };
-                                @endphp
-                                <span class="px-3 py-1 {{ $statusClass }} rounded-full text-xs">
-                                    {{ $message->status === 'sent' ? 'تم الإرسال' : ($message->status === 'failed' ? 'فشل' : $message->status) }}
-                                </span>
-                                @if($message->error_message)
-                                    <i class="fas fa-exclamation-triangle text-red-500 mr-1" title="{{ $message->error_message }}"></i>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 text-xs text-gray-500">
-                                {{ $message->sent_at ? $message->sent_at->diffForHumans() : '—' }}
-                            </td>
+
+                            {{-- العميل (للأدمن فقط) --}}
                             @if(Auth::user()->role === 'admin')
                             <td class="px-4 py-3">
-                                <button class="text-blue-600 hover:text-blue-800 text-xs" onclick="showDetails({{ $message->id }})">
-                                    تفاصيل
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-300">
+                                        {{ mb_substr($ticket->client->name ?? '?', 0, 1) }}
+                                    </div>
+                                    <span class="font-medium text-gray-900 dark:text-white text-xs">
+                                        {{ $ticket->client->name ?? 'غير معروف' }}
+                                    </span>
+                                </div>
                             </td>
                             @endif
+
+                            {{-- المشروع --}}
+                            <td class="px-4 py-3">
+                                <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    {{ $ticket->request->system->name_ar ?? '—' }}
+                                </span>
+                            </td>
+
+                            {{-- الموضوع --}}
+                            <td class="px-4 py-3">
+                                <div class="max-w-xs">
+                                    <p class="font-medium text-gray-900 dark:text-white text-xs truncate">
+                                        {{ $ticket->subject }}
+                                    </p>
+                                    <p class="text-gray-400 text-xs truncate mt-0.5">
+                                        {{ Str::limit($ticket->description, 50) }}
+                                    </p>
+                                </div>
+                            </td>
+
+                            {{-- الحالة --}}
+                            <td class="px-4 py-3">
+                                @php
+                                $statusConfig = [
+                                'open' => ['class' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                                'icon' => '🔴', 'label' => 'مفتوحة'],
+                                'in_review' => ['class' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30
+                                dark:text-yellow-300', 'icon' => '🟡', 'label' => 'قيد المراجعة'],
+                                'resolved' => ['class' => 'bg-green-100 text-green-700 dark:bg-green-900/30
+                                dark:text-green-300', 'icon' => '🟢', 'label' => 'محلولة'],
+                                'closed' => ['class' => 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+                                'icon' => '⚫', 'label' => 'منتهية'],
+                                ];
+                                $sc = $statusConfig[$ticket->status] ?? ['class'=>'bg-gray-100
+                                text-gray-600','icon'=>'⚪','label'=>$ticket->status];
+                                @endphp
+                                <span
+                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold {{ $sc['class'] }}">
+                                    {{ $sc['icon'] }} {{ $sc['label'] }}
+                                </span>
+                            </td>
+
+                            {{-- التاريخ --}}
+                            <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                <div>{{ $ticket->created_at->format('Y/m/d') }}</div>
+                                <div class="text-gray-400">{{ $ticket->created_at->diffForHumans() }}</div>
+                            </td>
+
+                            {{-- الإجراءات --}}
+                            <td class="px-4 py-3">
+                                <a href="{{ route('dashboard.technical_support.show', $ticket->id) }}"
+                                    class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium transition">
+                                    <i class="fas fa-eye"></i> عرض
+                                </a>
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ Auth::user()->role === 'admin' ? 8 : 7 }}" class="text-center px-4 py-8 text-gray-500">
-                                <i class="fas fa-comment-slash text-4xl mb-2"></i>
-                                <p>لا توجد رسائل واتساب حتى الآن</p>
+                            <td colspan="{{ Auth::user()->role === 'admin' ? 7 : 6 }}"
+                                class="text-center px-4 py-12 text-gray-400">
+                                <i class="fas fa-ticket-alt text-4xl mb-3 block opacity-30"></i>
+                                <p class="font-medium">لا توجد تذاكر دعم فني حتى الآن</p>
+                                <a href="{{ route('dashboard.technical_support.create') }}"
+                                    class="mt-3 inline-block text-blue-600 hover:underline text-sm">
+                                    + افتح تذكرتك الأولى
+                                </a>
                             </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
-
-                @if($messages->hasPages())
-                <div class="p-4">
-                    {{ $messages->links() }}
-                </div>
-                @endif
             </div>
+
+            {{-- Pagination --}}
+            @if($tickets->hasPages())
+            <div class="p-4 border-t dark:border-gray-700">
+                {{ $tickets->links() }}
+            </div>
+            @endif
         </div>
     </div>
 </section>

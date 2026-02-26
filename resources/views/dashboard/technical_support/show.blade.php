@@ -100,7 +100,7 @@
                 </div>
             </div>
 
-            {{-- **نموذج إرسال الشكوى/التفاصيل (إذا كان العميل هو من يعرضها)** --}}
+            {{-- **نموذج إرسال ملاحظات/التفاصيل (إذا كان العميل هو من يعرضها)** --}}
             {{-- @if(Auth::id() == $ticket->client_id && $ticket->status != 'resolved')
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 mt-6">تحديث التذكرة أو إضافة تفاصيل</h3>
             <hr class="mb-4">

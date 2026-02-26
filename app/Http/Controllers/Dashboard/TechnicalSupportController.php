@@ -6,103 +6,111 @@ use App\Http\Controllers\Controller;
 use App\Models\TechnicalSupport;
 use App\Models\Requests;
 use App\Models\SpecialRequest;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Performance;
-use App\Models\WhatsAppMessage;
-use Carbon\Carbon;
 
 class TechnicalSupportController extends Controller
 {
-    // Index Method
+    // ── Index ──────────────────────────────────────────
     public function index()
     {
-        $query = WhatsAppMessage::with('user');
+        $query = TechnicalSupport::with(['request.system', 'client']);
 
         if (Auth::user()->role !== 'admin') {
-            $query->where('user_id', Auth::id());
+            $query->where('client_id', Auth::id());
         }
 
-        $messages = $query->orderBy('created_at', 'desc')->paginate(15);
-        return view('dashboard.technical_support.index', compact('messages'));
+        $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        // بانر الدعم الفني — للعميل فقط
+        $activeRequests = collect();
+        if (Auth::user()->role !== 'admin') {
+            $activeRequests = Requests::where('client_id', Auth::id())
+                ->where('status', 'closed')
+                ->whereHas('system', fn($q) => $q->where('support_days', '>', 0))
+                ->with('system')
+                ->get()
+                ->filter(fn($r) => $r->has_active_support);
+        }
+
+        return view('dashboard.technical_support.index', compact('tickets', 'activeRequests'));
     }
 
-    // Create Method
+    // ── Create ─────────────────────────────────────────
     public function create()
     {
         $userId = Auth::id();
 
-        // 1. جلب سجلات جدول الـ Requests (تأكد من اسم العمود هنا أيضاً)
-        $generalRequests = Requests::where('client_id', $userId) // أو user_id حسب جدولك
-            ->whereHas('system', function ($query) {
-                $query->where('support_days', '>', 0)
-                    ->whereRaw('support_days >= DATEDIFF(CURDATE(), requests.created_at)');
-            })
+        $generalRequests = Requests::where('client_id', $userId)
+            ->where('status', 'closed')
+            ->whereHas('system', fn($q) => $q->where('support_days', '>', 0))
             ->with('system')
-            ->get();
-        $specialRequests = SpecialRequest::where('user_id', $userId)
-            ->get();
+            ->get()
+            ->filter(fn($r) => $r->has_active_support);
 
-        // 3. دمج المجموعتين
-        $allRequests = $generalRequests->concat($specialRequests);
+        $specialRequests = SpecialRequest::where('user_id', $userId)->get();
+        $allRequests     = $generalRequests->concat($specialRequests);
 
         return view('dashboard.technical_support.create', [
             'userRequests' => $allRequests,
         ]);
     }
-    // Store Method
+
+    // ── Store ──────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
-            'subject' => 'required|string|max:255',
+            'subject'     => 'required|string|max:255',
             'description' => 'required|string',
-            'request_id' => 'required|exists:requests,id',
+            'request_id'  => 'required|exists:requests,id',
         ]);
 
-        $requestModel = null;
-        if ($request->filled('request_id')) {
-            $requestModel = Requests::find($request->request_id);
+        $requestModel = Requests::with('system')->find($request->request_id);
+
+        if ($requestModel && !$requestModel->has_active_support) {
+            return redirect()->back()->withInput()
+                ->withErrors(['request_id' => 'انتهت مدة الدعم الفني لهذا المشروع.']);
         }
 
-        TechnicalSupport::create([
-            'client_id' => Auth::id(),
-            'request_id' => $request->request_id,
-            'system_id' => $requestModel->system_id ?? null, // جلب ID النظام المرتبط بالطلب إن وجد
-            'subject' => $request->subject,
+        // ── إنشاء التذكرة ──
+        $ticket = TechnicalSupport::create([
+            'client_id'   => Auth::id(),
+            'request_id'  => $request->request_id,
+            'system_id'   => $requestModel->system_id ?? null,
+            'subject'     => $request->subject,
             'description' => $request->description,
-            'status' => 'open',
+            'status'      => 'open',
         ]);
 
-        return redirect()->back()->with('success', 'تم انشاء التذكرة بنجاح');
+        // ── إرسال واتساب للـ partners المرتبطين بهذا الطلب ──
+        $this->notifyPartners($ticket, $requestModel);
+
+        return redirect()->route('dashboard.technical_support.index')
+            ->with('success', 'تم إنشاء التذكرة بنجاح وتم إشعار الفريق المختص');
     }
 
-    // Show Method
+    // ── Show ───────────────────────────────────────────
     public function show(TechnicalSupport $technicalSupport)
     {
-        $technicalSupport->load(['request', 'client']);
+        $technicalSupport->load(['request.system', 'client']);
         return view('dashboard.technical_support.show', [
             'ticket' => $technicalSupport,
         ]);
     }
 
-    // Update Method
+    // ── Update ─────────────────────────────────────────
     public function update(Request $request, TechnicalSupport $technicalSupport)
     {
         $newStatus = $request->status;
-
-        // 1. تحديث الحالة
         $technicalSupport->update(['status' => $newStatus]);
 
-        // 2. منطق تسجيل الأداء (Performance)
         if (in_array($newStatus, ['resolved', 'closed'])) {
             $partner = null;
-
-            if ($technicalSupport->request && $technicalSupport->request->system) {
-                $partner = $technicalSupport->request->system
-                    ->partners()
-                    ->first();
+            if ($technicalSupport->request?->system) {
+                $partner = $technicalSupport->request->system->partners()->first();
             }
 
             if ($partner) {
@@ -116,18 +124,71 @@ class TechnicalSupportController extends Controller
                     'performance_date'       => today(),
                 ]);
             } else {
-                Log::warning("Performance not recorded: No partner found for ticket ID {$technicalSupport->id}");
+                Log::warning("Performance not recorded: No partner for ticket #{$technicalSupport->id}");
             }
         }
 
-        // 3. الحل: الرجوع لصفحة الطلب الخاص (Special Request)
-        // نتحقق إذا كانت التذكرة مرتبطة بطلب خاص
         if ($technicalSupport->request_id) {
-            return redirect()->route('dashboard.special-request.show', $technicalSupport->request_id)
-                ->with('success', 'تم تحديث حالة التذكرة والعودة للمشروع');
+            return redirect()
+                ->route('dashboard.special-request.show', $technicalSupport->request_id)
+                ->with('success', 'تم تحديث حالة التذكرة');
         }
 
-        // لو مفيش request_id (حالة احتياطية) يرجع مكانه
         return redirect()->back()->with('success', 'تم تحديث الحالة بنجاح');
+    }
+
+    // ── إرسال إشعار واتساب عند فتح تذكرة ──────────
+    // يبعت للرقم الثابت + كل الـ partners المرتبطين بالطلب
+    private function notifyPartners(TechnicalSupport $ticket, Requests $requestModel): void
+    {
+        try {
+            $whatsapp    = app(WhatsAppOTPService::class);
+            $projectName = $requestModel->system->name_ar ?? ('مشروع #' . $requestModel->id);
+
+            // ── 1. الرقم الثابت دايماً ──
+            $fixedPhone = '+971501774477';
+            Log::info("[TICKET] إرسال للرقم الثابت", ['phone' => $fixedPhone, 'ticket_id' => $ticket->id]);
+            $sent = $whatsapp->sendTicketNotification(
+                phone: $fixedPhone,
+                partnerName: 'فريق الدعم',
+                projectName: $projectName,
+                ticketId: $ticket->id
+            );
+            Log::info("[TICKET] الرقم الثابت: " . ($sent ? 'نجح ✓' : 'فشل ✗'));
+
+            // ── 2. الـ partners المرتبطين بـ request_id ──
+            $partners = \Illuminate\Support\Facades\DB::table('special_request_partner')
+                ->where('special_request_partner.request_id', $ticket->request_id)
+                ->join('users', 'users.id', '=', 'special_request_partner.partner_id')
+                ->where('users.role', 'partner')
+                ->whereNotNull('users.phone')
+                ->select('users.id', 'users.name', 'users.phone')
+                ->get();
+
+            if ($partners->isEmpty()) {
+                Log::info("[TICKET] لا يوجد partners للطلب #{$ticket->request_id}");
+                return;
+            }
+
+            foreach ($partners as $partner) {
+                Log::info("[TICKET] إرسال للـ partner", [
+                    'partner_id' => $partner->id,
+                    'phone'      => $partner->phone,
+                    'ticket_id'  => $ticket->id,
+                ]);
+                $sent = $whatsapp->sendTicketNotification(
+                    phone: $partner->phone,
+                    partnerName: $partner->name,
+                    projectName: $projectName,
+                    ticketId: $ticket->id
+                );
+                Log::info("[TICKET] partner #{$partner->id}: " . ($sent ? 'نجح ✓' : 'فشل ✗'));
+            }
+        } catch (\Exception $e) {
+            Log::error("[TICKET] فشل إرسال الإشعارات", [
+                'ticket_id' => $ticket->id,
+                'error'     => $e->getMessage(),
+            ]);
+        }
     }
 }

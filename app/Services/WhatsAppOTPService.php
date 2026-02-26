@@ -7,12 +7,13 @@ use Illuminate\Support\Facades\Log;
 
 class WhatsAppOTPService
 {
-    private $appId = "oFafUriVLBEhLkZoydSQL9vsbKbQM68G5zejBBab";
-    private $appSecret = "1wIyZ8dwiSXDzwZ3sAavjyuD0XtoKTzs3E1MtZgy8yJkTtcAfXS5CbUCkv4K7oxAG5oWgDSqCpnet8Fj2Z1EoY3dzoioLT4Pfim5"; 
+    private $appId     = "oFafUriVLBEhLkZoydSQL9vsbKbQM68G5zejBBab";
+    private $appSecret = "1wIyZ8dwiSXDzwZ3sAavjyuD0XtoKTzs3E1MtZgy8yJkTtcAfXS5CbUCkv4K7oxAG5oWgDSqCpnet8Fj2Z1EoY3dzoioLT4Pfim5";
     private $projectId = 669;
-    private $baseUrl = "https://api-users.4jawaly.com/api/v1/whatsapp/";
+    private $baseUrl   = "https://api-users.4jawaly.com/api/v1/whatsapp/";
     private $namespace = "d62f7444_aa0b_40b8_8f46_0bb55ef2862e";
 
+    // ── OTP ───────────────────────────────────────────
     public function sendOTP($phoneNumber, $code, $isEnglish = false)
     {
         $template = $isEnglish ? 'general_notices_en' : 'general_notices_ar';
@@ -26,6 +27,37 @@ class WhatsAppOTPService
         return $this->executeRequest($phoneNumber, $template, $language, $params);
     }
 
+    // ── إشعار صرف الراتب ─────────────────────────────
+    /**
+     * يُرسل إشعار واتساب للموظف عند صرف راتبه
+     * BODY_1 = اسم الموظف
+     * BODY_2 = تفاصيل الراتب
+     */
+    public function sendSalaryNotification(string $phone, string $employeeName, float $totalDue, string $currency, string $month, string $year): bool
+    {
+        $imageUrl = 'https://evorq.online/assets/images/salaray.jpeg';
+        $bodyText = "تم صرف راتبك لشهر {$month}/{$year} بمبلغ {$totalDue} {$currency}";
+
+        $params = [
+            [
+                "type" => "body",
+                "parameters" => [
+                    ["type" => "text", "text" => $employeeName],
+                    ["type" => "text", "text" => $bodyText],
+                ]
+            ],
+            [
+                "type" => "header",
+                "parameters" => [
+                    ["type" => "image", "image" => ["link" => $imageUrl]]
+                ]
+            ]
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
+    // ── تأكيد الدورة ─────────────────────────────────
     public function sendCourseConfirmation($phone, $userName, $courseName, $course)
     {
         $imageUrl = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80';
@@ -33,14 +65,7 @@ class WhatsAppOTPService
         $params = [
             [
                 "type" => "header",
-                "parameters" => [
-                    [
-                        "type" => "image",
-                        "image" => [
-                            "link" => $imageUrl
-                        ]
-                    ]
-                ]
+                "parameters" => [["type" => "image", "image" => ["link" => $imageUrl]]]
             ],
             [
                 "type" => "body",
@@ -54,43 +79,95 @@ class WhatsAppOTPService
         return $this->executeRequest($phone, 'trabar', 'ar', $params);
     }
 
+    // ── إشعار تذكرة دعم فني للـ Partner ─────────────
+    /**
+     * يُرسل إشعار واتساب للـ partner عند فتح تذكرة دعم فني مرتبطة بمشروعه
+     *
+     * @param string $phone        رقم هاتف الـ partner
+     * @param string $partnerName  اسم الـ partner
+     * @param string $projectName  اسم المشروع / النظام
+     * @param string $subject      موضوع التذكرة
+     */
+    /**
+     * إشعار تذكرة دعم فني — template: trabar
+     * BODY_1 = اسم الـ partner
+     * BODY_2 = نص الإشعار
+     * FILE_URL = صورة ثابتة في الـ header
+     */
+    public function sendTicketNotification(string $phone, string $partnerName, string $projectName, string $ticketId): bool
+    {
+        $imageUrl   = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80';
+        $bodyText   = "لديك تذكرة دعم فني جديدة، المشروع: {$projectName}، رقم التذكرة: #{$ticketId}";
+
+        $params = [
+            [
+                "type" => "body",
+                "parameters" => [
+                    ["type" => "text", "text" => $partnerName],
+                    ["type" => "text", "text" => $bodyText],
+                ]
+            ],
+            [
+                "type" => "header",
+                "parameters" => [
+                    [
+                        "type"  => "image",
+                        "image" => ["link" => $imageUrl]
+                    ]
+                ]
+            ]
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
+
+    // ── executeRequest ────────────────────────────────
     private function executeRequest($phone, $template, $lang, $params)
     {
-        // تنظيف رقم الجوال
+        // شيل كل حاجة غير أرقام (بما فيها + و - و مسافات)
         $cleanPhone = preg_replace('/[^0-9]/', '', trim($phone));
-        $cleanPhone = ltrim($cleanPhone, '0');
-
-        if (!str_starts_with($cleanPhone, '20')) {
-            $cleanPhone = '20' . $cleanPhone;
+        // شيل الصفر الأول فقط لو مفيش كود دولة
+        // أكواد الدول — نتحقق قبل ما نضيف 20
+        $knownCodes = ['971', '966', '965', '968', '974', '973', '970', '962', '963', '961', '20'];
+        $hasCode    = false;
+        foreach ($knownCodes as $code) {
+            if (str_starts_with($cleanPhone, $code)) {
+                $hasCode = true;
+                break;
+            }
+        }
+        // لو مفيش كود دولة → مصري → شيل الصفر وضيف 20
+        if (!$hasCode) {
+            $cleanPhone = '20' . ltrim($cleanPhone, '0');
         }
 
-        if (strlen($cleanPhone) !== 12) {
-            Log::warning("رقم واتساب غير صالح", [
+        // طول صالح دولياً 10–15 رقم
+        if (strlen($cleanPhone) < 10 || strlen($cleanPhone) > 15) {
+            Log::warning("[WHATSAPP] رقم غير صالح", [
                 'original' => $phone,
                 'cleaned'  => $cleanPhone,
-                'length'   => strlen($cleanPhone)
+                'length'   => strlen($cleanPhone),
             ]);
 
-            // محاولة تسجيل حتى لو الرقم غلط
             $this->logWhatsAppMessage(
                 $cleanPhone,
                 $template,
                 $params,
                 'invalid_phone',
                 null,
-                'رقم الهاتف غير صالح (طول غير 12 رقم)'
+                'رقم الهاتف غير صالح'
             );
 
             return false;
         }
 
-        Log::info("[WHATSAPP] رقم منظف وجاهز للإرسال", [
-            'phone' => $cleanPhone,
+        Log::info("[WHATSAPP] إرسال", [
+            'phone'    => $cleanPhone,
             'template' => $template,
-            'user_id' => auth()->id() ?? 'غير مسجل'
+            'user_id'  => auth()->id() ?? 'غير مسجل'
         ]);
 
-        // محاولة إنشاء سجل قبل الإرسال
         try {
             $messageRecord = $this->logWhatsAppMessage(
                 $cleanPhone,
@@ -100,19 +177,8 @@ class WhatsAppOTPService
                 null,
                 $this->generateMessagePreview($params, $template)
             );
-
-            Log::info("[WHATSAPP] تم إنشاء سجل الرسالة بنجاح", [
-                'message_id' => $messageRecord->id,
-                'phone' => $cleanPhone
-            ]);
         } catch (\Exception $e) {
-            Log::error("[WHATSAPP] فشل إنشاء سجل الرسالة قبل الإرسال", [
-                'error' => $e->getMessage(),
-                'phone' => $cleanPhone,
-                'template' => $template
-            ]);
-
-            // لو فشل التخزين، نكمل الإرسال لكن من غير تسجيل
+            Log::error("[WHATSAPP] فشل إنشاء سجل الرسالة", ['error' => $e->getMessage()]);
             $messageRecord = null;
         }
 
@@ -125,9 +191,9 @@ class WhatsAppOTPService
                     'Content-Type'  => 'application/json',
                     'accept'        => 'application/json',
                 ])
-                ->timeout(30) // ← أضف timeout عشان ما يعلقش
+                ->timeout(30)
                 ->post($this->baseUrl . $this->projectId, [
-                    "path" => "message/template",
+                    "path"   => "message/template",
                     "params" => [
                         "phone"     => $cleanPhone,
                         "template"  => $template,
@@ -137,66 +203,39 @@ class WhatsAppOTPService
                     ]
                 ]);
 
-            $responseBody = $response->body();
-            $responseData = json_decode($responseBody, true) ?? [];
+            $responseData = json_decode($response->body(), true) ?? [];
 
-            Log::info("[WHATSAPP] رد الـ API", [
-                'status' => $response->status(),
-                'body'   => $responseBody,
-                'phone'  => $cleanPhone,
-                'template' => $template
-            ]);
-
-            if ($response->successful() && isset($responseData['sent']) && $responseData['sent'] === true) {
-                if ($messageRecord) {
-                    $messageRecord->update([
-                        'status'     => 'sent',
-                        'message_id' => $responseData['id'] ?? null,
-                    ]);
-                    Log::info("[WHATSAPP] تم تحديث الرسالة إلى sent", ['id' => $messageRecord->id]);
-                }
-
-                return true;
-            }
-
-            // فشل الإرسال
-            $errorMsg = $responseData['error'] ?? $responseBody ?? 'فشل غير معروف';
-
-            if ($messageRecord) {
-                $messageRecord->update([
-                    'status'        => 'failed',
-                    'error_message' => $errorMsg,
-                ]);
-                Log::error("[WHATSAPP] تم تحديث الرسالة إلى failed", [
-                    'id' => $messageRecord->id,
-                    'error' => $errorMsg
-                ]);
-            }
-
-            return false;
-        } catch (\Exception $e) {
-            Log::error("[WHATSAPP] استثناء أثناء إرسال الرسالة", [
-                'message'  => $e->getMessage(),
-                'file'     => $e->getFile(),
-                'line'     => $e->getLine(),
+            Log::info("[WHATSAPP] رد API", [
+                'status'   => $response->status(),
+                'body'     => $response->body(),
                 'phone'    => $cleanPhone,
                 'template' => $template
             ]);
 
-            if ($messageRecord) {
-                $messageRecord->update([
-                    'status'        => 'failed',
-                    'error_message' => $e->getMessage(),
+            if ($response->successful() && ($responseData['sent'] ?? false) === true) {
+                $messageRecord?->update([
+                    'status'     => 'sent',
+                    'message_id' => $responseData['id'] ?? null,
                 ]);
+                return true;
             }
 
+            $errorMsg = $responseData['error'] ?? $response->body() ?? 'فشل غير معروف';
+            $messageRecord?->update(['status' => 'failed', 'error_message' => $errorMsg]);
+
+            return false;
+        } catch (\Exception $e) {
+            Log::error("[WHATSAPP] استثناء", [
+                'message'  => $e->getMessage(),
+                'phone'    => $cleanPhone,
+                'template' => $template
+            ]);
+            $messageRecord?->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
             return false;
         }
     }
 
-    /**
-     * تسجيل محاولة إرسال رسالة في قاعدة البيانات
-     */
+    // ── Helpers ───────────────────────────────────────
     private function logWhatsAppMessage($phone, $template, $params, $status, $messageId = null, $contentPreview = null)
     {
         return \App\Models\WhatsAppMessage::create([
@@ -212,21 +251,22 @@ class WhatsAppOTPService
         ]);
     }
 
-    /**
-     * توليد معاينة نصية للرسالة لتخزينها
-     */
-    private function generateMessagePreview($params, $template)
+    private function generateMessagePreview($params, $template): string
     {
         if ($template === 'trabar') {
-            $bodyParams = $params[1]['parameters'] ?? [];
-            $name   = $bodyParams[0]['text'] ?? 'غير معروف';
-            $course = $bodyParams[1]['text'] ?? 'غير معروف';
-            return "تأكيد اشتراك: مرحبا {$name}، تم اشتراكك في دورة {$course}";
+            $bodyParams = $params[0]['parameters'] ?? [];
+            $name = $bodyParams[0]['text'] ?? 'غير معروف';
+            $text = $bodyParams[1]['text'] ?? 'غير معروف';
+            return "trabar: {$name} — {$text}";
         }
 
-        if ($template === 'general_notices_ar' || $template === 'general_notices_en') {
-            $code = $params[0]['parameters'][0]['text'] ?? 'غير معروف';
-            return "كود التحقق: {$code}";
+        if (in_array($template, ['general_notices_ar', 'general_notices_en'])) {
+            $text = $params[0]['parameters'][0]['text'] ?? 'غير معروف';
+            // لو الـ parameter رقم → تذكرة دعم فني
+            if (is_numeric($text)) {
+                return "إشعار تذكرة دعم فني رقم: {$text}";
+            }
+            return $text;
         }
 
         return "رسالة قالب: {$template}";

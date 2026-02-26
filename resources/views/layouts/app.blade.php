@@ -410,7 +410,7 @@
                         </a>
                     </li>
                     @else
-                    @if ($support)
+                    {{-- @if ($support) --}}
                     <li>
                         <a href="{{ route('dashboard.technical_support.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.technical_support.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -419,7 +419,7 @@
                             <span class="ml-3">الدعم الفني</span>
                         </a>
                     </li>
-                    @else
+                    {{-- @else
                     <li>
                         <button onclick="openSupport()"
                             class="block w-full text-right items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -427,7 +427,7 @@
                             <span class="ml-3">الدعم الفني</span>
                         </button>
                     </li>
-                    @endif
+                    @endif --}}
                     @endif
 
                     {{-- admin screens --}}
