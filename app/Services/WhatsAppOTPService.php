@@ -13,26 +13,17 @@ class WhatsAppOTPService
     private $baseUrl   = "https://api-users.4jawaly.com/api/v1/whatsapp/";
     private $namespace = "d62f7444_aa0b_40b8_8f46_0bb55ef2862e";
 
-    // ── OTP ───────────────────────────────────────────
     public function sendOTP($phoneNumber, $code, $isEnglish = false)
     {
         $template = $isEnglish ? 'general_notices_en' : 'general_notices_ar';
         $language = $isEnglish ? 'en' : 'ar';
-
         $params = [
             ["type" => "body", "parameters" => [["type" => "text", "text" => (string)$code]]],
             ["index" => "0", "sub_type" => "URL", "type" => "button", "parameters" => [["type" => "text", "text" => (string)$code]]]
         ];
-
         return $this->executeRequest($phoneNumber, $template, $language, $params);
     }
 
-    // ── إشعار صرف الراتب ─────────────────────────────
-    /**
-     * يُرسل إشعار واتساب للموظف عند صرف راتبه
-     * BODY_1 = اسم الموظف
-     * BODY_2 = تفاصيل الراتب
-     */
     public function sendSalaryNotification(string $phone, string $employeeName, float $totalDue, string $currency, string $month, string $year): bool
     {
         $imageUrl = 'https://evorq.online/assets/images/salaray.jpeg';

@@ -1,17 +1,39 @@
 @extends('layouts.app')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/css/intlTelInput.css">
+{{-- تم حذف: intl-tel-input CSS - كان يسبب مشكلة في حقل الهاتف --}}
+
 @section('title', 'الشركاء')
 
 @section('content')
 <style>
+    /* منع intl-tel-input من الظهور على حقل الهاتف - يمنع الظهور فوراً */
+    .iti:has(#phone),
+    .iti:has(#phone) .iti__flag-container,
+    .iti:has(#phone) .iti__selected-flag,
+    .iti:has(#phone) .iti__arrow,
+    .iti:has(#phone) .iti__selected-dial-code,
+    .iti:has(#phone) .iti__flag {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        position: absolute !important;
+        pointer-events: none !important;
+    }
+
+    /* إظهار الـ input نفسه بشكل طبيعي */
+    .iti:has(#phone) input#phone {
+        display: block !important;
+        width: 100% !important;
+        padding-right: 1rem !important;
+        padding-left: 1rem !important;
+        position: static !important;
+    }
+
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
-    }
-
-    input[type="number"] {
-        -moz-appearance: textfield;
     }
 
     input[type="number"] {
@@ -45,13 +67,16 @@
         border: 1px solid #d1d5db !important;
     }
 </style>
+
 <section class="p-3 sm:p-5">
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.partners.index') }}" second="الشركاء" third="إضافة شريك" />
     <div class="mx-auto max-w-4xl w-full rounded-xl">
         <div class="p-3 bg-white dark:bg-gray-800 relative shadow-xl border rounded-xl overflow-hidden">
+
             @foreach ($errors->all() as $error)
-            {{ $error }}
+            <p class="text-red-600 text-xs mb-1">{{ $error }}</p>
             @endforeach
+
             <form method="POST" action="{{ route('dashboard.partners.store') }}" class="space-y-6"
                 enctype="multipart/form-data">
                 @csrf
@@ -64,7 +89,7 @@
                         required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('name')
-                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
@@ -75,32 +100,44 @@
                         placeholder="example@domain.com" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('email')
-                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
-                {{-- country --}}
+
+                <!-- رقم الهاتف - بدون intl-tel-input -->
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف:</label>
+                    <input type="text" id="phone" name="phone" value="{{ old('phone') }}" placeholder="مثل: 01012345678"
+                        autocomplete="off"
+                        class="no-intl-tel placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+                    @error('phone')
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <!-- الدولة -->
                 <div>
                     <x-input-label for="country" value="الدولة" />
                     <div class="flex items-center gap-2 mt-1">
                         <select id="country_select2" name="first_country"
-                            class="!py-3 placeholder-gray-500 block mt-1 w-full rtl:text-right " required>
-                            <option :value="old('country', $user->country)" disabled selected>... جاري تحميل الدول ...
-                            </option>
+                            class="!py-3 placeholder-gray-500 block mt-1 w-full rtl:text-right" required>
+                            <option value="" disabled selected>... جاري تحميل الدول ...</option>
                         </select>
                     </div>
-                    <x-input-error :messages="$errors->get('country')" class="mt-2" />
+                    <x-input-error :messages="$errors->get('first_country')" class="mt-2" />
                 </div>
+
                 <!-- كلمة المرور -->
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-1">كلمة المرور:</label>
                     <input type="text" id="password" name="password" placeholder="********" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('password')
-                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <!-- الأنظمة المسؤول عنها -->
+                <!-- الأنظمة -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">الأنظمة المسؤول عنها:</label>
                     <div
@@ -119,7 +156,7 @@
                         @endforeach
                     </div>
                     @error('systems_id')
-                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                     @enderror
                     <p class="mt-2 text-sm text-gray-500">اختر نظامًا واحدًا أو أكثر.</p>
                 </div>
@@ -127,7 +164,7 @@
                 <!-- الخدمات -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        الخدمات التي يعمل بها الشريك: <span class="text-black">*</span>
+                        الخدمات التي يعمل بها الشريك: <span class="text-red-500">*</span>
                     </label>
                     <div
                         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
@@ -145,59 +182,9 @@
                         @endforeach
                     </div>
                     @error('services_id')
-                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                     @enderror
-                    <p class="mt-2 text-sm text-gray-500">
-                        <i class="fas fa-info-circle text-blue-500"></i>
-                        اختر خدمة واحدة أو أكثر يعمل بها الشريك.
-                    </p>
                 </div>
-
-                <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-                    rel="stylesheet" />
-                <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-                {{-- كود تحميل الدول --}}
-                <script>
-                    $(document).ready(function() {
-                    const countryDataUrl = 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json';
-                    const currentCountry = '{{ old('country') }}'; 
-                    
-                    fetch(countryDataUrl)
-                        .then(response => response.json())
-                        .then(data => {
-                            const selectElement = $('#country_select2');
-                            selectElement.empty();
-            
-                            selectElement.append(new Option("اختر دولتك", "", false, false));
-                            
-                            data.forEach(country => {
-                                const countryName = country.translations.ara.common || country.name.common;
-                                const countryCode = country.cca2;
-                                
-                                const isSelected = currentCountry === countryCode;
-                                const newOption = new Option(countryName, countryCode, isSelected, isSelected);
-                                
-                                selectElement.append(newOption);
-                            });
-            
-                            selectElement.select2({
-                                placeholder: "اختر دولتك",
-                                allowClear: true,
-                                dir: "rtl"
-                            });
-                            
-                            if (currentCountry) {
-                                selectElement.val(currentCountry).trigger('change');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('حدث خطأ أثناء تحميل قائمة الدول:', error);
-                            $('#country_select2').empty().append(new Option("تعذر تحميل الدول", "", true, true));
-                        });
-                });
-                </script>
 
                 <!-- نسبة الشريك -->
                 <div>
@@ -207,11 +194,11 @@
                         placeholder="مثل: 15.5" step="0.01" required
                         class="placeholder-gray-500 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                     @error('percentage')
-                    <span class="text-black text-xs mt-1">{{ $message }}</span>
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
-                <!-- الصلاحيات والنظام المالي -->
+                <!-- الصلاحيات -->
                 <div class="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm">
                     <h3 class="text-md font-bold mb-4 text-blue-800 flex items-center gap-2">
                         <i class="fas fa-user-shield"></i> صلاحيات الوصول والإدارة
@@ -225,7 +212,7 @@
                         'can_enter_knowledge_bank' => 'إدخال بنك معلومات',
                         'apply_working_hours' => 'تطبيق الحضور والإنصراف',
                         'can_request_meetings' => 'إمكانية طلب اجتماع',
-                        'services_screen_available' => 'شاشة الخدمات متوفرة'
+                        'services_screen_available' => 'شاشة الخدمات متوفرة',
                         ];
                         @endphp
 
@@ -241,9 +228,11 @@
                             </label>
                         </div>
                         @endforeach
+
+                        <!-- هل هو موظف -->
                         <div>
                             <label for="is_employee" class="block text-sm font-medium text-gray-700 mb-1">
-                                هل هذا الشريك موظف <span class="text-black">*</span>
+                                هل هذا الشريك موظف
                             </label>
                             <label class="inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="is_employee" id="is_employee" value="1"
@@ -254,14 +243,11 @@
                                 <span class="ms-3 text-sm font-medium text-gray-900 select-none">متاح</span>
                             </label>
                             @error('is_employee')
-                            <span class="text-black text-xs mt-1">{{ $message }}</span>
+                            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                             @enderror
                         </div>
                     </div>
                 </div>
-
-                <!-- هل هو موظف -->
-
 
                 <!-- الحقول الإضافية للموظف -->
                 <div id="employee_extra_fields"
@@ -282,9 +268,6 @@
                                     value="{{ old('salary_amount') }}"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500"
                                     placeholder="0.00">
-                                @error('salary_amount')
-                                <span class="text-black text-xs mt-1">{{ $message }}</span>
-                                @enderror
                             </div>
 
                             <!-- العملة -->
@@ -292,7 +275,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">العملة:</label>
                                 <input type="text" name="salary_currency" value="{{ old('salary_currency') }}"
                                     placeholder="مثلاً: جنيه مصري، USD، ريال"
-                                    class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition duration-150 ease-in-out">
+                                    class="placeholder-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500">
                             </div>
 
                             <!-- تاريخ التعيين -->
@@ -303,15 +286,11 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- مرفق مستند الراتب -->
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    العقد
-                                </label>
-                                <input type="file" name="salary_attachment"
-                                    class="w-full px-3 py-1.5 border border-gray-300 rounded-lg bg-white">
-                            </div>
+                        <!-- العقد -->
+                        <div class="md:col-span-2 mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">العقد</label>
+                            <input type="file" name="salary_attachment"
+                                class="w-full px-3 py-1.5 border border-gray-300 rounded-lg bg-white">
                         </div>
 
                         <!-- نظام ساعات العمل والدوام -->
@@ -322,19 +301,16 @@
                                 </h3>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+
                                     <!-- الدولة -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">الدولة:</label>
                                         <select id="employee_country_select2" name="country"
                                             class="!py-3 placeholder-gray-500 w-full px-4 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500 rtl:text-right">
-                                            <option value="{{ old('country') }}" disabled selected>... جاري تحميل الدول
-                                                ...</option>
+                                            <option value="" disabled selected>... جاري تحميل الدول ...</option>
                                         </select>
                                     </div>
-                                    <link rel="stylesheet"
-                                        href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-                                    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-                                    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+
                                     <!-- ساعة بداية العمل -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ساعة بداية
@@ -342,7 +318,6 @@
                                         <input type="text" name="work_start_time" value="{{ old('work_start_time') }}"
                                             placeholder="اختر وقت البداية"
                                             class="timepicker w-full px-4 py-2 border border-gray-300 rounded-lg">
-
                                     </div>
 
                                     <!-- ساعة نهاية العمل -->
@@ -352,18 +327,9 @@
                                         <input type="text" name="work_end_time" value="{{ old('work_end_time') }}"
                                             placeholder="اختر وقت النهاية"
                                             class="timepicker w-full px-4 py-2 border border-gray-300 rounded-lg">
-
                                     </div>
-                                    <script>
-                                        flatpickr(".timepicker", {
-                                            enableTime: true,
-                                            noCalendar: true,
-                                            dateFormat: "h:i K",
-                                            time_24hr: false,
-                                            locale: "ar",
-                                            minuteIncrement: 1
-                                        });
-                                    </script>
+
+                                    <!-- عدد ساعات العمل -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">عدد ساعات
                                             العمل:</label>
@@ -371,12 +337,9 @@
                                             id="daily_work_hours_create" value="{{ old('daily_work_hours', 8) }}"
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
                                             placeholder="8">
-                                        @error('daily_work_hours')
-                                        <span class="text-black text-xs mt-1">{{ $message }}</span>
-                                        @enderror
                                     </div>
 
-                                    <!-- عدد ساعات الاستراحة بالدقائق -->
+                                    <!-- ساعات الاستراحة -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">ساعات الاستراحة
                                             (بالدقائق):</label>
@@ -385,7 +348,7 @@
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500">
                                     </div>
 
-                                    <!-- قيمة العمل الإضافي بالساعة -->
+                                    <!-- قيمة العمل الإضافي -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">قيمة العمل الإضافي
                                             (بالساعة):</label>
@@ -395,48 +358,17 @@
                                             placeholder="0.00" readonly>
                                         <p class="text-xs text-gray-500 mt-1">يُحسب تلقائيًا: ساعة ونصف من قيمة الساعة
                                             العادية</p>
-                                        @error('overtime_hourly_rate')
-                                        <span class="text-black text-xs mt-1">{{ $message }}</span>
-                                        @enderror
                                     </div>
-                                    <script>
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                        const salaryInput = document.getElementById('salary_amount_create');
-                                        const hoursInput = document.getElementById('daily_work_hours_create');
-                                        const overtimeInput = document.getElementById('overtime_hourly_rate_create');
-                                
-                                        function calculateOvertimeRate() {
-                                            const salary = parseFloat(salaryInput.value) || 0;
-                                            const hoursPerDay = parseFloat(hoursInput.value) || 0;
-                                
-                                            if (salary > 0 && hoursPerDay > 0) {
-                                                const dailySalary = salary / 26;
-                                                const hourlyRate = dailySalary / hoursPerDay;
-                                                const overtimeRate = hourlyRate * 1.5;
-                                                overtimeInput.value = overtimeRate.toFixed(2);
-                                            } else {
-                                                overtimeInput.value = '0.00';
-                                            }
-                                        }
-                                
-                                        // حدث الحساب عند تغيير أي من الحقلين
-                                        salaryInput.addEventListener('input', calculateOvertimeRate);
-                                        hoursInput.addEventListener('input', calculateOvertimeRate);
-                                
-                                        // حساب أولي (لو في قيم محفوظة من old)
-                                        calculateOvertimeRate();
-                                    });
-                                    </script>
+
                                 </div>
 
-                                <!-- الخصومات والمدد المسموحة -->
+                                <!-- الخصومات -->
                                 <div class="bg-white p-4 rounded-lg border border-purple-100 mb-4">
                                     <h4 class="text-sm font-semibold mb-3 text-gray-700 flex items-center gap-2">
                                         <i class="fas fa-exclamation-triangle text-orange-500"></i> الخصومات والمدد
                                         المسموحة
                                     </h4>
                                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <!-- المدة المسموح بها للتأخير الصباحي -->
                                         <div>
                                             <label class="block text-xs font-medium text-gray-600 mb-1">المدة المسموحة
                                                 للتأخير (دقيقة):</label>
@@ -444,8 +376,6 @@
                                                 value="{{ old('allowed_late_minutes') }}" placeholder="15"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500">
                                         </div>
-
-                                        <!-- خصم الحضور الصباحي بالدقائق -->
                                         <div>
                                             <label class="block text-xs font-medium text-gray-600 mb-1">خصم التأخير
                                                 الصباحي (دقيقة):</label>
@@ -453,8 +383,6 @@
                                                 value="{{ old('morning_late_deduction') }}" placeholder="0.00"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500">
                                         </div>
-
-                                        <!-- قيمة تأخير الرجوع من الاستراحة -->
                                         <div>
                                             <label class="block text-xs font-medium text-gray-600 mb-1">خصم التأخير من
                                                 الاستراحة (دقيقة):</label>
@@ -462,8 +390,6 @@
                                                 value="{{ old('break_late_deduction') }}" placeholder="0.00"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500">
                                         </div>
-
-                                        <!-- خصم الخروج المبكر -->
                                         <div>
                                             <label class="block text-xs font-medium text-gray-600 mb-1">خصم الخروج
                                                 المبكر (دقيقة):</label>
@@ -474,7 +400,7 @@
                                     </div>
                                 </div>
 
-                                <!-- أيام الإجازة -->
+                                <!-- أيام الإجازة الأسبوعية -->
                                 <div class="bg-white p-4 rounded-lg border border-purple-100">
                                     <h4 class="text-sm font-semibold mb-3 text-gray-700 flex items-center gap-2">
                                         <i class="fas fa-calendar-times text-black"></i> أيام الإجازة الأسبوعية
@@ -488,7 +414,7 @@
                                         'tuesday' => 'الثلاثاء',
                                         'wednesday' => 'الأربعاء',
                                         'thursday' => 'الخميس',
-                                        'friday' => 'الجمعة'
+                                        'friday' => 'الجمعة',
                                         ];
                                         @endphp
 
@@ -505,68 +431,12 @@
                                         @endforeach
                                     </div>
                                 </div>
-                            </div>
 
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <script>
-document.getElementById('apply_salary_scale')?.addEventListener('change', function() {
-    const salaryDetails = document.getElementById('salary_details');
-    if (this.checked) {
-        salaryDetails.classList.remove('hidden');
-    } else {
-        salaryDetails.classList.add('hidden');
-    }
-});
-                </script>
-                <script>
-                    $(document).ready(function() {
-        const countryDataUrl = 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json';
-        const currentCountry = '{{ old('country') }}'; 
-        
-        fetch(countryDataUrl)
-            .then(response => response.json())
-            .then(data => {
-                // نستهدف الحقلين معًا
-                const selects = $('#country_select2, #employee_country_select2');
-                
-                selects.each(function() {
-                    const select = $(this);
-                    select.empty();
-                    select.append(new Option("اختر دولتك", "", false, false));
-                    
-                    data.forEach(country => {
-                        const countryName = country.translations.ara.common || country.name.common;
-                        const countryCode = country.cca2;
-                        
-                        const isSelected = currentCountry === countryCode;
-                        const newOption = new Option(countryName, countryCode, isSelected, isSelected);
-                        select.append(newOption);
-                    });
-                });
-
-                // نطبق Select2 على الحقلين
-                selects.select2({
-                    placeholder: "اختر دولتك",
-                    allowClear: true,
-                    dir: "rtl"
-                });
-
-                // لو في قيمة قديمة، نحدثها
-                if (currentCountry) {
-                    selects.val(currentCountry).trigger('change');
-                }
-            })
-            .catch(error => {
-                console.error('حدث خطأ أثناء تحميل قائمة الدول:', error);
-                $('#country_select2, #employee_country_select2')
-                    .empty()
-                    .append(new Option("تعذر تحميل الدول", "", true, true));
-            });
-    });
-                </script>
                 <!-- زر الحفظ -->
                 <div class="pt-4">
                     <button type="submit"
@@ -576,39 +446,149 @@ document.getElementById('apply_salary_scale')?.addEventListener('change', functi
                     </button>
                 </div>
             </form>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-        // التحكم في إظهار/إخفاء الحقول الإضافية للموظف
-        const isEmployeeCheckbox = document.getElementById('is_employee');
-        const employeeExtraFields = document.getElementById('employee_extra_fields');
-        
-        if (isEmployeeCheckbox && employeeExtraFields) {
-            isEmployeeCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    employeeExtraFields.classList.remove('hidden');
-                } else {
-                    employeeExtraFields.classList.add('hidden');
-                }
-            });
-        }
-
-        // التحكم في إظهار/إخفاء تفاصيل الراتب
-        const applySalaryScale = document.getElementById('apply_salary_scale');
-        const salaryDetails = document.getElementById('salary_details');
-        
-        if (applySalaryScale && salaryDetails) {
-            applySalaryScale.addEventListener('change', function() {
-                if (this.checked) {
-                    salaryDetails.classList.remove('hidden');
-                } else {
-                    salaryDetails.classList.add('hidden');
-                }
-            });
-        }
-    });
-            </script>
         </div>
     </div>
 </section>
+
+{{-- مكتبات CSS --}}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+{{-- مكتبات JS --}}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+
+<script>
+    // =====================
+    // Flatpickr - Time
+    // =====================
+    flatpickr(".timepicker", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "h:i K",
+        time_24hr: false,
+        locale: "ar",
+        minuteIncrement: 1
+    });
+
+    // =====================
+    // Overtime Calculator
+    // =====================
+    document.addEventListener('DOMContentLoaded', function () {
+        const salaryInput   = document.getElementById('salary_amount_create');
+        const hoursInput    = document.getElementById('daily_work_hours_create');
+        const overtimeInput = document.getElementById('overtime_hourly_rate_create');
+
+        function calculateOvertimeRate() {
+            const salary      = parseFloat(salaryInput.value) || 0;
+            const hoursPerDay = parseFloat(hoursInput.value) || 0;
+            if (salary > 0 && hoursPerDay > 0) {
+                const dailySalary  = salary / 26;
+                const hourlyRate   = dailySalary / hoursPerDay;
+                overtimeInput.value = (hourlyRate * 1.5).toFixed(2);
+            } else {
+                overtimeInput.value = '0.00';
+            }
+        }
+
+        salaryInput?.addEventListener('input', calculateOvertimeRate);
+        hoursInput?.addEventListener('input', calculateOvertimeRate);
+        calculateOvertimeRate();
+    });
+
+    // =====================
+    // Show/Hide Employee Fields
+    // =====================
+    document.addEventListener('DOMContentLoaded', function () {
+        const isEmployeeCheckbox  = document.getElementById('is_employee');
+        const employeeExtraFields = document.getElementById('employee_extra_fields');
+
+        if (isEmployeeCheckbox && employeeExtraFields) {
+            isEmployeeCheckbox.addEventListener('change', function () {
+                employeeExtraFields.classList.toggle('hidden', !this.checked);
+            });
+        }
+    });
+
+    // =====================
+    // منع intl-tel-input نهائياً على حقل الهاتف
+    // =====================
+    (function () {
+        const phoneInput = document.getElementById('phone');
+        if (!phoneInput) return;
+
+        function stripIntlTel() {
+            // لو اتحط في wrapper، نطلعه منه فوراً
+            const wrapper = phoneInput.closest('.iti');
+            if (wrapper) {
+                wrapper.replaceWith(phoneInput);
+            }
+            // تدمير الـ instance
+            if (typeof intlTelInputGlobals !== 'undefined') {
+                const inst = intlTelInputGlobals.getInstance(phoneInput);
+                if (inst) inst.destroy();
+            }
+        }
+
+        // مراقبة أي تغيير في الـ DOM حول حقل الهاتف
+        const observer = new MutationObserver(function () {
+            stripIntlTel();
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // وقف المراقبة بعد ثانيتين (بعد ما كل الـ JS يتحمل)
+        setTimeout(function () {
+            observer.disconnect();
+            stripIntlTel(); // مرة أخيرة للتأكيد
+        }, 2000);
+
+        // عند الـ submit: تأكد من الرقم بدون كود دولي
+        document.addEventListener('submit', function (e) {
+            if (e.target.contains(phoneInput)) {
+                phoneInput.value = phoneInput.value.replace(/^\+\d{1,4}\s*/, '').trim();
+            }
+        });
+    })();
+
+    // =====================
+    // Select2 - Countries
+    // =====================
+    $(document).ready(function () {
+        const countryDataUrl     = 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json';
+        const currentCountry     = '{{ old('first_country', '') }}'.trim().toUpperCase();
+        const currentEmpCountry  = '{{ old('country', '') }}'.trim().toUpperCase();
+
+        fetch(countryDataUrl)
+            .then(r => { if (!r.ok) throw new Error('Network error'); return r.json(); })
+            .then(data => {
+                const mainSelect = $('#country_select2');
+                const empSelect  = $('#employee_country_select2');
+
+                mainSelect.empty().append(new Option("اختر دولتك", "", false, false));
+                empSelect.empty().append(new Option("اختر دولتك", "", false, false));
+
+                data.forEach(country => {
+                    const name = country.translations.ara?.common || country.name.common;
+                    const code = country.cca2.toUpperCase();
+
+                    mainSelect.append(new Option(name, code, false, code === currentCountry));
+                    empSelect.append(new Option(name, code, false, code === currentEmpCountry));
+                });
+
+                mainSelect.select2({ placeholder: "اختر دولتك", allowClear: true, dir: "rtl" });
+                empSelect.select2({ placeholder: "اختر دولتك", allowClear: true, dir: "rtl" });
+
+                mainSelect.trigger('change.select2');
+                empSelect.trigger('change.select2');
+            })
+            .catch(() => {
+                $('#country_select2, #employee_country_select2')
+                    .empty().append(new Option("تعذر تحميل الدول", "", true, true));
+            });
+    });
+</script>
 
 @endsection

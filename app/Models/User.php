@@ -90,6 +90,7 @@ class User extends Authenticatable
         'services_screen_available' => 'boolean',
         'apply_salary_scale' => 'boolean',
         'hiring_date' => 'date',
+        
     ];
 
     protected $hidden = [
