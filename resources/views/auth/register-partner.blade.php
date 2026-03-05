@@ -219,40 +219,128 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-    <script>
-        $(document).ready(function() {
-                const countryDataUrl = 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json';
-                fetch(countryDataUrl)
-                    .then(response => response.json())
-                    .then(data => {
-                        const selectElement = $('#country_select2');
-                        selectElement.empty();
-    
-                        selectElement.append(new Option("اختر دولتك", "", true, true));
-                        data.forEach(country => {
-                            const countryName = country.translations.ara.common || country.name.common;
-                            const countryCode = country.cca2;
-                            const newOption = new Option(countryName, countryCode, false, false);
-                            if ('{{ old('country') }}' === countryCode) {
-                                newOption.selected = true;
-                            }
-    
-                            selectElement.append(newOption);
-                        });
-    
-                        selectElement.select2({
-                            placeholder: "اختر دولتك",
-                            allowClear: true,
-                            dir: "rtl"
-                        });
-                    })
-                    .catch(error => {
-                        console.error('حدث خطأ أثناء تحميل قائمة الدول:', error);
-                        $('#country_select2').empty().append(new Option("تعذر تحميل الدول", "", true, true));
-                    });
-            });
-    </script>
-    <script>
+<script>
+    $(document).ready(function() {
+    const countries = [
+        { code: "AF", name: "أفغانستان" }, { code: "AL", name: "ألبانيا" },
+        { code: "DZ", name: "الجزائر" }, { code: "AD", name: "أندورا" },
+        { code: "AO", name: "أنغولا" }, { code: "AG", name: "أنتيغوا وبربودا" },
+        { code: "AR", name: "الأرجنتين" }, { code: "AM", name: "أرمينيا" },
+        { code: "AU", name: "أستراليا" }, { code: "AT", name: "النمسا" },
+        { code: "AZ", name: "أذربيجان" }, { code: "BS", name: "باهاماس" },
+        { code: "BH", name: "البحرين" }, { code: "BD", name: "بنغلاديش" },
+        { code: "BB", name: "بربادوس" }, { code: "BY", name: "بيلاروسيا" },
+        { code: "BE", name: "بلجيكا" }, { code: "BZ", name: "بليز" },
+        { code: "BJ", name: "بنين" }, { code: "BT", name: "بوتان" },
+        { code: "BO", name: "بوليفيا" }, { code: "BA", name: "البوسنة والهرسك" },
+        { code: "BW", name: "بوتسوانا" }, { code: "BR", name: "البرازيل" },
+        { code: "BN", name: "بروناي" }, { code: "BG", name: "بلغاريا" },
+        { code: "BF", name: "بوركينا فاسو" }, { code: "BI", name: "بوروندي" },
+        { code: "CV", name: "الرأس الأخضر" }, { code: "KH", name: "كمبوديا" },
+        { code: "CM", name: "الكاميرون" }, { code: "CA", name: "كندا" },
+        { code: "CF", name: "جمهورية أفريقيا الوسطى" }, { code: "TD", name: "تشاد" },
+        { code: "CL", name: "تشيلي" }, { code: "CN", name: "الصين" },
+        { code: "CO", name: "كولومبيا" }, { code: "KM", name: "جزر القمر" },
+        { code: "CG", name: "الكونغو" }, { code: "CD", name: "الكونغو الديمقراطية" },
+        { code: "CR", name: "كوستاريكا" }, { code: "CI", name: "ساحل العاج" },
+        { code: "HR", name: "كرواتيا" }, { code: "CU", name: "كوبا" },
+        { code: "CY", name: "قبرص" }, { code: "CZ", name: "التشيك" },
+        { code: "DK", name: "الدنمارك" }, { code: "DJ", name: "جيبوتي" },
+        { code: "DM", name: "دومينيكا" }, { code: "DO", name: "الدومينيكان" },
+        { code: "EC", name: "الإكوادور" }, { code: "EG", name: "مصر" },
+        { code: "SV", name: "السلفادور" }, { code: "GQ", name: "غينيا الاستوائية" },
+        { code: "ER", name: "إريتريا" }, { code: "EE", name: "إستونيا" },
+        { code: "SZ", name: "إسواتيني" }, { code: "ET", name: "إثيوبيا" },
+        { code: "FJ", name: "فيجي" }, { code: "FI", name: "فنلندا" },
+        { code: "FR", name: "فرنسا" }, { code: "GA", name: "الغابون" },
+        { code: "GM", name: "غامبيا" }, { code: "GE", name: "جورجيا" },
+        { code: "DE", name: "ألمانيا" }, { code: "GH", name: "غانا" },
+        { code: "GR", name: "اليونان" }, { code: "GD", name: "غرينادا" },
+        { code: "GT", name: "غواتيمالا" }, { code: "GN", name: "غينيا" },
+        { code: "GW", name: "غينيا بيساو" }, { code: "GY", name: "غيانا" },
+        { code: "HT", name: "هايتي" }, { code: "HN", name: "هندوراس" },
+        { code: "HU", name: "هنغاريا" }, { code: "IS", name: "آيسلندا" },
+        { code: "IN", name: "الهند" }, { code: "ID", name: "إندونيسيا" },
+        { code: "IR", name: "إيران" }, { code: "IQ", name: "العراق" },
+        { code: "IE", name: "أيرلندا" },
+        { code: "IT", name: "إيطاليا" }, { code: "JM", name: "جامايكا" },
+        { code: "JP", name: "اليابان" }, { code: "JO", name: "الأردن" },
+        { code: "KZ", name: "كازاخستان" }, { code: "KE", name: "كينيا" },
+        { code: "KI", name: "كيريباتي" }, { code: "KP", name: "كوريا الشمالية" },
+        { code: "KR", name: "كوريا الجنوبية" }, { code: "KW", name: "الكويت" },
+        { code: "KG", name: "قيرغيزستان" }, { code: "LA", name: "لاوس" },
+        { code: "LV", name: "لاتفيا" }, { code: "LB", name: "لبنان" },
+        { code: "LS", name: "ليسوتو" }, { code: "LR", name: "ليبيريا" },
+        { code: "LY", name: "ليبيا" }, { code: "LI", name: "ليختنشتاين" },
+        { code: "LT", name: "ليتوانيا" }, { code: "LU", name: "لوكسمبورغ" },
+        { code: "MG", name: "مدغشقر" }, { code: "MW", name: "مالاوي" },
+        { code: "MY", name: "ماليزيا" }, { code: "MV", name: "جزر المالديف" },
+        { code: "ML", name: "مالي" }, { code: "MT", name: "مالطا" },
+        { code: "MH", name: "جزر مارشال" }, { code: "MR", name: "موريتانيا" },
+        { code: "MU", name: "موريشيوس" }, { code: "MX", name: "المكسيك" },
+        { code: "FM", name: "ميكرونيزيا" }, { code: "MD", name: "مولدوفا" },
+        { code: "MC", name: "موناكو" }, { code: "MN", name: "منغوليا" },
+        { code: "ME", name: "الجبل الأسود" }, { code: "MA", name: "المغرب" },
+        { code: "MZ", name: "موزمبيق" }, { code: "MM", name: "ميانمار" },
+        { code: "NA", name: "ناميبيا" }, { code: "NR", name: "ناورو" },
+        { code: "NP", name: "نيبال" }, { code: "NL", name: "هولندا" },
+        { code: "NZ", name: "نيوزيلندا" }, { code: "NI", name: "نيكاراغوا" },
+        { code: "NE", name: "النيجر" }, { code: "NG", name: "نيجيريا" },
+        { code: "MK", name: "مقدونيا الشمالية" }, { code: "NO", name: "النرويج" },
+        { code: "OM", name: "عُمان" }, { code: "PK", name: "باكستان" },
+        { code: "PW", name: "بالاو" }, { code: "PA", name: "بنما" },
+        { code: "PG", name: "بابوا غينيا الجديدة" }, { code: "PY", name: "باراغواي" },
+        { code: "PE", name: "بيرو" }, { code: "PH", name: "الفلبين" },
+        { code: "PL", name: "بولندا" }, { code: "PT", name: "البرتغال" },
+        { code: "QA", name: "قطر" }, { code: "RO", name: "رومانيا" },
+        { code: "RU", name: "روسيا" }, { code: "RW", name: "رواندا" },
+        { code: "KN", name: "سانت كيتس ونيفيس" }, { code: "LC", name: "سانت لوسيا" },
+        { code: "VC", name: "سانت فنسنت" }, { code: "WS", name: "ساموا" },
+        { code: "SM", name: "سان مارينو" }, { code: "ST", name: "ساو تومي وبرينسيبي" },
+        { code: "SA", name: "المملكة العربية السعودية" }, { code: "SN", name: "السنغال" },
+        { code: "RS", name: "صربيا" }, { code: "SC", name: "سيشل" },
+        { code: "SL", name: "سيراليون" }, { code: "SG", name: "سنغافورة" },
+        { code: "SK", name: "سلوفاكيا" }, { code: "SI", name: "سلوفينيا" },
+        { code: "SB", name: "جزر سليمان" }, { code: "SO", name: "الصومال" },
+        { code: "ZA", name: "جنوب أفريقيا" }, { code: "SS", name: "جنوب السودان" },
+        { code: "ES", name: "إسبانيا" }, { code: "LK", name: "سريلانكا" },
+        { code: "SD", name: "السودان" }, { code: "SR", name: "سورينام" },
+        { code: "SE", name: "السويد" }, { code: "CH", name: "سويسرا" },
+        { code: "SY", name: "سوريا" }, { code: "TW", name: "تايوان" },
+        { code: "TJ", name: "طاجيكستان" }, { code: "TZ", name: "تنزانيا" },
+        { code: "TH", name: "تايلاند" }, { code: "TL", name: "تيمور الشرقية" },
+        { code: "TG", name: "توغو" }, { code: "TO", name: "تونغا" },
+        { code: "TT", name: "ترينيداد وتوباغو" }, { code: "TN", name: "تونس" },
+        { code: "TR", name: "تركيا" }, { code: "TM", name: "تركمانستان" },
+        { code: "TV", name: "توفالو" }, { code: "UG", name: "أوغندا" },
+        { code: "UA", name: "أوكرانيا" }, { code: "AE", name: "الإمارات العربية المتحدة" },
+        { code: "GB", name: "المملكة المتحدة" }, { code: "US", name: "الولايات المتحدة" },
+        { code: "UY", name: "أوروغواي" }, { code: "UZ", name: "أوزبكستان" },
+        { code: "VU", name: "فانواتو" }, { code: "VE", name: "فنزويلا" },
+        { code: "VN", name: "فيتنام" }, { code: "YE", name: "اليمن" },
+        { code: "ZM", name: "زامبيا" }, { code: "ZW", name: "زيمبابوي" },
+        { code: "PS", name: "فلسطين" }, { code: "XK", name: "كوسوفو" }
+    ];
+
+    const selectElement = $('#country_select2');
+    selectElement.empty().append(new Option("اختر دولتك", "", true, true));
+
+    const oldValue = '{{ old('country') }}';
+
+    countries.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+
+    countries.forEach(country => {
+        const selected = oldValue === country.code;
+        selectElement.append(new Option(country.name, country.code, selected, selected));
+    });
+
+    selectElement.select2({
+        placeholder: "اختر دولتك",
+        allowClear: true,
+        dir: "rtl"
+    });
+});
+</script>    <script>
         function setupPreview(inputId, previewId, placeholderId) {
             const input = document.getElementById(inputId);
             const preview = document.getElementById(previewId);
