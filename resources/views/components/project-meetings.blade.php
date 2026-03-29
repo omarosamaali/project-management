@@ -87,9 +87,7 @@ $allPossibleAttendees = $allPossibleAttendees->unique('id');
                                 {{ $participant->name }}
                             </span>
                             <span class="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500">
-                                {{-- تحويل الحالة للعربية --}}
-                                @lang('status.' . $participant->pivot->status)
-                                {{-- ملاحظة: يفضل استخدام مصفوفة الترجمة التي وضعتها سابقاً هنا --}}
+                                {{ ['pending' => 'بانتظار الرد', 'accepted' => 'موافق', 'declined' => 'يعتذر', 'attended' => 'حضر الاجتماع', 'absent' => 'غائب'][$participant->pivot->status] ?? $participant->pivot->status }}
                             </span>
                         </div>
                         @endforeach

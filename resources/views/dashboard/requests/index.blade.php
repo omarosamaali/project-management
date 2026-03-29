@@ -208,6 +208,7 @@
 
                     @if(Auth::user()->role == 'partner')
                     @foreach ($specialRequests as $specialRequest)
+                    @continue(!$specialRequest->request)
                     <tbody>
                         <tr class="border-b dark:border-gray-700">
                             <td scope="row"

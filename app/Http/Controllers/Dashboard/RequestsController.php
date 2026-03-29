@@ -62,7 +62,7 @@ class RequestsController extends Controller
                     ->orWhereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%"));
             })->latest()->paginate(8, ['*'], 'special_page');
 
-        $specialRequests = $basePartnerSpecialRequests->with(['specialRequest.user', 'partner'])
+        $specialRequests = $basePartnerSpecialRequests->with(['specialRequest.user', 'partner', 'request'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
             ->latest()
             ->paginate(8, ['*'], 'partner_special_page');
