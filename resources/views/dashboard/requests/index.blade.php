@@ -231,10 +231,12 @@
                                 طلب خاص
                             </td>
                             <td class="px-4 py-3 flex items-center justify-end">
+                                @if($specialRequest->request)
                                 <a href="{{ route('dashboard.requests.show', $specialRequest->request->id) }}"
                                     class="block py-2 px-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                @endif
                                 @if(Auth::user()->role == 'admin')
                                 <form action="{{ route('dashboard.requests.destroy', $specialRequest->id) }}"
                                     method="POST" class="inline">
