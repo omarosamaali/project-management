@@ -159,14 +159,19 @@
     <div class="grid md:grid-cols-2 gap-6">
         {{-- الصورة الشخصية --}}
         <div class="relative group">
-            <label class="block text-sm font-bold mb-2">الصورة الشخصية</label>
+            <label class="block text-sm font-bold mb-2">الصورة الشخصية <span class="text-red-500">*</span></label>
             <div id="avatar-container"
-                class="border-2 border-dashed {{ $errors->has('avatar') ? 'border-red-400' : 'border-gray-200' }} rounded-2xl p-4 text-center hover:border-blue-400 transition-all cursor-pointer overflow-hidden h-56 flex items-center justify-center relative">
+                class="border-2 border-dashed {{ $errors->has('avatar') ? 'border-red-400 bg-red-50' : 'border-gray-200' }} rounded-2xl p-4 text-center hover:border-blue-400 transition-all cursor-pointer overflow-hidden h-56 flex items-center justify-center relative">
                 <input type="file" id="avatar-input" name="avatar"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*">
                 <div id="avatar-placeholder">
-                    <i class="fas fa-camera text-2xl text-gray-400 mb-2"></i>
-                    <p class="text-xs text-gray-500">اسحب أو اختر صورة مربعة</p>
+                    @if($errors->has('avatar'))
+                        <i class="fas fa-exclamation-circle text-2xl text-red-400 mb-2"></i>
+                        <p class="text-xs text-red-500 font-bold">يرجى إعادة رفع الصورة</p>
+                    @else
+                        <i class="fas fa-camera text-2xl text-gray-400 mb-2"></i>
+                        <p class="text-xs text-gray-500">اسحب أو اختر صورة مربعة</p>
+                    @endif
                 </div>
                 <img id="avatar-preview" src="#" alt="Preview"
                     class="hidden absolute inset-0 w-full h-full object-cover">
@@ -176,14 +181,19 @@
 
         {{-- صورة البطاقة --}}
         <div class="relative group">
-            <label class="block text-sm font-bold mb-2">صورة البطاقة / الجواز</label>
+            <label class="block text-sm font-bold mb-2">صورة البطاقة / الجواز <span class="text-red-500">*</span></label>
             <div id="id-container"
-                class="border-2 border-dashed {{ $errors->has('id_card_path') ? 'border-red-400' : 'border-gray-200' }} rounded-2xl p-4 text-center hover:border-blue-400 transition-all cursor-pointer overflow-hidden h-56 flex items-center justify-center relative">
+                class="border-2 border-dashed {{ $errors->has('id_card_path') ? 'border-red-400 bg-red-50' : 'border-gray-200' }} rounded-2xl p-4 text-center hover:border-blue-400 transition-all cursor-pointer overflow-hidden h-56 flex items-center justify-center relative">
                 <input type="file" id="id-input" name="id_card_path"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="image/*">
                 <div id="id-placeholder">
-                    <i class="fas fa-id-card-alt text-2xl text-gray-400 mb-2"></i>
-                    <p class="text-xs text-gray-500">صورة واضحة للوجهين</p>
+                    @if($errors->has('id_card_path'))
+                        <i class="fas fa-exclamation-circle text-2xl text-red-400 mb-2"></i>
+                        <p class="text-xs text-red-500 font-bold">يرجى إعادة رفع الصورة</p>
+                    @else
+                        <i class="fas fa-id-card-alt text-2xl text-gray-400 mb-2"></i>
+                        <p class="text-xs text-gray-500">صورة واضحة للوجهين</p>
+                    @endif
                 </div>
                 <img id="id-preview" src="#" alt="Preview" class="hidden absolute inset-0 w-full h-full object-cover">
             </div>
@@ -192,15 +202,21 @@
 
         {{-- فيديو التحقق --}}
         <div class="col-span-2 relative">
-            <label class="block text-sm font-bold mb-2">فيديو سيلفي مع البطاقة (التحقق)</label>
+            <label class="block text-sm font-bold mb-2">فيديو سيلفي مع البطاقة (التحقق) <span class="text-red-500">*</span></label>
             <div id="video-container"
-                class="bg-blue-50 dark:bg-blue-900/10 border-2 border-dashed {{ $errors->has('verification_video') ? 'border-red-400' : 'border-blue-200' }} rounded-2xl p-4 text-center hover:border-blue-500 transition-all cursor-pointer relative min-h-[200px] flex items-center justify-center">
+                class="border-2 border-dashed {{ $errors->has('verification_video') ? 'border-red-400 bg-red-50' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200' }} rounded-2xl p-4 text-center hover:border-blue-500 transition-all cursor-pointer relative min-h-[200px] flex items-center justify-center">
                 <input type="file" id="video-input" name="verification_video"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" accept="video/*">
                 <div id="video-placeholder">
-                    <i class="fas fa-video text-3xl text-blue-500 mb-3"></i>
-                    <h4 class="font-bold text-blue-700">ارفع فيديو التحقق</h4>
-                    <p class="text-xs text-blue-600 mt-1 italic">بحد أقصى 20 ميجابايت</p>
+                    @if($errors->has('verification_video'))
+                        <i class="fas fa-exclamation-circle text-3xl text-red-400 mb-3"></i>
+                        <h4 class="font-bold text-red-600">يرجى إعادة رفع الفيديو</h4>
+                        <p class="text-xs text-red-500 mt-1">{{ $errors->first('verification_video') }}</p>
+                    @else
+                        <i class="fas fa-video text-3xl text-blue-500 mb-3"></i>
+                        <h4 class="font-bold text-blue-700">ارفع فيديو التحقق</h4>
+                        <p class="text-xs text-blue-600 mt-1 italic">بحد أقصى 20 ميجابايت</p>
+                    @endif
                 </div>
                 <video id="video-preview" controls class="hidden w-full max-h-64 rounded-xl"></video>
             </div>

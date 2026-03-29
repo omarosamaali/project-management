@@ -18,6 +18,7 @@ use App\Models\Support;
 use App\Models\RequestPayment;
 use App\Models\RequestStage;
 use App\Models\RequestActivity;
+use App\Services\WhatsAppOTPService;
 
 class SpecialRequestController extends Controller
 {
@@ -77,8 +78,43 @@ class SpecialRequestController extends Controller
         // سنقوم بتحديث الحالة إلى active مباشرة بمجرد إضافة مرحلة
         $specialRequest->update([
             'status' => 'active',
-            'is_project' => 1 // لضمان أنه تم اعتباره مشروعاً بما أن له مراحل
+            'is_project' => 1
         ]);
+
+        // إرسال إشعار واتساب لكل أعضاء فريق المشروع
+        $whatsapp = app(WhatsAppOTPService::class);
+        $members = $specialRequest->partners()->get();
+
+        \Log::info("[STAGE] بدء إرسال إشعارات المرحلة الجديدة", [
+            'special_request_id' => $specialRequest->id,
+            'stage_title'        => $validated['title'],
+            'members_count'      => $members->count(),
+            'members'            => $members->map(fn($m) => ['id' => $m->id, 'name' => $m->name, 'phone' => $m->phone])->toArray(),
+        ]);
+
+        foreach ($members as $member) {
+            if ($member->phone) {
+                try {
+                    $result = $whatsapp->sendNewStageNotification(
+                        phone: $member->phone,
+                        memberName: $member->name,
+                        stageName: $validated['title'],
+                        projectTitle: $specialRequest->title,
+                    );
+                    \Log::info("[STAGE] إرسال إشعار لـ {$member->name}", [
+                        'phone'  => $member->phone,
+                        'result' => $result ? 'نجح ✓' : 'فشل ✗',
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error("[STAGE] استثناء عند إرسال إشعار لـ {$member->name}", [
+                        'phone' => $member->phone,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                \Log::warning("[STAGE] العضو {$member->name} (id={$member->id}) ليس لديه رقم هاتف");
+            }
+        }
 
         return back()->with('success', 'تم إضافة المرحلة وتنشيط المشروع بنجاح');
     }
@@ -107,7 +143,7 @@ class SpecialRequestController extends Controller
     {
         $assignedPartnerIds = $SpecialRequest->partners()->pluck('partner_id')->toArray();
         $requiredServiceType = $SpecialRequest->project_type;
-        $partners = User::where('role', 'partner')->whereNotIn('id', $assignedPartnerIds)->get();
+        $partners = User::whereIn('role', ['partner', 'independent_partner'])->whereNotIn('id', $assignedPartnerIds)->get();
         $managers = User::where('role', 'partner')->where('is_employee', 1)->get();
 
         $collection1 = Support::where('request_id', $SpecialRequest->id)
@@ -418,6 +454,41 @@ class SpecialRequestController extends Controller
             'description' => "تم إضافة مرحلة جديدة: {$data['title']} وتحديث حالة المشروع إلى جاري العمل به",
         ]);
 
+        // إرسال إشعار واتساب لكل أعضاء فريق المشروع
+        $whatsapp = app(WhatsAppOTPService::class);
+        $members = $specialRequest->partners()->get();
+
+        \Log::info("[STAGE] بدء إرسال إشعارات المرحلة الجديدة", [
+            'special_request_id' => $specialRequest->id,
+            'stage_title'        => $data['title'],
+            'members_count'      => $members->count(),
+            'members'            => $members->map(fn($m) => ['id' => $m->id, 'name' => $m->name, 'phone' => $m->phone])->toArray(),
+        ]);
+
+        foreach ($members as $member) {
+            if ($member->phone) {
+                try {
+                    $result = $whatsapp->sendNewStageNotification(
+                        phone: $member->phone,
+                        memberName: $member->name,
+                        stageName: $data['title'],
+                        projectTitle: $specialRequest->title,
+                    );
+                    \Log::info("[STAGE] إرسال إشعار لـ {$member->name}", [
+                        'phone'  => $member->phone,
+                        'result' => $result ? 'نجح ✓' : 'فشل ✗',
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error("[STAGE] استثناء عند إرسال إشعار لـ {$member->name}", [
+                        'phone' => $member->phone,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                \Log::warning("[STAGE] العضو {$member->name} (id={$member->id}) ليس لديه رقم هاتف");
+            }
+        }
+
         return back()->with('success', 'تمت إضافة المرحلة بنجاح وتنشيط المشروع');
     }
 
@@ -521,6 +592,17 @@ class SpecialRequestController extends Controller
             'description' => 'تم إضافة ملاحظة جديدة للمشروع: ' . $data['title'],
         ]);
 
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            foreach ($special_request->partners()->get() as $member) {
+                if ($member->phone) {
+                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تمت إضافة ملاحظة جديدة: ({$data['title']})", $special_request->title);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("[NOTE_NOTIFY] " . $e->getMessage());
+        }
+
         return back()->with('success', 'تمت إضافة الملاحظة بنجاح');
     }
 
@@ -573,6 +655,17 @@ class SpecialRequestController extends Controller
             'type' => 'file',
             'description' => 'تم اضافة ملاحظة جديدة للمشروع',
         ]);
+
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            foreach ($specialRequest->partners()->get() as $member) {
+                if ($member->phone) {
+                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تمت إضافة ملاحظة جديدة: ({$data['title']})", $specialRequest->title ?? "طلب #{$specialRequest->id}");
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("[NOTE_NOTIFY] " . $e->getMessage());
+        }
 
         return back()->with('success', 'تمت إضافة الملاحظة بنجاح');
     }

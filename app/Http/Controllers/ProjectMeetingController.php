@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProjectMeeting;
+use App\Models\SpecialRequest;
+use App\Models\Requests as ProjectRequest;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use App\Models\ProjectProposal;
 
@@ -41,6 +44,27 @@ class ProjectMeetingController extends Controller
         ]);
 
         $meeting->participants()->attach($validated['attendees'], ['status' => 'pending']);
+
+        // إشعار أعضاء المشروع
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            if ($request->filled('special_request_id')) {
+                $project = SpecialRequest::find($request->special_request_id);
+                $members = $project?->partners()->get() ?? collect();
+                $title = $project?->title ?? '';
+            } else {
+                $project = ProjectRequest::find($request->request_id);
+                $members = $project?->partners()->get() ?? collect();
+                $title = $project?->title ?? "طلب #{$request->request_id}";
+            }
+            foreach ($members as $member) {
+                if ($member->phone) {
+                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تم جدولة اجتماع جديد: ({$validated['title']})", $title);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("[MEETING_NOTIFY] " . $e->getMessage());
+        }
 
         return back()->with('success', 'تم جدولة الاجتماع بنجاح');
     }

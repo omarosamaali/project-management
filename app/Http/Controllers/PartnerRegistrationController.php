@@ -71,11 +71,19 @@ class PartnerRegistrationController extends Controller
             'name'               => 'required|string|max:255',
             'email'              => 'required|email|unique:users,email',
             'phone'              => 'required|string',
+            'country'            => 'required|string',
             'skills'             => 'required|array',
             'password'           => 'required|string|min:8|confirmed',
             'avatar'             => 'required|image|max:5120',
             'id_card_path'       => 'required|image|max:5120',
             'verification_video' => 'required|mimes:mp4,mov,avi|max:20480',
+        ], [
+            'country.required'            => 'يرجى اختيار الدولة.',
+            'verification_video.required' => 'يرجى رفع فيديو التحقق.',
+            'verification_video.mimes'    => 'صيغة الفيديو يجب أن تكون mp4 أو mov أو avi.',
+            'verification_video.max'      => 'حجم الفيديو يجب ألا يتجاوز 20 ميجابايت.',
+            'avatar.required'             => 'يرجى رفع الصورة الشخصية.',
+            'id_card_path.required'       => 'يرجى رفع صورة البطاقة.',
         ]);
 
         try {
@@ -104,11 +112,11 @@ class PartnerRegistrationController extends Controller
                     'name'     => $request->name,
                     'email'    => $request->email,
                     'phone'    => $request->phone,
+                    'country'  => $request->country,
                     'password' => \Hash::make($request->password),
                     'role'     => 'independent_partner',
                     'status'   => 'pending',
                     'otp'      => $otpCode,
-                    // ... باقي الحقول
                 ]);
 
                 // 7. إرسال الإيميل
@@ -124,10 +132,22 @@ class PartnerRegistrationController extends Controller
                 // 8. إرسال الواتساب (تمرير النص المخصص)
                 try {
                     $whatsappService = new \App\Services\WhatsAppOTPService();
-                    // ملاحظة: تأكد أن ميثود sendOTP في الخدمة تقبل نصاً مخصصاً أو عدلها لترسل $messageText
                     $whatsappService->sendOTP($cleanPhone, $otpCode, false, $messageText);
                 } catch (\Exception $e) {
                     \Log::error("WhatsApp Error: " . $e->getMessage());
+                }
+
+                // 9. إشعار الأدمن بتسجيل شريك جديد
+                try {
+                    $whatsappService = new \App\Services\WhatsAppOTPService();
+                    $whatsappService->sendNewPartnerNotification(
+                        adminPhone: '971501774477',
+                        partnerName: $user->name,
+                        partnerEmail: $user->email,
+                        partnerPhone: $request->phone,
+                    );
+                } catch (\Exception $e) {
+                    \Log::error("Admin WhatsApp Notification Error: " . $e->getMessage());
                 }
 
                 return redirect()->route('login')->with('success', 'تم إرسال الكود للواتساب والإيميل.');

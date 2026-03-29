@@ -113,6 +113,102 @@ class WhatsAppOTPService
     }
 
 
+    // ── إشعار الأدمن بتسجيل شريك جديد ──────────────────
+    public function sendNewPartnerNotification(string $adminPhone, string $partnerName, string $partnerEmail, string $partnerPhone): bool
+    {
+        $bodyText = "تم تسجيل شريك مستقل جديد:\nالاسم: {$partnerName}\nالإيميل: {$partnerEmail}\nالهاتف: {$partnerPhone}\nبانتظار المراجعة والموافقة.";
+
+        $params = [
+            [
+                "type" => "body",
+                "parameters" => [
+                    ["type" => "text", "text" => "مدير النظام"],
+                    ["type" => "text", "text" => $bodyText],
+                ]
+            ],
+            [
+                "type" => "header",
+                "parameters" => [
+                    ["type" => "image", "image" => ["link" => 'https://evorq.online/assets/images/salaray.jpeg']]
+                ]
+            ]
+        ];
+
+        return $this->executeRequest($adminPhone, 'trabar', 'ar', $params);
+    }
+
+    // ── إشعار عام للمشروع ────────────────────────────────
+    public function sendProjectNotification(string $phone, string $memberName, string $eventText, string $projectTitle): bool
+    {
+        $bodyText = "{$eventText} في المشروع: {$projectTitle}";
+
+        $params = [
+            [
+                "type" => "body",
+                "parameters" => [
+                    ["type" => "text", "text" => $memberName],
+                    ["type" => "text", "text" => $bodyText],
+                ]
+            ],
+            [
+                "type" => "header",
+                "parameters" => [
+                    ["type" => "image", "image" => ["link" => 'https://evorq.online/assets/images/salaray.jpeg']]
+                ]
+            ]
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
+    // ── إشعار مهمة جديدة في المشروع ─────────────────────
+    public function sendNewTaskNotification(string $phone, string $memberName, string $taskTitle, string $projectTitle): bool
+    {
+        $bodyText = "تم إضافة مهمة جديدة: ({$taskTitle}) في المشروع: {$projectTitle}";
+
+        $params = [
+            [
+                "type" => "body",
+                "parameters" => [
+                    ["type" => "text", "text" => $memberName],
+                    ["type" => "text", "text" => $bodyText],
+                ]
+            ],
+            [
+                "type" => "header",
+                "parameters" => [
+                    ["type" => "image", "image" => ["link" => 'https://evorq.online/assets/images/salaray.jpeg']]
+                ]
+            ]
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
+    // ── إشعار مرحلة جديدة في المشروع ────────────────────
+    public function sendNewStageNotification(string $phone, string $memberName, string $stageName, string $projectTitle): bool
+    {
+        $bodyText = "تم إضافة مرحلة عمل جديدة: ({$stageName}) في المشروع: {$projectTitle}";
+
+        $params = [
+            [
+                "type" => "body",
+                "parameters" => [
+                    ["type" => "text", "text" => $memberName],
+                    ["type" => "text", "text" => $bodyText],
+                ]
+            ],
+            [
+                "type" => "header",
+                "parameters" => [
+                    ["type" => "image", "image" => ["link" => 'https://evorq.online/assets/images/salaray.jpeg']]
+                ]
+            ]
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
     // ── executeRequest ────────────────────────────────
     private function executeRequest($phone, $template, $lang, $params)
     {

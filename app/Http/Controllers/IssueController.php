@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Issue;
+use App\Models\SpecialRequest;
+use App\Models\Requests as ProjectRequest;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,6 +31,7 @@ class IssueController extends Controller {
             'type' => 'file',
             'description' => 'تم تسجيل مشكلة جديدة: ' . $request->title,
         ]);
+        $this->notifyMembers('special_request_id', $request->special_request_id, "تم تسجيل خطأ/معوق جديد: ({$request->title})");
         return back()->with('success', 'تم تسجيل المشكلة بنجاح');
     }
     public function storeRequest(Request $request)
@@ -52,13 +56,12 @@ class IssueController extends Controller {
         Issue::create($data);
 
         \App\Models\ProjectActivity::create([
-            // نستخدم الحقل الجديد هنا أيضاً للأكتفتي
             'request_id' => $request->request_id,
             'user_id' => auth()->id(),
             'type' => 'file',
             'description' => 'تم تسجيل مشكلة جديدة: ' . $request->title,
         ]);
-
+        $this->notifyMembers('request_id', $request->request_id, "تم تسجيل خطأ/معوق جديد: ({$request->title})");
         return back()->with('success', 'تم تسجيل المشكلة بنجاح');
     }
 
@@ -81,6 +84,29 @@ class IssueController extends Controller {
         $issue->update($data);
 
         return back()->with('success', 'تم تحديث البيانات بنجاح');
+    }
+
+    private function notifyMembers(string $field, $id, string $eventText): void
+    {
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            if ($field === 'special_request_id') {
+                $project = SpecialRequest::find($id);
+                $members = $project?->partners()->get() ?? collect();
+                $title = $project?->title ?? '';
+            } else {
+                $project = ProjectRequest::find($id);
+                $members = $project?->partners()->get() ?? collect();
+                $title = $project?->title ?? "طلب #{$id}";
+            }
+            foreach ($members as $member) {
+                if ($member->phone) {
+                    $whatsapp->sendProjectNotification($member->phone, $member->name, $eventText, $title);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("[NOTIFY] {$eventText}: " . $e->getMessage());
+        }
     }
 
     // دالة الحذف

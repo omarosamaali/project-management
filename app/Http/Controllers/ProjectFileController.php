@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProjectFile;
+use App\Models\SpecialRequest;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,9 +30,22 @@ class ProjectFileController extends Controller
         \App\Models\ProjectActivity::create([
             'special_request_id' => $request->special_request_id,
             'user_id' => auth()->id(),
-            'type' => 'file', // أو status, invoice, etc
+            'type' => 'file',
             'description' => 'تم رفع ملف جديد للمشروع',
         ]);
+        try {
+            $project = SpecialRequest::find($request->special_request_id);
+            if ($project) {
+                $whatsapp = app(WhatsAppOTPService::class);
+                foreach ($project->partners()->get() as $member) {
+                    if ($member->phone) {
+                        $whatsapp->sendProjectNotification($member->phone, $member->name, "تم رفع ملف جديد: ({$request->title})", $project->title);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error("[FILE_NOTIFY] " . $e->getMessage());
+        }
         return back()->with('success', 'تم رفع الملف بنجاح');
     }
 

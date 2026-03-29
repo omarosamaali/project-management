@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Task;
+use App\Models\SpecialRequest;
+use App\Models\Requests as ProjectRequest;
+use App\Services\WhatsAppOTPService;
 
 class TaskController extends Controller
 {
@@ -26,6 +29,27 @@ class TaskController extends Controller
             'type' => 'file',
             'description' => 'تم اضافة مهمة جديدة للمشروع',
         ]);
+
+        // إشعار واتساب لأعضاء المشروع
+        $specialRequest = SpecialRequest::find($request->special_request_id);
+        if ($specialRequest) {
+            $whatsapp = app(WhatsAppOTPService::class);
+            foreach ($specialRequest->partners()->get() as $member) {
+                if ($member->phone) {
+                    try {
+                        $whatsapp->sendNewTaskNotification(
+                            phone: $member->phone,
+                            memberName: $member->name,
+                            taskTitle: $validated['title'],
+                            projectTitle: $specialRequest->title,
+                        );
+                    } catch (\Exception $e) {
+                        \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
+                    }
+                }
+            }
+        }
+
         return redirect()->back()->with('success', 'تم إضافة المهمة بنجاح');
     }
 
@@ -66,6 +90,51 @@ class TaskController extends Controller
                 'type'               => 'task',
                 'description'        => 'تم إضافة مهمة جديدة: ' . $task->title,
             ]);
+        }
+
+        // إشعار واتساب لأعضاء المشروع أو الطلب
+        $whatsapp = app(WhatsAppOTPService::class);
+
+        if (!empty($validated['special_request_id'])) {
+            $specialRequest = SpecialRequest::find($validated['special_request_id']);
+            if ($specialRequest) {
+                $projectTitle = $specialRequest->title;
+                $members = $specialRequest->partners()->get();
+                foreach ($members as $member) {
+                    if ($member->phone) {
+                        try {
+                            $whatsapp->sendNewTaskNotification(
+                                phone: $member->phone,
+                                memberName: $member->name,
+                                taskTitle: $task->title,
+                                projectTitle: $projectTitle,
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
+                        }
+                    }
+                }
+            }
+        } elseif (!empty($validated['request_id'])) {
+            $projectRequest = ProjectRequest::find($validated['request_id']);
+            if ($projectRequest) {
+                $projectTitle = $projectRequest->title ?? "طلب #{$projectRequest->id}";
+                $members = $projectRequest->partners()->get();
+                foreach ($members as $member) {
+                    if ($member->phone) {
+                        try {
+                            $whatsapp->sendNewTaskNotification(
+                                phone: $member->phone,
+                                memberName: $member->name,
+                                taskTitle: $task->title,
+                                projectTitle: $projectTitle,
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
+                        }
+                    }
+                }
+            }
         }
 
         return redirect()->back()->with('success', 'تم إضافة المهمة بنجاح');
