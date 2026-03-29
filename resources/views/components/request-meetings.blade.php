@@ -201,13 +201,17 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold mb-1 dark:text-gray-400">الوقت</label>
-                        <input type="datetime-local" name="start_at" required
+                        <input type="datetime-local" name="start_at" id="meeting_start_at" required
                             class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     </div>
                     <div>
                         <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت الانتهاء</label>
-                        <input type="datetime-local" name="end_at" required
-                            class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <input type="datetime-local" name="end_at" id="meeting_end_at" required
+                            class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('end_at') border-red-500 @enderror">
+                        @error('end_at')
+                            <p class="text-red-500 text-xs mt-1 font-bold">{{ $message }}</p>
+                        @enderror
+                        <p id="end_at_error" class="text-red-500 text-xs mt-1 font-bold hidden">يجب أن يكون وقت الانتهاء بعد وقت البدء</p>
                     </div>
                 </div>
 
@@ -223,6 +227,32 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
     </div>
 
     <script>
+        // فتح modal الاجتماع تلقائياً لو في validation errors
+        @if($errors->has('end_at') || $errors->has('start_at') || $errors->has('title'))
+            document.addEventListener('DOMContentLoaded', function() {
+                toggleModal('addMeetingModal', true);
+            });
+        @endif
+
+        // client-side validation: وقت الانتهاء بعد وقت البدء
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('meeting_end_at')?.closest('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const startAt = document.getElementById('meeting_start_at').value;
+                    const endAt = document.getElementById('meeting_end_at').value;
+                    const errorEl = document.getElementById('end_at_error');
+                    if (startAt && endAt && endAt <= startAt) {
+                        e.preventDefault();
+                        errorEl.classList.remove('hidden');
+                        document.getElementById('meeting_end_at').classList.add('border-red-500');
+                    } else {
+                        errorEl.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
         function joinMeeting(meetingId, url) {
         fetch(`/project-meetings/${meetingId}/status`, {
             method: 'PATCH',
