@@ -1,5 +1,5 @@
 @props(['SpecialRequest', 'partners', 'managers'])
-@if($SpecialRequest->is_project != 1)
+{{-- @if($SpecialRequest->is_project != 1) --}}
 <div class="pt-6 p-6 space-y-8">
     @if (Auth::user()->role != 'client')
     <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -481,7 +481,7 @@
     @endif
     @endif
 </div>
-@endif
+{{-- @endif --}}
 
 @if($SpecialRequest->is_project == 1)
 
