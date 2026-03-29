@@ -23,7 +23,7 @@ class CreateRequestController extends Controller
     public function postRequest(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'nullable|exists:clients,id',
+            'user_id' => 'nullable|exists:users,id',
             'title' => 'required|string|max:255',
             'project_type' => 'required|string',
             'system_id' => 'nullable|exists:systems,id',

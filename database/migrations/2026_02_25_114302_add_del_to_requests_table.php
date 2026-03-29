@@ -13,7 +13,6 @@ return new class extends Migration
             $table->timestamp('delivered_at')->nullable()->after('status');
         });
 
-        // ملء delivered_at للسجلات الموجودة التي حالتها closed
         DB::statement("
             UPDATE requests
             SET delivered_at = updated_at
