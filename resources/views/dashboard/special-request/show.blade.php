@@ -29,7 +29,8 @@
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
                             <i class="fas fa-file-alt text-blue-600"></i>
-                            {{ $SpecialRequest->title }} - @if($SpecialRequest->status == 'active')
+                            {{ $SpecialRequest->title }} - 
+                            @if($SpecialRequest->status == 'active')
                             جديد
                             @elseif($SpecialRequest->status == 'in_progress')
                             جاري العمل به
@@ -41,7 +42,7 @@
                             {{ $SpecialRequest->status }}
                             @endif
                         </h1>
-                        <span class="text-[13px] text-[#646464] font-bold">{{ $SpecialRequest->project_type }}</span>
+                        {{-- <span class="text-[13px] text-[#646464] font-bold">{{ $SpecialRequest->project_type }}</span> --}}
                     </div>
                     <div class="flex gap-2">
 
