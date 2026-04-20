@@ -179,19 +179,17 @@
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th class="px-4 py-3">#</th>
-                            <th class="px-4 py-3">الاسم</th>
-                            <th class="px-4 py-3">البريد الإلكتروني</th>
-                            <th class="px-4 py-3">الموضوع</th>
-                            <th class="px-4 py-3">الرسالة</th>
-                            <th class="px-4 py-3">الحالة</th>
-                            <th class="px-4 py-3">الرد</th>
+                            <th class="px-4 py-3">النظام</th>
                             <th class="px-4 py-3">التاريخ</th>
+                            <th class="px-4 py-3">الاسم</th>
+                            <th class="px-4 py-3">الموضوع</th>
+                            <th class="px-4 py-3">الحالة</th>
                             <th class="px-4 py-3">الإجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="api-messages-body">
                         <tr>
-                            <td colspan="9" class="text-center py-8 text-gray-500">
+                            <td colspan="7" class="text-center py-8 text-gray-500">
                                 <i class="fas fa-spinner fa-spin text-2xl"></i>
                                 <p class="mt-2 text-sm">جاري تحميل الرسائل...</p>
                             </td>
@@ -203,25 +201,60 @@
     </div>
 </section>
 
-{{-- Modal الرد --}}
-<div id="reply-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">الرد على الرسالة</h3>
-            <button onclick="closeReplyModal()" class="text-gray-400 hover:text-gray-600">
-                <i class="fas fa-times text-xl"></i>
+{{-- Modal العرض والرد --}}
+<div id="view-modal" class="fixed inset-0 z-50 items-center justify-center bg-black/50" style="display:none">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg mx-4">
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
+            <div class="flex items-center gap-3">
+                <img src="https://app.qmra.ae/favicon.ico" onerror="this.src='https://ui-avatars.com/api/?name=Q&background=6366f1&color=fff&size=32'" class="w-9 h-9 rounded-full object-contain border border-gray-200 bg-white p-0.5">
+                <div>
+                    <p class="font-semibold text-gray-800 dark:text-white text-sm">قمرة</p>
+                    <p class="text-xs text-gray-400" id="modal-date"></p>
+                </div>
+            </div>
+            <button onclick="closeViewModal()" class="text-gray-400 hover:text-gray-600 text-xl">
+                <i class="fas fa-times"></i>
             </button>
         </div>
-        <div id="reply-original-msg" class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300"></div>
-        <textarea id="reply-text" rows="4"
-            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm dark:bg-gray-700 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            placeholder="اكتب ردك هنا..."></textarea>
-        <div class="flex justify-end gap-3 mt-4">
-            <button onclick="closeReplyModal()"
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">إلغاء</button>
+        {{-- Body --}}
+        <div class="px-6 py-4 space-y-3">
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">الاسم</p>
+                    <p id="modal-name" class="font-medium text-gray-800 dark:text-white"></p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">البريد الإلكتروني</p>
+                    <p id="modal-email" class="font-medium text-gray-800 dark:text-white text-xs break-all"></p>
+                </div>
+                <div class="col-span-2">
+                    <p class="text-xs text-gray-400 mb-1">الموضوع</p>
+                    <p id="modal-subject" class="font-medium text-gray-800 dark:text-white"></p>
+                </div>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 mb-1">الرسالة</p>
+                <div id="modal-message" class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-sm text-gray-700 dark:text-gray-300 leading-relaxed"></div>
+            </div>
+            <div id="modal-reply-section" class="hidden">
+                <p class="text-xs text-gray-400 mb-1">الرد السابق</p>
+                <div id="modal-reply-prev" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-300"></div>
+            </div>
+            <div>
+                <p class="text-xs text-gray-400 mb-1">الرد</p>
+                <textarea id="reply-text" rows="3"
+                    class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm dark:bg-gray-700 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    placeholder="اكتب ردك هنا..."></textarea>
+            </div>
+        </div>
+        {{-- Footer --}}
+        <div class="flex justify-end gap-3 px-6 py-4 border-t dark:border-gray-700">
+            <button onclick="closeViewModal()"
+                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200">إغلاق</button>
             <button onclick="submitReply()"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
-                <i class="fas fa-paper-plane ml-1"></i> إرسال الرد
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2">
+                <i class="fas fa-paper-plane"></i> إرسال الرد
             </button>
         </div>
     </div>
@@ -250,31 +283,32 @@ async function loadMessages() {
             return;
         }
 
-        tbody.innerHTML = data.messages.map(msg => `
+        tbody.innerHTML = data.messages.map((msg, idx) => `
             <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 ${msg.read == 0 ? 'bg-blue-50 dark:bg-blue-900/10' : ''}">
-                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">${msg.id}</td>
-                <td class="px-4 py-3 text-gray-800 dark:text-white font-medium">${escHtml(msg.name)}</td>
-                <td class="px-4 py-3 text-xs">${escHtml(msg.email)}</td>
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">${idx + 1}</td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <img src="https://app.qmra.ae/favicon.ico" onerror="this.src='https://ui-avatars.com/api/?name=Q&background=6366f1&color=fff&size=32'" class="w-8 h-8 rounded-full object-contain border border-gray-200 bg-white p-0.5" alt="قمرة">
+                        <span class="font-medium text-gray-800 dark:text-white text-xs">قمرة</span>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">${msg.createdAt}</td>
+                <td class="px-4 py-3 font-medium text-gray-800 dark:text-white">${escHtml(msg.name)}</td>
                 <td class="px-4 py-3">${escHtml(msg.subject)}</td>
-                <td class="px-4 py-3 max-w-xs truncate" title="${escHtml(msg.message)}">${escHtml(msg.message)}</td>
                 <td class="px-4 py-3">
                     ${msg.read == 0
                         ? '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">غير مقروءة</span>'
-                        : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">مقروءة</span>'}
+                        : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">مقروءة</span>'}
                 </td>
-                <td class="px-4 py-3 text-xs text-gray-500 max-w-xs truncate" title="${msg.reply ? escHtml(msg.reply) : ''}">
-                    ${msg.reply ? escHtml(msg.reply) : '<span class="text-gray-400">لا يوجد رد</span>'}
-                </td>
-                <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">${msg.createdAt}</td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
-                        <button onclick="openReplyModal(${msg.id}, '${escHtml(msg.name)}', \`${escHtml(msg.message)}\`)"
-                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700">
-                            <i class="fas fa-reply ml-1"></i>رد
+                        <button onclick="openViewModal(${msg.id}, '${escHtml(msg.name)}', '${escHtml(msg.email)}', \`${escHtml(msg.message)}\`, '${escHtml(msg.subject)}', '${msg.createdAt}', \`${msg.reply ? escHtml(msg.reply) : ''}\`)"
+                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700 flex items-center gap-1">
+                            <i class="fas fa-eye"></i> عرض
                         </button>
                         <button onclick="deleteMessage(${msg.id})"
-                            class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700">
-                            <i class="fas fa-trash"></i>
+                            class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700 flex items-center gap-1">
+                            <i class="fas fa-trash"></i> حذف
                         </button>
                     </div>
                 </td>
@@ -323,16 +357,26 @@ async function deleteAllMessages() {
     } catch { showAlert('حدث خطأ أثناء الحذف', 'error'); }
 }
 
-function openReplyModal(id, name, message) {
+function openViewModal(id, name, email, message, subject, date, reply) {
     currentReplyId = id;
-    document.getElementById('reply-original-msg').innerHTML =
-        `<strong>${escHtml(name)}:</strong> ${escHtml(message)}`;
-    document.getElementById('reply-text').value = '';
-    document.getElementById('reply-modal').classList.remove('hidden');
+    document.getElementById('modal-name').textContent    = name;
+    document.getElementById('modal-email').textContent   = email;
+    document.getElementById('modal-subject').textContent = subject;
+    document.getElementById('modal-date').textContent    = date;
+    document.getElementById('modal-message').textContent = message;
+    document.getElementById('reply-text').value          = '';
+    const replySection = document.getElementById('modal-reply-section');
+    if (reply) {
+        document.getElementById('modal-reply-prev').textContent = reply;
+        replySection.classList.remove('hidden');
+    } else {
+        replySection.classList.add('hidden');
+    }
+    document.getElementById('view-modal').style.display = 'flex';
 }
 
-function closeReplyModal() {
-    document.getElementById('reply-modal').classList.add('hidden');
+function closeViewModal() {
+    document.getElementById('view-modal').style.display = 'none';
     currentReplyId = null;
 }
 
@@ -346,7 +390,7 @@ async function submitReply() {
             body: JSON.stringify({ reply })
         });
         if (res.ok) {
-            closeReplyModal();
+            closeViewModal();
             showAlert('تم إرسال الرد بنجاح', 'success');
             loadMessages();
         } else {
@@ -361,8 +405,8 @@ function showAlert(msg, type) {
     el.className = type === 'success'
         ? 'mx-4 mt-3 p-3 rounded-lg text-sm bg-green-50 text-green-800 border border-green-200'
         : 'mx-4 mt-3 p-3 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200';
-    el.classList.remove('hidden');
-    setTimeout(() => el.classList.add('hidden'), 4000);
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 document.addEventListener('DOMContentLoaded', loadMessages);
