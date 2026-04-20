@@ -207,7 +207,7 @@
         {{-- Header --}}
         <div class="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700">
             <div class="flex items-center gap-3">
-                <img src="https://app.qmra.ae/favicon.ico" onerror="this.src='https://ui-avatars.com/api/?name=Q&background=6366f1&color=fff&size=32'" class="w-9 h-9 rounded-full object-contain border border-gray-200 bg-white p-0.5">
+                <img src="/assets/images/fav.png" class="w-9 h-9 rounded-full object-contain border border-gray-200 bg-white p-0.5">
                 <div>
                     <p class="font-semibold text-gray-800 dark:text-white text-sm">قمرة</p>
                     <p class="text-xs text-gray-400" id="modal-date"></p>
@@ -288,7 +288,7 @@ async function loadMessages() {
                 <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">${idx + 1}</td>
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
-                        <img src="https://app.qmra.ae/favicon.ico" onerror="this.src='https://ui-avatars.com/api/?name=Q&background=6366f1&color=fff&size=32'" class="w-8 h-8 rounded-full object-contain border border-gray-200 bg-white p-0.5" alt="قمرة">
+                        <img src="/assets/images/fav.png" class="w-8 h-8 rounded-full object-contain border border-gray-200 bg-white p-0.5" alt="قمرة">
                         <span class="font-medium text-gray-800 dark:text-white text-xs">قمرة</span>
                     </div>
                 </td>
