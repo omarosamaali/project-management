@@ -156,4 +156,216 @@
     </div>
 </section>
 
+{{-- ===== قسم رسائل التواصل من API ===== --}}
+<section class="!pl-0 p-3 sm:p-5 mt-2">
+    <div class="mx-auto w-full">
+        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+            <div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-white">رسائل التواصل</h2>
+                    <span id="api-unread-badge" class="hidden px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold"></span>
+                    <span id="api-total-badge" class="hidden px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs"></span>
+                </div>
+                <button onclick="deleteAllMessages()"
+                    class="flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs">
+                    <i class="fas fa-trash-alt"></i> حذف الكل
+                </button>
+            </div>
+
+            <div id="api-alert" class="hidden mx-4 mt-3 p-3 rounded-lg text-sm"></div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th class="px-4 py-3">#</th>
+                            <th class="px-4 py-3">الاسم</th>
+                            <th class="px-4 py-3">البريد الإلكتروني</th>
+                            <th class="px-4 py-3">الموضوع</th>
+                            <th class="px-4 py-3">الرسالة</th>
+                            <th class="px-4 py-3">الحالة</th>
+                            <th class="px-4 py-3">الرد</th>
+                            <th class="px-4 py-3">التاريخ</th>
+                            <th class="px-4 py-3">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="api-messages-body">
+                        <tr>
+                            <td colspan="9" class="text-center py-8 text-gray-500">
+                                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                                <p class="mt-2 text-sm">جاري تحميل الرسائل...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- Modal الرد --}}
+<div id="reply-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">الرد على الرسالة</h3>
+            <button onclick="closeReplyModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="reply-original-msg" class="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300"></div>
+        <textarea id="reply-text" rows="4"
+            class="w-full border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-sm dark:bg-gray-700 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            placeholder="اكتب ردك هنا..."></textarea>
+        <div class="flex justify-end gap-3 mt-4">
+            <button onclick="closeReplyModal()"
+                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300">إلغاء</button>
+            <button onclick="submitReply()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
+                <i class="fas fa-paper-plane ml-1"></i> إرسال الرد
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+const PROXY_BASE = '{{ route("dashboard.support.api.messages") }}';
+const CSRF = '{{ csrf_token() }}';
+let currentReplyId = null;
+
+async function loadMessages() {
+    try {
+        const res = await fetch(PROXY_BASE);
+        const data = await res.json();
+
+        const badge = document.getElementById('api-unread-badge');
+        const totalBadge = document.getElementById('api-total-badge');
+        badge.textContent = `${data.unread} غير مقروءة`;
+        badge.classList.remove('hidden');
+        totalBadge.textContent = `الإجمالي: ${data.total}`;
+        totalBadge.classList.remove('hidden');
+
+        const tbody = document.getElementById('api-messages-body');
+        if (!data.messages || data.messages.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center py-8 text-gray-500"><i class="fas fa-inbox text-3xl mb-2"></i><p>لا توجد رسائل</p></td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.messages.map(msg => `
+            <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 ${msg.read == 0 ? 'bg-blue-50 dark:bg-blue-900/10' : ''}">
+                <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">${msg.id}</td>
+                <td class="px-4 py-3 text-gray-800 dark:text-white font-medium">${escHtml(msg.name)}</td>
+                <td class="px-4 py-3 text-xs">${escHtml(msg.email)}</td>
+                <td class="px-4 py-3">${escHtml(msg.subject)}</td>
+                <td class="px-4 py-3 max-w-xs truncate" title="${escHtml(msg.message)}">${escHtml(msg.message)}</td>
+                <td class="px-4 py-3">
+                    ${msg.read == 0
+                        ? '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold">غير مقروءة</span>'
+                        : '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">مقروءة</span>'}
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-500 max-w-xs truncate" title="${msg.reply ? escHtml(msg.reply) : ''}">
+                    ${msg.reply ? escHtml(msg.reply) : '<span class="text-gray-400">لا يوجد رد</span>'}
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">${msg.createdAt}</td>
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <button onclick="openReplyModal(${msg.id}, '${escHtml(msg.name)}', \`${escHtml(msg.message)}\`)"
+                            class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700">
+                            <i class="fas fa-reply ml-1"></i>رد
+                        </button>
+                        <button onclick="deleteMessage(${msg.id})"
+                            class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        document.getElementById('api-messages-body').innerHTML =
+            `<tr><td colspan="9" class="text-center py-8 text-red-500">فشل تحميل الرسائل</td></tr>`;
+    }
+}
+
+function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function deleteMessage(id) {
+    if (!confirm('هل تريد حذف هذه الرسالة؟')) return;
+    try {
+        const res = await fetch(PROXY_BASE.replace('/api-messages', `/api-messages/${id}`), {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': CSRF }
+        });
+        if (res.ok) {
+            showAlert('تم حذف الرسالة بنجاح', 'success');
+            loadMessages();
+        } else {
+            showAlert('فشل في حذف الرسالة', 'error');
+        }
+    } catch { showAlert('حدث خطأ أثناء الحذف', 'error'); }
+}
+
+async function deleteAllMessages() {
+    if (!confirm('هل تريد حذف جميع الرسائل؟ لا يمكن التراجع عن هذا الإجراء.')) return;
+    try {
+        const res = await fetch(PROXY_BASE.replace('/api-messages', '/api-messages/all'), {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': CSRF }
+        });
+        if (res.ok) {
+            showAlert('تم حذف جميع الرسائل بنجاح', 'success');
+            loadMessages();
+        } else {
+            showAlert('فشل في حذف الرسائل', 'error');
+        }
+    } catch { showAlert('حدث خطأ أثناء الحذف', 'error'); }
+}
+
+function openReplyModal(id, name, message) {
+    currentReplyId = id;
+    document.getElementById('reply-original-msg').innerHTML =
+        `<strong>${escHtml(name)}:</strong> ${escHtml(message)}`;
+    document.getElementById('reply-text').value = '';
+    document.getElementById('reply-modal').classList.remove('hidden');
+}
+
+function closeReplyModal() {
+    document.getElementById('reply-modal').classList.add('hidden');
+    currentReplyId = null;
+}
+
+async function submitReply() {
+    const reply = document.getElementById('reply-text').value.trim();
+    if (!reply) { alert('يرجى كتابة نص الرد'); return; }
+    try {
+        const res = await fetch(PROXY_BASE.replace('/api-messages', `/api-messages/${currentReplyId}/reply`), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF },
+            body: JSON.stringify({ reply })
+        });
+        if (res.ok) {
+            closeReplyModal();
+            showAlert('تم إرسال الرد بنجاح', 'success');
+            loadMessages();
+        } else {
+            showAlert('فشل في إرسال الرد', 'error');
+        }
+    } catch { showAlert('حدث خطأ أثناء إرسال الرد', 'error'); }
+}
+
+function showAlert(msg, type) {
+    const el = document.getElementById('api-alert');
+    el.textContent = msg;
+    el.className = type === 'success'
+        ? 'mx-4 mt-3 p-3 rounded-lg text-sm bg-green-50 text-green-800 border border-green-200'
+        : 'mx-4 mt-3 p-3 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200';
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+document.addEventListener('DOMContentLoaded', loadMessages);
+</script>
+
 @endsection

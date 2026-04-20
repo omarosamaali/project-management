@@ -7,6 +7,7 @@ use App\Models\Support;
 use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class SupportController extends Controller
 {
@@ -67,6 +68,37 @@ class SupportController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'تم إرسال الرسالة بنجاح');
+    }
+
+    // External API Proxy Methods
+    private string $apiBase = 'https://app.qmra.ae/api/admin/messages';
+    private string $apiKey  = 'qumra-secret-2026';
+
+    public function apiMessages()
+    {
+        $res = Http::get("{$this->apiBase}?key={$this->apiKey}");
+        return response()->json($res->json(), $res->status());
+    }
+
+    public function apiDeleteMessage($id)
+    {
+        $res = Http::delete("{$this->apiBase}/{$id}?key={$this->apiKey}");
+        return response()->json($res->json(), $res->status());
+    }
+
+    public function apiDeleteAllMessages()
+    {
+        $res = Http::delete("{$this->apiBase}?key={$this->apiKey}");
+        return response()->json($res->json(), $res->status());
+    }
+
+    public function apiReplyMessage(Request $request, $id)
+    {
+        $request->validate(['reply' => 'required|string']);
+        $res = Http::post("{$this->apiBase}/{$id}/reply?key={$this->apiKey}", [
+            'reply' => $request->reply,
+        ]);
+        return response()->json($res->json(), $res->status());
     }
 
     // UpdateStatus Method

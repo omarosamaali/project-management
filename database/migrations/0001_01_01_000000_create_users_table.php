@@ -71,6 +71,7 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
         });
 
+        Schema::dropIfExists('sessions');
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->index();

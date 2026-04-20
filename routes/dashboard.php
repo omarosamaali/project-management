@@ -287,4 +287,10 @@ Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(func
     Route::get('/support/{id}', [SupportController::class, 'show'])->name('support.show');
     Route::post('/support/{id}/message', [SupportController::class, 'sendMessage'])->name('support.message');
     Route::patch('/support/{id}/status', [SupportController::class, 'updateStatus'])->name('support.status');
+
+    // External messages API proxy
+    Route::get('/api-messages', [SupportController::class, 'apiMessages'])->name('support.api.messages');
+    Route::delete('/api-messages/all', [SupportController::class, 'apiDeleteAllMessages'])->name('support.api.delete-all');
+    Route::delete('/api-messages/{id}', [SupportController::class, 'apiDeleteMessage'])->name('support.api.delete');
+    Route::post('/api-messages/{id}/reply', [SupportController::class, 'apiReplyMessage'])->name('support.api.reply');
 });
