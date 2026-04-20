@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\CheckOtpVerification::class,
         ]);
+        $middleware->validateCsrfTokens(except: [
+            'dashboard/api-messages',
+            'dashboard/api-messages/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
