@@ -10,6 +10,7 @@ use App\Models\RequestStage;
 use Illuminate\Http\Request;
 use App\Models\RequestBudget;
 use Illuminate\Support\Facades\DB;
+use App\Services\WhatsAppOTPService;
 
 class SpecialRequestController extends Controller
 {
@@ -74,7 +75,7 @@ class SpecialRequestController extends Controller
             'deadline' => ['nullable', 'date'],
         ]);
 
-        SpecialRequest::create([
+        $specialRequest = SpecialRequest::create([
             'order_number' => 'REQ' . time() . rand(1, 9),
             'user_id' => Auth::id(),
             'title' => $request->title,
@@ -87,6 +88,16 @@ class SpecialRequestController extends Controller
             'is_project' => false,
             'status' => 'pending',
         ]);
+
+        // إشعار المدير والأدمن بالطلب الجديد
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            $clientName = Auth::user()->name ?? 'عميل';
+            $eventText  = "طلب خاص جديد من: {$clientName} — نوع الطلب: {$request->project_type}";
+            $whatsapp->notifyManager($eventText, $request->title);
+        } catch (\Exception $e) {
+            \Log::error("[SPECIAL_REQUEST] فشل إشعار المدير: " . $e->getMessage());
+        }
 
         return redirect()->route('special-request.index')->with('success', '✅ تم إنشاء طلبك بنجاح');
     }
