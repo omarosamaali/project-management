@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,17 @@ class RegisteredUserController extends Controller
         ]);
 
         event(new Registered($user));
+
+        // إشعار المدير والأدمن بتسجيل عميل جديد
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            $whatsapp->notifyManager(
+                "تسجيل عميل جديد — الاسم: {$user->name} | الإيميل: {$user->email} | الهاتف: {$user->phone}",
+                'تسجيل حسابات'
+            );
+        } catch (\Exception $e) {
+            \Log::error("[REGISTER] فشل إشعار المدير: " . $e->getMessage());
+        }
 
         // تسجيل دخول تلقائي
         Auth::login($user);

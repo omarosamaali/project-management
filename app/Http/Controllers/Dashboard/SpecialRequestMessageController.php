@@ -34,6 +34,7 @@ class SpecialRequestMessageController extends Controller
                         $whatsapp->sendProjectNotification($member->phone, $member->name, "رسالة جديدة من {$senderName}: \"{$preview}\"", $project->title);
                     }
                 }
+                $whatsapp->notifyManager("رسالة جديدة من {$senderName}: \"{$preview}\"", $project->title);
             }
         } catch (\Exception $e) {
             \Log::error("[MSG_NOTIFY] " . $e->getMessage());

@@ -21,6 +21,17 @@ class SpecialRequestController extends Controller
             'paid_at' => now(),
         ]);
 
+        try {
+            $project = $payment->specialRequest;
+            $whatsapp = app(WhatsAppOTPService::class);
+            $whatsapp->notifyManager(
+                "تم تأكيد دفعة: ({$payment->payment_name}) بمبلغ {$payment->amount}",
+                $project->title ?? "طلب #{$payment->special_request_id}"
+            );
+        } catch (\Exception $e) {
+            \Log::error("[PAYMENT] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         return back()->with('success', 'تم تحويل الدفعة إلى مدفوعة بنجاح ✅');
     }
     
@@ -89,14 +100,29 @@ class SpecialRequestController extends Controller
             'status' => 'pending',
         ]);
 
+        $whatsapp = app(WhatsAppOTPService::class);
+        $client = Auth::user();
+
         // إشعار المدير والأدمن بالطلب الجديد
         try {
-            $whatsapp = app(WhatsAppOTPService::class);
-            $clientName = Auth::user()->name ?? 'عميل';
-            $eventText  = "طلب خاص جديد من: {$clientName} — نوع الطلب: {$request->project_type}";
+            $eventText = "طلب خاص جديد من: {$client->name} — نوع الطلب: {$request->project_type}";
             $whatsapp->notifyManager($eventText, $request->title);
         } catch (\Exception $e) {
             \Log::error("[SPECIAL_REQUEST] فشل إشعار المدير: " . $e->getMessage());
+        }
+
+        // إشعار العميل نفسه بتأكيد استلام طلبه
+        try {
+            if ($client->phone) {
+                $whatsapp->sendProjectNotification(
+                    $client->phone,
+                    $client->name,
+                    "تم استلام طلبك الخاص بنجاح ✅ سنراجعه ونتواصل معك قريباً",
+                    $request->title
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error("[SPECIAL_REQUEST] فشل إشعار العميل: " . $e->getMessage());
         }
 
         return redirect()->route('special-request.index')->with('success', '✅ تم إنشاء طلبك بنجاح');

@@ -793,6 +793,17 @@ class SpecialRequestController extends Controller
             'status' => 'pending',
         ]);
 
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            $clientName = auth()->user()->name;
+            $whatsapp->notifyManager(
+                "رفع إثبات دفع من: {$clientName} — الدفعة: ({$payment->payment_name}) بمبلغ {$payment->amount}",
+                $payment->specialRequest->title ?? "طلب #{$payment->special_request_id}"
+            );
+        } catch (\Exception $e) {
+            \Log::error("[PAYMENT_PROOF] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         return back()->with('success', 'تم رفع إثبات الدفع بنجاح، في انتظار مراجعة الإدارة');
     }
 
@@ -806,6 +817,23 @@ class SpecialRequestController extends Controller
             'status' => 'paid',
             'paid_at' => now(),
         ]);
+
+        // إشعار العميل بتأكيد دفعته
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            $project = $payment->specialRequest;
+            $client = $project?->user;
+            if ($client?->phone) {
+                $whatsapp->sendProjectNotification(
+                    $client->phone,
+                    $client->name,
+                    "تم تأكيد دفعتك: ({$payment->payment_name}) بمبلغ {$payment->amount} ✅",
+                    $project->title ?? "طلب #{$payment->special_request_id}"
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error("[PAYMENT_CONFIRM] فشل إشعار العميل: " . $e->getMessage());
+        }
 
         return back()->with('success', 'تم تأكيد الدفعة بنجاح');
     }

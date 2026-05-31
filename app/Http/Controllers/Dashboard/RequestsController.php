@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Performance;
 use App\Models\PartnerSystem;
 use App\Models\SpecialRequestPartner;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\SpecialRequest;
@@ -115,6 +116,34 @@ class RequestsController extends Controller
         $validated['order_number'] = 'REQ' . time() . rand(1, 9);
 
         Requests::create($validated);
+
+        $whatsapp = app(WhatsAppOTPService::class);
+        $client   = Auth::user();
+        $system   = System::find($request->system_id);
+
+        // إشعار المدير والأدمن
+        try {
+            $whatsapp->notifyManager(
+                "طلب نظام جديد من: {$client->name}",
+                $system->name_ar ?? "نظام #{$request->system_id}"
+            );
+        } catch (\Exception $e) {
+            \Log::error("[CLIENT_REQUEST] فشل إشعار المدير: " . $e->getMessage());
+        }
+
+        // إشعار العميل بتأكيد استلام طلبه
+        try {
+            if ($client->phone) {
+                $whatsapp->sendProjectNotification(
+                    $client->phone,
+                    $client->name,
+                    "تم استلام طلبك للنظام بنجاح ✅ سيتم مراجعته والتواصل معك قريباً",
+                    $system->name_ar ?? "نظام #{$request->system_id}"
+                );
+            }
+        } catch (\Exception $e) {
+            \Log::error("[CLIENT_REQUEST] فشل إشعار العميل: " . $e->getMessage());
+        }
 
         return redirect()->route('system.show', ['system' => $request->system_id])
             ->with('success', '🎉 تم الاشتراك في النظام بنجاح! سيتم مراجعة طلبك قريباً');

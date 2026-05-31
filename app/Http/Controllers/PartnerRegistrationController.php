@@ -137,15 +137,17 @@ class PartnerRegistrationController extends Controller
                     \Log::error("WhatsApp Error: " . $e->getMessage());
                 }
 
-                // 9. إشعار الأدمن بتسجيل شريك جديد
+                // 9. إشعار المدير والأدمن بتسجيل شريك مستقل جديد
                 try {
                     $whatsappService = new \App\Services\WhatsAppOTPService();
-                    $whatsappService->sendNewPartnerNotification(
-                        adminPhone: '971501774477',
-                        partnerName: $user->name,
-                        partnerEmail: $user->email,
-                        partnerPhone: $request->phone,
-                    );
+                    foreach ([\App\Services\WhatsAppOTPService::MANAGER_PHONE, \App\Services\WhatsAppOTPService::ADMIN_PHONE] as $phone) {
+                        $whatsappService->sendNewPartnerNotification(
+                            adminPhone: $phone,
+                            partnerName: $user->name,
+                            partnerEmail: $user->email,
+                            partnerPhone: $request->phone,
+                        );
+                    }
                 } catch (\Exception $e) {
                     \Log::error("Admin WhatsApp Notification Error: " . $e->getMessage());
                 }
