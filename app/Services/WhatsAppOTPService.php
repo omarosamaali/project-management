@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 class WhatsAppOTPService
 {
     const MANAGER_PHONE = '971501774477';
+    const ADMIN_PHONE   = '201016934863';
 
     private $appId     = "oFafUriVLBEhLkZoydSQL9vsbKbQM68G5zejBBab";
     private $appSecret = "1wIyZ8dwiSXDzwZ3sAavjyuD0XtoKTzs3E1MtZgy8yJkTtcAfXS5CbUCkv4K7oxAG5oWgDSqCpnet8Fj2Z1EoY3dzoioLT4Pfim5";
@@ -211,10 +212,12 @@ class WhatsAppOTPService
         return $this->executeRequest($phone, 'trabar', 'ar', $params);
     }
 
-    // ── إشعار المدير بأي حدث في المشروع ────────────────
+    // ── إشعار المدير والأدمن بأي حدث في المشروع ────────
     public function notifyManager(string $eventText, string $projectTitle): bool
     {
-        return $this->sendProjectNotification(self::MANAGER_PHONE, 'المدير', $eventText, $projectTitle);
+        $r1 = $this->sendProjectNotification(self::MANAGER_PHONE, 'المدير', $eventText, $projectTitle);
+        $r2 = $this->sendProjectNotification(self::ADMIN_PHONE,   'الأدمن', $eventText, $projectTitle);
+        return $r1 || $r2;
     }
 
     // ── executeRequest ────────────────────────────────

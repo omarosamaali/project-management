@@ -42,6 +42,7 @@
 
         <div class="space-y-3">
             @foreach ($SpecialRequest->partners as $partner)
+            @if($partner->status === 'blocked') @continue @endif
             @php
             $canSeeDetails = auth()->user()->role === 'admin' || auth()->id() === $partner->id;
 
@@ -269,7 +270,7 @@
                 اختر الشركاء وحدد نسبة الأرباح لكل منهم:
             </h3>
             <div class="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-300 dark:border-gray-600">
-                @forelse($partners as $partner)
+                @forelse($partners->where('status', '!=', 'blocked') as $partner)
                 <div class="flex items-center justify-between p-2 border-b last:border-b-0">
                     <div class="flex items-center gap-3">
                         <input type="checkbox" id="partner_{{ $partner->id }}" name="partner_id[]"
@@ -498,7 +499,7 @@
             @csrf
 
             <div class="space-y-3">
-                @forelse(\App\Models\User::where('role', 'partner')->get() as $partner)
+                @forelse(\App\Models\User::where('role', 'partner')->where('status', '!=', 'blocked')->get() as $partner)
                 <div class="flex items-center justify-between p-3 rounded-lg border
                         {{ (isset($SpecialRequest->projectManager) && $SpecialRequest->projectManager->user_id == $partner->id)
                             ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/20'

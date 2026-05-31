@@ -145,16 +145,20 @@ class TechnicalSupportController extends Controller
             $whatsapp    = app(WhatsAppOTPService::class);
             $projectName = $requestModel->system->name_ar ?? ('مشروع #' . $requestModel->id);
 
-            // ── 1. الرقم الثابت دايماً ──
-            $fixedPhone = '+971501774477';
-            Log::info("[TICKET] إرسال للرقم الثابت", ['phone' => $fixedPhone, 'ticket_id' => $ticket->id]);
-            $sent = $whatsapp->sendTicketNotification(
-                phone: $fixedPhone,
-                partnerName: 'فريق الدعم',
-                projectName: $projectName,
-                ticketId: $ticket->id
-            );
-            Log::info("[TICKET] الرقم الثابت: " . ($sent ? 'نجح ✓' : 'فشل ✗'));
+            // ── 1. المدير والأدمن دايماً ──
+            foreach ([
+                WhatsAppOTPService::MANAGER_PHONE => 'المدير',
+                WhatsAppOTPService::ADMIN_PHONE   => 'الأدمن',
+            ] as $fixedPhone => $fixedName) {
+                Log::info("[TICKET] إرسال لـ {$fixedName}", ['phone' => $fixedPhone, 'ticket_id' => $ticket->id]);
+                $sent = $whatsapp->sendTicketNotification(
+                    phone: $fixedPhone,
+                    partnerName: $fixedName,
+                    projectName: $projectName,
+                    ticketId: $ticket->id
+                );
+                Log::info("[TICKET] {$fixedName}: " . ($sent ? 'نجح ✓' : 'فشل ✗'));
+            }
 
             // ── 2. الـ partners المرتبطين بـ request_id ──
             $partners = \Illuminate\Support\Facades\DB::table('special_request_partner')
