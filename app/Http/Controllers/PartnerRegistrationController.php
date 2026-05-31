@@ -76,7 +76,7 @@ class PartnerRegistrationController extends Controller
             'password'           => 'required|string|min:8|confirmed',
             'avatar'             => 'required|image|max:5120',
             'id_card_path'       => 'required|image|max:5120',
-            'verification_video' => 'required|mimes:mp4,mov,avi|max:20480',
+            'verification_video' => 'nullable|mimes:mp4,mov,avi|max:20480',
         ], [
             'country.required'            => 'يرجى اختيار الدولة.',
             'verification_video.required' => 'يرجى رفع فيديو التحقق.',
@@ -92,7 +92,7 @@ class PartnerRegistrationController extends Controller
                 // 2. رفع الملفات
                 $avatarPath = $request->file('avatar')->store('partners/avatars', 'public');
                 $idCardPath = $request->file('id_card_path')->store('partners/documents', 'public');
-                $videoPath  = $request->file('verification_video')->store('partners/videos', 'public');
+                $videoPath  = $request->hasFile('verification_video') ? $request->file('verification_video')->store('partners/videos', 'public') : null;
 
                 // 3. توليد الكود
                 $otpCode = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);

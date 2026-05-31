@@ -71,6 +71,7 @@
                         <tr>
                             <th scope="col" class="px-4 py-3">#</th>
                             <th scope="col" class="px-4 py-3">الإسم</th>
+                            <th scope="col" class="px-4 py-3">الحالة</th>
                             <th scope="col" class="px-4 py-3">الانظمة</th>
                             <th scope="col" class="px-4 py-3">النسبة</th>
                             <th scope="col" class="px-4 py-3">عدد المشاريع</th>
@@ -88,8 +89,23 @@
                                 {{ $loop->iteration }}
                             </td>
                             <td class="px-4 py-3">
-                                <span class="{{ $partner->is_employee == '1' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}</span> {{ $partner->name }} rounded-full text-xs px-1">{{ $partner->is_employee == '1' ? 'شريك موظف' : 'شريك
-                                    مستقل' }}</span> {{ $partner->name }}
+                                <span class="{{ $partner->is_employee == '1' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }} rounded-full text-xs px-2 py-0.5">{{ $partner->is_employee == '1' ? 'شريك موظف' : 'شريك مستقل' }}</span>
+                                {{ $partner->name }}
+                            </td>
+                            <td class="px-4 py-3">
+                                @php
+                                    $statusMap = [
+                                        'active'    => ['label' => 'فعال',      'class' => 'bg-green-100 text-green-800'],
+                                        'inactive'  => ['label' => 'غير فعال',  'class' => 'bg-gray-100 text-gray-700'],
+                                        'blocked'   => ['label' => 'محظور',     'class' => 'bg-red-100 text-red-800'],
+                                        'pending'   => ['label' => 'معلق',      'class' => 'bg-yellow-100 text-yellow-800'],
+                                        'suspended' => ['label' => 'موقوف',     'class' => 'bg-orange-100 text-orange-800'],
+                                    ];
+                                    $s = $statusMap[$partner->status] ?? ['label' => $partner->status ?? '—', 'class' => 'bg-gray-100 text-gray-600'];
+                                @endphp
+                                <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $s['class'] }}">
+                                    {{ $s['label'] }}
+                                </span>
                             </td>
                             <td class="px-4 py-3">
                                 @php

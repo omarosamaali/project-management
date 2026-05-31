@@ -48,6 +48,11 @@ class TaskController extends Controller
                     }
                 }
             }
+            try {
+                $whatsapp->notifyManager("تم إضافة مهمة جديدة: ({$validated['title']})", $specialRequest->title);
+            } catch (\Exception $e) {
+                \Log::error("[TASK] فشل إشعار المدير: " . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('success', 'تم إضافة المهمة بنجاح');
@@ -114,6 +119,11 @@ class TaskController extends Controller
                         }
                     }
                 }
+                try {
+                    $whatsapp->notifyManager("تم إضافة مهمة جديدة: ({$task->title})", $projectTitle);
+                } catch (\Exception $e) {
+                    \Log::error("[TASK] فشل إشعار المدير: " . $e->getMessage());
+                }
             }
         } elseif (!empty($validated['request_id'])) {
             $projectRequest = ProjectRequest::find($validated['request_id']);
@@ -133,6 +143,11 @@ class TaskController extends Controller
                             \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
                         }
                     }
+                }
+                try {
+                    $whatsapp->notifyManager("تم إضافة مهمة جديدة: ({$task->title})", $projectTitle);
+                } catch (\Exception $e) {
+                    \Log::error("[TASK] فشل إشعار المدير: " . $e->getMessage());
                 }
             }
         }

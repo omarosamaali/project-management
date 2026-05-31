@@ -116,6 +116,12 @@ class SpecialRequestController extends Controller
             }
         }
 
+        try {
+            $whatsapp->notifyManager("تم إضافة مرحلة جديدة: ({$validated['title']})", $specialRequest->title);
+        } catch (\Exception $e) {
+            \Log::error("[STAGE] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         return back()->with('success', 'تم إضافة المرحلة وتنشيط المشروع بنجاح');
     }
 
@@ -489,6 +495,12 @@ class SpecialRequestController extends Controller
             }
         }
 
+        try {
+            $whatsapp->notifyManager("تم إضافة مرحلة جديدة: ({$data['title']})", $specialRequest->title);
+        } catch (\Exception $e) {
+            \Log::error("[STAGE] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         return back()->with('success', 'تمت إضافة المرحلة بنجاح وتنشيط المشروع');
     }
 
@@ -599,6 +611,7 @@ class SpecialRequestController extends Controller
                     $whatsapp->sendProjectNotification($member->phone, $member->name, "تمت إضافة ملاحظة جديدة: ({$data['title']})", $special_request->title);
                 }
             }
+            $whatsapp->notifyManager("تمت إضافة ملاحظة جديدة: ({$data['title']})", $special_request->title);
         } catch (\Exception $e) {
             \Log::error("[NOTE_NOTIFY] " . $e->getMessage());
         }
@@ -663,6 +676,7 @@ class SpecialRequestController extends Controller
                     $whatsapp->sendProjectNotification($member->phone, $member->name, "تمت إضافة ملاحظة جديدة: ({$data['title']})", $specialRequest->title ?? "طلب #{$specialRequest->id}");
                 }
             }
+            $whatsapp->notifyManager("تمت إضافة ملاحظة جديدة: ({$data['title']})", $specialRequest->title ?? "طلب #{$specialRequest->id}");
         } catch (\Exception $e) {
             \Log::error("[NOTE_NOTIFY] " . $e->getMessage());
         }
