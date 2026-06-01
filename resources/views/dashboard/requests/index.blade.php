@@ -88,8 +88,8 @@
         <div
             class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg {{ Auth::user()->role != 'admin' ? '!mt-4' : '' }} overflow-hidden">
 
-            @if(Auth::user()->role == 'admin')
             <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+                @if(Auth::user()->role == 'admin')
                 <div class="w-full md:w-1/2">
                     <form action="{{ route('dashboard.requests.index') }}" method="GET" class="flex items-center">
                         <label for="search" class="sr-only">بحث</label>
@@ -114,7 +114,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="!ml-0">
+                <div class="flex items-center gap-2 !ml-0">
                     <a href="{{ route('dashboard.requests.create-request') }}"
                         class="text-xs flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -123,9 +123,22 @@
                         </svg>
                         إضافة طلب جديد ( للأدمن فقط )
                     </a>
+                    <a href="{{ route('special-request.index') }}" target="_blank"
+                        class="text-xs flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        <i class="fas fa-star"></i>
+                        إضافة طلب خاص
+                    </a>
                 </div>
+                @else
+                <div class="flex items-center justify-end w-full">
+                    <a href="{{ route('special-request.index') }}" target="_blank"
+                        class="text-sm flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:-translate-y-1">
+                        <i class="fas fa-star"></i>
+                        إضافة طلب خاص
+                    </a>
+                </div>
+                @endif
             </div>
-            @endif
 
             <div class="overflow-x-auto">
                 @if(session('success'))
@@ -205,6 +218,14 @@
                         </td>
                     </tr>
                     @endforeach
+                    </table>
+                    {{-- Pagination للطلبات الخاصة --}}
+                    @if($specialRequestss->hasPages())
+                    <div class="px-4 py-3 border-t dark:border-gray-700">
+                        {{ $specialRequestss->links() }}
+                    </div>
+                    @endif
+                    <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
 
                     @if(Auth::user()->role == 'partner')
                     @foreach ($specialRequests as $specialRequest)
@@ -253,6 +274,14 @@
                         </tr>
                     </tbody>
                     @endforeach
+                    @endif
+                    {{-- Pagination للطلبات الخاصة بالشريك --}}
+                    @if(Auth::user()->role == 'partner' && $specialRequests->hasPages())
+                    </table>
+                    <div class="px-4 py-3 border-t dark:border-gray-700">
+                        {{ $specialRequests->links() }}
+                    </div>
+                    <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
                     @endif
 
                     @foreach($requests as $request)

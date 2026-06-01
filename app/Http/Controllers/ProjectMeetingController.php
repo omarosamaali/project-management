@@ -59,7 +59,7 @@ class ProjectMeetingController extends Controller
             }
             foreach ($members as $member) {
                 if ($member->phone) {
-                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تم جدولة اجتماع جديد: ({$validated['title']})", $title);
+                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تم جدولة اجتماع جديد: ({$validated['title']})", $title, $member->email ?? null);
                 }
             }
         } catch (\Exception $e) {

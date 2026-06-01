@@ -24,6 +24,7 @@
         @endphp
 
         @if ($SpecialRequest->partners->count() > 0)
+        @if(auth()->user()->role !== 'client')
         <div class="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
             <div class="flex items-center justify-between">
                 <span class="text-sm font-medium text-blue-800 dark:text-blue-300">
@@ -39,6 +40,7 @@
                 المتاح للإسناد: <strong>{{ 100 - $currentTotalShare }}%</strong>
             </div>
         </div>
+        @endif
 
         <div class="space-y-3">
             @foreach ($SpecialRequest->partners as $partner)
@@ -113,7 +115,8 @@
                     </div>
                 </div>
 
-                {{-- الإحصائيات: المهام + الاجتماعات في صف واحد --}}
+                {{-- الإحصائيات: المهام + الاجتماعات في صف واحد (مخفية عن العميل) --}}
+                @if(auth()->user()->role !== 'client')
                 <div
                     class="grid grid-cols-7 divide-x divide-gray-200 dark:divide-gray-600 border-t border-gray-200 dark:border-gray-600">
 
@@ -186,6 +189,7 @@
                     @endforeach
                 </div>
                 @endif
+                @endif {{-- end hide from client --}}
 
                 {{-- ملاحظات --}}
                 @if ($partner->pivot->notes && $canSeeDetails)

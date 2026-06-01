@@ -42,31 +42,67 @@ class RequestsController extends Controller
             $baseSpecialRequests = SpecialRequest::where('user_id', $user->id);
             $basePartnerSpecialRequests = SpecialRequestPartner::whereRaw('1 = 0');
         }
+        // حالات الطلبات العادية (Requests) في قاعدة البيانات
+        $newStatusesRequests         = ['new', 'جديد'];
+        $underProcessStatusesRequests = ['in_progress', 'تحت الاجراء', 'waiting_client'];
+        $pendingStatusesRequests     = ['pending', 'معلقة', 'suspended'];
+        $closedStatusesRequests      = ['closed', 'completed', 'منتهية'];
+
+        // حالات الطلبات الخاصة (SpecialRequest) في قاعدة البيانات
+        $newStatusesSpecial         = ['pending', 'جديد'];
+        $underProcessStatusesSpecial = ['in_progress', 'تحت الاجراء', 'active', 'in_review'];
+        $pendingStatusesSpecial     = ['معلقة', 'بانتظار الدفع', 'بانتظار عروض الاسعار'];
+        $closedStatusesSpecial      = ['completed', 'canceled', 'منتهية'];
+
         $allRequestsCount = (clone $baseRequests)->count() + (clone $baseSpecialRequests)->count();
-        $newRequestsCount = (clone $baseRequests)->where('status', 'جديد')->count() +
-            (clone $baseSpecialRequests)->where('status', 'جديد')->count();
-        $underProcessRequestsCount = (clone $baseRequests)->where('status', 'تحت الاجراء')->count() +
-            (clone $baseSpecialRequests)->where('status', 'تحت الاجراء')->count();
-        $pendingRequestsCount = (clone $baseRequests)->where('status', 'معلقة')->count() +
-            (clone $baseSpecialRequests)->where('status', 'معلقة')->count();
-        $closedRequestsCount = (clone $baseRequests)->where('status', 'منتهية')->count() +
-            (clone $baseSpecialRequests)->where('status', 'منتهية')->count();
+
+        $newRequestsCount = (clone $baseRequests)->whereIn('status', $newStatusesRequests)->count()
+            + (clone $baseSpecialRequests)->whereIn('status', $newStatusesSpecial)->count();
+
+        $underProcessRequestsCount = (clone $baseRequests)->whereIn('status', $underProcessStatusesRequests)->count()
+            + (clone $baseSpecialRequests)->whereIn('status', $underProcessStatusesSpecial)->count();
+
+        $pendingRequestsCount = (clone $baseRequests)->whereIn('status', $pendingStatusesRequests)->count()
+            + (clone $baseSpecialRequests)->whereIn('status', $pendingStatusesSpecial)->count();
+
+        $closedRequestsCount = (clone $baseRequests)->whereIn('status', $closedStatusesRequests)->count()
+            + (clone $baseSpecialRequests)->whereIn('status', $closedStatusesSpecial)->count();
+
+        // بناء فلتر الحالة للاستعلامات المُصفحة — يدعم العربي والإنجليزي
+        $statusFilterRequests = match ($statusFilter) {
+            'جديد'         => $newStatusesRequests,
+            'تحت الاجراء'  => $underProcessStatusesRequests,
+            'معلقة'        => $pendingStatusesRequests,
+            'منتهية'       => $closedStatusesRequests,
+            default        => null,
+        };
+        $statusFilterSpecial = match ($statusFilter) {
+            'جديد'         => $newStatusesSpecial,
+            'تحت الاجراء'  => $underProcessStatusesSpecial,
+            'معلقة'        => $pendingStatusesSpecial,
+            'منتهية'       => $closedStatusesSpecial,
+            default        => null,
+        };
+
         $requests = $baseRequests->with(['system', 'client'])
-            ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
+            ->when($statusFilterRequests, fn($q) => $q->whereIn('status', $statusFilterRequests))
             ->when($search, fn($q) => $q->whereHas('client', fn($sq) => $sq->where('name', 'like', "%$search%")))
             ->latest()
-            ->paginate(8, ['*'], 'requests_page');
+            ->paginate(8, ['*'], 'requests_page')
+            ->withQueryString();
+
         $specialRequestss = $baseSpecialRequests->with(['user'])
-            ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
+            ->when($statusFilterSpecial, fn($q) => $q->whereIn('status', $statusFilterSpecial))
             ->when($search, function ($q) use ($search) {
                 $q->where('title', 'like', "%$search%")
                     ->orWhereHas('user', fn($sq) => $sq->where('name', 'like', "%$search%"));
-            })->latest()->paginate(8, ['*'], 'special_page');
+            })->latest()->paginate(8, ['*'], 'special_page')->withQueryString();
 
         $specialRequests = $basePartnerSpecialRequests->with(['specialRequest.user', 'partner', 'request'])
             ->when($statusFilter, fn($q) => $q->where('status', $statusFilter))
             ->latest()
-            ->paginate(8, ['*'], 'partner_special_page');
+            ->paginate(8, ['*'], 'partner_special_page')
+            ->withQueryString();
 
         return view('dashboard.requests.index', compact(
             'requests',

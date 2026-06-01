@@ -4,11 +4,14 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class WhatsAppOTPService
 {
     const MANAGER_PHONE = '971501774477';
     const ADMIN_PHONE   = '201016934863';
+    const MANAGER_EMAIL = 'info@evorq.com';
+    const ADMIN_EMAIL   = 'admin@evorq.com';
 
     private $appId     = "oFafUriVLBEhLkZoydSQL9vsbKbQM68G5zejBBab";
     private $appSecret = "1wIyZ8dwiSXDzwZ3sAavjyuD0XtoKTzs3E1MtZgy8yJkTtcAfXS5CbUCkv4K7oxAG5oWgDSqCpnet8Fj2Z1EoY3dzoioLT4Pfim5";
@@ -141,7 +144,7 @@ class WhatsAppOTPService
     }
 
     // ── إشعار عام للمشروع ────────────────────────────────
-    public function sendProjectNotification(string $phone, string $memberName, string $eventText, string $projectTitle): bool
+    public function sendProjectNotification(string $phone, string $memberName, string $eventText, string $projectTitle, ?string $email = null): bool
     {
         $bodyText = "{$eventText} في المشروع: {$projectTitle}";
 
@@ -161,7 +164,33 @@ class WhatsAppOTPService
             ]
         ];
 
-        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+        $result = $this->executeRequest($phone, 'trabar', 'ar', $params);
+
+        if ($email) {
+            $this->sendEmailNotification($email, $memberName, "إشعار مشروع: {$projectTitle}", $bodyText);
+        }
+
+        return $result;
+    }
+
+    // ── إرسال إشعار عبر الإيميل ──────────────────────────
+    public function sendEmailNotification(string $email, string $name, string $subject, string $body): void
+    {
+        try {
+            Mail::raw(
+                "السلام عليكم {$name},\n\n{$body}\n\n---\nفريق Evorq Technologies",
+                function ($message) use ($email, $name, $subject) {
+                    $message->to($email, $name)
+                            ->subject($subject)
+                            ->from(config('mail.from.address', 'noreply@evorq.com'), config('mail.from.name', 'Evorq'));
+                }
+            );
+        } catch (\Exception $e) {
+            Log::error("[EMAIL] فشل إرسال الإيميل", [
+                'to'    => $email,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     // ── إشعار مهمة جديدة في المشروع ─────────────────────
@@ -215,8 +244,8 @@ class WhatsAppOTPService
     // ── إشعار المدير والأدمن بأي حدث في المشروع ────────
     public function notifyManager(string $eventText, string $projectTitle): bool
     {
-        $r1 = $this->sendProjectNotification(self::MANAGER_PHONE, 'المدير', $eventText, $projectTitle);
-        $r2 = $this->sendProjectNotification(self::ADMIN_PHONE,   'الأدمن', $eventText, $projectTitle);
+        $r1 = $this->sendProjectNotification(self::MANAGER_PHONE, 'المدير', $eventText, $projectTitle, self::MANAGER_EMAIL);
+        $r2 = $this->sendProjectNotification(self::ADMIN_PHONE,   'الأدمن', $eventText, $projectTitle, self::ADMIN_EMAIL);
         return $r1 || $r2;
     }
 

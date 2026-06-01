@@ -21,5 +21,19 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            $previous = url()->previous();
+            $registerUrl = route('register');
+            $loginUrl = route('login');
+
+            if (str_contains($previous, 'register') || $request->routeIs('register')) {
+                return redirect()->route('register')
+                    ->withInput($request->except('password', 'password_confirmation'))
+                    ->withErrors(['csrf' => 'انتهت صلاحية الجلسة، يرجى المحاولة مرة أخرى.']);
+            }
+
+            return redirect()->back()
+                ->withInput($request->except('password', 'password_confirmation'))
+                ->withErrors(['csrf' => 'انتهت صلاحية الجلسة، يرجى المحاولة مرة أخرى.']);
+        });
     })->create();

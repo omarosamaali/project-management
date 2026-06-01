@@ -44,6 +44,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\ZiinaPaymentController;
 use App\Http\Controllers\MyCoursesController;
 use App\Http\Controllers\EducationalResourceController;
+use App\Http\Controllers\NotificationController;
 use App\Models\MyStore;
 
 Route::patch('/dashboard/my-store/{id}/update-status', [MyStoreController::class, 'updateStatus'])
@@ -293,4 +294,8 @@ Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(func
     Route::delete('/api-messages/all', [SupportController::class, 'apiDeleteAllMessages'])->name('support.api.delete-all');
     Route::delete('/api-messages/{id}', [SupportController::class, 'apiDeleteMessage'])->name('support.api.delete');
     Route::post('/api-messages/{id}/reply', [SupportController::class, 'apiReplyMessage'])->name('support.api.reply');
+
+    // Notifications
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 });

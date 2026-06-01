@@ -8,7 +8,13 @@
     {{-- Breadcrumb --}}
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my_courses.index') }}" second="دوراتي التدريبية" />
 
-    {{-- الاحصائيات العلوية (اختياري) --}}
+    {{-- الاحصائيات العلوية --}}
+    @php
+        $now = \Carbon\Carbon::now();
+        $activeCourses  = $myPayments->filter(fn($p) => $p->course && $now->between(\Carbon\Carbon::parse($p->course->start_date), \Carbon\Carbon::parse($p->course->end_date)))->count();
+        $upcomingCourses = $myPayments->filter(fn($p) => $p->course && $now->lt(\Carbon\Carbon::parse($p->course->start_date)))->count();
+        $endedCourses   = $myPayments->filter(fn($p) => $p->course && $now->gt(\Carbon\Carbon::parse($p->course->end_date)))->count();
+    @endphp
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div class="flex bg-black justify-between rounded-lg overflow-hidden">
             <div class="p-4 pr-6 flex flex-col justify-between">
@@ -18,6 +24,39 @@
                 </p>
             </div>
             <div class="p-5 bg-[#181818]">
+                <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
+            </div>
+        </div>
+        <div class="flex bg-green-700 justify-between rounded-lg overflow-hidden">
+            <div class="p-4 pr-6 flex flex-col justify-between">
+                <h1 class="text-md font-bold text-white whitespace-nowrap">دورات نشطة</h1>
+                <p class="text-2xl flex items-center text-white">
+                    {{ $activeCourses }} دورة
+                </p>
+            </div>
+            <div class="p-5 bg-green-800">
+                <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
+            </div>
+        </div>
+        <div class="flex bg-blue-600 justify-between rounded-lg overflow-hidden">
+            <div class="p-4 pr-6 flex flex-col justify-between">
+                <h1 class="text-md font-bold text-white whitespace-nowrap">دورات قادمة</h1>
+                <p class="text-2xl flex items-center text-white">
+                    {{ $upcomingCourses }} دورة
+                </p>
+            </div>
+            <div class="p-5 bg-blue-700">
+                <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
+            </div>
+        </div>
+        <div class="flex bg-[#808080] justify-between rounded-lg overflow-hidden">
+            <div class="p-4 pr-6 flex flex-col justify-between">
+                <h1 class="text-md font-bold text-white whitespace-nowrap">دورات منتهية</h1>
+                <p class="text-2xl flex items-center text-white">
+                    {{ $endedCourses }} دورة
+                </p>
+            </div>
+            <div class="p-5 bg-[#6b6b6b]">
                 <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
             </div>
         </div>

@@ -82,12 +82,7 @@
                             $payment->created_at->format('Y-m-d H:i') : now()->format('Y-m-d H:i') }}</p>
                         <p class="text-gray-700 text-sm"><strong>طريقة الدفع:</strong> (بوابة دفع إلكترونية)</p>
                         @if($installment)
-                        <p class="text-gray-700 text-sm"><strong>نوع الدفع:</strong> {{
-                            $installment->payment_name }}</p>
-                        @else
-                        {{-- <p class="text-gray-700 text-sm">
-                            <strong>نوع الدفع:</strong> {{ $$installment->payment_name ?? 'غير محدد' }}
-                        </p> --}}
+                        <p class="text-gray-700 text-sm"><strong>رقم الدفع:</strong> #{{ $installment->id }}</p>
                         @endif
                     </div>
                 </div>
@@ -250,8 +245,52 @@
 </section>
 
 <style>
-    /* تحويل كل الصور للأبيض والأسود عند الطباعة */
     @media print {
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+
+        * {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: white !important;
+        }
+
+        /* إخفاء عناصر التنقل والأزرار */
+        .no-print,
+        nav,
+        aside,
+        header,
+        footer,
+        .sidebar {
+            display: none !important;
+        }
+
+        /* تصحيح موضع حاوية الطباعة */
+        .print-container {
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: 2px solid black !important;
+            page-break-inside: avoid;
+        }
+
+        section {
+            padding: 0 !important;
+        }
+
+        .mx-auto {
+            margin: 0 !important;
+            max-width: 100% !important;
+        }
+
         img {
             filter: grayscale(100%);
         }
@@ -264,30 +303,13 @@
             background-color: #f3f4f6 !important;
         }
 
-        body * {
-            visibility: hidden;
+        table {
+            page-break-inside: auto;
         }
 
-        .print-container,
-        .print-container * {
-            visibility: visible;
-        }
-
-        .print-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            border: 1px solid black !important;
-        }
-
-        .no-print {
-            display: none !important;
-        }
-
-        @page {
-            margin: 1cm;
-            size: A4;
+        tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
         }
     }
 </style>

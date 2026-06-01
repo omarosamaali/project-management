@@ -133,7 +133,47 @@ Route::resource('special-request', SpecialRequestController::class)->names('spec
 
 // Dashboard
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $user = auth()->user();
+
+    // إحصائيات المشاريع
+    if ($user->role === 'admin') {
+        $baseReq     = \App\Models\Requests::query();
+        $baseSpecial = \App\Models\SpecialRequest::query();
+    } elseif ($user->role === 'partner') {
+        $systemIds   = \App\Models\PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
+        $baseReq     = \App\Models\Requests::whereIn('system_id', $systemIds);
+        $assignedIds = \App\Models\SpecialRequestPartner::where('partner_id', $user->id)->whereNotNull('special_request_id')->pluck('special_request_id');
+        $baseSpecial = \App\Models\SpecialRequest::whereIn('id', $assignedIds);
+    } else {
+        $baseReq     = \App\Models\Requests::where('client_id', $user->id);
+        $baseSpecial = \App\Models\SpecialRequest::where('user_id', $user->id);
+    }
+
+    $allRequestsCount          = (clone $baseReq)->count() + (clone $baseSpecial)->count();
+    $newRequestsCount          = (clone $baseReq)->whereIn('status', ['new', 'جديد'])->count()
+                               + (clone $baseSpecial)->whereIn('status', ['pending', 'جديد'])->count();
+    $underProcessRequestsCount = (clone $baseReq)->whereIn('status', ['in_progress', 'تحت الاجراء', 'waiting_client'])->count()
+                               + (clone $baseSpecial)->whereIn('status', ['in_progress', 'تحت الاجراء', 'active', 'in_review'])->count();
+    $pendingRequestsCount      = (clone $baseReq)->whereIn('status', ['pending', 'معلقة', 'suspended'])->count()
+                               + (clone $baseSpecial)->whereIn('status', ['معلقة', 'بانتظار الدفع', 'بانتظار عروض الاسعار'])->count();
+    $closedRequestsCount       = (clone $baseReq)->whereIn('status', ['closed', 'completed', 'منتهية'])->count()
+                               + (clone $baseSpecial)->whereIn('status', ['completed', 'canceled', 'منتهية'])->count();
+
+    // الإشعارات غير المقروءة
+    $notifications = \App\Models\AppNotification::where('user_id', $user->id)
+        ->where('is_read', false)
+        ->latest()
+        ->take(10)
+        ->get();
+
+    return view('dashboard', compact(
+        'allRequestsCount',
+        'newRequestsCount',
+        'underProcessRequestsCount',
+        'pendingRequestsCount',
+        'closedRequestsCount',
+        'notifications'
+    ));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Profile
