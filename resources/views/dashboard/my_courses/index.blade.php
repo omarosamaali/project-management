@@ -8,59 +8,86 @@
     {{-- Breadcrumb --}}
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my_courses.index') }}" second="دوراتي التدريبية" />
 
-    {{-- الاحصائيات العلوية --}}
-    @php
-        $now = \Carbon\Carbon::now();
-        $activeCourses  = $myPayments->filter(fn($p) => $p->course && $now->between(\Carbon\Carbon::parse($p->course->start_date), \Carbon\Carbon::parse($p->course->end_date)))->count();
-        $upcomingCourses = $myPayments->filter(fn($p) => $p->course && $now->lt(\Carbon\Carbon::parse($p->course->start_date)))->count();
-        $endedCourses   = $myPayments->filter(fn($p) => $p->course && $now->gt(\Carbon\Carbon::parse($p->course->end_date)))->count();
-    @endphp
+    {{-- كروت فيلتر الدورات --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="flex bg-black justify-between rounded-lg overflow-hidden">
+
+        {{-- الكل --}}
+        <a href="{{ route('dashboard.my_courses.index') }}"
+            class="flex bg-black justify-between rounded-lg overflow-hidden transition-transform hover:-translate-y-1 {{ !$filter ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-100' : '' }}">
             <div class="p-4 pr-6 flex flex-col justify-between">
-                <h1 class="text-md font-bold text-white whitespace-nowrap">إجمالي الدورات</h1>
+                <h1 class="text-md font-bold text-white whitespace-nowrap flex items-center gap-2">
+                    @if(!$filter)<i class="fas fa-check-circle text-yellow-400 text-xs"></i>@endif
+                    إجمالي الدورات
+                </h1>
                 <p class="text-2xl flex items-center text-white">
-                    {{ $myPayments->count() }} دورة
+                    {{ $myPayments->count() }} <span class="text-sm mr-1">دورة</span>
                 </p>
             </div>
             <div class="p-5 bg-[#181818]">
                 <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
             </div>
-        </div>
-        <div class="flex bg-green-700 justify-between rounded-lg overflow-hidden">
+        </a>
+
+        {{-- نشطة --}}
+        <a href="{{ route('dashboard.my_courses.index') }}?filter=active"
+            class="flex bg-green-700 justify-between rounded-lg overflow-hidden transition-transform hover:-translate-y-1 {{ $filter === 'active' ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-100' : '' }}">
             <div class="p-4 pr-6 flex flex-col justify-between">
-                <h1 class="text-md font-bold text-white whitespace-nowrap">دورات نشطة</h1>
-                <p class="text-2xl flex items-center text-white">
-                    {{ $activeCourses }} دورة
-                </p>
+                <h1 class="text-md font-bold text-white whitespace-nowrap flex items-center gap-2">
+                    @if($filter === 'active')<i class="fas fa-check-circle text-yellow-400 text-xs"></i>@endif
+                    دورات نشطة
+                </h1>
+                <p class="text-2xl text-white">{{ $activeCourses }} <span class="text-sm">دورة</span></p>
             </div>
             <div class="p-5 bg-green-800">
                 <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
             </div>
-        </div>
-        <div class="flex bg-blue-600 justify-between rounded-lg overflow-hidden">
+        </a>
+
+        {{-- قادمة --}}
+        <a href="{{ route('dashboard.my_courses.index') }}?filter=upcoming"
+            class="flex bg-blue-600 justify-between rounded-lg overflow-hidden transition-transform hover:-translate-y-1 {{ $filter === 'upcoming' ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-100' : '' }}">
             <div class="p-4 pr-6 flex flex-col justify-between">
-                <h1 class="text-md font-bold text-white whitespace-nowrap">دورات قادمة</h1>
-                <p class="text-2xl flex items-center text-white">
-                    {{ $upcomingCourses }} دورة
-                </p>
+                <h1 class="text-md font-bold text-white whitespace-nowrap flex items-center gap-2">
+                    @if($filter === 'upcoming')<i class="fas fa-check-circle text-yellow-400 text-xs"></i>@endif
+                    دورات قادمة
+                </h1>
+                <p class="text-2xl text-white">{{ $upcomingCourses }} <span class="text-sm">دورة</span></p>
             </div>
             <div class="p-5 bg-blue-700">
                 <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
             </div>
-        </div>
-        <div class="flex bg-[#808080] justify-between rounded-lg overflow-hidden">
+        </a>
+
+        {{-- منتهية --}}
+        <a href="{{ route('dashboard.my_courses.index') }}?filter=ended"
+            class="flex bg-[#808080] justify-between rounded-lg overflow-hidden transition-transform hover:-translate-y-1 {{ $filter === 'ended' ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-100' : '' }}">
             <div class="p-4 pr-6 flex flex-col justify-between">
-                <h1 class="text-md font-bold text-white whitespace-nowrap">دورات منتهية</h1>
-                <p class="text-2xl flex items-center text-white">
-                    {{ $endedCourses }} دورة
-                </p>
+                <h1 class="text-md font-bold text-white whitespace-nowrap flex items-center gap-2">
+                    @if($filter === 'ended')<i class="fas fa-check-circle text-yellow-400 text-xs"></i>@endif
+                    دورات منتهية
+                </h1>
+                <p class="text-2xl text-white">{{ $endedCourses }} <span class="text-sm">دورة</span></p>
             </div>
             <div class="p-5 bg-[#6b6b6b]">
                 <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-30" alt="">
             </div>
-        </div>
+        </a>
     </div>
+
+    {{-- شارة الفلتر النشط --}}
+    @if($filter)
+    <div class="mb-4 flex items-center gap-2">
+        <span class="text-sm text-gray-600 dark:text-gray-400">
+            <i class="fas fa-filter ml-1"></i>
+            عرض:
+            <strong>{{ ['active' => 'الدورات النشطة', 'upcoming' => 'الدورات القادمة', 'ended' => 'الدورات المنتهية'][$filter] ?? '' }}</strong>
+        </span>
+        <a href="{{ route('dashboard.my_courses.index') }}"
+            class="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+            <i class="fas fa-times"></i> إلغاء الفلتر
+        </a>
+    </div>
+    @endif
 
     <div class="mx-auto w-full">
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">

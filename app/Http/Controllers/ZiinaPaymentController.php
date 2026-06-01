@@ -716,6 +716,20 @@ class ZiinaPaymentController extends Controller
                         } catch (\Exception $e) {
                             \Log::error("عطل في إرسال رسالة الواتساب: " . $e->getMessage());
                         }
+
+                        try {
+                            $courseName = app()->getLocale() == 'ar' ? $course->name_ar : $course->name_en;
+                            \App\Models\AppNotification::notify(
+                                $user->id,
+                                'تم تأكيد اشتراكك في الدورة',
+                                "تم تفعيل اشتراكك في دورة: {$courseName} بنجاح",
+                                route('dashboard.my_courses.index'),
+                                'fa-graduation-cap',
+                                'success'
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error("عطل في إنشاء إشعار الدورة: " . $e->getMessage());
+                        }
                     }
 
                     return redirect()->route('courses.show', $courseId)
