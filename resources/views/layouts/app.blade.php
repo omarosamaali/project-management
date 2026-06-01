@@ -521,6 +521,25 @@
                     @endif
 
                 </ul>
+
+                {{-- أزرار الموبايل فقط: الموقع الخارجي + تسجيل الخروج --}}
+                <div class="md:hidden mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                    <a href="{{ route('system.index') }}"
+                        class="flex items-center gap-2 p-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition">
+                        <i class="fas fa-globe text-gray-500"></i>
+                        <span>الموقع الخارجي</span>
+                    </a>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit"
+                            class="w-full flex items-center gap-2 p-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>تسجيل الخروج</span>
+                        </button>
+                    </form>
+                </div>
+
             </div>
         </aside>
 
