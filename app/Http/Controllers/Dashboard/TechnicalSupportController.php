@@ -104,8 +104,20 @@ class TechnicalSupportController extends Controller
     // ── Update ─────────────────────────────────────────
     public function update(Request $request, TechnicalSupport $technicalSupport)
     {
+        $oldStatus = $technicalSupport->status;
         $newStatus = $request->status;
         $technicalSupport->update(['status' => $newStatus]);
+
+        try {
+            $whatsapp    = app(WhatsAppOTPService::class);
+            $projectName = $technicalSupport->request?->system->name_ar ?? "تذكرة #{$technicalSupport->id}";
+            $whatsapp->notifyManager(
+                "تم تحديث تذكرة الدعم الفني: ({$technicalSupport->subject}) — الحالة: {$oldStatus} ← {$newStatus}",
+                $projectName
+            );
+        } catch (\Exception $e) {
+            Log::error("[TICKET_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        }
 
         if (in_array($newStatus, ['resolved', 'closed'])) {
             $partner = null;

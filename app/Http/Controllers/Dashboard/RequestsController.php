@@ -223,6 +223,17 @@ class RequestsController extends Controller
         $userRequest->update([
             'status' => $newStatus
         ]);
+
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            $whatsapp->notifyManager(
+                "تم تحديث حالة الطلب: {$oldStatus} ← {$newStatus}",
+                $userRequest->system->name_ar ?? "طلب #{$userRequest->id}"
+            );
+        } catch (\Exception $e) {
+            \Log::error("[REQUEST_STATUS] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         if ($newStatus === 'منتهية' && $oldStatus !== 'منتهية') {
             $system = $userRequest->system;
             if (!$system) {
@@ -345,7 +356,19 @@ class RequestsController extends Controller
             'status' => 'required|string',
         ]);
 
+        $oldStatus = $stage->status;
         $stage->update($data);
+
+        try {
+            $whatsapp     = app(WhatsAppOTPService::class);
+            $userRequest  = Requests::find($stage->request_id);
+            $projectTitle = $userRequest?->system->name_ar ?? "طلب #{$stage->request_id}";
+            $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
+            $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
+        } catch (\Exception $e) {
+            \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         return back()->with('success', 'تم تحديث المرحلة بنجاح');
     }
 

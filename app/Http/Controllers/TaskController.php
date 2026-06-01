@@ -186,7 +186,20 @@ class TaskController extends Controller
             'project_stage_id' => 'nullable|exists:project_stages,id',
             'status' => 'required'
         ]);
+
+        $oldStatus = $task->status;
         $task->update($validated);
+
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+            $project  = $task->specialRequest ?? $task->projectRequest;
+            $title    = $project->title ?? "مهمة #{$task->id}";
+            $statusChanged = $oldStatus !== $validated['status'] ? " (الحالة: {$oldStatus} ← {$validated['status']})" : '';
+            $whatsapp->notifyManager("تم تعديل المهمة: ({$task->title}){$statusChanged}", $title);
+        } catch (\Exception $e) {
+            \Log::error("[TASK_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        }
+
         return redirect()->back()->with('success', 'تم تعديل المهمة بنجاح');
     }
 

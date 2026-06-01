@@ -135,27 +135,53 @@
         </div>
 
         <!-- Mobile Menu -->
-        <div id="mobileMenu" class="hidden md:hidden bg-white border-t">
-            <div class="px-2 pt-2 pb-3 space-y-1">
-                <!-- Systems Button -->
-                <a href="{{ route('system.index') }}" class="block text-center px-4 py-2 rounded-lg transition {{ request()->routeIs('system.index')
-                                                                    ? 'bg-black text-white hover:bg-gray-700'
-                                                                    : 'text-gray-700 hover:bg-gray-100' }}
-                                                            ">
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t shadow-lg">
+            <div class="px-4 pt-3 pb-4 space-y-2">
+
+                <!-- الموقع الرئيسي -->
+                <a href="https://evorq.com/"
+                    class="flex items-center justify-center px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition text-sm font-medium">
+                    {{ __('messages.web') }}
+                </a>
+
+                <!-- الخدمات المتاحة -->
+                <a href="{{ route('system.index') }}"
+                    class="flex items-center justify-center px-4 py-2 rounded-lg transition text-sm font-medium
+                        {{ request()->routeIs('system.index') ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                     {{ __('messages.systems') }}
                 </a>
 
-                <!-- Login Button -->
+                <!-- طلب خاص - للمسجلين فقط -->
+                @auth
+                <a href="{{ route('special-request.index') }}"
+                    class="flex items-center justify-center px-4 py-2 rounded-lg transition text-sm font-medium
+                        {{ request()->routeIs('special-request.index') ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100' }}">
+                    {{ __('messages.special_request') }}
+                </a>
+                @endauth
+
+                <!-- تسجيل الدخول / الداشبورد -->
+                @guest
                 <a href="{{ route('login') }}"
-                    class="block justify-center text-center {{ request()->routeIs('login') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }}
-                                                             px-4 py-2 rounded-lg transition  flex items-center gap-2 flex-row-reverse">
+                    class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium
+                        {{ request()->routeIs('login') ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1">
-                        </path>
+                            d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                     </svg>
                     {{ __('messages.login') }}
                 </a>
+                @else
+                <a href="{{ route('dashboard') }}"
+                    class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    {{ __('messages.dashboard') }}
+                </a>
+                @endguest
+
             </div>
         </div>
     </nav>
