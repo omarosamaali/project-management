@@ -180,12 +180,14 @@ class SpecialRequestController extends Controller
             ->get();
 
    
+        $allClients = User::where('role', 'client')->get();
+
         return view('dashboard.special-request.show', [
             'SpecialRequest' => $SpecialRequest,
             'supports'       => $allMessages,
-            // 'supports'       => $allSupports,
             'partners'       => $partners,
             'managers'       => $managers,
+            'allClients'     => $allClients,
         ]);
     }
 
@@ -881,18 +883,89 @@ class SpecialRequestController extends Controller
         return back()->with('success', 'تم رفض الدفعة');
     }
 
+    public function updateMaintenance(Request $request, SpecialRequest $specialRequest)
+    {
+        if (auth()->user()->role !== 'admin') abort(403);
+
+        $request->validate([
+            'maintenance_period' => 'nullable|integer|min:1',
+            'maintenance_unit'   => 'nullable|in:days,months',
+        ]);
+
+        $specialRequest->update([
+            'maintenance_period' => $request->maintenance_period,
+            'maintenance_unit'   => $request->maintenance_unit ?? 'days',
+        ]);
+
+        return back()->with('success', 'تم تحديث مدة الدعم الفني بنجاح');
+    }
+
+    public function addClient(Request $request, SpecialRequest $specialRequest)
+    {
+        if (auth()->user()->role !== 'admin') abort(403);
+
+        $request->validate(['user_id' => 'required|exists:users,id']);
+
+        $user = \App\Models\User::findOrFail($request->user_id);
+        if ($user->role !== 'client') {
+            return back()->withErrors(['user_id' => 'يجب أن يكون المستخدم عميلاً']);
+        }
+
+        $specialRequest->clients()->syncWithoutDetaching([$request->user_id]);
+
+        return back()->with('success', "تم إضافة العميل {$user->name} للمشروع");
+    }
+
+    public function removeClient(Request $request, SpecialRequest $specialRequest, \App\Models\User $user)
+    {
+        if (auth()->user()->role !== 'admin') abort(403);
+
+        $specialRequest->clients()->detach($user->id);
+
+        return back()->with('success', "تم إزالة العميل {$user->name} من المشروع");
+    }
+
+    public function addRequestClient(Request $request, \App\Models\Requests $requestModel)
+    {
+        if (auth()->user()->role !== 'admin') abort(403);
+
+        $request->validate(['user_id' => 'required|exists:users,id']);
+
+        $user = \App\Models\User::findOrFail($request->user_id);
+        if ($user->role !== 'client') {
+            return back()->withErrors(['user_id' => 'يجب أن يكون المستخدم عميلاً']);
+        }
+
+        $requestModel->clients()->syncWithoutDetaching([$request->user_id]);
+
+        return back()->with('success', "تم إضافة العميل {$user->name} للمشروع");
+    }
+
+    public function removeRequestClient(Request $request, \App\Models\Requests $requestModel, \App\Models\User $user)
+    {
+        if (auth()->user()->role !== 'admin') abort(403);
+
+        $requestModel->clients()->detach($user->id);
+
+        return back()->with('success', "تم إزالة العميل {$user->name} من المشروع");
+    }
+
     public function updateProjectStatus(Request $request, SpecialRequest $specialRequest)
     {
         if (auth()->user()->role !== 'admin') {
             abort(403);
         }
         $request->validate([
-            'is_project'       => 'required|boolean',
-            'bidding_deadline' => 'nullable|date',
+            'is_project'         => 'required|boolean',
+            'bidding_deadline'   => 'nullable|date',
+            'maintenance_period' => 'nullable|integer|min:1',
+            'maintenance_unit'   => 'nullable|in:days,months',
         ]);
         $isProject = $request->is_project;
         $updateData = [
-            'is_project' => $isProject,
+            'is_project'         => $isProject,
+            'maintenance_period' => $request->maintenance_period,
+            'maintenance_unit'   => $request->maintenance_unit,
         ];
         if ($isProject) {
             $updateData['bidding_deadline'] = $request->bidding_deadline;
@@ -917,12 +990,16 @@ class SpecialRequestController extends Controller
             abort(403);
         }
         $request->validate([
-            'is_project'       => 'required|boolean',
-            'bidding_deadline' => 'nullable|date',
+            'is_project'         => 'required|boolean',
+            'bidding_deadline'   => 'nullable|date',
+            'maintenance_period' => 'nullable|integer|min:1',
+            'maintenance_unit'   => 'nullable|in:days,months',
         ]);
         $isProject = $request->is_project;
         $updateData = [
-            'is_project' => $isProject,
+            'is_project'         => $isProject,
+            'maintenance_period' => $request->maintenance_period,
+            'maintenance_unit'   => $request->maintenance_unit,
         ];
         if ($isProject) {
             $updateData['bidding_deadline'] = $request->bidding_deadline;

@@ -182,12 +182,12 @@
         <div class="p-6 space-y-5">
             <div>
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">عنوان المرحلة</label>
-                <p id="show_title" class="text-lg font-bold text-gray-900 dark:text-white mt-1"></p>
+                <p id="show_stage_title" class="text-lg font-bold text-gray-900 dark:text-white mt-1"></p>
             </div>
 
             <div>
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">تفاصيل العمل</label>
-                <div id="show_details"
+                <div id="show_stage_details"
                     class="mt-1 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg text-gray-700 dark:text-gray-300 text-sm leading-relaxed min-h-[80px]">
                 </div>
             </div>
@@ -195,12 +195,12 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="text-xs font-bold text-gray-400">الحالة</label>
-                    <div id="show_status_badge" class="mt-1">
+                    <div id="show_stage_status_badge" class="mt-1">
                     </div>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-400">تاريخ الانتهاء</label>
-                    <p id="show_end_date" class="mt-1 font-semibold text-gray-900 dark:text-white"></p>
+                    <p id="show_stage_end_date" class="mt-1 font-semibold text-gray-900 dark:text-white"></p>
                 </div>
             </div>
         </div>
@@ -328,12 +328,12 @@
     }
 function openShowStageModal(stage) {
 // تعبئة النصوص البسيطة
-document.getElementById('show_title').innerText = stage.title || 'بدون عنوان';
-document.getElementById('show_details').innerText = stage.details || 'لا توجد تفاصيل مضافة لهذه المرحلة.';
-document.getElementById('show_end_date').innerText = stage.end_date || 'غير محدد';
+document.getElementById('show_stage_title').innerText = stage.title || 'بدون عنوان';
+document.getElementById('show_stage_details').innerText = stage.details || 'لا توجد تفاصيل مضافة لهذه المرحلة.';
+document.getElementById('show_stage_end_date').innerText = stage.end_date || 'غير محدد';
 
 // تعبئة الشارة (Badge) بناءً على الحالة
-const badgeContainer = document.getElementById('show_status_badge');
+const badgeContainer = document.getElementById('show_stage_status_badge');
 const statusMap = {
 'waiting': { label: 'بالانتظار', css: 'bg-gray-100 text-gray-600' },
 'in_progress': { label: 'قيد الإنجاز', css: 'bg-amber-100 text-amber-600' },

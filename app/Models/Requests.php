@@ -15,7 +15,8 @@ class Requests extends Model
         'client_id',
         'status',
         'delivered_at',
-
+        'maintenance_period',
+        'maintenance_unit',
     ];
     protected $casts = [
         'delivered_at' => 'datetime',
@@ -48,6 +49,12 @@ class Requests extends Model
 
     public function client() {
         return $this->belongsTo(User::class, 'client_id');
+    }
+
+    public function clients()
+    {
+        return $this->belongsToMany(User::class, 'request_clients', 'request_id', 'user_id')
+                    ->withTimestamps();
     }
 
     public function installments()
@@ -100,7 +107,7 @@ class Requests extends Model
 
     public function tasks()
     {
-        return $this->hasManyThrough(Task::class, RequestStage::class, 'request_id', 'request_stage_id');
+        return $this->hasMany(Task::class, 'request_id');
     }
 
     public function notes()

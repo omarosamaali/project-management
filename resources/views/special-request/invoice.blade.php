@@ -76,13 +76,12 @@
                         تفاصيل الدفع / Payment Details
                     </h3>
                     <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-2">
-                        <p class="text-gray-700 text-sm"><strong>رقم الفاتورة:</strong> INV-{{ $payment->id }}-{{
-                            $specialRequest->id }}</p>
+                        <p class="text-gray-700 text-sm"><strong>رقم الفاتورة:</strong> INV-{{ $installment ? $installment->id : $payment->id }}-{{ $specialRequest->id }}</p>
                         <p class="text-gray-700 text-sm"><strong>تاريخ الدفع:</strong> {{ $payment->created_at ?
                             $payment->created_at->format('Y-m-d H:i') : now()->format('Y-m-d H:i') }}</p>
                         <p class="text-gray-700 text-sm"><strong>طريقة الدفع:</strong> (بوابة دفع إلكترونية)</p>
                         @if($installment)
-                        <p class="text-gray-700 text-sm"><strong>رقم الدفع:</strong> #{{ $installment->id }}</p>
+                        <p class="text-gray-700 text-sm"><strong>اسم الدفعة:</strong> {{ $installment->payment_name }}</p>
                         @endif
                     </div>
                 </div>

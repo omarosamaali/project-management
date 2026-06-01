@@ -190,6 +190,26 @@
                                         العروض لهذا المشروع.</p>
                                 </div>
 
+                                {{-- فترة الصيانة بعد التسليم --}}
+                                <div class="space-y-2 mt-4 border-t pt-4 dark:border-gray-700">
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <i class="fas fa-tools ml-1 text-orange-500"></i>
+                                        فترة الصيانة بعد التسليم
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input type="number" name="maintenance_period" min="1"
+                                            value="{{ $SpecialRequest->maintenance_period }}"
+                                            placeholder="عدد الأيام / الأشهر"
+                                            class="flex-1 p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-orange-400 outline-none transition">
+                                        <select name="maintenance_unit"
+                                            class="p-3 rounded-lg border-2 border-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-orange-400 outline-none transition">
+                                            <option value="days" {{ $SpecialRequest->maintenance_unit === 'days' ? 'selected' : '' }}>أيام</option>
+                                            <option value="months" {{ $SpecialRequest->maintenance_unit === 'months' ? 'selected' : '' }}>أشهر</option>
+                                        </select>
+                                    </div>
+                                    <p class="text-[10px] text-gray-400">المدة التي يلتزم فيها الفريق بدعم المشروع بعد التسليم.</p>
+                                </div>
+
                                 <div class="flex gap-3 pt-4">
                                     <button type="submit"
                                         class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg">
@@ -345,7 +365,7 @@
 
             {{-- التابة الثانية فريق العمل --}}
             <div id="team" class="tab-content hidden">
-                <x-project-team :managers="$managers" :SpecialRequest="$SpecialRequest" :partners="$partners" />
+                <x-project-team :managers="$managers" :SpecialRequest="$SpecialRequest" :partners="$partners" :allClients="$allClients" />
             </div>
 
             {{-- التابة الثالثة مراحل المشروع --}}

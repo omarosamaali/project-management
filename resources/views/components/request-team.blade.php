@@ -1,4 +1,4 @@
-@props(['SpecialRequest', 'partners', 'managers'])
+@props(['SpecialRequest', 'partners', 'managers', 'allClients' => collect()])
 
 <div class="pt-6 p-6 space-y-8">
     <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -464,3 +464,65 @@ function validateTotal() {
     }
 }
 </script>
+
+{{-- ====== قسم العملاء ====== --}}
+@php
+    $assignedClients = $SpecialRequest->clients;
+    $unassignedClients = $allClients->whereNotIn('id', $assignedClients->pluck('id'));
+@endphp
+<div class="m-6 bg-white dark:bg-gray-800 rounded-lg shadow border p-6 space-y-4">
+    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <i class="fas fa-user-tie text-indigo-600"></i>
+        العملاء المرتبطون بالمشروع
+        <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ $assignedClients->count() }})</span>
+    </h3>
+
+    @if($assignedClients->count() > 0)
+    <div class="space-y-2">
+        @foreach($assignedClients as $client)
+        <div class="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700 rounded-lg px-4 py-3">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                    {{ mb_substr($client->name, 0, 1) }}
+                </div>
+                <div>
+                    <p class="font-bold text-gray-900 dark:text-white text-sm">{{ $client->name }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ $client->email }}</p>
+                </div>
+            </div>
+            @if(auth()->user()->role === 'admin')
+            <form action="{{ route('dashboard.request.remove-client', [$SpecialRequest, $client]) }}"
+                method="POST" onsubmit="return confirm('هل تريد إزالة هذا العميل من المشروع؟')">
+                @csrf @method('DELETE')
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+                    <i class="fas fa-user-times"></i> إزالة
+                </button>
+            </form>
+            @endif
+        </div>
+        @endforeach
+    </div>
+    @else
+    <div class="text-center py-6 text-gray-400">
+        <i class="fas fa-user-slash text-3xl mb-2"></i>
+        <p class="text-sm">لا يوجد عملاء مرتبطون بهذا المشروع</p>
+    </div>
+    @endif
+
+    @if(auth()->user()->role === 'admin' && $unassignedClients->count() > 0)
+    <form action="{{ route('dashboard.request.add-client', $SpecialRequest) }}" method="POST"
+        class="flex gap-2 pt-2 border-t dark:border-gray-700">
+        @csrf
+        <select name="user_id" class="flex-1 p-2 rounded-lg border dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" required>
+            <option value="">اختر عميلاً لإضافته...</option>
+            @foreach($unassignedClients as $client)
+            <option value="{{ $client->id }}">{{ $client->name }} — {{ $client->email }}</option>
+            @endforeach
+        </select>
+        <button type="submit"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition flex items-center gap-1 whitespace-nowrap">
+            <i class="fas fa-plus"></i> إضافة عميل
+        </button>
+    </form>
+    @endif
+</div>

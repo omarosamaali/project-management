@@ -264,6 +264,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/notes/{note}/toggle-visibility', [SpecialRequestController::class, 'toggleNoteVisibility'])
         ->name('dashboard.special-request.toggle-note-visibility');
 
+    // تحديث مدة الصيانة
+    Route::patch('special-request/{specialRequest}/maintenance', [SpecialRequestController::class, 'updateMaintenance'])->name('dashboard.special-request.update-maintenance');
+
+    // إدارة العملاء المتعددين
+    Route::post('special-request/{specialRequest}/add-client', [SpecialRequestController::class, 'addClient'])->name('dashboard.special-request.add-client');
+    Route::delete('special-request/{specialRequest}/client/{user}', [SpecialRequestController::class, 'removeClient'])->name('dashboard.special-request.remove-client');
+
+    Route::post('requests/{request}/add-client', [SpecialRequestController::class, 'addRequestClient'])->name('dashboard.request.add-client');
+    Route::delete('requests/{request}/client/{user}', [SpecialRequestController::class, 'removeRequestClient'])->name('dashboard.request.remove-client');
+
     Route::post('special-request/{specialRequest}/assign-partners', [SpecialRequestController::class, 'assignPartners'])->name('dashboard.special-request.assign-partners');
     
     Route::post('special-request/{specialRequest}/request-assign-partners', [SpecialRequestController::class, 'requestAssignPartners'])->name('dashboard.special-request.request-assign-partners');

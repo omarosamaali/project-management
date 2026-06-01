@@ -38,8 +38,10 @@ class RequestsController extends Controller
             $baseSpecialRequests = SpecialRequest::whereIn('id', $assignedSpecialIds);
             $basePartnerSpecialRequests = SpecialRequestPartner::where('partner_id', $user->id);
         } else {
-            $baseRequests = Requests::where('client_id', $user->id);
-            $baseSpecialRequests = SpecialRequest::where('user_id', $user->id);
+            $reqIds     = \DB::table('request_clients')->where('user_id', $user->id)->pluck('request_id');
+            $specialIds = \DB::table('special_request_clients')->where('user_id', $user->id)->pluck('special_request_id');
+            $baseRequests = Requests::whereIn('id', $reqIds);
+            $baseSpecialRequests = SpecialRequest::whereIn('id', $specialIds);
             $basePartnerSpecialRequests = SpecialRequestPartner::whereRaw('1 = 0');
         }
         // حالات الطلبات العادية (Requests) في قاعدة البيانات
@@ -210,11 +212,14 @@ class RequestsController extends Controller
         // استخدم نظام الرسائل الجديد
         $supports = $SpecialRequest->messages()->with('user')->oldest()->get();
 
+        $allClients = \App\Models\User::where('role', 'client')->get();
+
         return view('dashboard.requests.show', [
             'SpecialRequest' => $SpecialRequest,
             'supports'       => $supports,
             'partners'       => $partners,
             'managers'       => $managers,
+            'allClients'     => $allClients,
         ]);
     }
 

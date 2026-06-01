@@ -23,6 +23,8 @@ class SpecialRequest extends Model
         'deadline',
         'status',
         'is_project',
+        'maintenance_period',
+        'maintenance_unit',
         'price',
         'payment_type',
         'installments_data',
@@ -56,6 +58,12 @@ class SpecialRequest extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function clients()
+    {
+        return $this->belongsToMany(User::class, 'special_request_clients', 'special_request_id', 'user_id')
+                    ->withTimestamps();
     }
 
     public function getStatusNameAttribute()
@@ -201,36 +209,48 @@ class SpecialRequest extends Model
     }
 
 
-    // ✅ حساب الساعات المتوقعة من الفرق بين deadline و created_at
+    // ثوابت ساعات العمل
+    const WORK_HOURS_PER_DAY = 9; // ساعات العمل اليومية
+    const WORK_DAYS_PER_WEEK = 6; // أيام العمل في الأسبوع
+
+    /**
+     * تحويل عدد الأيام التقويمية إلى ساعات عمل فعلية
+     * بناءً على 6 أيام/أسبوع و 9 ساعات/يوم
+     */
+    private static function calendarDaysToWorkHours(int $calendarDays): int
+    {
+        $fullWeeks   = intdiv($calendarDays, 7);
+        $remainDays  = $calendarDays % 7;
+        $workDays    = ($fullWeeks * self::WORK_DAYS_PER_WEEK) + min($remainDays, self::WORK_DAYS_PER_WEEK);
+        return $workDays * self::WORK_HOURS_PER_DAY;
+    }
+
+    // ✅ حساب ساعات العمل المتوقعة (6 أيام/أسبوع × 9 ساعات/يوم)
     public function getExpectedHoursAttribute()
     {
         if ($this->deadline && $this->created_at) {
-            $start = Carbon::parse($this->created_at);
-            $end = Carbon::parse($this->deadline);
-
-            // حساب الفرق بالساعات
-            return $start->diffInHours($end);
+            $start = Carbon::parse($this->created_at)->startOfDay();
+            $end   = Carbon::parse($this->deadline)->startOfDay();
+            $days  = (int) $start->diffInDays($end);
+            return self::calendarDaysToWorkHours($days);
         }
         return 0;
     }
 
-    // ✅ حساب الساعات المستغرقة حتى الآن من created_at إلى الآن
+    // ✅ حساب ساعات العمل المستغرقة حتى الآن (6 أيام/أسبوع × 9 ساعات/يوم)
     public function getSpentHoursAttribute()
     {
         if ($this->created_at) {
-            $start = Carbon::parse($this->created_at);
-            $now = Carbon::now();
+            $start = Carbon::parse($this->created_at)->startOfDay();
 
-            // حساب الفرق بالساعات من البداية حتى الآن
-            $hoursSpent = $start->diffInHours($now);
-
-            // إذا كان المشروع مكتمل، نحسب من البداية حتى تاريخ التحديث
             if (in_array($this->status, ['completed', 'canceled'])) {
-                $end = Carbon::parse($this->updated_at);
-                return $start->diffInHours($end);
+                $end = Carbon::parse($this->updated_at)->startOfDay();
+            } else {
+                $end = Carbon::now()->startOfDay();
             }
 
-            return $hoursSpent;
+            $days = (int) $start->diffInDays($end);
+            return self::calendarDaysToWorkHours($days);
         }
         return 0;
     }

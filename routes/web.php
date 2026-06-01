@@ -145,8 +145,11 @@ Route::get('/dashboard', function () {
         $assignedIds = \App\Models\SpecialRequestPartner::where('partner_id', $user->id)->whereNotNull('special_request_id')->pluck('special_request_id');
         $baseSpecial = \App\Models\SpecialRequest::whereIn('id', $assignedIds);
     } else {
-        $baseReq     = \App\Models\Requests::where('client_id', $user->id);
-        $baseSpecial = \App\Models\SpecialRequest::where('user_id', $user->id);
+        // العميل يرى المشاريع الأصلية + المشاريع المضافة إليه عبر الجدول الوسيط
+        $reqIds     = \DB::table('request_clients')->where('user_id', $user->id)->pluck('request_id');
+        $specialIds = \DB::table('special_request_clients')->where('user_id', $user->id)->pluck('special_request_id');
+        $baseReq     = \App\Models\Requests::whereIn('id', $reqIds);
+        $baseSpecial = \App\Models\SpecialRequest::whereIn('id', $specialIds);
     }
 
     $allRequestsCount          = (clone $baseReq)->count() + (clone $baseSpecial)->count();
@@ -158,6 +161,24 @@ Route::get('/dashboard', function () {
                                + (clone $baseSpecial)->whereIn('status', ['معلقة', 'بانتظار الدفع', 'بانتظار عروض الاسعار'])->count();
     $closedRequestsCount       = (clone $baseReq)->whereIn('status', ['closed', 'completed', 'منتهية'])->count()
                                + (clone $baseSpecial)->whereIn('status', ['completed', 'canceled', 'منتهية'])->count();
+
+    // إحصائيات الدورات
+    $now = \Carbon\Carbon::now();
+    $allCoursePayments = \App\Models\Payment::where('user_id', $user->id)
+        ->whereNotNull('course_id')
+        ->with('course')
+        ->get();
+
+    $allCoursesCount      = $allCoursePayments->count();
+    $activeCoursesCount   = $allCoursePayments->filter(fn($p) => $p->course
+        && $now->between(
+            \Carbon\Carbon::parse($p->course->start_date),
+            \Carbon\Carbon::parse($p->course->end_date)
+        ))->count();
+    $upcomingCoursesCount = $allCoursePayments->filter(fn($p) => $p->course
+        && $now->lt(\Carbon\Carbon::parse($p->course->start_date)))->count();
+    $endedCoursesCount    = $allCoursePayments->filter(fn($p) => $p->course
+        && $now->gt(\Carbon\Carbon::parse($p->course->end_date)))->count();
 
     // الإشعارات غير المقروءة
     $notifications = \App\Models\AppNotification::where('user_id', $user->id)
@@ -172,6 +193,10 @@ Route::get('/dashboard', function () {
         'underProcessRequestsCount',
         'pendingRequestsCount',
         'closedRequestsCount',
+        'allCoursesCount',
+        'activeCoursesCount',
+        'upcomingCoursesCount',
+        'endedCoursesCount',
         'notifications'
     ));
 })->middleware(['auth', 'verified'])->name('dashboard');

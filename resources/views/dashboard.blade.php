@@ -60,6 +60,51 @@
         </div>
     </div>
 
+    {{-- ====== كروت إحصائيات الدورات ====== --}}
+    <div>
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
+            <i class="fas fa-graduation-cap text-green-600"></i> إحصائيات الدورات
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="{{ route('dashboard.my_courses.index') }}" class="flex bg-black justify-between rounded-lg hover:-translate-y-1 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">إجمالي الدورات</h1>
+                    <p class="text-2xl flex items-center text-white">{{ $allCoursesCount }}</p>
+                </div>
+                <div class="p-5 bg-[#181818] rounded-lg">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=active" class="flex bg-green-700 justify-between rounded-lg hover:-translate-y-1 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات نشطة</h1>
+                    <p class="text-2xl text-white">{{ $activeCoursesCount }}</p>
+                </div>
+                <div class="p-5 bg-green-800 rounded-lg">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=upcoming" class="flex bg-blue-600 justify-between rounded-lg hover:-translate-y-1 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات قادمة</h1>
+                    <p class="text-2xl text-white">{{ $upcomingCoursesCount }}</p>
+                </div>
+                <div class="p-5 bg-blue-700 rounded-lg">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=ended" class="flex bg-[#808080] justify-between rounded-lg hover:-translate-y-1 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات منتهية</h1>
+                    <p class="text-2xl text-white">{{ $endedCoursesCount }}</p>
+                </div>
+                <div class="p-5 bg-[#6b6b6b] rounded-lg">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
+                </div>
+            </a>
+        </div>
+    </div>
+
     {{-- ====== قسم الإشعارات ====== --}}
     <div>
         <div class="flex items-center justify-between mb-3">
