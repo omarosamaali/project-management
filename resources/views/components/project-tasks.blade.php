@@ -19,10 +19,43 @@ $stats = [
 'in_progress' => $allTasks->where('status', 'قيد الإنجاز')->count(),
 'hours' => $allStages->sum('hours_count'),
 ];
+
+$workHoursPerDay = \App\Models\SpecialRequest::WORK_HOURS_PER_DAY;
+$workDaysPerWeek = \App\Models\SpecialRequest::WORK_DAYS_PER_WEEK;
+
+$toWorkHours = function ($startDate, $endDate) use ($workHoursPerDay, $workDaysPerWeek) {
+    if (!$startDate || !$endDate) {
+        return 0;
+    }
+
+    $start = \Carbon\Carbon::parse($startDate)->startOfDay();
+    $end = \Carbon\Carbon::parse($endDate)->startOfDay();
+
+    if ($end->lt($start)) {
+        return 0;
+    }
+
+    $calendarDays = (int) $start->diffInDays($end);
+    $fullWeeks = intdiv($calendarDays, 7);
+    $remainingDays = $calendarDays % 7;
+    $workDays = ($fullWeeks * $workDaysPerWeek) + min($remainingDays, $workDaysPerWeek);
+
+    return $workDays * $workHoursPerDay;
+};
+
+$projectTotalWorkHours = $allTasks->sum(function ($task) use ($toWorkHours) {
+    return $toWorkHours($task->start_date, $task->end_date);
+});
+
+$projectTrackedSeconds = $allTasks->sum(function ($task) {
+    return (int) ($task->elapsed_tracked_seconds ?? 0);
+});
+$projectTrackedHours = floor($projectTrackedSeconds / 3600);
+$projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
 @endphp
 <div class="p-6 space-y-6">
     {{-- 1. كروت إحصائيات المهام الجديدة --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         {{-- بوكس المنتهية --}}
         <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-xl border border-green-100 dark:border-green-800">
             <div class="text-green-600 dark:text-green-400 text-sm font-bold flex items-center gap-2">
@@ -50,6 +83,21 @@ $stats = [
             </div>
             <div class="text-2xl font-black text-gray-700 dark:text-gray-300">
                 {{ $SpecialRequest->tasks->where('status', 'بالانتظار')->count() }}
+            </div>
+        </div>
+
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
+            <div class="text-indigo-600 dark:text-indigo-300 text-sm font-bold flex items-center gap-2">
+                <i class="fas fa-business-time"></i> وقت المشروع
+            </div>
+            <div class="text-2xl font-black text-indigo-700 dark:text-indigo-200">
+                {{ number_format($projectTotalWorkHours) }} <span class="text-sm">ساعة</span>
+            </div>
+            <div class="text-[11px] text-indigo-500 dark:text-indigo-300 mt-1">
+                تقديري ({{ $workHoursPerDay }} س/يوم - {{ $workDaysPerWeek }} أيام/أسبوع)
+            </div>
+            <div class="text-[11px] text-green-600 mt-1 font-bold">
+                فعلي: {{ str_pad((string) $projectTrackedHours, 2, '0', STR_PAD_LEFT) }}س {{ str_pad((string) $projectTrackedMinutes, 2, '0', STR_PAD_LEFT) }}د
             </div>
         </div>
     </div>
@@ -92,12 +140,21 @@ $stats = [
                         <th class="p-4 text-xs font-bold uppercase text-center">المرحلة</th>
                         <th class="p-4 text-xs font-bold uppercase text-center">المسؤول</th>
                         <th class="p-4 text-xs font-bold uppercase text-center">التاريخ</th>
+                        <th class="p-4 text-xs font-bold uppercase text-center">الوقت</th>
                         <th class="p-4 text-xs font-bold uppercase text-center">الحالة</th>
                         <th class="p-4 text-xs font-bold uppercase text-center">إجراءات</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                     @forelse($SpecialRequest->tasks as $task)
+                    @php
+                        $taskWorkHours = $toWorkHours($task->start_date, $task->end_date);
+                        $taskWorkDays = $workHoursPerDay > 0 ? round($taskWorkHours / $workHoursPerDay, 1) : 0;
+                        $trackedSeconds = (int) ($task->elapsed_tracked_seconds ?? 0);
+                        $trackedHours = floor($trackedSeconds / 3600);
+                        $trackedMinutes = floor(($trackedSeconds % 3600) / 60);
+                        $canTrackTask = auth()->id() === $task->user_id || in_array(auth()->user()->role, ['admin', 'manager']);
+                    @endphp
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                         <td class="p-4">
                             <div class="font-bold text-gray-900 dark:text-white">{{ $task->title }}</div>
@@ -115,6 +172,21 @@ $stats = [
                             <div class="text-[10px] text-gray-400 font-bold">إلى {{ $task->end_date ?? '-' }}</div>
                         </td>
                         <td class="p-4 text-center">
+                            <div class="text-sm font-extrabold text-indigo-600 dark:text-indigo-300">
+                                {{ number_format($taskWorkHours) }} ساعة
+                            </div>
+                            <div class="text-[10px] text-gray-400">
+                                {{ $taskWorkDays }} يوم عمل
+                            </div>
+                            <div class="text-[10px] font-bold {{ $task->is_timer_running ? 'text-green-600' : 'text-gray-500' }}">
+                                فعلي: {{ str_pad((string) $trackedHours, 2, '0', STR_PAD_LEFT) }}س
+                                {{ str_pad((string) $trackedMinutes, 2, '0', STR_PAD_LEFT) }}د
+                                @if($task->is_timer_running)
+                                    <span class="text-green-600">(يعمل)</span>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">
                             @php
                             $statusClasses = [
                             'منتهية' => 'bg-green-100 text-green-700',
@@ -130,6 +202,31 @@ $stats = [
                         </td>
                         <td class="p-4 text-center">
                             <div class="flex items-center justify-center gap-2">
+                                @if($canTrackTask && $task->status !== 'منتهية')
+                                @if(!$task->is_timer_running)
+                                <form action="{{ route('tasks.start-timer', $task) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="px-2 py-1 text-[10px] font-bold bg-green-100 text-green-700 rounded-md hover:bg-green-200">
+                                        ابدأ
+                                    </button>
+                                </form>
+                                @else
+                                <form action="{{ route('tasks.pause-timer', $task) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="px-2 py-1 text-[10px] font-bold bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200">
+                                        توقف
+                                    </button>
+                                </form>
+                                @endif
+
+                                <form action="{{ route('tasks.finish-timer', $task) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="px-2 py-1 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200">
+                                        إنهاء
+                                    </button>
+                                </form>
+                                @endif
+
                                 {{-- زر عرض التفاصيل --}}
                                 <button onclick="openShowModal({{ $task->id }})" class="p-2 text-green-600 hover:bg-green-50 rounded-lg"
                                     title="عرض التفاصيل">
@@ -160,7 +257,7 @@ $stats = [
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="p-10 text-center text-gray-400 italic">لا توجد مهام حالياً</td>
+                        <td colspan="7" class="p-10 text-center text-gray-400 italic">لا توجد مهام حالياً</td>
                     </tr>
                     @endforelse
                 </tbody>

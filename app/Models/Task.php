@@ -18,7 +18,15 @@ class Task extends Model
         'details',
         'start_date',
         'end_date',
-        'status'
+        'status',
+        'tracked_seconds',
+        'timer_started_at',
+        'is_timer_running',
+    ];
+
+    protected $casts = [
+        'timer_started_at' => 'datetime',
+        'is_timer_running' => 'boolean',
     ];
 
     // علاقة المهمة بالمشروع
@@ -50,5 +58,16 @@ class Task extends Model
     public function requestStage(): BelongsTo
     {
         return $this->belongsTo(RequestStage::class, 'request_stage_id');
+    }
+
+    public function getElapsedTrackedSecondsAttribute(): int
+    {
+        $seconds = (int) ($this->tracked_seconds ?? 0);
+
+        if ($this->is_timer_running && $this->timer_started_at) {
+            $seconds += $this->timer_started_at->diffInSeconds(now());
+        }
+
+        return max($seconds, 0);
     }
 }

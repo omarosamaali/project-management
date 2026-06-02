@@ -7,9 +7,25 @@ use App\Models\Task;
 use App\Models\SpecialRequest;
 use App\Models\Requests as ProjectRequest;
 use App\Services\WhatsAppOTPService;
+use Carbon\Carbon;
 
 class TaskController extends Controller
 {
+    private function accumulateRunningTime(Task $task): void
+    {
+        if (!$task->is_timer_running || !$task->timer_started_at) {
+            return;
+        }
+
+        $startedAt = Carbon::parse($task->timer_started_at);
+        $seconds = max(0, $startedAt->diffInSeconds(now()));
+
+        $task->tracked_seconds = (int) ($task->tracked_seconds ?? 0) + $seconds;
+        $task->timer_started_at = null;
+        $task->is_timer_running = false;
+        $task->save();
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -172,6 +188,8 @@ class TaskController extends Controller
             'special_request_id' => $task->special_request_id,
             'start_date'       => $task->start_date ? date('Y-m-d', strtotime($task->start_date)) : null,
             'end_date'         => $task->end_date   ? date('Y-m-d', strtotime($task->end_date))   : null,
+            'tracked_seconds'  => $task->elapsed_tracked_seconds,
+            'is_timer_running' => (bool) $task->is_timer_running,
         ]);
     }
     // تحديث المهمة
@@ -201,6 +219,44 @@ class TaskController extends Controller
         }
 
         return redirect()->back()->with('success', 'تم تعديل المهمة بنجاح');
+    }
+
+    public function startTimer(Task $task)
+    {
+        if (!$task->is_timer_running) {
+            $task->timer_started_at = now();
+            $task->is_timer_running = true;
+
+            // عند البدء الفعلي نضعها قيد الإنجاز إذا لم تكن منتهية
+            if ($task->status !== 'منتهية') {
+                $task->status = 'قيد الإنجاز';
+            }
+
+            $task->save();
+        }
+
+        return redirect()->back()->with('success', 'تم بدء العمل على المهمة');
+    }
+
+    public function pauseTimer(Task $task)
+    {
+        $this->accumulateRunningTime($task);
+
+        if ($task->status !== 'منتهية') {
+            $task->status = 'بالانتظار';
+            $task->save();
+        }
+
+        return redirect()->back()->with('success', 'تم إيقاف العداد مؤقتاً');
+    }
+
+    public function finishTimer(Task $task)
+    {
+        $this->accumulateRunningTime($task);
+        $task->status = 'منتهية';
+        $task->save();
+
+        return redirect()->back()->with('success', 'تم إنهاء المهمة وتثبيت الوقت');
     }
 
     // حذف المهمة

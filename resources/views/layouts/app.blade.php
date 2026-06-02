@@ -47,6 +47,32 @@
                         <img src="{{ asset('assets/images/logo.webp') }}" class="h-20" alt="">
                     </a>
                 </div>
+                @if(!empty($attendanceWidget['show']))
+                <div class="hidden lg:flex items-center gap-2 flex-wrap" id="attendanceWidget"
+                    data-status="{{ $attendanceWidget['status'] ?? 'off' }}"
+                    data-seconds="{{ (int)($attendanceWidget['worked_seconds'] ?? 0) }}">
+                    <button type="button" data-action="check_in"
+                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
+                        حضور
+                    </button>
+                    <button type="button" data-action="check_out"
+                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
+                        انصراف
+                    </button>
+                    <button type="button" data-action="break_start"
+                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
+                        خروج للاستراحة
+                    </button>
+                    <button type="button" data-action="break_end"
+                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
+                        رجوع من الاستراحة
+                    </button>
+                    <div class="px-3 py-1 rounded-lg bg-gray-100 text-xs font-extrabold text-gray-700">
+                        <span id="attendanceStatusText">...</span> |
+                        <span id="attendanceTimer">00:00:00</span>
+                    </div>
+                </div>
+                @endif
                 <div class="hidden sm:flex sm:items-center sm:ms-6">
                     <a href="{{ route('system.index') }}"
                         class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -555,6 +581,99 @@
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/js/intlTelInput.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+        // Employee attendance widget
+        const attendanceRoot = document.getElementById('attendanceWidget');
+        if (attendanceRoot) {
+            const statusTextEl = document.getElementById('attendanceStatusText');
+            const timerEl = document.getElementById('attendanceTimer');
+            const buttons = attendanceRoot.querySelectorAll('.attendance-btn');
+
+            let status = attendanceRoot.dataset.status || 'off';
+            let seconds = parseInt(attendanceRoot.dataset.seconds || '0', 10);
+
+            function fmtTime(totalSec) {
+                const s = Math.max(0, parseInt(totalSec, 10) || 0);
+                const h = String(Math.floor(s / 3600)).padStart(2, '0');
+                const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+                const sec = String(s % 60).padStart(2, '0');
+                return `${h}:${m}:${sec}`;
+            }
+
+            function setBtnStyle(btn, active, disabled) {
+                btn.disabled = disabled;
+                btn.classList.remove('bg-green-600', 'text-white', 'border-green-700', 'bg-blue-600', 'border-blue-700', 'bg-yellow-500', 'border-yellow-600', 'bg-gray-100', 'text-gray-700', 'border-gray-300', 'opacity-50', 'cursor-not-allowed');
+                if (active) {
+                    if (btn.dataset.action === 'check_in' || btn.dataset.action === 'break_end') {
+                        btn.classList.add('bg-green-600', 'text-white', 'border-green-700');
+                    } else if (btn.dataset.action === 'check_out') {
+                        btn.classList.add('bg-blue-600', 'text-white', 'border-blue-700');
+                    } else {
+                        btn.classList.add('bg-yellow-500', 'text-white', 'border-yellow-600');
+                    }
+                } else {
+                    btn.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+                }
+                if (disabled) {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            function refreshUI() {
+                timerEl.textContent = fmtTime(seconds);
+                if (status === 'working') statusTextEl.textContent = 'يعمل الآن';
+                else if (status === 'break') statusTextEl.textContent = 'في استراحة';
+                else statusTextEl.textContent = 'خارج الدوام';
+
+                buttons.forEach((btn) => {
+                    const action = btn.dataset.action;
+                    const allowed =
+                        (status === 'off' && action === 'check_in') ||
+                        (status === 'working' && (action === 'break_start' || action === 'check_out')) ||
+                        (status === 'break' && (action === 'break_end' || action === 'check_out'));
+                    setBtnStyle(btn, allowed, !allowed);
+                });
+            }
+
+            async function sendAction(action) {
+                try {
+                    const res = await fetch('{{ route('dashboard.work-times.quick-action') }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ action }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || 'حدث خطأ');
+                    }
+                    status = data.status;
+                    seconds = parseInt(data.worked_seconds || 0, 10);
+                    refreshUI();
+                } catch (e) {
+                    Swal.fire({ icon: 'error', title: 'تنبيه', text: e.message || 'تعذر تنفيذ العملية' });
+                }
+            }
+
+            buttons.forEach((btn) => {
+                btn.addEventListener('click', function() {
+                    if (this.disabled) return;
+                    sendAction(this.dataset.action);
+                });
+            });
+
+            setInterval(() => {
+                if (status === 'working') {
+                    seconds += 1;
+                    timerEl.textContent = fmtTime(seconds);
+                }
+            }, 1000);
+
+            refreshUI();
+        }
+
         // Sidebar search functionality
         const searchInput = document.querySelector('#searchInput');
         const sidebarItems = document.querySelectorAll('.sidebar-item, li a');

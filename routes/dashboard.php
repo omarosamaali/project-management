@@ -83,6 +83,8 @@ Route::middleware(['auth'])->group(function () {
     
 Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('work-times', WorkTimeController::class);
+    Route::post('work-times/quick-action', [WorkTimeController::class, 'quickAction'])->name('work-times.quick-action');
+    Route::get('work-times/my-status', [WorkTimeController::class, 'myStatus'])->name('work-times.my-status');
     Route::resource('educational_resources', EducationalResourceController::class);
 
     Route::post('special-request/{specialRequest}/store-stage', [SpecialRequestController::class, 'storeStage'])
@@ -221,6 +223,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/request-store', [TaskController::class, 'requestStore'])->name('tasks.request-store');
     Route::get('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::post('/tasks/{task}/start-timer', [TaskController::class, 'startTimer'])->name('tasks.start-timer');
+    Route::post('/tasks/{task}/pause-timer', [TaskController::class, 'pauseTimer'])->name('tasks.pause-timer');
+    Route::post('/tasks/{task}/finish-timer', [TaskController::class, 'finishTimer'])->name('tasks.finish-timer');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
 
     // Special Request
