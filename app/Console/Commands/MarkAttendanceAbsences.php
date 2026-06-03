@@ -103,6 +103,15 @@ class MarkAttendanceAbsences extends Command
             'warning'
         );
 
+        if ($user->email) {
+            $whatsapp->sendEmailNotification(
+                $user->email,
+                $user->name,
+                $title,
+                $message
+            );
+        }
+
         if (!$user->phone) {
             return;
         }
@@ -117,15 +126,6 @@ class MarkAttendanceAbsences extends Command
                 date: $date->format('Y-m-d'),
                 notes: 'عدم تسجيل حضور في يوم عمل',
             );
-
-            if ($user->email) {
-                $whatsapp->sendEmailNotification(
-                    $user->email,
-                    $user->name,
-                    $title,
-                    $message
-                );
-            }
         } catch (\Throwable $e) {
             Log::error('[ATTENDANCE_ABSENCE] فشل إرسال إشعار', [
                 'user_id' => $user->id,

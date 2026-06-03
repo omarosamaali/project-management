@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppNotification;
 use App\Models\EmployeeAdjustment;
 use App\Models\User;
 use App\Services\WhatsAppOTPService;
@@ -77,7 +78,8 @@ class AdjustmentController extends Controller
             'user_id' => $employee->id,
         ]);
 
-        $this->notifyEmployee($adjustment);
+        $adjustment->load('user');
+        $this->notifyAdjustment($adjustment);
 
         return redirect()->route('dashboard.adjustments.index')
             ->with('success', 'تم حفظ السجل وإرسال إشعار للموظف بنجاح');
@@ -106,9 +108,11 @@ class AdjustmentController extends Controller
 
         User::notBlocked()->findOrFail($data['user_id']);
         $adjustment->update($data);
+        $adjustment->load('user');
+        $this->notifyAdjustment($adjustment, true);
 
         return redirect()->route('dashboard.adjustments.index')
-            ->with('success', 'تم تعديل السجل بنجاح');
+            ->with('success', 'تم تعديل السجل وإرسال الإشعارات بنجاح');
     }
 
     public function destroy(EmployeeAdjustment $adjustment)
@@ -120,7 +124,7 @@ class AdjustmentController extends Controller
         return back()->with('success', 'تم الحذف بنجاح');
     }
 
-    private function notifyEmployee(EmployeeAdjustment $adjustment): void
+    private function notifyAdjustment(EmployeeAdjustment $adjustment, bool $isUpdate = false): void
     {
         try {
             $user = $adjustment->user ?? User::find($adjustment->user_id);
@@ -129,51 +133,116 @@ class AdjustmentController extends Controller
                 return;
             }
 
-            if (!$user->phone) {
-                Log::info("[ADJUSTMENT] لا يوجد رقم هاتف للموظف #{$adjustment->user_id}");
-                return;
-            }
-
-            $typeLabel = $adjustment->type === 'bonus' ? 'مكافأة' : 'خصم';
+            $typeLabel = $adjustment->type === 'bonus' ? 'مكافأة' : 'خصm';
             $currency = $user->salary_currency ?? $user->salary_currency_scale ?? 'USD';
             $date = $adjustment->date instanceof \Carbon\Carbon
                 ? $adjustment->date->format('Y-m-d')
                 : (string) $adjustment->date;
 
-            $whatsapp = app(WhatsAppOTPService::class);
-            $sent = $whatsapp->sendAdjustmentNotification(
-                phone: $user->phone,
-                employeeName: $user->name,
-                typeLabel: $typeLabel,
-                amount: (float) $adjustment->amount,
-                currency: $currency,
-                date: $date,
-                notes: $adjustment->notes,
+            $employeeBody = $this->adjustmentMessageBody($typeLabel, (float) $adjustment->amount, $currency, $date, $adjustment->notes);
+            $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
+            $employeeTitle = $isUpdate ? "تعديل {$typeLabel}" : "إشعار {$typeLabel}";
+            $adminBody = "{$actionWord} {$typeLabel} للموظف «{$user->name}» بمبلغ "
+                . number_format((float) $adjustment->amount, 2) . " {$currency} بتاريخ {$date}.";
+            if ($adjustment->notes) {
+                $adminBody .= " ملاحظات: {$adjustment->notes}";
+            }
+
+            $url = route('dashboard.adjustments.index');
+            $uiType = $adjustment->type === 'bonus' ? 'success' : 'warning';
+            $icon = $adjustment->type === 'bonus' ? 'fa-gift' : 'fa-minus-circle';
+
+            AppNotification::notify(
+                $user->id,
+                $employeeTitle,
+                $employeeBody,
+                $url,
+                $icon,
+                $uiType,
             );
 
+            $whatsapp = app(WhatsAppOTPService::class);
+
             if ($user->email) {
-                $body = "تم تسجيل {$typeLabel} بمبلغ " . number_format((float) $adjustment->amount, 2)
-                    . " {$currency} بتاريخ {$date}.";
-                if ($adjustment->notes) {
-                    $body .= "\nملاحظات: {$adjustment->notes}";
-                }
                 $whatsapp->sendEmailNotification(
                     $user->email,
                     $user->name,
-                    "إشعار {$typeLabel}",
-                    $body
+                    $employeeTitle,
+                    $employeeBody,
                 );
+            } else {
+                Log::info("[ADJUSTMENT] لا يوجد بريد للموظف #{$user->id}");
             }
 
-            Log::info('[ADJUSTMENT] نتيجة إرسال الإشعار: ' . ($sent ? 'نجح' : 'فشل'), [
-                'adjustment_id' => $adjustment->id,
-                'user_id' => $user->id,
-            ]);
+            if ($user->phone) {
+                $sent = $whatsapp->sendAdjustmentNotification(
+                    phone: $user->phone,
+                    employeeName: $user->name,
+                    typeLabel: $typeLabel,
+                    amount: (float) $adjustment->amount,
+                    currency: $currency,
+                    date: $date,
+                    notes: $adjustment->notes,
+                );
+                Log::info('[ADJUSTMENT] واتساب الموظف: ' . ($sent ? 'نجح' : 'فشل'), [
+                    'adjustment_id' => $adjustment->id,
+                    'user_id' => $user->id,
+                ]);
+            } else {
+                Log::info("[ADJUSTMENT] لا يوجد رقم هاتف للموظف #{$user->id}");
+            }
+
+            $whatsapp->notifyManager($adminBody, 'الخصومات والمكافآت');
+
+            User::where('role', 'admin')->get()->each(function (User $admin) use (
+                $adminBody,
+                $url,
+                $icon,
+                $uiType,
+                $user,
+            ) {
+                if ((int) $admin->id === (int) $user->id) {
+                    return;
+                }
+
+                AppNotification::notify(
+                    $admin->id,
+                    'خصومات ومكافآت',
+                    $adminBody,
+                    $url,
+                    $icon,
+                    $uiType,
+                );
+
+                if ($admin->email) {
+                    app(WhatsAppOTPService::class)->sendEmailNotification(
+                        $admin->email,
+                        $admin->name,
+                        'إشعار خصومات ومكافآت',
+                        $adminBody,
+                    );
+                }
+            });
         } catch (\Exception $e) {
-            Log::error('[ADJUSTMENT] فشل إرسال إشعار الخصم/المكافأة', [
+            Log::error('[ADJUSTMENT] فشل إرسال إشعار الخصm/المكافأة', [
                 'adjustment_id' => $adjustment->id,
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    private function adjustmentMessageBody(
+        string $typeLabel,
+        float $amount,
+        string $currency,
+        string $date,
+        ?string $notes,
+    ): string {
+        $body = "تم تسجيل {$typeLabel} بمبلغ " . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
+        if ($notes && trim($notes) !== '') {
+            $body .= "\nملاحظات: " . trim($notes);
+        }
+
+        return $body;
     }
 }
