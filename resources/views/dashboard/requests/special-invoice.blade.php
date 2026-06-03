@@ -29,7 +29,7 @@
                         بيانات العميل / Customer Details
                     </h3>
                     <div class="bg-gray-50 p-4 rounded-lg space-y-2">
-                        <p class="font-bold text-gray-900">{{ $userRequest->user?->name ?? 'عميل' }}</p>
+                        @include('partials.invoice-client-name', ['user' => $userRequest->user])
                         <p class="text-gray-600 text-sm">{{ $userRequest->user?->phone?? '' }}</p>
                         <p class="text-gray-600 text-sm">{{ $userRequest->user?->email ?? ''}}</p>
                         <p class="text-gray-600 text-sm">

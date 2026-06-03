@@ -21,6 +21,23 @@ class SpecialRequestController extends Controller
             'paid_at' => now(),
         ]);
 
+        $base = (float) $payment->amount;
+        $fees = round(($base * 0.079) + 2, 2);
+
+        \App\Models\Payment::updateOrCreate(
+            ['request_payment_id' => $payment->id],
+            [
+                'user_id' => auth()->id(),
+                'special_request_id' => $payment->special_request_id,
+                'amount' => $base + $fees,
+                'original_price' => $base,
+                'fees' => $fees,
+                'status' => 'completed',
+                'payment_method' => 'manual',
+                'currency' => 'AED',
+            ]
+        );
+
         $payment->specialRequest?->refreshPaymentStatus();
 
         try {

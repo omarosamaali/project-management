@@ -46,7 +46,7 @@
                         <i class="fas fa-user text-gray-600"></i> بيانات العميل / Customer Details
                     </h3>
                     <div class="bg-gray-50 p-4 rounded-lg space-y-2">
-                        <p class="font-bold text-gray-900">{{ Auth::user()->name }}</p>
+                        @include('partials.invoice-client-name', ['user' => Auth::user()])
                         <p class="text-gray-600 text-sm">{{ Auth::user()->phone ?? '-' }}</p>
                         <p class="text-gray-600 text-sm">{{ Auth::user()->email }}</p>
                     </div>

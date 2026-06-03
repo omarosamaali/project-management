@@ -52,7 +52,7 @@ class ZiinaSystemPaymentHandler
                 'name' => auth()->user()->name,
                 'email' => auth()->user()->email,
             ],
-            'success_url' => $successUrl,
+            'success_url' => self::appendPaymentIntentPlaceholder($successUrl),
             'failure_url' => $cancelUrl,
             'metadata' => $isFullPayment ? [
                 'special_request_id' => $model->id,
@@ -422,6 +422,17 @@ class ZiinaSystemPaymentHandler
         }
 
         return $decodedResponse;
+    }
+
+    public static function appendPaymentIntentPlaceholder(string $successUrl): string
+    {
+        if (str_contains($successUrl, '{PAYMENT_INTENT_ID}') || str_contains($successUrl, 'payment_intent_id=')) {
+            return $successUrl;
+        }
+
+        $separator = str_contains($successUrl, '?') ? '&' : '?';
+
+        return $successUrl . $separator . 'payment_intent_id={PAYMENT_INTENT_ID}';
     }
 
     public function validateWebhook($payload, $signature, $secret = null)

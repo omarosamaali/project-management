@@ -21,7 +21,7 @@
                 <div>
                     <p class="text-sm text-blue-600 dark:text-blue-400 font-medium">إجمالي الميزانية</p>
                     <p class="text-3xl font-bold text-blue-700 dark:text-blue-300 mt-2 flex items-center gap-1">
-                        {{ number_format($SpecialRequest->price, 2) }}
+                        {{ number_format($SpecialRequest->budget_total, 2) }}
                         <x-drhm-icon color="#1d4ed8" width="18" heigt="18" />
                     </p>
                 </div>
@@ -163,17 +163,22 @@
 
                         @if($payment->status === 'paid')
                         @php
-                        $ziinaPayment = \App\Models\Payment::where('request_payment_id', $payment->id)
-                            ->whereIn('status', ['completed', 'paid'])
-                            ->latest()
-                            ->first();
+                        $ziinaPayment = \App\Support\InstallmentPaymentService::findZiinaPaymentForInstallment($payment);
+                        $invoiceUrl = $ziinaPayment
+                            ? route('special-request.payment.invoice', [
+                                'specialRequest' => $SpecialRequest->id,
+                                'payment' => $ziinaPayment->id,
+                                'installment_id' => $payment->id,
+                            ])
+                            : route('special-request.installment.invoice', [
+                                'specialRequest' => $SpecialRequest->id,
+                                'installment' => $payment->id,
+                            ]);
+                        $canViewInvoice = auth()->user()->role === 'admin'
+                            || (auth()->user()->role === 'client' && $SpecialRequest->isClientMember(auth()->id()));
                         @endphp
-                        @if($ziinaPayment)
-                        <a href="{{ route('special-request.payment.invoice', [
-                            'specialRequest' => $SpecialRequest->id,
-                            'payment' => $ziinaPayment->id,
-                            'installment_id' => $payment->id,
-                        ]) }}" target="_blank"
+                        @if($canViewInvoice)
+                        <a href="{{ $invoiceUrl }}" target="_blank"
                             class="px-4 py-2 bg-emerald-100 dark:bg-emerald-700 text-emerald-700 dark:text-white rounded-lg text-sm font-medium hover:bg-emerald-200 dark:hover:bg-emerald-600 transition-colors flex items-center gap-2">
                             <i class="fas fa-file-invoice"></i>
                             معاينة الفاتورة

@@ -101,10 +101,21 @@
                         params.set('user_id', uid);
                     }
                 }
-                fetch(`${eventsUrl}?${params}`)
-                    .then(r => r.json())
-                    .then(data => successCallback(data))
-                    .catch(err => failureCallback(err));
+                fetch(`${eventsUrl}?${params}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                })
+                    .then(r => {
+                        if (!r.ok) {
+                            throw new Error('HTTP ' + r.status);
+                        }
+                        return r.json();
+                    })
+                    .then(data => successCallback(Array.isArray(data) ? data : []))
+                    .catch(err => {
+                        console.error('calendar events:', err);
+                        failureCallback(err);
+                    });
             },
             eventClick: function(info) {
                 const p = info.event.extendedProps;

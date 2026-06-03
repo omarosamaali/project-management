@@ -66,6 +66,20 @@ class ClientCompanyFields
         $user->company_logo = null;
     }
 
+    public static function isBusiness(?User $user): bool
+    {
+        return $user !== null && ($user->account_type ?? 'personal') === 'business';
+    }
+
+    public static function invoiceCompanyName(?User $user): ?string
+    {
+        if (!self::isBusiness($user) || !filled($user->company_name)) {
+            return null;
+        }
+
+        return $user->company_name;
+    }
+
     public static function logoUrl(?User $user): ?string
     {
         if (!$user?->company_logo) {

@@ -240,10 +240,14 @@ class ZiinaPaymentController extends Controller
             $payment = Payment::where('payment_id', $paymentIntentId)->first();
 
             if ($payment) {
-                $payment->update(['status' => $status === 'paid' ? 'completed' : $status]);
+                if (InstallmentPaymentService::isPaidStatus($status)) {
+                    InstallmentPaymentService::confirmPaymentRecord($payment, $status);
+                } else {
+                    $payment->update(['status' => $status]);
+                }
 
-                if ($status === 'paid') {
-                    $payment->user->systems()->syncWithoutDetaching([$payment->system_id]);
+                if ($payment->system_id && InstallmentPaymentService::isPaidStatus($status)) {
+                    $payment->user?->systems()->syncWithoutDetaching([$payment->system_id]);
                 }
             }
         }
@@ -391,24 +395,13 @@ class ZiinaPaymentController extends Controller
                 ->first();
 
             if ($payment) {
-                $payment->update(['status' => $status === 'paid' ? 'completed' : $status]);
-
-                if ($status === 'paid') {
-                    if ($payment->request_payment_id) {
-                        $installment = RequestPayment::find($payment->request_payment_id);
-                        if ($installment) {
-                            InstallmentPaymentService::markInstallmentPaid($payment, $installment);
-                            Log::info('تم تأكيد دفعة جزئية عبر callback', [
-                                'installment_id' => $installment->id,
-                            ]);
-                        }
-                    } else {
-                        $specialRequest = SpecialRequest::find($payment->special_request_id);
-                        if ($specialRequest) {
-                            $specialRequest->update(['status' => 'in_progress']);
-                            Log::info('تم تحديث حالة الطلب الخاص عبر callback');
-                        }
-                    }
+                if (InstallmentPaymentService::confirmPaymentRecord($payment, $status)) {
+                    Log::info('تم تأكيد الدفع عبر callback', [
+                        'payment_intent_id' => $paymentIntentId,
+                        'request_payment_id' => $payment->request_payment_id,
+                    ]);
+                } elseif (!InstallmentPaymentService::isPaidStatus($status)) {
+                    $payment->update(['status' => $status]);
                 }
             }
         }
@@ -496,27 +489,36 @@ class ZiinaPaymentController extends Controller
 
     public function handleInstallmentReturn(Request $request)
     {
-        $paymentIntentId = $request->query('payment_intent_id');
         $installmentId = InstallmentPaymentService::resolveInstallmentId($request);
-
-        if (!$paymentIntentId) {
-            return redirect()->route('dashboard')->with('error', 'بيانات الدفع غير كاملة');
-        }
-
-        $payment = Payment::where('payment_id', $paymentIntentId)->first();
-
-        if (!$installmentId && $payment?->request_payment_id) {
-            $installmentId = (int) $payment->request_payment_id;
-        }
-
         $installment = $installmentId ? RequestPayment::find($installmentId) : null;
 
         if (!$installment) {
             return redirect()->route('dashboard')->with('error', 'بيانات الدفع غير كاملة');
         }
 
+        $paymentIntentId = InstallmentPaymentService::resolvePaymentIntentId($request, $installment);
+
+        if (!$paymentIntentId) {
+            return redirect()
+                ->route('dashboard.special-request.show', $installment->special_request_id)
+                ->with('error', 'بيانات الدفع غير كاملة');
+        }
+
+        $payment = Payment::where('payment_id', $paymentIntentId)->first();
+
+        if ($payment && !$payment->request_payment_id) {
+            $payment->update([
+                'request_payment_id' => $installment->id,
+                'special_request_id' => $installment->special_request_id,
+            ]);
+        }
+
         $redirectRoute = fn () => redirect()
             ->route('dashboard.special-request.show', $installment->special_request_id);
+
+        if ($installment->status === 'paid') {
+            return $redirectRoute()->with('success', 'تم دفع الدفعة بنجاح!');
+        }
 
         try {
             $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
@@ -533,7 +535,10 @@ class ZiinaPaymentController extends Controller
                 $this->ziinaHandler
             );
         } catch (\Exception $e) {
-            Log::error('Installment return error: ' . $e->getMessage());
+            Log::error('Installment return error: ' . $e->getMessage(), [
+                'installment_id' => $installment->id,
+                'payment_intent_id' => $paymentIntentId,
+            ]);
             InstallmentPaymentService::revertInstallmentIfNotPaid(
                 $installment,
                 $paymentIntentId,

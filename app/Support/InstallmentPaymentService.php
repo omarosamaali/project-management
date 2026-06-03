@@ -26,9 +26,116 @@ class InstallmentPaymentService
         return $id ? (int) $id : null;
     }
 
+    public static function resolvePaymentIntentId(Request $request, ?RequestPayment $installment = null): ?string
+    {
+        $intentId = $request->query('payment_intent_id');
+        if ($intentId) {
+            return $intentId;
+        }
+
+        if (!$installment) {
+            return null;
+        }
+
+        return Payment::query()
+            ->where('request_payment_id', $installment->id)
+            ->whereNotNull('payment_id')
+            ->orderByDesc('id')
+            ->value('payment_id');
+    }
+
+    public static function isPaidStatus(?string $status): bool
+    {
+        return in_array($status ?? '', self::paidStatuses(), true);
+    }
+
+    /**
+     * تأكيد الدفع من webhook/callback (حالات Ziina: completed, paid, succeeded).
+     */
+    public static function confirmPaymentRecord(Payment $payment, ?string $status = null): bool
+    {
+        if ($status !== null && !self::isPaidStatus($status)) {
+            return false;
+        }
+
+        if ($payment->request_payment_id) {
+            $installment = RequestPayment::find($payment->request_payment_id);
+            if ($installment && $installment->status !== 'paid') {
+                self::markInstallmentPaid($payment, $installment);
+
+                return true;
+            }
+
+            return $installment?->status === 'paid';
+        }
+
+        if ($payment->special_request_id) {
+            $payment->update(['status' => 'completed']);
+            $payment->specialRequest?->update(['status' => 'in_progress']);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public static function findZiinaPaymentForInstallment(RequestPayment $installment): ?Payment
+    {
+        $linked = Payment::query()
+            ->where('request_payment_id', $installment->id)
+            ->whereIn('status', ['completed', 'paid'])
+            ->latest('id')
+            ->first();
+
+        if ($linked) {
+            return $linked;
+        }
+
+        return Payment::query()
+            ->where('special_request_id', $installment->special_request_id)
+            ->whereIn('status', ['completed', 'paid'])
+            ->where(function ($query) use ($installment) {
+                $query->where('request_payment_id', $installment->id)
+                    ->orWhere(function ($q) use ($installment) {
+                        $q->whereNull('request_payment_id')
+                            ->where('original_price', $installment->amount);
+                    });
+            })
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * بيانات فاتورة عند التأكيد اليدوي أو غياب سجل payments.
+     */
+    public static function buildInvoicePaymentPreview(RequestPayment $installment): Payment
+    {
+        $base = (float) $installment->amount;
+        $fees = round(($base * 0.079) + 2, 2);
+
+        $payment = new Payment([
+            'user_id' => $installment->specialRequest?->user_id,
+            'special_request_id' => $installment->special_request_id,
+            'request_payment_id' => $installment->id,
+            'original_price' => $base,
+            'fees' => $fees,
+            'amount' => $base + $fees,
+            'status' => 'completed',
+            'payment_method' => 'manual',
+            'currency' => 'AED',
+        ]);
+        $payment->created_at = $installment->paid_at ?? now();
+
+        return $payment;
+    }
+
     public static function markInstallmentPaid(Payment $payment, RequestPayment $installment): void
     {
-        $payment->update(['status' => 'completed']);
+        $payment->update([
+            'status' => 'completed',
+            'request_payment_id' => $payment->request_payment_id ?? $installment->id,
+            'special_request_id' => $payment->special_request_id ?? $installment->special_request_id,
+        ]);
 
         $installment->update([
             'status' => 'paid',

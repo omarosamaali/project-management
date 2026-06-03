@@ -68,44 +68,50 @@ class WorkTimeCalendarController extends Controller
         }
 
         if ($request->filled('start') && $request->filled('end')) {
-            $rangeStart = Carbon::parse($request->start)->toDateString();
-            $rangeEnd = Carbon::parse($request->end)->subSecond()->toDateString();
-            $query->whereBetween('date', [$rangeStart, $rangeEnd]);
+            $rangeStart = Carbon::parse($request->start)->startOfDay();
+            $rangeEnd = Carbon::parse($request->end)->subSecond()->endOfDay();
+            $query->whereDate('date', '>=', $rangeStart->toDateString())
+                ->whereDate('date', '<=', $rangeEnd->toDateString());
         }
 
         $showAllEmployees = !$isEmployeeView && !$request->filled('user_id');
 
         $events = $query->orderBy('date')->orderBy('start_time')->get()->map(function (WorkTime $record) use ($showAllEmployees) {
-            $start = WorkTimeMoment::at($record->date, $record->start_time);
+            try {
+                $start = WorkTimeMoment::at($record->date, $record->start_time);
+                $date = WorkTimeMoment::dateKey($record->date);
 
-            $employeeName = $record->user->name ?? 'موظف';
-            $title = $showAllEmployees
-                ? "{$record->type} — {$employeeName}"
-                : $record->type;
+                $employeeName = $record->user->name ?? 'موظف';
+                $title = $showAllEmployees
+                    ? "{$record->type} — {$employeeName}"
+                    : $record->type;
 
-            $icon = $record->isFromWeb() ? ' 🌐' : '';
+                $icon = $record->isFromWeb() ? ' 🌐' : '';
 
-            return [
-                'id' => $record->id,
-                'title' => $title . $icon,
-                'start' => $start->toIso8601String(),
-                'allDay' => false,
-                'backgroundColor' => $this->colorForType($record->type),
-                'borderColor' => $this->colorForType($record->type),
-                'textColor' => '#ffffff',
-                'extendedProps' => [
-                    'type' => $record->type,
-                    'employee' => $employeeName,
-                    'time' => $start->format('g:i A'),
-                    'date' => $date,
-                    'source' => $record->sourceLabel(),
-                    'from_web' => $record->isFromWeb(),
-                    'notes' => $record->notes,
-                ],
-            ];
-        });
+                return [
+                    'id' => $record->id,
+                    'title' => $title . $icon,
+                    'start' => $start->toIso8601String(),
+                    'allDay' => false,
+                    'backgroundColor' => $this->colorForType($record->type),
+                    'borderColor' => $this->colorForType($record->type),
+                    'textColor' => '#ffffff',
+                    'extendedProps' => [
+                        'type' => $record->type,
+                        'employee' => $employeeName,
+                        'time' => $start->format('g:i A'),
+                        'date' => $date,
+                        'source' => $record->sourceLabel(),
+                        'from_web' => $record->isFromWeb(),
+                        'notes' => $record->notes,
+                    ],
+                ];
+            } catch (\Throwable) {
+                return null;
+            }
+        })->filter()->values();
 
-        return response()->json($events->values());
+        return response()->json($events);
     }
 
     private function colorForType(string $type): string

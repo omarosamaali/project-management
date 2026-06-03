@@ -10,13 +10,16 @@ class Payment extends Model
         'user_id',
         'system_id',
         'payment_id',
-        'course_id', // تأكد من وجود هذا السطر
+        'course_id',
+        'special_request_id',
+        'request_payment_id',
         'amount',
         'original_price',
         'fees',
         'status',
         'store_id',
         'payment_method',
+        'currency',
     ];
 
     public function user()
@@ -27,7 +30,7 @@ class Payment extends Model
     // داخل ملف Payment.php
     public function requestPayment()
     {
-        return $this->belongsTo(RequestPayment::class, 'payment_id');
+        return $this->belongsTo(RequestPayment::class, 'request_payment_id');
     }
     public function system()
     {

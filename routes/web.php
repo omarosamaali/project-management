@@ -65,10 +65,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/special-requests/{specialRequest}/payment/{payment}/invoice', function ($specialRequestId, $paymentId) {
         $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
         $payment = \App\Models\Payment::findOrFail($paymentId);
-        $installment = \App\Models\RequestPayment::find(request('installment_id')); // 👈 هنا
+        $installment = \App\Models\RequestPayment::find(request('installment_id'));
 
         return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
     })->name('special-request.payment.invoice')->middleware('auth');
+
+    Route::get('/special-requests/{specialRequest}/installments/{installment}/invoice', function ($specialRequestId, $installmentId) {
+        $specialRequest = \App\Models\SpecialRequest::findOrFail($specialRequestId);
+        $installment = \App\Models\RequestPayment::where('id', $installmentId)
+            ->where('special_request_id', $specialRequestId)
+            ->firstOrFail();
+
+        $payment = \App\Support\InstallmentPaymentService::findZiinaPaymentForInstallment($installment)
+            ?? \App\Support\InstallmentPaymentService::buildInvoicePaymentPreview($installment);
+
+        return view('special-request.invoice', compact('specialRequest', 'payment', 'installment'));
+    })->name('special-request.installment.invoice')->middleware('auth');
 
     
     Route::post('/payments/{payment}/ziina-pay', [ZiinaPaymentController::class, 'initiateInstallmentPayment'])

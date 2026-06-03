@@ -205,25 +205,67 @@ class SpecialRequest extends Model
         }
     }
 
-    public function getTotalPaidAmount()
+    /**
+     * إجمالي الميزانية: مجموع الدفعات إن وُجدت، وإلا سعر المشروع.
+     */
+    public function getBudgetTotalAttribute(): float
     {
-        return $this->payments()->where('status', 'paid')->sum('amount');
+        $installmentsTotal = (float) $this->requestPayments()->sum('amount');
+
+        if ($installmentsTotal > 0) {
+            return $installmentsTotal;
+        }
+
+        return (float) ($this->price ?? 0);
     }
 
-    public function getRemainingAmount()
+    public function getTotalPaidAmount(): float
     {
-        return $this->price - $this->getTotalPaidAmount();
+        $fromInstallments = (float) $this->requestPayments()->where('status', 'paid')->sum('amount');
+
+        if ($fromInstallments > 0) {
+            return $fromInstallments;
+        }
+
+        return (float) $this->payments()->where('status', 'paid')->sum('amount');
     }
 
-    public function isFullyPaid()
+    public function getTotalPaidAttribute(): float
     {
-        return $this->getTotalPaidAmount() >= $this->price;
+        return $this->getTotalPaidAmount();
     }
 
-    public function getPaymentProgress()
+    public function getRemainingAmountAttribute(): float
     {
-        if (!$this->price) return 0;
-        return ($this->getTotalPaidAmount() / $this->price) * 100;
+        return max(0, $this->budget_total - $this->total_paid);
+    }
+
+    public function getRemainingAmount(): float
+    {
+        return $this->remaining_amount;
+    }
+
+    public function isFullyPaid(): bool
+    {
+        $total = $this->budget_total;
+
+        return $total > 0 && $this->total_paid >= $total;
+    }
+
+    public function getPaymentProgressAttribute(): float
+    {
+        $total = $this->budget_total;
+
+        if ($total <= 0) {
+            return 0;
+        }
+
+        return min(100, round(($this->total_paid / $total) * 100, 1));
+    }
+
+    public function getPaymentProgress(): float
+    {
+        return $this->payment_progress;
     }
 
     // Helper method لعرض نوع الدفع
