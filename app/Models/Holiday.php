@@ -36,7 +36,7 @@ class Holiday extends Model
 
     public function employees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'holiday_user')->withTimestamps();
+        return $this->belongsToMany(User::class, 'holiday_user');
     }
 
     public function isActive(): bool
