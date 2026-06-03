@@ -175,7 +175,7 @@ class WhatsAppOTPService
     }
 
     // ── إرسال إشعار عبر الإيميل ──────────────────────────
-    public function sendEmailNotification(string $email, string $name, string $subject, string $body): void
+    public function sendEmailNotification(string $email, string $name, string $subject, string $body): bool
     {
         try {
             Mail::raw(
@@ -186,11 +186,15 @@ class WhatsAppOTPService
                             ->from(config('mail.from.address', 'noreply@evorq.com'), config('mail.from.name', 'Evorq'));
                 }
             );
+
+            return true;
         } catch (\Exception $e) {
             Log::error("[EMAIL] فشل إرسال الإيميل", [
                 'to'    => $email,
                 'error' => $e->getMessage(),
             ]);
+
+            return false;
         }
     }
 
@@ -336,14 +340,19 @@ class WhatsAppOTPService
                 currency: $currency,
                 date: $date,
                 notes: $notes,
-                email: $user->email,
+                email: null,
                 emailSubject: $employeeTitle,
                 isUpdate: $isUpdate,
             );
-            $results['employee_email'] = (bool) $user->email;
-        } elseif ($user->email) {
-            $this->sendEmailNotification($user->email, $user->name, $employeeTitle, $employeeBody);
-            $results['employee_email'] = true;
+        }
+
+        if ($user->email) {
+            $results['employee_email'] = $this->sendEmailNotification(
+                $user->email,
+                $user->name,
+                $employeeTitle,
+                $employeeBody,
+            );
         }
 
         $results['manager'] = $this->notifyManager($adminBody, 'الخصومات والمكافآت');
