@@ -147,25 +147,9 @@ class WhatsAppOTPService
     // ── إشعار عام للمشروع ────────────────────────────────
     public function sendProjectNotification(string $phone, string $memberName, string $eventText, string $projectTitle, ?string $email = null): bool
     {
-        $bodyText = "{$eventText} في المشروع: {$projectTitle}";
+        $bodyText = $this->sanitizeTrabarText("{$eventText} في المشروع: {$projectTitle}");
 
-        $params = [
-            [
-                "type" => "body",
-                "parameters" => [
-                    ["type" => "text", "text" => $memberName],
-                    ["type" => "text", "text" => $bodyText],
-                ]
-            ],
-            [
-                "type" => "header",
-                "parameters" => [
-                    ["type" => "image", "image" => ["link" => 'https://evorq.online/assets/images/salaray.jpeg']]
-                ]
-            ]
-        ];
-
-        $result = $this->executeRequest($phone, 'trabar', 'ar', $params);
+        $result = $this->sendTrabar($phone, $memberName, $bodyText);
 
         if ($email) {
             $this->sendEmailNotification($email, $memberName, "إشعار مشروع: {$projectTitle}", $bodyText);
@@ -268,23 +252,7 @@ class WhatsAppOTPService
             $bodyText .= " ملاحظات: " . trim($notes);
         }
 
-        $params = [
-            [
-                'type' => 'body',
-                'parameters' => [
-                    ['type' => 'text', 'text' => $employeeName],
-                    ['type' => 'text', 'text' => $bodyText],
-                ],
-            ],
-            [
-                'type' => 'header',
-                'parameters' => [
-                    ['type' => 'image', 'image' => ['link' => 'https://evorq.online/assets/images/salaray.jpeg']],
-                ],
-            ],
-        ];
-
-        $result = $this->executeRequest($phone, 'trabar', 'ar', $params);
+        $result = $this->sendTrabar($phone, $employeeName, $bodyText);
 
         if ($email) {
             $this->sendEmailNotification(
@@ -319,7 +287,7 @@ class WhatsAppOTPService
             $employeeBody .= "\nملاحظات: " . trim($notes);
         }
 
-        $adminBody = "{$actionWord} {$typeLabel} للموظف «{$user->name}» بمبلغ "
+        $adminBody = "{$actionWord} {$typeLabel} للموظف {$user->name} بمبلغ "
             . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
         if ($notes && trim($notes) !== '') {
             $adminBody .= " ملاحظات: " . trim($notes);
@@ -523,6 +491,51 @@ class WhatsAppOTPService
     }
 
     // ── Helpers ───────────────────────────────────────
+    private function sanitizeTrabarText(string $text, int $maxLength = 900): string
+    {
+        $text = str_replace(['«', '»', '"', '“', '”'], '', $text);
+        $text = preg_replace('/[\r\n]+/u', ' ', $text) ?? $text;
+        $text = preg_replace('/\s+/u', ' ', trim($text)) ?? trim($text);
+
+        if (mb_strlen($text) > $maxLength) {
+            $text = mb_substr($text, 0, $maxLength - 3) . '...';
+        }
+
+        return $text;
+    }
+
+    /**
+     * إرسال قالب trabar — body فقط أولاً (أكثر نجاحاً في التسليم)، ثم مع صورة header.
+     */
+    private function sendTrabar(string $phone, string $recipientName, string $bodyText): bool
+    {
+        $recipientName = $this->sanitizeTrabarText($recipientName, 120);
+        $bodyText = $this->sanitizeTrabarText($bodyText);
+
+        $bodyComponent = [
+            'type' => 'body',
+            'parameters' => [
+                ['type' => 'text', 'text' => $recipientName],
+                ['type' => 'text', 'text' => $bodyText],
+            ],
+        ];
+
+        $sent = $this->executeRequest($phone, 'trabar', 'ar', [$bodyComponent]);
+        if ($sent) {
+            return true;
+        }
+
+        return $this->executeRequest($phone, 'trabar', 'ar', [
+            [
+                'type' => 'header',
+                'parameters' => [
+                    ['type' => 'image', 'image' => ['link' => 'https://evorq.online/assets/images/salaray.jpeg']],
+                ],
+            ],
+            $bodyComponent,
+        ]);
+    }
+
     private function logWhatsAppMessage($phone, $template, $params, $status, $messageId = null, $contentPreview = null)
     {
         return \App\Models\WhatsAppMessage::create([
@@ -541,7 +554,13 @@ class WhatsAppOTPService
     private function generateMessagePreview($params, $template): string
     {
         if ($template === 'trabar') {
-            $bodyParams = $params[0]['parameters'] ?? [];
+            $bodyParams = [];
+            foreach ($params as $component) {
+                if (($component['type'] ?? null) === 'body') {
+                    $bodyParams = $component['parameters'] ?? [];
+                    break;
+                }
+            }
             $name = $bodyParams[0]['text'] ?? 'غير معروف';
             $text = $bodyParams[1]['text'] ?? 'غير معروف';
             return "trabar: {$name} — {$text}";

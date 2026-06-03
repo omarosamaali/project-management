@@ -146,7 +146,7 @@ class AdjustmentController extends Controller
         $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
         $employeeTitle = $isUpdate ? "تعديل {$typeLabel}" : "إشعار {$typeLabel}";
         $employeeBody = $this->adjustmentMessageBody($typeLabel, (float) $adjustment->amount, $currency, $date, $adjustment->notes, $isUpdate);
-        $adminBody = "{$actionWord} {$typeLabel} للموظف «{$user->name}» بمبلغ "
+        $adminBody = "{$actionWord} {$typeLabel} للموظف {$user->name} بمبلغ "
             . number_format((float) $adjustment->amount, 2) . " {$currency} بتاريخ {$date}.";
         if ($adjustment->notes) {
             $adminBody .= " ملاحظات: {$adjustment->notes}";
