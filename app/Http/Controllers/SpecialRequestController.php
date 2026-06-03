@@ -21,6 +21,8 @@ class SpecialRequestController extends Controller
             'paid_at' => now(),
         ]);
 
+        $payment->specialRequest?->refreshPaymentStatus();
+
         try {
             $project = $payment->specialRequest;
             $whatsapp = app(WhatsAppOTPService::class);

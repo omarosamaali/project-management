@@ -86,8 +86,7 @@
                             <h4 class="font-bold text-gray-900 dark:text-white">{{ $payment->payment_name }}</h4>
                             <span
                                 class="px-3 py-1 rounded-full text-xs font-bold @if($payment->status == 'paid') bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 @elseif($payment->status == 'pending') bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 @else bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 @endif">
-                                @if($payment->status == 'paid') مدفوعة @elseif($payment->status == 'pending') قيد
-                                المراجعة @else غير مدفوعة @endif
+                                @if($payment->status == 'paid') مدفوعة @elseif($payment->status == 'pending') بانتظار تأكيد الدفع @else غير مدفوعة @endif
                             </span>
                         </div>
                         <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
@@ -116,7 +115,7 @@
                         </div>
                         @endif
                     </div>
-                    @if(auth()->user()->role === 'client' && $payment->status !== 'paid')
+                    @if(auth()->user()->role === 'client' && $SpecialRequest->isClientMember(auth()->id()) && $payment->status !== 'paid')
                     <div class="flex flex-col items-end">
                         @php
                         $baseAmount = $payment->amount;

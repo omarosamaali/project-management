@@ -31,7 +31,7 @@
                 </div>
             </div>
             @endforeach
-            <form method="POST" action="{{ route('dashboard.clients.store') }}" class="space-y-6">
+            <form method="POST" action="{{ route('dashboard.clients.store') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 <input type="hidden" name="role" value="client">
                 <div>
@@ -61,6 +61,9 @@
                     <span class="text-black text-xs mt-1">{{ $message }}</span>
                     @enderror
                 </div>
+
+                @php $newClient = new \App\Models\User(['account_type' => old('account_type', 'personal')]); @endphp
+                <x-client-company-fields :user="$newClient" :logo-required="true" />
 
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 mb-1">كلمة المرور:</label>

@@ -27,7 +27,7 @@
                 تعديل بيانات العميل: {{ $client->name }}
             </h2>
 
-            <form method="POST" action="{{ route('dashboard.clients.update', $client->id) }}" class="space-y-6">
+            <form method="POST" action="{{ route('dashboard.clients.update', $client->id) }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('PUT')
 
@@ -65,6 +65,8 @@
                     @enderror
                 </div>
 
+                <x-client-company-fields :user="$client" />
+
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">كلمة
                         المرور:</label>
@@ -85,12 +87,14 @@
                     <div class="flex gap-4">
                         <label
                             class="flex items-center gap-3 p-4 border-2 border-green-300 bg-green-50 rounded-lg cursor-pointer">
-                            <input type="radio" name="status" value="active" checked class="w-5 h-5 text-green-600">
+                            <input type="radio" name="status" value="active"
+                                {{ old('status', $client->status) === 'active' ? 'checked' : '' }} class="w-5 h-5 text-green-600">
                             <span class="font-medium text-green-700">نشط</span>
                         </label>
                         <label
                             class="flex items-center gap-3 p-4 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                            <input type="radio" name="status" value="inactive" class="w-5 h-5 text-gray-600">
+                            <input type="radio" name="status" value="inactive"
+                                {{ old('status', $client->status) === 'inactive' ? 'checked' : '' }} class="w-5 h-5 text-gray-600">
                             <span class="font-medium text-gray-700">غير نشط</span>
                         </label>
                     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ClientCompanyFields;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -30,18 +31,26 @@ class ClientController extends Controller
     // Store Method
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
             'phone' => 'nullable|string|max:20',
             'status' => 'required|in:active,inactive',
-        ]);
+        ];
+
+        $placeholder = new User(['role' => 'client']);
+        $validated = $request->validate(
+            array_merge($rules, ClientCompanyFields::rules($placeholder, logoRequiredForNewBusiness: true)),
+            ClientCompanyFields::messages()
+        );
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['role'] = 'client';
 
-        User::create($validated);
+        $user = User::create(collect($validated)->except(['company_logo', 'account_type', 'company_name'])->all());
+        ClientCompanyFields::apply($user, $request);
+        $user->save();
 
         return redirect()->route('dashboard.clients.index')
             ->with('success', 'تم إضافة العميل بنجاح');
@@ -62,23 +71,30 @@ class ClientController extends Controller
     // Update Method
     public function update(Request $request, User $client)
     {
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => "required|email|unique:users,email,{$client->id},id",
             'password' => 'nullable|string|min:8',
             'phone' => 'nullable|string|max:20',
             'status' => 'required|in:active,inactive',
-        ]);
+        ];
+
+        $validated = $request->validate(
+            array_merge($rules, ClientCompanyFields::rules($client)),
+            ClientCompanyFields::messages()
+        );
 
         $validated['role'] = 'client';
 
-        if(!empty($request->password)) {
+        if (!empty($request->password)) {
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
         }
 
-        $client->update($validated);
+        $client->update(collect($validated)->except(['company_logo', 'account_type', 'company_name'])->all());
+        ClientCompanyFields::apply($client, $request);
+        $client->save();
 
         return redirect()->route('dashboard.clients.index')
             ->with('success', 'تم تحديث العميل بنجاح');

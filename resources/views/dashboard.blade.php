@@ -7,96 +7,98 @@
 <section class="!pl-0 p-3 sm:p-5 space-y-6">
 
     {{-- ====== كروت المهام ====== --}}
-    <div>
-        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
-            <i class="fas fa-tasks text-indigo-600"></i>
-            إحصائيات {{ $taskStats['scope_label'] }}
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div class="rounded-lg bg-indigo-900 text-white p-4 flex flex-col justify-between min-h-[100px]">
-                <span class="text-xs opacity-80">الإجمالي</span>
-                <span class="text-2xl font-black">{{ $taskStats['total'] }}</span>
-            </div>
-            <div class="rounded-lg bg-green-700 text-white p-4 flex flex-col justify-between min-h-[100px]">
-                <span class="text-xs opacity-80">منتهية</span>
-                <span class="text-2xl font-black">{{ $taskStats['completed'] }}</span>
-            </div>
-            <div class="rounded-lg bg-slate-700 text-white p-4 flex flex-col justify-between min-h-[100px]">
-                <span class="text-xs opacity-80">متبقية</span>
-                <span class="text-2xl font-black">{{ $taskStats['remaining'] }}</span>
-            </div>
-            <div class="rounded-lg bg-blue-600 text-white p-4 flex flex-col justify-between min-h-[100px]">
-                <span class="text-xs opacity-80">قيد الإنجاز</span>
-                <span class="text-2xl font-black">{{ $taskStats['in_progress'] }}</span>
-            </div>
-            <div class="rounded-lg bg-red-600 text-white p-4 flex flex-col justify-between min-h-[100px]">
-                <span class="text-xs opacity-80">متأخرة</span>
-                <span class="text-2xl font-black">{{ $taskStats['late'] }}</span>
-            </div>
-            <div class="rounded-lg bg-amber-600 text-white p-4 flex flex-col justify-between min-h-[100px]">
-                <span class="text-xs opacity-80">بالانتظار</span>
-                <span class="text-2xl font-black">{{ $taskStats['waiting'] }}</span>
-            </div>
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-tasks text-indigo-600"></i>
+                إحصائيات {{ $taskStats['scope_label'] }}
+            </h2>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <p class="text-xs text-gray-500 dark:text-gray-400">متوسط سرعة الإنجاز (أيام)</p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white mt-1">
-                    {{ $taskStats['avg_completion_days'] !== null ? $taskStats['avg_completion_days'] . ' يوم' : '—' }}
-                </p>
+        <div class="p-4 space-y-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 auto-rows-fr">
+                @php
+                    $taskCards = [
+                        ['label' => 'الإجمالي', 'value' => $taskStats['total'], 'bg' => 'bg-indigo-900'],
+                        ['label' => 'منتهية', 'value' => $taskStats['completed'], 'bg' => 'bg-green-700'],
+                        ['label' => 'متبقية', 'value' => $taskStats['remaining'], 'bg' => 'bg-slate-600'],
+                        ['label' => 'قيد الإنجاز', 'value' => $taskStats['in_progress'], 'bg' => 'bg-blue-600'],
+                        ['label' => 'متأخرة', 'value' => $taskStats['late'], 'bg' => 'bg-red-600'],
+                        ['label' => 'بالانتظار', 'value' => $taskStats['waiting'], 'bg' => 'bg-amber-600'],
+                    ];
+                @endphp
+                @foreach($taskCards as $card)
+                <div class="{{ $card['bg'] }} text-white rounded-xl p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs font-medium opacity-90 leading-tight">{{ $card['label'] }}</span>
+                    <span class="text-2xl sm:text-3xl font-black tabular-nums leading-none">{{ $card['value'] }}</span>
+                </div>
+                @endforeach
             </div>
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <p class="text-xs text-gray-500 dark:text-gray-400">نسبة الإنجاز في الموعد</p>
-                <p class="text-xl font-bold text-green-600 mt-1">
-                    {{ $taskStats['on_time_rate'] !== null ? $taskStats['on_time_rate'] . '%' : '—' }}
-                </p>
-            </div>
-            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                <p class="text-xs text-gray-500 dark:text-gray-400">ساعات العمل على المهام (تتبع الوقت)</p>
-                <p class="text-xl font-bold text-indigo-600 mt-1">{{ $taskStats['total_tracked_hours'] }} ساعة</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">متوسط سرعة الإنجاز (أيام)</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white mt-2 tabular-nums">
+                        {{ $taskStats['avg_completion_days'] !== null ? $taskStats['avg_completion_days'] . ' يوم' : '—' }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">نسبة الإنجاز في الموعد</p>
+                    <p class="text-xl font-bold text-green-600 mt-2 tabular-nums">
+                        {{ $taskStats['on_time_rate'] !== null ? $taskStats['on_time_rate'] . '%' : '—' }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">ساعات العمل على المهام</p>
+                    <p class="text-xl font-bold text-indigo-600 mt-2 tabular-nums">{{ $taskStats['total_tracked_hours'] }} <span class="text-sm font-semibold">ساعة</span></p>
+                </div>
             </div>
         </div>
     </div>
 
     @if($attendanceStats)
     {{-- ====== كروت الحضور والرواتب ====== --}}
-    <div>
-        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-1 flex items-center gap-2">
-            <i class="fas fa-clock text-orange-600"></i>
-            الحضور والدوام
-            <span class="text-sm font-normal text-gray-500">({{ $attendanceStats['period_label'] }})</span>
-        </h2>
-        <p class="text-xs text-gray-500 mb-3">اليوم: {{ $attendanceStats['status_today'] }} — {{ $attendanceStats['worked_hours_today'] }} ساعة</p>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <a href="{{ route('dashboard.work-times.calendar') }}"
-                class="rounded-lg bg-orange-700 text-white p-4 hover:bg-orange-800 transition min-h-[100px] flex flex-col justify-between">
-                <span class="text-xs opacity-90"><i class="fas fa-business-time ml-1"></i>ساعات العمل</span>
-                <span class="text-2xl font-black">{{ $attendanceStats['worked_hours'] }}<span class="text-sm font-normal"> س</span></span>
-            </a>
-            <div class="rounded-lg bg-yellow-600 text-white p-4 min-h-[100px] flex flex-col justify-between">
-                <span class="text-xs opacity-90">دقائق التأخير</span>
-                <span class="text-2xl font-black">{{ $attendanceStats['late_minutes'] }}</span>
-            </div>
-            <div class="rounded-lg bg-teal-700 text-white p-4 min-h-[100px] flex flex-col justify-between">
-                <span class="text-xs opacity-90">قيمة الإضافي</span>
-                <span class="text-xl font-black">{{ number_format($attendanceStats['overtime_amount'], 0) }}</span>
-            </div>
-            <div class="rounded-lg bg-red-700 text-white p-4 min-h-[100px] flex flex-col justify-between">
-                <span class="text-xs opacity-90">خصم حضور</span>
-                <span class="text-xl font-black">{{ number_format($attendanceStats['attendance_deduction'], 0) }}</span>
-            </div>
-            <a href="{{ route('dashboard.adjustments.index') }}"
-                class="rounded-lg bg-green-600 text-white p-4 hover:bg-green-700 transition min-h-[100px] flex flex-col justify-between">
-                <span class="text-xs opacity-90"><i class="fas fa-gift ml-1"></i>مكافآت</span>
-                <span class="text-xl font-black">{{ number_format($attendanceStats['bonus_total'], 0) }}</span>
-            </a>
-            <a href="{{ route('dashboard.adjustments.index') }}"
-                class="rounded-lg bg-rose-700 text-white p-4 hover:bg-rose-800 transition min-h-[100px] flex flex-col justify-between">
-                <span class="text-xs opacity-90"><i class="fas fa-minus-circle ml-1"></i>خصومات</span>
-                <span class="text-xl font-black">{{ number_format($attendanceStats['adjustment_deduction'], 0) }}</span>
-            </a>
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-clock text-orange-600"></i>
+                    الحضور والدوام
+                </span>
+                <span class="text-sm font-normal text-gray-500">({{ $attendanceStats['period_label'] }})</span>
+            </h2>
+            <p class="text-xs text-gray-500 mt-1">اليوم: {{ $attendanceStats['status_today'] }} — {{ $attendanceStats['worked_hours_today'] }} ساعة</p>
         </div>
-        <p class="text-xs text-gray-500 mt-2">أيام حضور مسجّلة هذا الشهر: {{ $attendanceStats['attendance_days'] }}</p>
+        <div class="p-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 auto-rows-fr">
+                <a href="{{ route('dashboard.work-times.calendar') }}"
+                    class="rounded-xl bg-orange-700 text-white p-4 hover:bg-orange-800 transition min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90"><i class="fas fa-business-time ml-1"></i>ساعات العمل</span>
+                    <span class="text-2xl font-black tabular-nums">{{ $attendanceStats['worked_hours'] }}<span class="text-sm font-normal"> س</span></span>
+                </a>
+                <div class="rounded-xl bg-yellow-600 text-white p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90">دقائق التأخير</span>
+                    <span class="text-2xl font-black tabular-nums">{{ $attendanceStats['late_minutes'] }}</span>
+                </div>
+                <div class="rounded-xl bg-teal-700 text-white p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90">قيمة الإضافي</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['overtime_amount'], 0) }}</span>
+                </div>
+                <div class="rounded-xl bg-red-700 text-white p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90">خصم حضور</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['attendance_deduction'], 0) }}</span>
+                </div>
+                <a href="{{ route('dashboard.adjustments.index') }}"
+                    class="rounded-xl bg-green-600 text-white p-4 hover:bg-green-700 transition min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90"><i class="fas fa-gift ml-1"></i>مكافآت</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['bonus_total'], 0) }}</span>
+                </a>
+                <a href="{{ route('dashboard.adjustments.index') }}"
+                    class="rounded-xl bg-rose-700 text-white p-4 hover:bg-rose-800 transition min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90"><i class="fas fa-minus-circle ml-1"></i>خصومات</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['adjustment_deduction'], 0) }}</span>
+                </a>
+            </div>
+            <p class="text-xs text-gray-500 mt-3 text-center sm:text-right">أيام حضور مسجّلة هذا الشهر: {{ $attendanceStats['attendance_days'] }}</p>
+        </div>
     </div>
     @endif
 

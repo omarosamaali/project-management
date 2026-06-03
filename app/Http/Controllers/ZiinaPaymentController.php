@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Course;
 use App\Models\MyStore;
+use App\Models\RequestPayment;
+use App\Support\InstallmentPaymentService;
 use Illuminate\Support\Facades\Http;
 
 class ZiinaPaymentController extends Controller
@@ -392,10 +394,20 @@ class ZiinaPaymentController extends Controller
                 $payment->update(['status' => $status === 'paid' ? 'completed' : $status]);
 
                 if ($status === 'paid') {
-                    $specialRequest = SpecialRequest::find($payment->special_request_id);
-                    if ($specialRequest) {
-                        $specialRequest->update(['status' => 'in_progress']);
-                        Log::info('تم تحديث حالة الطلب الخاص عبر callback');
+                    if ($payment->request_payment_id) {
+                        $installment = RequestPayment::find($payment->request_payment_id);
+                        if ($installment) {
+                            InstallmentPaymentService::markInstallmentPaid($payment, $installment);
+                            Log::info('تم تأكيد دفعة جزئية عبر callback', [
+                                'installment_id' => $installment->id,
+                            ]);
+                        }
+                    } else {
+                        $specialRequest = SpecialRequest::find($payment->special_request_id);
+                        if ($specialRequest) {
+                            $specialRequest->update(['status' => 'in_progress']);
+                            Log::info('تم تحديث حالة الطلب الخاص عبر callback');
+                        }
                     }
                 }
             }
@@ -418,7 +430,7 @@ class ZiinaPaymentController extends Controller
 
             $specialRequest = $installment->specialRequest;
 
-            if ($specialRequest->user_id !== Auth::id()) {
+            if (!$specialRequest->isClientMember((int) Auth::id())) {
                 return response()->json([
                     'success' => false,
                     'message' => 'غير مصرح لك بدفع هذه الدفعة'
@@ -436,7 +448,7 @@ class ZiinaPaymentController extends Controller
             $fees = ($basePrice * 0.079) + 2;
             $totalAmount = $basePrice + $fees;
 
-            $successUrl = route('payment.installment.return', ['installment' => $installment->id]);
+            $successUrl = route('payment.installment.return', ['installment_id' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
             // $isTest = config('services.ziina.test_mode', true);
 
@@ -485,41 +497,51 @@ class ZiinaPaymentController extends Controller
     public function handleInstallmentReturn(Request $request)
     {
         $paymentIntentId = $request->query('payment_intent_id');
-        $installmentId = $request->query('installment_id');
+        $installmentId = InstallmentPaymentService::resolveInstallmentId($request);
 
-        if (!$paymentIntentId || !$installmentId) {
+        if (!$paymentIntentId) {
             return redirect()->route('dashboard')->with('error', 'بيانات الدفع غير كاملة');
         }
 
-        try {
-            $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
-            $payment = Payment::where('payment_id', $paymentIntentId)->first();
+        $payment = Payment::where('payment_id', $paymentIntentId)->first();
 
-            if ($payment && in_array($paymentIntent['status'], ['completed', 'paid'])) {
-                $payment->update(['status' => 'completed']);
-
-                $installment = \App\Models\RequestPayment::find($installmentId);
-                if ($installment) {
-                    $installment->update([
-                        'status' => 'paid',
-                        'paid_at' => now(),
-                    ]);
-
-                    $specialRequest = $installment->specialRequest;
-                    $specialRequest->refreshPaymentStatus();
-                }
-
-                return redirect()
-                    ->route('special-request.details', $installment->special_request_id)
-                    ->with('success', 'تم دفع الدفعة بنجاح!');
-            }
-        } catch (\Exception $e) {
-            Log::error('Installment return error: ' . $e->getMessage());
+        if (!$installmentId && $payment?->request_payment_id) {
+            $installmentId = (int) $payment->request_payment_id;
         }
 
-        return redirect()
-            ->route('special-request.details', $installment->special_request_id)
-            ->with('error', 'فشل في تأكيد الدفع');
+        $installment = $installmentId ? RequestPayment::find($installmentId) : null;
+
+        if (!$installment) {
+            return redirect()->route('dashboard')->with('error', 'بيانات الدفع غير كاملة');
+        }
+
+        $redirectRoute = fn () => redirect()
+            ->route('dashboard.special-request.show', $installment->special_request_id);
+
+        try {
+            $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
+
+            if ($payment && InstallmentPaymentService::isZiinaPaid($paymentIntent)) {
+                InstallmentPaymentService::markInstallmentPaid($payment, $installment);
+
+                return $redirectRoute()->with('success', 'تم دفع الدفعة بنجاح!');
+            }
+
+            InstallmentPaymentService::revertInstallmentIfNotPaid(
+                $installment,
+                $paymentIntentId,
+                $this->ziinaHandler
+            );
+        } catch (\Exception $e) {
+            Log::error('Installment return error: ' . $e->getMessage());
+            InstallmentPaymentService::revertInstallmentIfNotPaid(
+                $installment,
+                $paymentIntentId,
+                $this->ziinaHandler
+            );
+        }
+
+        return $redirectRoute()->with('error', 'فشل في تأكيد الدفع أو تم إلغاء العملية');
     }
 
     public function createCoursePayment(Request $request)

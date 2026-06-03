@@ -46,6 +46,27 @@
                     <div class="grid md:grid-cols-2 gap-6">
 
                         <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">نوع الحساب</label>
+                            <span class="text-lg font-bold text-gray-900 dark:text-white">
+                                {{ ($client->account_type ?? 'personal') === 'business' ? 'تجاري' : 'شخصي' }}
+                            </span>
+                        </div>
+
+                        @if(($client->account_type ?? '') === 'business')
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">اسم الشركة</label>
+                            <span class="text-lg font-bold text-gray-900 dark:text-white">{{ $client->company_name ?: '—' }}</span>
+                        </div>
+                        @if($client->company_logo)
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">لوجو الشركة</label>
+                            <img src="{{ \App\Support\ClientCompanyFields::logoUrl($client) }}" alt="لوجو الشركة"
+                                class="h-20 w-auto max-w-[200px] object-contain rounded border border-gray-200 bg-white p-2">
+                        </div>
+                        @endif
+                        @endif
+
+                        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">الاسم</label>
                             <span class="text-lg font-bold text-gray-900 dark:text-white">{{ $client->name }}</span>
                         </div>

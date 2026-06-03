@@ -41,7 +41,7 @@
         @csrf
     </form>
 
-    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ route('profile.update') }}" enctype="multipart/form-data" class="mt-6 space-y-6">
         @csrf
         @method('patch')
 
@@ -52,6 +52,10 @@
                 required autofocus autocomplete="name" />
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
         </div>
+
+        @if(Auth::user()->role === 'client')
+        <x-client-company-fields :user="$user" :logo-required="($user->account_type ?? 'personal') === 'business' && !$user->company_logo" />
+        @endif
 
         {{-- country --}}
         <div>

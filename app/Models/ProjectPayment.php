@@ -34,7 +34,7 @@ class ProjectPayment extends Model
         return [
             'unpaid' => 'غير مدفوعة',
             'paid' => 'مدفوعة',
-            'pending' => 'قيد المراجعة'
+            'pending' => 'بانتظار تأكيد الدفع'
         ][$this->status] ?? 'غير محدد';
     }
 

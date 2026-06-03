@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\ClientCompanyFields;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +45,10 @@ class ProfileController extends Controller
         // الحقول الجديدة التي أضفناها للمحفظة
         $user->wallet_type = $request->wallet_type;
         $user->wallet_full_name = $request->wallet_full_name;
+
+        if ($user->role === 'client') {
+            ClientCompanyFields::apply($user, $request);
+        }
 
         $user->save();
 

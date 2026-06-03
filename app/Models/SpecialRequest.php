@@ -187,6 +187,23 @@ class SpecialRequest extends Model
         return $this->hasMany(RequestPayment::class);
     }
 
+    /**
+     * بعد دفع دفعة: تحديث حالة المشروع إن اكتملت كل الدفعات.
+     */
+    public function refreshPaymentStatus(): void
+    {
+        $payments = $this->requestPayments()->get();
+
+        if ($payments->isEmpty()) {
+            return;
+        }
+
+        $allPaid = $payments->every(fn ($p) => $p->status === 'paid');
+
+        if ($allPaid && $this->status !== 'completed') {
+            $this->update(['status' => 'in_progress']);
+        }
+    }
 
     public function getTotalPaidAmount()
     {
