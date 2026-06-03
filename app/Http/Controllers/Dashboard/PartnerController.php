@@ -123,6 +123,22 @@ class PartnerController extends Controller
                 $partner->{$field} = CountryNames::ensureUtf8((string) $partner->{$field});
             }
         }
+
+        if ($partner->relationLoaded('systems')) {
+            foreach ($partner->systems as $system) {
+                if (! empty($system->name_ar)) {
+                    $system->name_ar = CountryNames::ensureUtf8($system->name_ar);
+                }
+            }
+        }
+
+        if ($partner->relationLoaded('services')) {
+            foreach ($partner->services as $service) {
+                if (! empty($service->name_ar)) {
+                    $service->name_ar = CountryNames::ensureUtf8($service->name_ar);
+                }
+            }
+        }
     }
 
     // Create Method

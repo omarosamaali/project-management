@@ -75,6 +75,8 @@
                             <th scope="col" class="px-4 py-3">الانظمة</th>
                             <th scope="col" class="px-4 py-3">النسبة</th>
                             <th scope="col" class="px-4 py-3">عدد المشاريع</th>
+                            <th scope="col" class="px-4 py-3">الراتب</th>
+                            <th scope="col" class="px-4 py-3">الدوام</th>
                             <th scope="col" class="px-4 py-3">
                                 <span class="sr-only">Actions</span>
                             </th>
@@ -90,7 +92,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <span class="{{ $partner->is_employee == '1' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }} rounded-full text-xs px-2 py-0.5">{{ $partner->is_employee == '1' ? 'شريك موظف' : 'شريك مستقل' }}</span>
-                                {{ $partner->name }}
+                                <a href="{{ route('dashboard.partners.show', $partner) }}" class="font-medium text-blue-700 hover:underline dark:text-blue-400">{{ $partner->name }}</a>
                             </td>
                             <td class="px-4 py-3">
                                 @php
@@ -132,6 +134,22 @@
                                 </span>
                                 @else
                                 <span class="text-gray-500">لا يوجد طلبات</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-xs">
+                                @if($partner->is_employee && $partner->salary_amount)
+                                <span class="font-bold text-green-700">{{ number_format($partner->salary_amount, 0) }}</span>
+                                <span class="text-gray-400">{{ $partner->salary_currency }}</span>
+                                @else
+                                <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-xs text-gray-600">
+                                @if($partner->work_start_time || $partner->work_end_time)
+                                <span class="block"><i class="fas fa-sign-in-alt text-green-500"></i> {{ $partner->work_start_time ?? '—' }}</span>
+                                <span class="block"><i class="fas fa-sign-out-alt text-red-500"></i> {{ $partner->work_end_time ?? '—' }}</span>
+                                @else
+                                <span class="text-gray-400">—</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 flex items-center justify-end">
@@ -182,7 +200,7 @@
                     @endforeach
                     @else
                     <tr>
-                        <td colspan="5"
+                        <td colspan="8"
                             class="text-center px-4 py-3 font-medium text-gray-700 whitespace-nowrap bg-gray-50">
                             <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
                             لا يوجد شركاء لعرضهم.

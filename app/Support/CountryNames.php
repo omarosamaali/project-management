@@ -14,6 +14,8 @@ class CountryNames
     public static function arabicNames(): array
     {
         return cache()->remember(self::CACHE_KEY, now()->addMonth(), function () {
+            cache()->forget('country_names_ar');
+
             $path = base_path('vendor/umpirsky/country-list/data/ar/country.php');
 
             if (! is_file($path)) {

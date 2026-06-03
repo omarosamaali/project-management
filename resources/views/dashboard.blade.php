@@ -116,18 +116,18 @@
         <div class="p-4 space-y-4">
             @php
                 $taskFilterCards = [
-                    ['label' => 'منتهية', 'value' => $taskStats['completed'], 'bg' => 'bg-green-700', 'status' => 'منتهية'],
-                    ['label' => 'بالانتظار', 'value' => $taskStats['waiting'], 'bg' => 'bg-amber-600', 'status' => 'بالانتظار'],
-                    ['label' => 'متأخرة', 'value' => $taskStats['late'], 'bg' => 'bg-red-600', 'status' => 'متأخرة'],
-                    ['label' => 'قيد الإنجاز', 'value' => $taskStats['in_progress'], 'bg' => 'bg-blue-600', 'status' => 'قيد الإنجاز'],
-                    ['label' => 'الإجمالي', 'value' => $taskStats['total'], 'bg' => 'bg-indigo-900', 'status' => 'all'],
-                    ['label' => 'متبقية', 'value' => $taskStats['remaining'], 'bg' => 'bg-slate-600', 'status' => 'remaining'],
+                    ['label' => 'منتهية', 'value' => $taskStats['completed'], 'classes' => 'bg-green-700 hover:bg-green-800', 'status' => 'منتهية'],
+                    ['label' => 'بالانتظار', 'value' => $taskStats['waiting'], 'classes' => 'bg-amber-600 hover:bg-amber-700', 'status' => 'بالانتظار'],
+                    ['label' => 'متأخرة', 'value' => $taskStats['late'], 'classes' => 'bg-red-600 hover:bg-red-700', 'status' => 'متأخرة'],
+                    ['label' => 'قيد الإنجاز', 'value' => $taskStats['in_progress'], 'classes' => 'bg-blue-600 hover:bg-blue-700', 'status' => 'قيد الإنجاز'],
+                    ['label' => 'الإجمالي', 'value' => $taskStats['total'], 'classes' => 'bg-gray-900 hover:bg-black', 'status' => 'all'],
+                    ['label' => 'متبقية', 'value' => $taskStats['remaining'], 'classes' => 'bg-gray-600 hover:bg-gray-700', 'status' => 'remaining'],
                 ];
             @endphp
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 @foreach($taskFilterCards as $card)
                 <a href="{{ route('dashboard', ['task_status' => $card['status']]) }}#tasks-list"
-                    class="{{ $card['bg'] }} text-white rounded-xl p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm hover:opacity-95 transition ring-2 {{ ($taskStatusFilter ?? '') === $card['status'] ? 'ring-white ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800' : 'ring-transparent' }}">
+                    class="{{ $card['classes'] }} text-white rounded-xl p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm transition ring-2 {{ ($taskStatusFilter ?? '') === $card['status'] ? 'ring-white ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800' : 'ring-transparent' }}">
                     <span class="text-[11px] sm:text-xs font-medium opacity-90 leading-tight">{{ $card['label'] }}</span>
                     <span class="text-2xl sm:text-3xl font-black tabular-nums leading-none">{{ $card['value'] }}</span>
                 </a>

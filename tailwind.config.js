@@ -36,4 +36,19 @@ export default {
     },
 
     plugins: [forms, require("flowbite/plugin")],
+
+    safelist: [
+        "bg-green-700",
+        "hover:bg-green-800",
+        "bg-amber-600",
+        "hover:bg-amber-700",
+        "bg-red-600",
+        "hover:bg-red-700",
+        "bg-blue-600",
+        "hover:bg-blue-700",
+        "bg-gray-900",
+        "hover:bg-black",
+        "bg-gray-600",
+        "hover:bg-gray-700",
+    ],
 };

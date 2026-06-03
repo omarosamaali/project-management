@@ -8,7 +8,7 @@
         first="الرئيسية"
         :link="!empty($isOwnProfile) ? route('dashboard.my-profile') : route('dashboard.partners.index')"
         :second="!empty($isOwnProfile) ? 'ملفي الوظيفي' : 'الشركاء'"
-        :third="!empty($isOwnProfile) ? 'بياناتي' : 'عرض الشريك'" />
+        :third="$partner->name" />
 
     <div class="mx-auto max-w-6xl w-full">
         <div class="bg-white dark:bg-gray-800 relative shadow-2xl border rounded-xl overflow-hidden">
@@ -135,7 +135,7 @@
     </div>
 
     {{-- القسم 2: تفاصيل الرواتب --}}
-    @if($partner->salary_amount || $partner->hiring_date)
+    @if($partner->is_employee || $partner->salary_amount || $partner->hiring_date || $partner->apply_salary_scale)
     <div class="pb-6 border-b">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i class="fas fa-money-check-alt text-green-600"></i> البيانات المالية (الرواتب)
@@ -178,6 +178,92 @@
         <div class="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100">
             <label class="text-xs text-gray-400 block mb-1">ملاحظات الراتب:</label>
             <p class="text-sm text-gray-700 dark:text-gray-300 italic">{{ $partner->salary_notes }}</p>
+        </div>
+        @endif
+    </div>
+    @endif
+
+    {{-- القسم: تفاصيل الدوام وساعات العمل (يظهر لكل موظف) --}}
+    @if($partner->is_employee || $partner->apply_working_hours || $partner->work_start_time || $partner->work_end_time || $partner->daily_work_hours)
+    <div class="pb-6 border-b">
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <i class="fas fa-user-clock text-indigo-600"></i> تفاصيل الدوام والعمل
+        </h2>
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            @if($partner->country && $partner->country != $partner->first_country)
+            <div class="bg-purple-50 dark:bg-gray-700 p-4 rounded-lg border border-purple-100">
+                <label class="block text-sm font-medium text-gray-500 mb-1">الدولة (دوام العمل)</label>
+                <span class="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-xs font-bold">
+                    {{ $partner->country_name }}
+                </span>
+            </div>
+            @endif
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">وقت الحضور</label>
+                <span class="text-lg font-bold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-sign-in-alt text-green-500"></i> {{ $partner->work_start_time ?? '—' }}
+                </span>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">وقت الانصراف</label>
+                <span class="text-lg font-bold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-sign-out-alt text-red-500"></i> {{ $partner->work_end_time ?? '—' }}
+                </span>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">ساعات العمل اليومية</label>
+                <span class="text-lg font-bold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-business-time text-blue-500"></i> {{ $partner->daily_work_hours ?? '0' }} ساعة
+                </span>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
+                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">مدة الاستراحة</label>
+                <span class="text-lg font-bold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-coffee text-orange-500"></i> {{ $partner->break_minutes ?? '0' }} دقيقة
+                </span>
+            </div>
+            @if($partner->allowed_late_minutes)
+            <div class="p-4 bg-orange-50 dark:bg-gray-700 rounded-lg border border-orange-100">
+                <label class="text-xs text-orange-600 block mb-1">تأخير مسموح</label>
+                <span class="text-lg font-bold text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-hourglass-half"></i> {{ $partner->allowed_late_minutes }} دقيقة
+                </span>
+            </div>
+            @endif
+        </div>
+
+        @if($partner->vacation_days && count($partner->vacation_days) > 0)
+        <div class="mt-4">
+            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-2 font-medium">
+                <i class="fas fa-calendar-times"></i> أيام الإجازة الأسبوعية:
+            </label>
+            <div class="flex flex-wrap gap-2">
+                @php
+                $daysMapping = [
+                    'saturday' => 'السبت', 'sunday' => 'الأحد', 'monday' => 'الاثنين',
+                    'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة',
+                ];
+                @endphp
+                @foreach($partner->vacation_days as $day)
+                @php $cleanDay = trim(strtolower($day)); @endphp
+                <span class="px-3 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-100 rounded-md text-xs font-bold">
+                    <i class="fas fa-calendar-day"></i> {{ $daysMapping[$cleanDay] ?? $day }}
+                </span>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        @if(!empty($isOwnProfile) || !empty($isAdminView))
+        <div class="mt-4 flex flex-wrap gap-2">
+            <a href="{{ route('dashboard.work-times.index') }}"
+                class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700">
+                <i class="fas fa-clock"></i> سجل الحضور
+            </a>
+            <a href="{{ route('dashboard.work-times.calendar') }}"
+                class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700">
+                <i class="fas fa-calendar-alt"></i> تقويم الحضور
+            </a>
         </div>
         @endif
     </div>
@@ -248,82 +334,6 @@
             </div>
             @endforeach
         </div>
-    </div>
-    @endif
-
-    {{-- القسم 5: تفاصيل الدوام وساعات العمل --}}
-    @if($partner->work_start_time || $partner->daily_work_hours)
-    <div class="pb-6 border-b">
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <i class="fas fa-user-clock text-indigo-600"></i> تفاصيل الدوام والعمل
-        </h2>
-        <div class="grid md:grid-cols-4 gap-4">
-            @if($partner->country && $partner->country != $partner->first_country)
-                        <div class="bg-purple-50 dark:bg-gray-700 p-4 rounded-lg border border-purple-100">
-                            <label class="block text-sm font-medium text-gray-500 mb-1">الدولة (دوام العمل)</label>
-                            <span class="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-xs font-bold">
-                                {{ $partner->country_name }}
-                            </span>
-                        </div>
-                        @endif
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
-                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">وقت الحضور</label>
-                <span class="font-bold text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-sign-in-alt text-green-500"></i> {{ $partner->work_start_time ?? '--:--' }}
-                </span>
-            </div>
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
-                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">وقت الانصراف</label>
-                <span class="font-bold text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-sign-out-alt text-black"></i> {{ $partner->work_end_time ?? '--:--' }}
-                </span>
-            </div>
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
-                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">ساعات العمل اليومية</label>
-                <span class="font-bold text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-business-time text-blue-500"></i> {{ $partner->daily_work_hours ?? '0' }} ساعة
-                </span>
-            </div>
-            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600">
-                <label class="text-xs text-gray-500 dark:text-gray-400 block mb-1">وقت الاستراحة</label>
-                <span class="font-bold text-gray-700 dark:text-gray-200">
-                    <i class="fas fa-coffee text-orange-500"></i> {{ $partner->break_minutes ?? '0' }} دقيقة
-                </span>
-            </div>
-        </div>
-
-        {{-- أيام الإجازة الأسبوعية --}}
-        @if($partner->vacation_days && count($partner->vacation_days) > 0)
-        <div class="mt-4">
-            <label class="text-xs text-gray-500 dark:text-gray-400 block mb-2 font-medium">
-                <i class="fas fa-calendar-times text-black"></i> أيام الإجازة الأسبوعية:
-            </label>
-            <div class="flex flex-wrap gap-2">
-                @php
-                $daysMapping = [
-                'saturday' => 'السبت',
-                'sunday' => 'الأحد',
-                'monday' => 'الاثنين',
-                'tuesday' => 'الثلاثاء',
-                'wednesday' => 'الأربعاء',
-                'thursday' => 'الخميس',
-                'friday' => 'الجمعة'
-                ];
-                @endphp
-
-                @foreach($partner->vacation_days as $day)
-                @php
-                $cleanDay = trim(strtolower($day));
-                @endphp
-                <span
-                    class="px-3 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-700 rounded-md text-xs font-bold shadow-sm flex items-center gap-1">
-                    <i class="fas fa-calendar-day"></i>
-                    {{ $daysMapping[$cleanDay] ?? $day }}
-                </span>
-                @endforeach
-            </div>
-        </div>
-        @endif
     </div>
     @endif
 

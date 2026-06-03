@@ -12,6 +12,7 @@ use App\Models\SpecialRequest;
 use App\Models\SpecialRequestPartner;
 use App\Models\Task;
 use App\Support\CockpitMetrics;
+use App\Support\CountryNames;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -34,7 +35,11 @@ class CockpitController extends Controller
             ->where('is_read', false)
             ->latest()
             ->take(10)
-            ->get();
+            ->get()
+            ->each(function ($notification) {
+                $notification->title = CountryNames::ensureUtf8($notification->title);
+                $notification->message = CountryNames::ensureUtf8($notification->message);
+            });
 
         $allTasks = $this->loadAllTasks($user, $requestIds, $specialIds, $taskStatusFilter);
         $allStages = $this->loadAllStages($user, $requestIds, $specialIds);
