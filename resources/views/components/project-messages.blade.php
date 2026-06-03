@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
+    <div id="messagesContainer" data-messages-container class="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
         @forelse($supports as $message)
         @php
         $isMine = $message->user_id === auth()->id();
@@ -51,7 +51,7 @@
             </div>
         </div>
         @empty
-        <div class="text-center py-10">
+        <div class="text-center py-10" data-chat-empty>
             <i class="fas fa-comment-slash text-4xl text-gray-300 mb-3"></i>
             <p class="text-gray-500 text-sm">لا توجد نقاشات بعد.. ابدأ المحادثة الآن!</p>
         </div>
@@ -59,7 +59,7 @@
     </div>
 
     <div class="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-b-xl">
-        <form action="{{ route('dashboard.special-request-messages.store') }}" method="POST" class="flex gap-2">
+        <form data-project-chat-form action="{{ route('dashboard.special-request-messages.store') }}" method="POST" class="flex gap-2">
             @csrf
             <input type="hidden" name="special_request_id" value="{{ $SpecialRequest->id }}">
             <input type="text" name="message" required placeholder="اكتب رسالتك هنا..."
@@ -72,9 +72,4 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.getElementById('messagesContainer');
-        container.scrollTop = container.scrollHeight;
-    });
-</script>
+<x-project-chat-ajax />

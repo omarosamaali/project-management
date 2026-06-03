@@ -2,43 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\StoresProjectChatMessage;
 use App\Models\RequestMessage;
 use App\Models\Requests;
-use App\Services\WhatsAppOTPService;
+use App\Services\ProjectMessageNotificationService;
 use Illuminate\Http\Request;
 
 class RequestMessageController extends Controller
 {
+    use StoresProjectChatMessage;
+
     public function store(Request $request)
     {
         $validated = $request->validate([
             'request_id' => 'required|exists:requests,id',
-            'message' => 'required|string|max:1000'
+            'message' => 'required|string|max:1000',
         ]);
 
-        RequestMessage::create([
+        $message = RequestMessage::create([
             'request_id' => $validated['request_id'],
             'user_id' => auth()->id(),
-            'message' => $validated['message']
+            'message' => $validated['message'],
         ]);
 
-        try {
-            $project = Requests::find($validated['request_id']);
-            if ($project) {
-                $whatsapp = app(WhatsAppOTPService::class);
-                $senderName = auth()->user()->name;
-                $preview = mb_substr($request->message, 0, 60);
-                foreach ($project->partners()->get() as $member) {
-                    if ($member->phone && $member->id !== auth()->id()) {
-                        $whatsapp->sendProjectNotification($member->phone, $member->name, "رسالة جديدة من {$senderName}: \"{$preview}\"", $project->title ?? "طلب #{$project->id}");
-                    }
+        return $this->chatStoreResponse(
+            $request,
+            $message,
+            $validated['message'],
+            function (int $senderId, string $senderName, string $preview) use ($validated) {
+                $project = Requests::find($validated['request_id']);
+                if ($project) {
+                    app(ProjectMessageNotificationService::class)
+                        ->notifyRequest($project, $senderId, $senderName, $preview);
                 }
-                $whatsapp->notifyManager("رسالة جديدة من {$senderName}: \"{$preview}\"", $project->title ?? "طلب #{$project->id}");
-            }
-        } catch (\Exception $e) {
-            \Log::error("[MSG_NOTIFY] " . $e->getMessage());
-        }
-
-        return back()->with('success', 'تم إرسال الرسالة بنجاح');
+            },
+            'تم إرسال الرسالة بنجاح'
+        );
     }
 }
