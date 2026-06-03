@@ -4,7 +4,8 @@
 
 @section('content')
 <section class="p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.salaries.index') }}" second="رواتب الموظفين"
+    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.salaries.index') }}"
+        :second="!empty($isEmployeeView) ? 'رواتبي' : 'رواتب الموظفين'"
         third="عرض التفاصيل" />
 
     <div class="mx-auto max-w-4xl w-full">
@@ -22,11 +23,13 @@
                         </p>
                     </div>
                     <div class="flex gap-2">
+                        @if(empty($isEmployeeView))
                         <a href="{{ route('dashboard.salaries.edit', $salary) }}"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1">
                             <i class="fas fa-edit"></i>
                             تعديل
                         </a>
+                        @endif
                         <a href="{{ route('dashboard.salaries.index') }}"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center gap-1">
                             <i class="fas fa-arrow-right"></i>

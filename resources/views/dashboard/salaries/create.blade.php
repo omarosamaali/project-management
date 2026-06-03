@@ -115,12 +115,34 @@
                     </div>
                 </div>
 
+                {{-- ملخص الخصومات والمكافآت (من شاشة الخصومات والمكافآت) --}}
+                <div id="adjustments_summary"
+                    class="hidden p-4 bg-purple-50 dark:bg-gray-700 border border-purple-200 dark:border-purple-900 rounded-xl space-y-2">
+                    <h4 class="text-purple-800 dark:text-purple-300 font-bold text-sm flex items-center gap-2">
+                        <i class="fas fa-percent"></i> خصومات ومكافآت الشهر (تلقائي من السجلات)
+                    </h4>
+                    <p id="adjustments_period" class="text-xs text-gray-500"></p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase">مكافآت (+)</p>
+                            <p id="adjustment_bonus_total" class="font-bold text-green-600">0.00</p>
+                            <p id="adjustment_bonus_count" class="text-[10px] text-gray-400">0 سجل</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase">خصومات (-)</p>
+                            <p id="adjustment_deduction_total" class="font-bold text-red-600">0.00</p>
+                            <p id="adjustment_deduction_count" class="text-[10px] text-gray-400">0 سجل</p>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- لوحة ملخص الحضور --}}
                 <div id="attendance_summary"
                     class="hidden p-4 bg-orange-50 dark:bg-gray-700 border border-orange-200 dark:border-orange-900 rounded-xl space-y-2">
                     <h4 class="text-orange-700 dark:text-orange-400 font-bold text-sm flex items-center gap-2">
-                        <i class="fas fa-info-circle"></i> ملخص حضور الشهر الحالي
+                        <i class="fas fa-info-circle"></i> ملخص حضور فترة الراتب
                     </h4>
+                    <p id="attendance_period" class="text-xs text-gray-500 dark:text-gray-400 mb-1"></p>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                         <div>
                             <p class="text-[10px] text-gray-500 uppercase">أيام الحضور</p>
@@ -159,12 +181,20 @@
                             </div>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">الإضافي (+)</label>
+                            <label class="text-xs font-semibold text-gray-600 dark:text-gray-400">إضافي الحضور (+)</label>
                             <div class="relative">
                                 <input type="number" step="0.01" name="overtime_value" id="overtime_value"
                                     value="{{ old('overtime_value', 0) }}"
                                     class="calc-input w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500">
                                 <span class="currency-label absolute left-2 top-2 text-[10px] text-gray-400">--</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-green-700 dark:text-green-400">مكافآت مسجّلة (+)</label>
+                            <div class="relative">
+                                <input type="number" step="0.01" id="adjustment_bonus_value" readonly value="0"
+                                    class="w-full px-4 py-2 bg-green-50 border border-green-200 rounded-lg font-bold text-green-700">
+                                <span class="currency-label absolute left-2 top-2 text-[10px] text-green-600">--</span>
                             </div>
                         </div>
                         <div>
@@ -177,11 +207,28 @@
                             </div>
                         </div>
                         <div>
-                            <label class="text-xs font-semibold text-black dark:text-red-400">الخصم (-)</label>
+                            <label class="text-xs font-semibold text-black dark:text-red-400">خصم الحضور (-)</label>
+                            <div class="relative">
+                                <input type="number" step="0.01" id="attendance_deduction_display" readonly value="0"
+                                    class="w-full px-4 py-2 bg-red-50 border border-red-200 rounded-lg font-bold text-red-700">
+                                <span class="currency-label absolute left-2 top-2 text-[10px] text-red-300">--</span>
+                            </div>
+                            <input type="hidden" name="attendance_deduction" id="attendance_deduction" value="0">
+                        </div>
+                        <div>
+                            <label class="text-xs font-semibold text-black dark:text-red-400">خصومات مسجّلة (-)</label>
+                            <div class="relative">
+                                <input type="number" step="0.01" id="adjustment_deduction_value" readonly value="0"
+                                    class="w-full px-4 py-2 bg-red-50 border border-red-200 rounded-lg font-bold text-red-700">
+                                <span class="currency-label absolute left-2 top-2 text-[10px] text-red-300">--</span>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="text-xs font-semibold text-black dark:text-red-400">إجمالي الخصم (حضور + مسجّل)</label>
                             <div class="relative">
                                 <input type="number" step="0.01" name="deduction_value" id="deduction_value"
-                                    value="{{ old('deduction_value', 0) }}"
-                                    class="calc-input w-full px-4 py-2 border border-red-300 rounded-lg focus:border-red-500 text-black font-bold">
+                                    value="{{ old('deduction_value', 0) }}" readonly
+                                    class="w-full px-4 py-2 bg-gray-100 border border-red-300 rounded-lg font-bold text-red-800 cursor-not-allowed">
                                 <span class="currency-label absolute left-2 top-2 text-[10px] text-red-300">--</span>
                             </div>
                         </div>
@@ -211,6 +258,10 @@
 </section>
 
 <script>
+    let attendanceDeduction = 0;
+    let adjustmentBonus = 0;
+    let adjustmentDeduction = 0;
+
     document.getElementById('attachment').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
@@ -224,11 +275,67 @@
         }
     });
 
-    document.getElementById('employee_select').addEventListener('change', function() {
-        const userId = this.value;
-        const selectedOption = this.options[this.selectedIndex];
-        const country  = selectedOption.getAttribute('data-country');
-        const salary   = parseFloat(selectedOption.getAttribute('data-salary')) || 0;
+    function getSalaryPeriod() {
+        const month = document.querySelector('[name="month"]')?.value;
+        const year = document.querySelector('[name="year"]')?.value;
+        return { month, year };
+    }
+
+    function applyDeductionFields() {
+        document.getElementById('attendance_deduction').value = attendanceDeduction.toFixed(2);
+        document.getElementById('attendance_deduction_display').value = attendanceDeduction.toFixed(2);
+        document.getElementById('adjustment_bonus_value').value = adjustmentBonus.toFixed(2);
+        document.getElementById('adjustment_deduction_value').value = adjustmentDeduction.toFixed(2);
+        document.getElementById('deduction_value').value = (attendanceDeduction + adjustmentDeduction).toFixed(2);
+    }
+
+    function calculate() {
+        const base = parseFloat(document.getElementById('base_salary').value) || 0;
+        const overtime = parseFloat(document.getElementById('overtime_value').value) || 0;
+        const carried = parseFloat(document.getElementById('carried_forward').value) || 0;
+        const totalDeduction = attendanceDeduction + adjustmentDeduction;
+        document.getElementById('total_due').value = (base + overtime + carried + adjustmentBonus - totalDeduction).toFixed(2);
+    }
+
+    function fetchAdjustments(userId, currency) {
+        const { month, year } = getSalaryPeriod();
+        if (!userId || !month || !year) {
+            adjustmentBonus = 0;
+            adjustmentDeduction = 0;
+            document.getElementById('adjustments_summary').classList.add('hidden');
+            applyDeductionFields();
+            calculate();
+            return;
+        }
+
+        fetch(`{{ url('/dashboard/salaries/fetch-adjustments') }}/${userId}?year=${year}&month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('adjustments_summary').classList.remove('hidden');
+                document.getElementById('adjustments_period').innerText = data.period_label || '';
+                adjustmentBonus = parseFloat(data.bonus_total) || 0;
+                adjustmentDeduction = parseFloat(data.deduction_total) || 0;
+                document.getElementById('adjustment_bonus_total').innerText = adjustmentBonus.toFixed(2) + ' ' + currency;
+                document.getElementById('adjustment_deduction_total').innerText = adjustmentDeduction.toFixed(2) + ' ' + currency;
+                document.getElementById('adjustment_bonus_count').innerText = (data.bonus_count || 0) + ' سجل';
+                document.getElementById('adjustment_deduction_count').innerText = (data.deduction_count || 0) + ' سجل';
+                applyDeductionFields();
+                calculate();
+            })
+            .catch(() => {
+                adjustmentBonus = 0;
+                adjustmentDeduction = 0;
+                applyDeductionFields();
+                calculate();
+            });
+    }
+
+    function loadSalaryData() {
+        const select = document.getElementById('employee_select');
+        const userId = select.value;
+        const selectedOption = select.options[select.selectedIndex];
+        const country = selectedOption.getAttribute('data-country');
+        const salary = parseFloat(selectedOption.getAttribute('data-salary')) || 0;
         const currency = selectedOption.getAttribute('data-currency') || 'USD';
 
         document.getElementById('display_country').value = country || 'غير محدد';
@@ -236,36 +343,40 @@
         document.querySelectorAll('.currency-label').forEach(el => el.innerText = currency);
         document.getElementById('final_currency').innerText = currency;
 
-        fetch(`/dashboard/salaries/fetch-attendance/${userId}`)
+        const { month, year } = getSalaryPeriod();
+        if (!userId || !month || !year) {
+            document.getElementById('attendance_summary').classList.add('hidden');
+            return;
+        }
+
+        fetch(`{{ url('/dashboard/salaries/fetch-attendance') }}/${userId}?year=${year}&month=${month}`)
             .then(response => response.json())
             .then(data => {
                 document.getElementById('attendance_summary').classList.remove('hidden');
-                document.getElementById('days_present').innerText = data.days_count + " يوم";
-                document.getElementById('late_minutes_count').innerText = data.late_minutes + " دقيقة";
-                document.getElementById('overtime_minutes_count').innerText = data.overtime_minutes + " دقيقة";
-
-                const netAmount = data.overtime_amount - data.deduction_amount;
-                document.getElementById('auto_net_val').innerText = netAmount.toFixed(2) + " " + currency;
-
-                document.getElementById('overtime_value').value = data.overtime_amount.toFixed(2);
-                document.getElementById('deduction_value').value = data.deduction_amount.toFixed(2);
-                calculate();
+                document.getElementById('attendance_period').innerText = data.period_label || data.range || '';
+                document.getElementById('days_present').innerText = (data.days_count ?? 0) + ' يوم';
+                document.getElementById('late_minutes_count').innerText = (data.late_minutes ?? 0) + ' دقيقة';
+                document.getElementById('overtime_minutes_count').innerText = (data.overtime_minutes ?? 0) + ' دقيقة';
+                const netAmount = parseFloat(data.net_amount ?? 0)
+                    || ((parseFloat(data.overtime_amount) || 0) - (parseFloat(data.deduction_amount) || 0));
+                document.getElementById('auto_net_val').innerText = netAmount.toFixed(2) + ' ' + currency;
+                document.getElementById('overtime_value').value = (parseFloat(data.overtime_amount) || 0).toFixed(2);
+                attendanceDeduction = parseFloat(data.deduction_amount) || 0;
+                applyDeductionFields();
+                fetchAdjustments(userId, currency);
             })
-            .catch(err => {
-                console.error("خطأ في جلب بيانات الحضور:", err);
-                document.getElementById('overtime_value').value = 0;
-                document.getElementById('deduction_value').value = 0;
-                calculate();
+            .catch(() => {
+                document.getElementById('attendance_summary').classList.add('hidden');
+                attendanceDeduction = 0;
+                document.getElementById('overtime_value').value = '0.00';
+                applyDeductionFields();
+                fetchAdjustments(userId, currency);
             });
-    });
-
-    function calculate() {
-        const base      = parseFloat(document.getElementById('base_salary').value) || 0;
-        const overtime  = parseFloat(document.getElementById('overtime_value').value) || 0;
-        const carried   = parseFloat(document.getElementById('carried_forward').value) || 0;
-        const deduction = parseFloat(document.getElementById('deduction_value').value) || 0;
-        document.getElementById('total_due').value = (base + overtime + carried - deduction).toFixed(2);
     }
+
+    document.getElementById('employee_select').addEventListener('change', loadSalaryData);
+    document.querySelector('[name="month"]')?.addEventListener('change', loadSalaryData);
+    document.querySelector('[name="year"]')?.addEventListener('change', loadSalaryData);
 
     document.querySelectorAll('.calc-input').forEach(input => {
         input.addEventListener('input', calculate);

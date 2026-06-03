@@ -1,18 +1,20 @@
 @extends('layouts.app')
 
-@section('title', 'رواتب الموظفين')
+@section('title', !empty($isEmployeeView) ? 'رواتبي' : 'رواتب الموظفين')
 
 @section('content')
 
 <section class="!pl-0 p-3 sm:p-5">
-    {{-- Breadcrumb --}}
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.salaries.index') }}" second="رواتب الموظفين" />
+    <x-breadcrumb
+        first="الرئيسية"
+        link="{{ route('dashboard.salaries.index') }}"
+        :second="!empty($isEmployeeView) ? 'رواتبي' : 'رواتب الموظفين'" />
 
     <div class="mx-auto w-full">
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
 
-            {{-- Header: Search & Add Button --}}
             <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
+                @if(empty($isEmployeeView))
                 <div class="w-full md:w-1/2">
                     <form action="{{ route('dashboard.salaries.index') }}" method="GET" class="flex items-center">
                         <label for="search" class="sr-only">بحث</label>
@@ -32,25 +34,28 @@
                                 @endif
                             </div>
                             <input value="{{ request()->search }}" type="text" id="search" name="search"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                placeholder="بحث باسم الموظف..." required="">
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                placeholder="بحث باسم الموظف...">
                         </div>
                     </form>
                 </div>
                 <div class="w-full md:w-auto flex flex-col md:flex-row md:items-center justify-end !ml-0">
                     <a href="{{ route('dashboard.salaries.create') }}"
-                        class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
-                        <svg class="h-3.5 w-3.5 ml-2" fill="currentColor" viewbox="0 0 20 20"
-                            xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700">
+                        <svg class="h-3.5 w-3.5 ml-2" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                             <path clip-rule="evenodd" fill-rule="evenodd"
                                 d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" />
                         </svg>
                         إضافة سجل راتب
                     </a>
                 </div>
+                @else
+                <p class="w-full text-sm text-gray-600 dark:text-gray-300">
+                    عرض سجلات رواتبك فقط — للاطلاع دون إمكانية التعديل أو الحذف.
+                </p>
+                @endif
             </div>
 
-            {{-- Notifications --}}
             <div class="overflow-x-auto">
                 @if(session('success'))
                 <div class="mx-4 p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 border border-green-200"
@@ -62,35 +67,35 @@
                 </div>
                 @endif
 
-                {{-- Table --}}
                 <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th scope="col" class="px-4 py-3">#</th>
+                            @if(empty($isEmployeeView))
                             <th scope="col" class="px-4 py-3">الموظف</th>
+                            @endif
                             <th scope="col" class="px-4 py-3">الفترة (شهر/سنة)</th>
                             <th scope="col" class="px-4 py-3">الراتب المستحق</th>
                             <th scope="col" class="px-4 py-3">المرفق</th>
                             <th scope="col" class="px-4 py-3">
-                                <span class="sr-only">Actions</span>
+                                <span class="sr-only">إجراءات</span>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if($salaries->isNotEmpty())
-                        @foreach($salaries as $salary)
+                        @forelse($salaries as $salary)
                         <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ $loop->iteration }}
                             </td>
+                            @if(empty($isEmployeeView))
                             <td class="px-4 py-3">
-                                <div class="font-semibold text-gray-800 dark:text-gray-200">{{ $salary->user->name }}
-                                </div>
-                                <div class="text-xs text-gray-500">{{ $salary->user->country_name }}</div>
+                                <div class="font-semibold text-gray-800 dark:text-gray-200">{{ $salary->user->name }}</div>
+                                <div class="text-xs text-gray-500">{{ $salary->user->country_name ?? '' }}</div>
                             </td>
+                            @endif
                             <td class="px-4 py-3">
-                                <span
-                                    class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
                                     {{ $salary->month }} / {{ $salary->year }}
                                 </span>
                             </td>
@@ -101,17 +106,18 @@
                                 @if($salary->attachment)
                                 <a href="{{ asset('storage/' . $salary->attachment) }}" target="_blank">
                                     <img class="w-10 h-10 rounded shadow-sm border"
-                                        src="{{ asset('storage/' . $salary->attachment) }}" alt="فاتورة">
+                                        src="{{ asset('storage/' . $salary->attachment) }}" alt="سند الراتب">
                                 </a>
                                 @else
                                 <span class="text-gray-400 text-xs">لا يوجد</span>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 flex items-center justify-end space-x-reverse space-x-2">
-                                <a href="{{ route('dashboard.salaries.show', $salary->id) }}" title="عرض"
+                            <td class="px-4 py-3 flex items-center justify-end">
+                                <a href="{{ route('dashboard.salaries.show', $salary->id) }}" title="عرض التفاصيل"
                                     class="p-2 text-gray-600 hover:text-blue-600 transition-colors">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                @if(empty($isEmployeeView))
                                 <a href="{{ route('dashboard.salaries.edit', $salary->id) }}" title="تعديل"
                                     class="p-2 text-gray-600 hover:text-yellow-500 transition-colors">
                                     <i class="fas fa-edit"></i>
@@ -121,28 +127,27 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" onclick="return confirm('هل أنت متأكد من حذف سجل الراتب؟')"
-                                        title="حذف" class="p-2 text-gray-600 hover:text-black transition-colors">
+                                        title="حذف" class="p-2 text-gray-600 hover:text-red-600 transition-colors">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
-                        @endforeach
-                        @else
+                        @empty
                         <tr>
-                            <td colspan="6"
+                            <td colspan="{{ empty($isEmployeeView) ? 6 : 5 }}"
                                 class="text-center px-4 py-8 font-medium text-gray-500 bg-gray-50 dark:bg-gray-800">
                                 <div class="flex flex-col items-center">
                                     <i class="fas fa-folder-open text-4xl mb-3 text-gray-300"></i>
-                                    <span>لا توجد سجلات رواتب لعرضها حالياً.</span>
+                                    <span>{{ !empty($isEmployeeView) ? 'لا توجد سجلات رواتب لك حتى الآن.' : 'لا توجد سجلات رواتب لعرضها حالياً.' }}</span>
                                 </div>
                             </td>
                         </tr>
-                        @endif
+                        @endforelse
                     </tbody>
                 </table>
 
-                {{-- Pagination --}}
                 <div class="p-4 border-t dark:border-gray-700">
                     {{ $salaries->appends(request()->query())->links() }}
                 </div>

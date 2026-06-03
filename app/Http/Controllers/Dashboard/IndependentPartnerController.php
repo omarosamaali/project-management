@@ -13,6 +13,7 @@ class IndependentPartnerController extends Controller
         $search = $request->input('search');
 
         $partners = User::where('role', 'independent_partner')
+            ->notBlocked()
             ->when($search, function ($query, $search) {
                 return $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")

@@ -22,6 +22,7 @@ $stats = [
 
 $workHoursPerDay = \App\Models\SpecialRequest::WORK_HOURS_PER_DAY;
 $workDaysPerWeek = \App\Models\SpecialRequest::WORK_DAYS_PER_WEEK;
+$canManageProjectTasks = \App\Support\TaskPermissions::canManage(auth()->user(), $SpecialRequest);
 
 $toWorkHours = function ($startDate, $endDate) use ($workHoursPerDay, $workDaysPerWeek) {
     if (!$startDate || !$endDate) {
@@ -47,11 +48,8 @@ $projectTotalWorkHours = $allTasks->sum(function ($task) use ($toWorkHours) {
     return $toWorkHours($task->start_date, $task->end_date);
 });
 
-$projectTrackedSeconds = $allTasks->sum(function ($task) {
-    return (int) ($task->elapsed_tracked_seconds ?? 0);
-});
-$projectTrackedHours = floor($projectTrackedSeconds / 3600);
-$projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
+$projectTrackedSeconds = $allTasks->sum(fn ($task) => (int) $task->stored_tracked_seconds);
+$projectTrackedLabel = \App\Support\DurationFormatter::format($projectTrackedSeconds);
 @endphp
 <div class="p-6 space-y-6">
     {{-- 1. كروت إحصائيات المهام الجديدة --}}
@@ -97,7 +95,7 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                 تقديري ({{ $workHoursPerDay }} س/يوم - {{ $workDaysPerWeek }} أيام/أسبوع)
             </div>
             <div class="text-[11px] text-green-600 mt-1 font-bold">
-                فعلي: {{ str_pad((string) $projectTrackedHours, 2, '0', STR_PAD_LEFT) }}س {{ str_pad((string) $projectTrackedMinutes, 2, '0', STR_PAD_LEFT) }}د
+                مخزّن: {{ $projectTrackedLabel }}
             </div>
         </div>
     </div>
@@ -120,7 +118,7 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
     </div>
 
     {{-- زر الإضافة --}}
-    @if (in_array(auth()->user()->role, ['admin', 'partner']))
+    @if ($canManageProjectTasks)
     <div class="flex justify-end">
         <button onclick="document.getElementById('addTaskModal').classList.remove('hidden')"
             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md">
@@ -150,10 +148,10 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                     @php
                         $taskWorkHours = $toWorkHours($task->start_date, $task->end_date);
                         $taskWorkDays = $workHoursPerDay > 0 ? round($taskWorkHours / $workHoursPerDay, 1) : 0;
-                        $trackedSeconds = (int) ($task->elapsed_tracked_seconds ?? 0);
-                        $trackedHours = floor($trackedSeconds / 3600);
-                        $trackedMinutes = floor(($trackedSeconds % 3600) / 60);
-                        $canTrackTask = auth()->id() === $task->user_id || in_array(auth()->user()->role, ['admin', 'manager']);
+                        $storedSeconds = (int) $task->stored_tracked_seconds;
+                        $storedLabel = \App\Support\DurationFormatter::format($storedSeconds);
+                        $isTimerRunning = $task->is_timer_running && $task->timer_started_at;
+                        $canTrackTask = \App\Support\TaskPermissions::canTrack(auth()->user(), $task, $SpecialRequest);
                     @endphp
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                         <td class="p-4">
@@ -166,7 +164,7 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                                 {{ $task->stage->title ?? 'مهمة عامة' }}
                             </span>
                         </td>
-                        <td class="p-4 text-center text-sm font-medium dark:text-gray-200">{{ $task->user->name }}</td>
+                        <td class="p-4 text-center text-sm font-medium dark:text-gray-200">{{ $task->user->display_name }}</td>
                         <td class="p-4 text-center">
                             <div class="text-[10px] text-gray-500">{{ $task->start_date }}</div>
                             <div class="text-[10px] text-gray-400 font-bold">إلى {{ $task->end_date ?? '-' }}</div>
@@ -178,11 +176,10 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                             <div class="text-[10px] text-gray-400">
                                 {{ $taskWorkDays }} يوم عمل
                             </div>
-                            <div class="text-[10px] font-bold {{ $task->is_timer_running ? 'text-green-600' : 'text-gray-500' }}">
-                                فعلي: {{ str_pad((string) $trackedHours, 2, '0', STR_PAD_LEFT) }}س
-                                {{ str_pad((string) $trackedMinutes, 2, '0', STR_PAD_LEFT) }}د
-                                @if($task->is_timer_running)
-                                    <span class="text-green-600">(يعمل)</span>
+                            <div class="text-[10px] font-bold {{ $isTimerRunning ? 'text-green-600' : 'text-gray-500' }}">
+                                مخزّن: {{ $storedLabel }}
+                                @if($isTimerRunning)
+                                    <span class="text-green-600">(عداد يعمل — يُحفظ عند الإيقاف)</span>
                                 @endif
                             </div>
                         </td>
@@ -232,25 +229,16 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                                     title="عرض التفاصيل">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                @php
-                                // التحقق مما إذا كان المستخدم الحالي مديرًا لهذا المشروع
-                                $isProjectManager = \App\Models\Project_Manager::where('user_id', auth()->id())
-                                ->where('special_request_id', $SpecialRequest->id)
-                                ->exists();
-                                @endphp
-                                @if(Auth::user()->role != 'client')
-                                @if (in_array(auth()->user()->role, ['admin' || $isProjectManager]))
-                                <button onclick="openEditModal({{ $task->id }})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
+                                @if($canManageProjectTasks)
+                                <button onclick="openEditModal({{ $task->id }})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="تعديل">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                        
                                 <form action="{{ route('tasks.destroy', $task->id) }}" method="POST" onsubmit="return confirm('حذف المهمة؟')">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="p-2 text-black hover:bg-red-50 rounded-lg">
+                                    <button type="submit" class="p-2 text-black hover:bg-red-50 rounded-lg" title="حذف">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </form>
-                                @endif
                                 @endif
                             </div>
                         </td>
@@ -366,8 +354,8 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                 <select name="user_id" required
                     class="w-full p-3 rounded-xl border dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     <option value="">اختر المسؤول...</option>
-                    @foreach ($SpecialRequest->partners as $partner)
-                    <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                    @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+                    <option value="{{ $member->id }}">{{ $member->display_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -439,8 +427,8 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                     <label class="block text-sm font-bold mb-1 dark:text-gray-300">المسؤول</label>
                     <select id="edit_user_id" name="user_id" required
                         class="w-full p-3 rounded-xl border dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm">
-                        @foreach ($SpecialRequest->partners as $partner)
-                        <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                        @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+                        <option value="{{ $member->id }}">{{ $member->display_name }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -471,7 +459,8 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                 </div>
             </div>
 
-            {{-- 4. الحالة --}}
+            {{-- 4. الحالة — للأدمن فقط في التعديل --}}
+            @if(auth()->user()->role === 'admin')
             <div>
                 <label class="block text-sm font-bold mb-1 dark:text-gray-300">الحالة الحالية</label>
                 <select id="edit_status" name="status"
@@ -482,6 +471,9 @@ $projectTrackedMinutes = floor(($projectTrackedSeconds % 3600) / 60);
                     <option value="متأخرة">متأخرة</option>
                 </select>
             </div>
+            @else
+            <input type="hidden" id="edit_status" name="status" value="">
+            @endif
 
             {{-- الأزرار --}}
             <div class="flex gap-3 pt-4 border-t dark:border-gray-700">

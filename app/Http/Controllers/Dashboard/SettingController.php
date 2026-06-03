@@ -16,6 +16,7 @@ class SettingController extends Controller
         $search = $request->input('search');
 
         $settingss = User::whereIn('role', ['partner', 'design_partner', 'advertising_partner'])
+            ->notBlocked()
             ->when($search, function ($query, $search) {
                 return $query->where('name', 'LIKE', '%' . $search . '%');
             })

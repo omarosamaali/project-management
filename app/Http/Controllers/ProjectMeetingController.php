@@ -32,6 +32,7 @@ class ProjectMeetingController extends Controller
         }
 
         $validated = $request->validate($rules);
+        $validated['attendees'] = $this->mergeProjectClientAttendees($request, $validated['attendees']);
 
         $meeting = ProjectMeeting::create([
             'special_request_id' => $request->special_request_id,
@@ -50,13 +51,18 @@ class ProjectMeetingController extends Controller
             $whatsapp = app(WhatsAppOTPService::class);
             if ($request->filled('special_request_id')) {
                 $project = SpecialRequest::find($request->special_request_id);
-                $members = $project?->partners()->get() ?? collect();
+                $members = collect()
+                    ->merge($project?->partners ?? [])
+                    ->merge($project?->allProjectClients() ?? []);
                 $title = $project?->title ?? '';
             } else {
                 $project = ProjectRequest::find($request->request_id);
-                $members = $project?->partners()->get() ?? collect();
-                $title = $project?->title ?? "طلب #{$request->request_id}";
+                $members = collect()
+                    ->merge($project?->partners ?? [])
+                    ->merge($project?->allProjectClients() ?? []);
+                $title = $project?->system?->name_ar ?? "طلب #{$request->request_id}";
             }
+            $members = $members->unique('id');
             foreach ($members as $member) {
                 if ($member->phone) {
                     $whatsapp->sendProjectNotification($member->phone, $member->name, "تم جدولة اجتماع جديد: ({$validated['title']})", $title, $member->email ?? null);
@@ -107,12 +113,64 @@ class ProjectMeetingController extends Controller
             'status' => 'required|in:pending,accepted,declined,attended,absent'
         ]);
 
-        // تحديث حالة المستخدم الحالي فقط
-        $meeting->participants()->updateExistingPivot(auth()->id(), [
-            'status' => $validated['status']
-        ]);
+        $userId = auth()->id();
+
+        if (!$meeting->participants()->where('users.id', $userId)->exists()) {
+            if (!$this->userCanRespondToMeeting($meeting, $userId)) {
+                abort(403, 'غير مصرح لك بالرد على هذا الاجتماع.');
+            }
+            $meeting->participants()->attach($userId, ['status' => $validated['status']]);
+        } else {
+            $meeting->participants()->updateExistingPivot($userId, [
+                'status' => $validated['status'],
+            ]);
+        }
 
         return back()->with('success', 'تم تحديث الحالة بنجاح.');
+    }
+
+    private function mergeProjectClientAttendees(Request $request, array $attendees): array
+    {
+        $project = null;
+
+        if ($request->filled('special_request_id')) {
+            $project = SpecialRequest::find($request->special_request_id);
+        } elseif ($request->filled('request_id')) {
+            $project = ProjectRequest::find($request->request_id);
+        }
+
+        if (!$project) {
+            return $attendees;
+        }
+
+        $clientIds = $project->allProjectClients()->pluck('id')->all();
+
+        return array_values(array_unique(array_merge($attendees, $clientIds)));
+    }
+
+    private function userCanRespondToMeeting(ProjectMeeting $meeting, int $userId): bool
+    {
+        if (auth()->user()->role === 'admin') {
+            return true;
+        }
+
+        if ($meeting->created_by === $userId) {
+            return true;
+        }
+
+        if ($meeting->special_request_id) {
+            $project = SpecialRequest::find($meeting->special_request_id);
+
+            return $project && $project->isClientMember($userId);
+        }
+
+        if ($meeting->request_id) {
+            $project = ProjectRequest::find($meeting->request_id);
+
+            return $project && $project->isClientMember($userId);
+        }
+
+        return $meeting->participants()->where('users.id', $userId)->exists();
     }
 
     public function accept($id)

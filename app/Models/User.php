@@ -9,6 +9,7 @@ use App\Models\WithdrawalRequest;
 use App\Models\Payment;
 use App\Models\Requests;
 use App\Models\System;
+use App\Support\SystemManager;
 
 class User extends Authenticatable
 {
@@ -18,6 +19,9 @@ class User extends Authenticatable
         'id_card_path',
         'verification_video',
         'name',
+        'account_type',
+        'company_name',
+        'company_logo',
         'avatar',
         'otp',
         'email',
@@ -157,6 +161,23 @@ class User extends Authenticatable
             }
         });
         return $countries[strtoupper($this->country)] ?? $this->country;
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return SystemManager::nameFor($this);
+    }
+
+    public function scopeNotBlocked($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('status', '!=', 'blocked')->orWhereNull('status');
+        });
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->status === 'blocked';
     }
 
     public function getRoleNameAttribute()

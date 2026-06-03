@@ -48,29 +48,8 @@
                     </a>
                 </div>
                 @if(!empty($attendanceWidget['show']))
-                <div class="hidden lg:flex items-center gap-2 flex-wrap" id="attendanceWidget"
-                    data-status="{{ $attendanceWidget['status'] ?? 'off' }}"
-                    data-seconds="{{ (int)($attendanceWidget['worked_seconds'] ?? 0) }}">
-                    <button type="button" data-action="check_in"
-                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
-                        حضور
-                    </button>
-                    <button type="button" data-action="check_out"
-                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
-                        انصراف
-                    </button>
-                    <button type="button" data-action="break_start"
-                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
-                        خروج للاستراحة
-                    </button>
-                    <button type="button" data-action="break_end"
-                        class="attendance-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition">
-                        رجوع من الاستراحة
-                    </button>
-                    <div class="px-3 py-1 rounded-lg bg-gray-100 text-xs font-extrabold text-gray-700">
-                        <span id="attendanceStatusText">...</span> |
-                        <span id="attendanceTimer">00:00:00</span>
-                    </div>
+                <div class="hidden md:flex flex-1 min-w-0 justify-center px-2 max-w-3xl">
+                    <x-attendance-widget :widget="$attendanceWidget" />
                 </div>
                 @endif
                 <div class="hidden sm:flex sm:items-center sm:ms-6">
@@ -137,6 +116,16 @@
                 <ul class="space-y-2">
                     <span class="block text-sm text-black dark:text-white font-bold px-2 ">اهلا
                         {{ Auth::user()->name }}</span>
+                    @if(in_array(Auth::user()->role, ['admin', 'partner', 'client']))
+                    <li>
+                        <a href="{{ route('dashboard') }}"
+                            class="{{ Route::currentRouteName() == 'dashboard' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ Route::currentRouteName() == 'dashboard' ? 'text-white' : '' }} fas fa-gauge-high text-gray-500 pl-2"></i>
+                            <span class="ml-3">قُمرة القيادة</span>
+                        </a>
+                    </li>
+                    @endif
                     @if(Auth::user()->role != 'client')
                     <li>
                         <a href="{{ route('dashboard.performance.show') }}"
@@ -199,14 +188,6 @@
                     @if (Auth::user()->role == 'admin')
                     <span
                         class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">الإدارة</span>
-                    <li>
-                        <a href="{{ route('dashboard') }}"
-                            class="{{ Route::currentRouteName() == 'dashboard' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                            <i
-                                class="{{ Route::currentRouteName() == 'dashboard' ? 'text-white' : '' }} fa fa-home text-gray-500 pl-2"></i>
-                            <span class="ml-3">قُمرة القيادة</span>
-                        </a>
-                    </li>
                     <span
                         class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">الأنظمة
                         والخدمات
@@ -278,11 +259,23 @@
                             class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white' : '' }} fas fa-clock text-gray-500 pl-2"></i>
                         <span class="ml-3">الحضور والإنصراف</span>
                     </a>
+                    <a href="{{ route('dashboard.work-times.calendar') }}"
+                        class="{{ str_contains(Route::currentRouteName() ?? '', 'work-times.calendar') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName() ?? '', 'work-times.calendar') ? 'text-white' : '' }} fas fa-calendar-alt text-gray-500 pl-2"></i>
+                        <span class="ml-3">تقويم الحضور</span>
+                    </a>
                     <a href="{{ route('dashboard.adjustments.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.adjustments.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
                             class="{{ Route::currentRouteName() == 'dashboard.adjustments.index' ? 'text-white' : '' }} fas fa-percent text-gray-500 pl-2"></i>
                         <span class="ml-3">الخصومات والمكافات</span>
+                    </a>
+                    <a href="{{ route('dashboard.holidays.index') }}"
+                        class="{{ str_contains(Route::currentRouteName() ?? '', 'dashboard.holidays') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName() ?? '', 'dashboard.holidays') ? 'text-white' : '' }} fas fa-umbrella-beach text-gray-500 pl-2"></i>
+                        <span class="ml-3">العطلات</span>
                     </a>
                     <span
                         class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-5 border-t">المستخدمين</span>
@@ -497,6 +490,33 @@
                     </a>
                     @endif
 
+                    @if(Auth::user()->role == 'partner' && Auth::user()->is_employee)
+                    <a href="{{ route('dashboard.work-times.index') }}"
+                        class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white' : '' }} fas fa-clock text-gray-500 pl-2"></i>
+                        <span class="ml-3">الحضور والإنصراف</span>
+                    </a>
+                    <a href="{{ route('dashboard.work-times.calendar') }}"
+                        class="{{ str_contains(Route::currentRouteName() ?? '', 'work-times.calendar') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName() ?? '', 'work-times.calendar') ? 'text-white' : '' }} fas fa-calendar-alt text-gray-500 pl-2"></i>
+                        <span class="ml-3">تقويم حضوري</span>
+                    </a>
+                    <a href="{{ route('dashboard.salaries.index') }}"
+                        class="{{ str_contains(Route::currentRouteName() ?? '', 'dashboard.salaries') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName() ?? '', 'dashboard.salaries') ? 'text-white' : '' }} fas fa-wallet text-gray-500 pl-2"></i>
+                        <span class="ml-3">رواتبي</span>
+                    </a>
+                    <a href="{{ route('dashboard.adjustments.index') }}"
+                        class="{{ str_contains(Route::currentRouteName() ?? '', 'dashboard.adjustments') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ str_contains(Route::currentRouteName() ?? '', 'dashboard.adjustments') ? 'text-white' : '' }} fas fa-percent text-gray-500 pl-2"></i>
+                        <span class="ml-3">خصوماتي ومكافآتي</span>
+                    </a>
+                    @endif
+
                     @if(Auth::user()->role != 'client' && Auth::user()->role != 'admin')
                     <a href="{{ route('dashboard.kb.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.kb.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -548,6 +568,13 @@
 
                 </ul>
 
+                @if(!empty($attendanceWidget['show']))
+                <div class="md:hidden mt-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+                    <p class="text-xs font-bold text-gray-600 dark:text-gray-400 mb-2">تسجيل الدوام اليوم</p>
+                    <x-attendance-widget :widget="$attendanceWidget" :compact="true" />
+                </div>
+                @endif
+
                 {{-- أزرار الموبايل فقط: الموقع الخارجي + تسجيل الخروج --}}
                 <div class="md:hidden mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
                     <a href="{{ route('system.index') }}"
@@ -581,97 +608,120 @@
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/js/intlTelInput.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-        // Employee attendance widget
-        const attendanceRoot = document.getElementById('attendanceWidget');
-        if (attendanceRoot) {
-            const statusTextEl = document.getElementById('attendanceStatusText');
-            const timerEl = document.getElementById('attendanceTimer');
-            const buttons = attendanceRoot.querySelectorAll('.attendance-btn');
+        // Employee attendance widgets (navbar + sidebar + work-times page)
+        const attendanceWidgets = document.querySelectorAll('.attendance-widget-root');
+        const attendanceStates = [];
 
-            let status = attendanceRoot.dataset.status || 'off';
-            let seconds = parseInt(attendanceRoot.dataset.seconds || '0', 10);
+        function fmtAttendanceTime(totalSec) {
+            const s = Math.max(0, parseInt(totalSec, 10) || 0);
+            const h = String(Math.floor(s / 3600)).padStart(2, '0');
+            const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+            const sec = String(s % 60).padStart(2, '0');
+            return `${h}:${m}:${sec}`;
+        }
 
-            function fmtTime(totalSec) {
-                const s = Math.max(0, parseInt(totalSec, 10) || 0);
-                const h = String(Math.floor(s / 3600)).padStart(2, '0');
-                const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
-                const sec = String(s % 60).padStart(2, '0');
-                return `${h}:${m}:${sec}`;
-            }
-
-            function setBtnStyle(btn, active, disabled) {
-                btn.disabled = disabled;
-                btn.classList.remove('bg-green-600', 'text-white', 'border-green-700', 'bg-blue-600', 'border-blue-700', 'bg-yellow-500', 'border-yellow-600', 'bg-gray-100', 'text-gray-700', 'border-gray-300', 'opacity-50', 'cursor-not-allowed');
-                if (active) {
-                    if (btn.dataset.action === 'check_in' || btn.dataset.action === 'break_end') {
-                        btn.classList.add('bg-green-600', 'text-white', 'border-green-700');
-                    } else if (btn.dataset.action === 'check_out') {
-                        btn.classList.add('bg-blue-600', 'text-white', 'border-blue-700');
-                    } else {
-                        btn.classList.add('bg-yellow-500', 'text-white', 'border-yellow-600');
-                    }
+        function setAttendanceBtnStyle(btn, active, disabled) {
+            btn.disabled = disabled;
+            btn.classList.remove('ring-2', 'ring-offset-1', 'ring-green-400', 'ring-blue-400', 'ring-yellow-400', 'scale-105', 'bg-green-600', 'text-white', 'border-green-700', 'bg-blue-600', 'border-blue-700', 'bg-yellow-500', 'border-yellow-600', 'bg-gray-100', 'text-gray-700', 'border-gray-300', 'opacity-50', 'cursor-not-allowed');
+            if (active) {
+                if (btn.dataset.action === 'check_in' || btn.dataset.action === 'break_end') {
+                    btn.classList.add('bg-green-600', 'text-white', 'border-green-700', 'ring-2', 'ring-green-400', 'ring-offset-1', 'scale-105');
+                } else if (btn.dataset.action === 'check_out') {
+                    btn.classList.add('bg-blue-600', 'text-white', 'border-blue-700', 'ring-2', 'ring-blue-400', 'ring-offset-1', 'scale-105');
                 } else {
-                    btn.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+                    btn.classList.add('bg-yellow-500', 'text-white', 'border-yellow-600', 'ring-2', 'ring-yellow-400', 'ring-offset-1', 'scale-105');
                 }
-                if (disabled) {
-                    btn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
+            } else {
+                btn.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
             }
-
-            function refreshUI() {
-                timerEl.textContent = fmtTime(seconds);
-                if (status === 'working') statusTextEl.textContent = 'يعمل الآن';
-                else if (status === 'break') statusTextEl.textContent = 'في استراحة';
-                else statusTextEl.textContent = 'خارج الدوام';
-
-                buttons.forEach((btn) => {
-                    const action = btn.dataset.action;
-                    const allowed =
-                        (status === 'off' && action === 'check_in') ||
-                        (status === 'working' && (action === 'break_start' || action === 'check_out')) ||
-                        (status === 'break' && (action === 'break_end' || action === 'check_out'));
-                    setBtnStyle(btn, allowed, !allowed);
-                });
+            if (disabled) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
             }
+        }
 
-            async function sendAction(action) {
-                try {
-                    const res = await fetch('{{ route('dashboard.work-times.quick-action') }}', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                        },
-                        body: JSON.stringify({ action }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) {
-                        throw new Error(data.message || 'حدث خطأ');
-                    }
-                    status = data.status;
-                    seconds = parseInt(data.worked_seconds || 0, 10);
-                    refreshUI();
-                } catch (e) {
-                    Swal.fire({ icon: 'error', title: 'تنبيه', text: e.message || 'تعذر تنفيذ العملية' });
-                }
+        function refreshAttendanceUI(stateIndex) {
+            const state = attendanceStates[stateIndex];
+            const root = state.root;
+            const timerEls = root.querySelectorAll('.attendance-timer');
+            const statusEls = root.querySelectorAll('.attendance-status-text');
+            const label = state.status === 'working' ? 'يعمل الآن' : (state.status === 'break' ? 'في استراحة' : 'خارج الدوام');
+            const timeStr = fmtAttendanceTime(state.seconds);
+
+            timerEls.forEach((el) => { el.textContent = timeStr; });
+            statusEls.forEach((el) => { el.textContent = label; });
+
+            state.buttons.forEach((btn) => {
+                const action = btn.dataset.action;
+                const allowed =
+                    (state.status === 'off' && action === 'check_in') ||
+                    (state.status === 'working' && (action === 'break_start' || action === 'check_out')) ||
+                    (state.status === 'break' && (action === 'break_end' || action === 'check_out'));
+                setAttendanceBtnStyle(btn, allowed, !allowed);
+            });
+        }
+
+        function refreshAllAttendanceUI() {
+            attendanceStates.forEach((_, i) => refreshAttendanceUI(i));
+        }
+
+        async function sendAttendanceAction(action) {
+            const res = await fetch('{{ route('dashboard.work-times.quick-action') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ action }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'حدث خطأ');
             }
+            attendanceStates.forEach((state) => {
+                state.status = data.status;
+                state.seconds = parseInt(data.worked_seconds || 0, 10);
+            });
+            refreshAllAttendanceUI();
+        }
+
+        attendanceWidgets.forEach((root, index) => {
+            const buttons = root.querySelectorAll('.attendance-btn');
+            attendanceStates.push({
+                root,
+                buttons: Array.from(buttons),
+                status: root.dataset.status || 'off',
+                seconds: parseInt(root.dataset.seconds || '0', 10),
+            });
 
             buttons.forEach((btn) => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', async function() {
                     if (this.disabled) return;
-                    sendAction(this.dataset.action);
+                    try {
+                        await sendAttendanceAction(this.dataset.action);
+                    } catch (e) {
+                        Swal.fire({ icon: 'error', title: 'تنبيه', text: e.message || 'تعذر تنفيذ العملية' });
+                    }
                 });
             });
 
-            setInterval(() => {
-                if (status === 'working') {
-                    seconds += 1;
-                    timerEl.textContent = fmtTime(seconds);
-                }
-            }, 1000);
+            refreshAttendanceUI(index);
+        });
 
-            refreshUI();
+        if (attendanceStates.length) {
+            setInterval(() => {
+                let changed = false;
+                attendanceStates.forEach((state, index) => {
+                    if (state.status === 'working') {
+                        state.seconds += 1;
+                        changed = true;
+                        const root = state.root;
+                        root.querySelectorAll('.attendance-timer').forEach((el) => {
+                            el.textContent = fmtAttendanceTime(state.seconds);
+                        });
+                    }
+                });
+            }, 1000);
         }
 
         // Sidebar search functionality

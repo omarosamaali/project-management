@@ -503,7 +503,7 @@
             @csrf
 
             <div class="space-y-3">
-                @forelse(\App\Models\User::where('role', 'partner')->where('status', '!=', 'blocked')->get() as $partner)
+                @forelse(\App\Models\User::where('role', 'partner')->notBlocked()->get() as $partner)
                 <div class="flex items-center justify-between p-3 rounded-lg border
                         {{ (isset($SpecialRequest->projectManager) && $SpecialRequest->projectManager->user_id == $partner->id)
                             ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/20'

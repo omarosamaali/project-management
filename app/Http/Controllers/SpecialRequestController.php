@@ -100,12 +100,15 @@ class SpecialRequestController extends Controller
             'status' => 'pending',
         ]);
 
+        $specialRequest->attachProjectClient((int) Auth::id());
+
         $whatsapp = app(WhatsAppOTPService::class);
         $client = Auth::user();
 
         // إشعار المدير والأدمن بالطلب الجديد
         try {
-            $eventText = "طلب خاص جديد من: {$client->name} — نوع الطلب: {$request->project_type}";
+            $typeLabel = (new SpecialRequest(['project_type' => $request->project_type]))->project_type_label;
+            $eventText = "طلب خاص جديد من: {$client->name} — نوع الطلب: {$typeLabel}";
             $whatsapp->notifyManager($eventText, $request->title);
         } catch (\Exception $e) {
             \Log::error("[SPECIAL_REQUEST] فشل إشعار المدير: " . $e->getMessage());
@@ -133,11 +136,12 @@ class SpecialRequestController extends Controller
     {
         // جلب كل المشاريع مع علاقاتها
         $specialRequests = SpecialRequest::with(['proposals.user', 'partners', 'projectManager'])
-            ->where('user_id', Auth::id())->paginate(8); // أو ->paginate(10) لو عايز pagination
+            ->forClient(Auth::id())
+            ->paginate(8);
 
         // البيانات الإضافية
-        $partners = User::where('role', 'partner')->get();
-        $managers = User::where('role', 'manager')->get();
+        $partners = User::where('role', 'partner')->notBlocked()->get();
+        $managers = User::where('role', 'manager')->notBlocked()->get();
 
         return view('special-request.show', compact('specialRequests', 'partners', 'managers'));
     }
@@ -145,7 +149,7 @@ class SpecialRequestController extends Controller
     // Show Method
     public function showSpecialRequest(SpecialRequest $specialRequest)
     {
-        if (Auth::id() !== $specialRequest->user_id) {
+        if (Auth::user()->role === 'client' && !$specialRequest->isClientMember(Auth::id())) {
             abort(403, 'غير مصرح لك بمشاهدة تفاصيل هذا الطلب.');
         }
         return view('special-request.show-special-request', compact('specialRequest'));
@@ -154,7 +158,7 @@ class SpecialRequestController extends Controller
     // Edit Method
     public function edit(SpecialRequest $specialRequest)
     {
-        if (Auth::id() !== $specialRequest->user_id) {
+        if (Auth::user()->role === 'client' && !$specialRequest->isClientMember(Auth::id())) {
             abort(403, 'غير مصرح لك بتعديل هذا الطلب.');
         }
 
@@ -164,7 +168,7 @@ class SpecialRequestController extends Controller
     // Update Method
     public function update(Request $request, SpecialRequest $specialRequest)
     {
-        if (Auth::id() !== $specialRequest->user_id) {
+        if (Auth::user()->role === 'client' && !$specialRequest->isClientMember(Auth::id())) {
             abort(403, 'غير مصرح لك بتحديث هذا الطلب.');
         }
 

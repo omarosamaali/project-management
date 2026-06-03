@@ -79,7 +79,10 @@
         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white">
         <option selected disabled>اختر الموظف</option>
         @foreach($employees as $emp)
-        <option value="{{ $emp->id }}" data-country="{{ $emp->country_name }}">
+        <option value="{{ $emp->id }}"
+            data-country-code="{{ strtoupper($emp->country ?? '') }}"
+            data-country-name="{{ $emp->country_name }}"
+            data-work-start="{{ $emp->work_start_time ? \Carbon\Carbon::parse($emp->work_start_time)->format('H:i') : '09:00' }}">
             {{ $emp->name }}
         </option>
         @endforeach
@@ -94,28 +97,27 @@
     </select>
     <x-input-error :messages="$errors->get('country')" class="mt-2" />
 </div>
-<script>
-    document.getElementById('employee_select').addEventListener('change', function() {
-        // 1. الحصول على خيار الموظف المختار
-        const selectedOption = this.options[this.selectedIndex];
-        
-        // 2. سحب اسم الدولة (الذي أصبح الآن الاسم الكامل وليس الرمز)
-        const countryName = selectedOption.getAttribute('data-country');
-        
-        const countrySelect = document.getElementById('country_select2');
-        
-        // 3. تحديث قائمة الدول
-        countrySelect.innerHTML = ''; 
-        
-        if (countryName && countryName.trim() !== "") {
-            // نضع اسم الدولة كنص (Text) وكقيمة (Value) ليتم إرسالها للـ Controller عند الحفظ
-            const newOption = new Option(countryName, countryName, true, true);
-            countrySelect.add(newOption);
-        } else {
-            countrySelect.innerHTML = '<option disabled selected>لا توجد دولة مسجلة لهذا الموظف</option>';
-        }
-    });
-</script>
+                </div>
+
+                {{-- وقت الدولة المحلي --}}
+                <div id="country_time_panel"
+                    class="hidden p-4 rounded-xl border border-blue-200 bg-blue-50 dark:bg-gray-700 dark:border-blue-900 space-y-2">
+                    <h4 class="text-sm font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                        <i class="fas fa-globe-americas"></i>
+                        <span id="country_time_title">التوقيت المحلي للدولة</span>
+                    </h4>
+                    <p id="country_time_label" class="text-lg font-black text-gray-900 dark:text-white font-mono">--</p>
+                    <p id="country_timezone_label" class="text-xs text-gray-600 dark:text-gray-400"></p>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                        بداية الدوام المعتادة:
+                        <span id="country_work_start" class="font-bold">09:00</span>
+                        (حسب إعدادات الموظف أو 9 صباحاً)
+                    </p>
+                    <p id="ip_detect_hint" class="text-xs text-amber-700 dark:text-amber-300 hidden"></p>
+                    <button type="button" id="apply_country_now_btn"
+                        class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        استخدام الوقت والتاريخ الحاليين للدولة
+                    </button>
                 </div>
 
                 {{-- نوع الحركة --}}
@@ -168,7 +170,7 @@
                         placeholder="اكتب أي ملاحظات هنا..."></textarea>
                     <p class="mt-2 text-xs text-gray-500 flex items-center gap-1">
                         <i class="fas fa-info-circle"></i>
-                        سيتم تسجيل التوقيت آلياً بناءً على توقيت بلدك المحلي.
+                        يُسجَّل الوقت حسب توقيت الدولة المختارة (وليس توقيت جهازك)، مع عرض الساعة المحلية أعلاه.
                     </p>
                 </div>
 
@@ -184,65 +186,164 @@
     </div>
 </section>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 1. جلب المنطقة الزمنية للمستخدم
-        const tzInput = document.getElementById('user_timezone');
-        if(tzInput) {
-            tzInput.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        }
-
-        // 2. تفعيل فتح منتقي الوقت والتاريخ عند الضغط على أي مكان في الحقل
-        const interactiveInputs = document.querySelectorAll('input[type="time"], input[type="date"]');
-        
-        interactiveInputs.forEach(input => {
-            input.addEventListener('click', function() {
-                try {
-                    if ('showPicker' in HTMLInputElement.prototype) {
-                        this.showPicker();
-                    }
-                } catch (error) {
-                    console.warn('showPicker is not supported or failed');
-                }
-            });
-        });
-    });
-</script>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
+    let countryClockTimer = null;
+    let activeTimezone = null;
+    let lastCountryPayload = null;
+
+    const tzInput = document.getElementById('user_timezone');
+    const dateInput = document.querySelector('input[name="date"]');
+    const timeInput = document.getElementById('start_time');
+    const panel = document.getElementById('country_time_panel');
+
+    function formatInTimezone(timezone) {
+        return new Intl.DateTimeFormat('ar-EG', {
+            timeZone: timezone,
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+        }).format(new Date());
+    }
+
+    function formatTimeOnly(timezone) {
+        return new Intl.DateTimeFormat('en-GB', {
+            timeZone: timezone,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        }).format(new Date());
+    }
+
+    function formatDateOnly(timezone) {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).formatToParts(new Date());
+        const y = parts.find(p => p.type === 'year')?.value;
+        const m = parts.find(p => p.type === 'month')?.value;
+        const d = parts.find(p => p.type === 'day')?.value;
+        return `${y}-${m}-${d}`;
+    }
+
+    function startCountryClock(timezone) {
+        activeTimezone = timezone;
+        if (countryClockTimer) clearInterval(countryClockTimer);
+        const tick = () => {
+            if (!activeTimezone) return;
+            document.getElementById('country_time_label').textContent = formatInTimezone(activeTimezone);
+        };
+        tick();
+        countryClockTimer = setInterval(tick, 1000);
+    }
+
+    function applyCountryFields(payload, applyToForm) {
+        lastCountryPayload = payload;
+        if (!payload?.timezone) return;
+
+        panel.classList.remove('hidden');
+        tzInput.value = payload.timezone;
+        document.getElementById('country_timezone_label').textContent =
+            `المنطقة الزمنية: ${payload.timezone}` + (payload.country_code ? ` (${payload.country_code})` : '');
+        if (payload.work_start) {
+            document.getElementById('country_work_start').textContent = payload.work_start;
+        }
+        startCountryClock(payload.timezone);
+
+        if (applyToForm) {
+            dateInput.value = payload.date || formatDateOnly(payload.timezone);
+            timeInput.value = payload.time || formatTimeOnly(payload.timezone).slice(0, 5);
+        }
+    }
+
+    async function fetchCountryTime(countryCode, userId, applyToForm = false) {
+        if (!countryCode) {
+            panel.classList.add('hidden');
+            return;
+        }
+        const params = new URLSearchParams({ country: countryCode });
+        if (userId) params.set('user_id', userId);
+        const res = await fetch(`{{ route('dashboard.work-times.country-time') }}?${params}`);
+        const data = await res.json();
+        if (!res.ok) return;
+        applyCountryFields(data, applyToForm);
+    }
+
+    document.getElementById('apply_country_now_btn').addEventListener('click', function() {
+        if (lastCountryPayload) {
+            applyCountryFields(lastCountryPayload, true);
+        } else if (activeTimezone) {
+            dateInput.value = formatDateOnly(activeTimezone);
+            timeInput.value = formatTimeOnly(activeTimezone).slice(0, 5);
+        }
+    });
+
+    document.getElementById('employee_select').addEventListener('change', function() {
+        const opt = this.options[this.selectedIndex];
+        const code = opt?.getAttribute('data-country-code');
+        const name = opt?.getAttribute('data-country-name');
+        const workStart = opt?.getAttribute('data-work-start');
+        if (code) {
+            $('#country_select2').val(code).trigger('change.select2');
+            document.getElementById('country_time_title').textContent =
+                name ? `التوقيت المحلي — ${name}` : 'التوقيت المحلي للدولة';
+        }
+        if (workStart) {
+            document.getElementById('country_work_start').textContent = workStart;
+        }
+        fetchCountryTime(code, this.value, true);
+    });
+
     $(document).ready(function() {
-                const countryDataUrl = 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json';
-                fetch(countryDataUrl)
-                    .then(response => response.json())
+        fetch('https://raw.githubusercontent.com/mledoze/countries/master/countries.json')
+            .then(r => r.json())
+            .then(data => {
+                const selectElement = $('#country_select2');
+                selectElement.empty().append(new Option('اختر الدولة', '', true, true));
+                data.forEach(country => {
+                    const countryName = country.translations?.ara?.common || country.name.common;
+                    selectElement.append(new Option(countryName, country.cca2, false, false));
+                });
+                selectElement.select2({ placeholder: 'اختر الدولة', allowClear: true, dir: 'rtl' });
+                selectElement.on('change', function() {
+                    const code = $(this).val();
+                    const userId = document.getElementById('employee_select').value;
+                    fetchCountryTime(code, userId, false);
+                });
+
+                fetch(`{{ route('dashboard.work-times.country-time') }}?use_ip=1`)
+                    .then(r => r.json())
                     .then(data => {
-                        const selectElement = $('#country_select2');
-                        selectElement.empty();
-    
-                        selectElement.append(new Option("اختر دولتك", "", true, true));
-                        data.forEach(country => {
-                            const countryName = country.translations.ara.common || country.name.common;
-                            const countryCode = country.cca2;
-                            const newOption = new Option(countryName, countryCode, false, false);
-                            if ('{{ old('country') }}' === countryCode) {
-                                newOption.selected = true;
+                        if (data.source === 'ip' && data.country_code) {
+                            const hint = document.getElementById('ip_detect_hint');
+                            hint.textContent = `تقدير من IP: ${data.country_name || data.country_code}`;
+                            hint.classList.remove('hidden');
+                            if (!$('#country_select2').val()) {
+                                $('#country_select2').val(data.country_code).trigger('change');
                             }
-    
-                            selectElement.append(newOption);
-                        });
-    
-                        selectElement.select2({
-                            placeholder: "اختر دولتك",
-                            allowClear: true,
-                            dir: "rtl"
-                        });
+                        }
                     })
-                    .catch(error => {
-                        console.error('حدث خطأ أثناء تحميل قائمة الدول:', error);
-                        $('#country_select2').empty().append(new Option("تعذر تحميل الدول", "", true, true));
-                    });
+                    .catch(() => {});
             });
+    });
+
+    document.querySelectorAll('input[type="time"], input[type="date"]').forEach(input => {
+        input.addEventListener('click', function() {
+            try {
+                if ('showPicker' in HTMLInputElement.prototype) this.showPicker();
+            } catch (e) {}
+        });
+    });
 </script>
 @endsection

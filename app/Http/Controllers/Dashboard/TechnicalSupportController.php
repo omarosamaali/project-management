@@ -9,15 +9,16 @@ use App\Models\SpecialRequest;
 use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Performance;
+use Illuminate\Support\Collection;
 
 class TechnicalSupportController extends Controller
 {
-    // ── Index ──────────────────────────────────────────
     public function index()
     {
-        $query = TechnicalSupport::with(['request.system', 'client']);
+        $query = TechnicalSupport::with(['request.system', 'specialRequest', 'client']);
 
         if (Auth::user()->role !== 'admin') {
             $query->where('client_id', Auth::id());
@@ -25,83 +26,95 @@ class TechnicalSupportController extends Controller
 
         $tickets = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        // بانر الدعم الفني — للعميل فقط
         $activeRequests = collect();
         if (Auth::user()->role !== 'admin') {
-            $activeRequests = Requests::where('client_id', Auth::id())
-                ->where('status', 'closed')
-                ->whereHas('system', fn($q) => $q->where('support_days', '>', 0))
-                ->with('system')
-                ->get()
-                ->filter(fn($r) => $r->has_active_support);
+            $activeRequests = $this->mergedActiveSupportProjects(Auth::id());
         }
 
         return view('dashboard.technical_support.index', compact('tickets', 'activeRequests'));
     }
 
-    // ── Create ─────────────────────────────────────────
     public function create()
     {
         $userId = Auth::id();
 
-        $generalRequests = Requests::where('client_id', $userId)
-            ->where('status', 'closed')
-            ->whereHas('system', fn($q) => $q->where('support_days', '>', 0))
-            ->with('system')
-            ->get()
-            ->filter(fn($r) => $r->has_active_support);
+        $supportProjects = $this->mergedActiveSupportProjects($userId);
+        $userRequests    = $supportProjects;
 
-        $specialRequests = SpecialRequest::where('user_id', $userId)->get();
-        $allRequests     = $generalRequests->concat($specialRequests);
-
-        return view('dashboard.technical_support.create', [
-            'userRequests' => $allRequests,
-        ]);
+        return view('dashboard.technical_support.create', compact('userRequests', 'supportProjects'));
     }
 
-    // ── Store ──────────────────────────────────────────
     public function store(Request $request)
     {
         $request->validate([
-            'subject'     => 'required|string|max:255',
-            'description' => 'required|string',
-            'request_id'  => 'required|exists:requests,id',
+            'subject'      => 'required|string|max:255',
+            'description'  => 'required|string',
+            'project_key'  => ['required', 'string', 'regex:/^(request|special):\d+$/'],
         ]);
 
-        $requestModel = Requests::with('system')->find($request->request_id);
+        [$type, $id] = explode(':', $request->project_key, 2);
+        $userId      = Auth::id();
 
-        if ($requestModel && !$requestModel->has_active_support) {
-            return redirect()->back()->withInput()
-                ->withErrors(['request_id' => 'انتهت مدة الدعم الفني لهذا المشروع.']);
+        if ($type === 'request') {
+            $requestModel = Requests::with('system')->find($id);
+
+            if (!$requestModel || !$this->clientOwnsRequest($requestModel, $userId)) {
+                return redirect()->back()->withInput()
+                    ->withErrors(['project_key' => 'المشروع غير موجود أو لا يخصك.']);
+            }
+
+            if (!$requestModel->has_active_support) {
+                return redirect()->back()->withInput()
+                    ->withErrors(['project_key' => 'انتهت مدة الدعم الفني / الصيانة لهذا المشروع.']);
+            }
+
+            $ticket = TechnicalSupport::create([
+                'client_id'   => $userId,
+                'request_id'  => $requestModel->id,
+                'system_id'   => $requestModel->system_id,
+                'subject'     => $request->subject,
+                'description' => $request->description,
+                'status'      => 'open',
+            ]);
+
+            $this->notifyPartnersForRequest($ticket, $requestModel);
+        } else {
+            $special = SpecialRequest::find($id);
+
+            if (!$special || !$this->clientOwnsSpecial($special, $userId)) {
+                return redirect()->back()->withInput()
+                    ->withErrors(['project_key' => 'المشروع غير موجود أو لا يخصك.']);
+            }
+
+            if (!$special->has_active_support) {
+                return redirect()->back()->withInput()
+                    ->withErrors(['project_key' => 'انتهت فترة الصيانة لهذا المشروع.']);
+            }
+
+            $ticket = TechnicalSupport::create([
+                'client_id'          => $userId,
+                'special_request_id' => $special->id,
+                'subject'            => $request->subject,
+                'description'        => $request->description,
+                'status'             => 'open',
+            ]);
+
+            $this->notifyPartnersForSpecial($ticket, $special);
         }
-
-        // ── إنشاء التذكرة ──
-        $ticket = TechnicalSupport::create([
-            'client_id'   => Auth::id(),
-            'request_id'  => $request->request_id,
-            'system_id'   => $requestModel->system_id ?? null,
-            'subject'     => $request->subject,
-            'description' => $request->description,
-            'status'      => 'open',
-        ]);
-
-        // ── إرسال واتساب للـ partners المرتبطين بهذا الطلب ──
-        $this->notifyPartners($ticket, $requestModel);
 
         return redirect()->route('dashboard.technical_support.index')
             ->with('success', 'تم إنشاء التذكرة بنجاح وتم إشعار الفريق المختص');
     }
 
-    // ── Show ───────────────────────────────────────────
     public function show(TechnicalSupport $technicalSupport)
     {
-        $technicalSupport->load(['request.system', 'client']);
+        $technicalSupport->load(['request.system', 'specialRequest', 'client']);
+
         return view('dashboard.technical_support.show', [
             'ticket' => $technicalSupport,
         ]);
     }
 
-    // ── Update ─────────────────────────────────────────
     public function update(Request $request, TechnicalSupport $technicalSupport)
     {
         $oldStatus = $technicalSupport->status;
@@ -110,7 +123,7 @@ class TechnicalSupportController extends Controller
 
         try {
             $whatsapp    = app(WhatsAppOTPService::class);
-            $projectName = $technicalSupport->request?->system->name_ar ?? "تذكرة #{$technicalSupport->id}";
+            $projectName = $technicalSupport->project_name;
             $whatsapp->notifyManager(
                 "تم تحديث تذكرة الدعم الفني: ({$technicalSupport->subject}) — الحالة: {$oldStatus} ← {$newStatus}",
                 $projectName
@@ -121,8 +134,11 @@ class TechnicalSupportController extends Controller
 
         if (in_array($newStatus, ['resolved', 'closed'])) {
             $partner = null;
-            if ($technicalSupport->request?->system) {
+
+            if ($technicalSupport->request_id && $technicalSupport->request?->system) {
                 $partner = $technicalSupport->request->system->partners()->first();
+            } elseif ($technicalSupport->special_request_id) {
+                $partner = $technicalSupport->specialRequest?->partners()->first();
             }
 
             if ($partner) {
@@ -140,65 +156,112 @@ class TechnicalSupportController extends Controller
             }
         }
 
+        if ($technicalSupport->special_request_id) {
+            return redirect()
+                ->route('dashboard.special-request.show', $technicalSupport->special_request_id)
+                ->with('success', 'تم تحديث حالة التذكرة');
+        }
+
         if ($technicalSupport->request_id) {
             return redirect()
-                ->route('dashboard.special-request.show', $technicalSupport->request_id)
+                ->route('dashboard.requests.show', $technicalSupport->request_id)
                 ->with('success', 'تم تحديث حالة التذكرة');
         }
 
         return redirect()->back()->with('success', 'تم تحديث الحالة بنجاح');
     }
 
-    // ── إرسال إشعار واتساب عند فتح تذكرة ──────────
-    // يبعت للرقم الثابت + كل الـ partners المرتبطين بالطلب
-    private function notifyPartners(TechnicalSupport $ticket, Requests $requestModel): void
+    private function mergedActiveSupportProjects(int $userId): Collection
     {
-        try {
-            $whatsapp    = app(WhatsAppOTPService::class);
-            $projectName = $requestModel->system->name_ar ?? ('مشروع #' . $requestModel->id);
+        return $this->activeGeneralRequestsForUser($userId)
+            ->concat($this->activeSpecialRequestsForUser($userId));
+    }
 
-            // ── 1. المدير والأدمن دايماً ──
-            foreach ([
-                WhatsAppOTPService::MANAGER_PHONE => 'المدير',
-                WhatsAppOTPService::ADMIN_PHONE   => 'الأدمن',
-            ] as $fixedPhone => $fixedName) {
-                Log::info("[TICKET] إرسال لـ {$fixedName}", ['phone' => $fixedPhone, 'ticket_id' => $ticket->id]);
-                $sent = $whatsapp->sendTicketNotification(
-                    phone: $fixedPhone,
-                    partnerName: $fixedName,
-                    projectName: $projectName,
-                    ticketId: $ticket->id
-                );
-                Log::info("[TICKET] {$fixedName}: " . ($sent ? 'نجح ✓' : 'فشل ✗'));
-            }
+    private function activeGeneralRequestsForUser(int $userId): Collection
+    {
+        return Requests::forClient($userId)
+            ->where('status', 'closed')
+            ->whereNotNull('delivered_at')
+            ->with('system')
+            ->get()
+            ->filter(fn ($r) => $r->has_active_support)
+            ->values();
+    }
 
-            // ── 2. الـ partners المرتبطين بـ request_id ──
-            $partners = \Illuminate\Support\Facades\DB::table('special_request_partner')
+    private function activeSpecialRequestsForUser(int $userId): Collection
+    {
+        return SpecialRequest::forClient($userId)
+            ->where('status', 'completed')
+            ->whereNotNull('delivered_at')
+            ->get()
+            ->filter(fn ($s) => $s->has_active_support)
+            ->values();
+    }
+
+    private function clientOwnsRequest(Requests $model, int $userId): bool
+    {
+        return $model->isClientMember($userId);
+    }
+
+    private function clientOwnsSpecial(SpecialRequest $model, int $userId): bool
+    {
+        return $model->isClientMember($userId);
+    }
+
+    private function notifyPartnersForRequest(TechnicalSupport $ticket, Requests $requestModel): void
+    {
+        $projectName = $requestModel->system->name_ar ?? ('مشروع #' . $requestModel->id);
+        $this->sendTicketWhatsApp($ticket, $projectName, function () use ($ticket) {
+            return DB::table('special_request_partner')
                 ->where('special_request_partner.request_id', $ticket->request_id)
                 ->join('users', 'users.id', '=', 'special_request_partner.partner_id')
                 ->where('users.role', 'partner')
                 ->whereNotNull('users.phone')
                 ->select('users.id', 'users.name', 'users.phone')
                 ->get();
+        });
+    }
 
-            if ($partners->isEmpty()) {
-                Log::info("[TICKET] لا يوجد partners للطلب #{$ticket->request_id}");
-                return;
+    private function notifyPartnersForSpecial(TechnicalSupport $ticket, SpecialRequest $special): void
+    {
+        $projectName = $special->title ?? ('مشروع خاص #' . $special->id);
+        $this->sendTicketWhatsApp($ticket, $projectName, function () use ($special) {
+            return DB::table('special_request_partner')
+                ->where('special_request_partner.special_request_id', $special->id)
+                ->join('users', 'users.id', '=', 'special_request_partner.partner_id')
+                ->where('users.role', 'partner')
+                ->whereNotNull('users.phone')
+                ->select('users.id', 'users.name', 'users.phone')
+                ->get();
+        });
+    }
+
+    private function sendTicketWhatsApp(TechnicalSupport $ticket, string $projectName, callable $partnersQuery): void
+    {
+        try {
+            $whatsapp = app(WhatsAppOTPService::class);
+
+            foreach ([
+                WhatsAppOTPService::MANAGER_PHONE => 'المدير',
+                WhatsAppOTPService::ADMIN_PHONE   => 'الأدمن',
+            ] as $fixedPhone => $fixedName) {
+                $whatsapp->sendTicketNotification(
+                    phone: $fixedPhone,
+                    partnerName: $fixedName,
+                    projectName: $projectName,
+                    ticketId: $ticket->id
+                );
             }
 
+            $partners = $partnersQuery();
+
             foreach ($partners as $partner) {
-                Log::info("[TICKET] إرسال للـ partner", [
-                    'partner_id' => $partner->id,
-                    'phone'      => $partner->phone,
-                    'ticket_id'  => $ticket->id,
-                ]);
-                $sent = $whatsapp->sendTicketNotification(
+                $whatsapp->sendTicketNotification(
                     phone: $partner->phone,
                     partnerName: $partner->name,
                     projectName: $projectName,
                     ticketId: $ticket->id
                 );
-                Log::info("[TICKET] partner #{$partner->id}: " . ($sent ? 'نجح ✓' : 'فشل ✗'));
             }
         } catch (\Exception $e) {
             Log::error("[TICKET] فشل إرسال الإشعارات", [

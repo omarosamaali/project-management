@@ -7,10 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\RequestFile;
 use Carbon\Carbon;
 use App\Models\RequestPrice;
+use App\Models\Concerns\HasMaintenanceSupport;
+use App\Models\Concerns\HasProjectClients;
+use App\Models\Concerns\HasProjectWorkTimeMetrics;
 
 class SpecialRequest extends Model
 {
-    use HasFactory;
+    use HasFactory, HasMaintenanceSupport, HasProjectClients, HasProjectWorkTimeMetrics;
+
+    protected function projectOwnerColumn(): string
+    {
+        return 'user_id';
+    }
 
     protected $fillable = [
         'user_id',
@@ -22,6 +30,7 @@ class SpecialRequest extends Model
         'budget',
         'deadline',
         'status',
+        'delivered_at',
         'is_project',
         'maintenance_period',
         'maintenance_unit',
@@ -47,8 +56,60 @@ class SpecialRequest extends Model
         'bidding_deadline' => 'datetime',   // ✅ مهم جداً
         'created_at' => 'datetime',         // ✅ مهم جداً
         'updated_at' => 'datetime',         // ✅ مهم جداً
+        'delivered_at' => 'datetime',
 
     ];
+
+    public function getSupportStartDateAttribute(): ?Carbon
+    {
+        if (!$this->delivered_at) {
+            return null;
+        }
+
+        return $this->delivered_at instanceof Carbon
+            ? $this->delivered_at
+            : Carbon::parse($this->delivered_at);
+    }
+
+    public function getSupportRemainingDaysAttribute(): ?int
+    {
+        return $this->maintenance_remaining_days;
+    }
+
+    public function getSupportPercentageAttribute(): int
+    {
+        return $this->maintenance_percentage;
+    }
+
+    public function getSupportColorAttribute(): string
+    {
+        return $this->maintenance_color;
+    }
+
+    public function getSupportTotalDaysAttribute(): int
+    {
+        return $this->maintenance_total_days;
+    }
+
+    public function getSupportEndDateAttribute(): ?Carbon
+    {
+        return $this->getMaintenanceEndDate();
+    }
+
+    public function getProjectDisplayNameAttribute(): string
+    {
+        return $this->title ?: ('مشروع خاص #' . $this->id);
+    }
+
+    public function getHasActiveSupportAttribute(): bool
+    {
+        return $this->status === 'completed' && $this->has_active_maintenance;
+    }
+
+    public function technicalSupports()
+    {
+        return $this->hasMany(TechnicalSupport::class, 'special_request_id');
+    }
 
     public function files()
     {
@@ -92,9 +153,13 @@ class SpecialRequest extends Model
             'special_request_partner',
             'special_request_id',
             'partner_id'
-        )->withPivot('notes', 'created_at', 'profit_share_percentage',
-            'share_type',       // ← لازم يكون موجود
-            'fixed_amount',     // ← لازم يكون موجود
+        )
+            ->where(function ($q) {
+                $q->where('users.status', '!=', 'blocked')->orWhereNull('users.status');
+            })
+            ->withPivot('notes', 'created_at', 'profit_share_percentage',
+            'share_type',
+            'fixed_amount',
         )->withTimestamps();
     }
 
@@ -208,6 +273,35 @@ class SpecialRequest extends Model
         return $this->hasMany(SpecialRequestMessage::class, 'special_request_id');
     }
 
+    /**
+     * اسم نوع المشروع/الخدمة للعرض (يحوّل معرّف الخدمة أو الرمز إلى اسم عربي).
+     */
+    public function getProjectTypeLabelAttribute(): ?string
+    {
+        if (!$this->project_type) {
+            return null;
+        }
+
+        $value = (string) $this->project_type;
+
+        if (ctype_digit($value)) {
+            $service = Service::find((int) $value);
+            if ($service) {
+                return $service->name_ar;
+            }
+        }
+
+        $knownCodes = [
+            'web', 'mobile', 'both', 'logo', 'identity', 'digital',
+            'management', 'social', 'training', 'consulting', 'other', 'desktop',
+        ];
+
+        if (in_array($value, $knownCodes, true)) {
+            return (new Service(['status' => $value]))->status_name;
+        }
+
+        return $value;
+    }
 
     // ثوابت ساعات العمل
     const WORK_HOURS_PER_DAY = 9; // ساعات العمل اليومية
@@ -235,40 +329,6 @@ class SpecialRequest extends Model
             return self::calendarDaysToWorkHours($days);
         }
         return 0;
-    }
-
-    // ✅ حساب ساعات العمل المستغرقة حتى الآن (6 أيام/أسبوع × 9 ساعات/يوم)
-    public function getSpentHoursAttribute()
-    {
-        if ($this->created_at) {
-            $start = Carbon::parse($this->created_at)->startOfDay();
-
-            if (in_array($this->status, ['completed', 'canceled'])) {
-                $end = Carbon::parse($this->updated_at)->startOfDay();
-            } else {
-                $end = Carbon::now()->startOfDay();
-            }
-
-            $days = (int) $start->diffInDays($end);
-            return self::calendarDaysToWorkHours($days);
-        }
-        return 0;
-    }
-
-    // ✅ حساب نسبة الإنجاز
-    public function getProgressPercentageAttribute()
-    {
-        if ($this->expected_hours > 0) {
-            return min(round(($this->spent_hours / $this->expected_hours) * 100, 1), 100);
-        }
-        return 0;
-    }
-
-    // ✅ الساعات المتبقية
-    public function getRemainingHoursAttribute()
-    {
-        $remaining = $this->expected_hours - $this->spent_hours;
-        return max($remaining, 0);
     }
 
     // ✅ حالة المشروع (متأخر أم لا)

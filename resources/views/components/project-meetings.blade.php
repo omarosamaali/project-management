@@ -2,19 +2,13 @@
 
 {{-- 1. تجهيز قائمة الحضور المتاحة --}}
 @php
-$allPossibleAttendees = collect();
-if ($SpecialRequest->user) {
-$allPossibleAttendees->push($SpecialRequest->user);
+$allPossibleAttendees = $SpecialRequest->allProjectClients();
+foreach ($SpecialRequest->assignableTeamMembers() as $member) {
+    $allPossibleAttendees->push($member);
 }
-if ($SpecialRequest->partners) {
-foreach ($SpecialRequest->partners as $partner) {
-$allPossibleAttendees->push($partner);
-}
-}
-if ($SpecialRequest->projectManager && $SpecialRequest->projectManager->user) {
-$allPossibleAttendees->push($SpecialRequest->projectManager->user);
-}
-$allPossibleAttendees = $allPossibleAttendees->unique('id');
+$allPossibleAttendees = $allPossibleAttendees
+    ->filter(fn ($u) => ($u->status ?? 'active') !== 'blocked')
+    ->unique('id');
 @endphp
 
 <div class="p-6 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
@@ -50,17 +44,17 @@ $allPossibleAttendees = $allPossibleAttendees->unique('id');
     $participants = $meeting->participants;
 
     // 2. التحقق هل المستخدم الحالي مدعو أم لا؟
-    $isInvited = $participants->contains(auth()->id());
+    $isInvited = $participants->contains('id', auth()->id());
     $isCreator = $meeting->created_by == auth()->id();
     $isAdmin = auth()->user()->role === 'admin';
+    $isProjectClient = $SpecialRequest->userCanViewAllProjectIssues(auth()->id(), auth()->user()->role);
 
-    // 3. جلب بيانات المستخدم الحالي من جدول الربط (لمعرفة حالته: موافق/معتذر)
     $myParticipant = $participants->firstWhere('id', auth()->id());
     $currentUserStatus = $myParticipant ? $myParticipant->pivot->status : 'pending';
     @endphp
 
-    {{-- حماية: لا يظهر الاجتماع إلا للمدعو، المنشئ، أو الأدمن --}}
-    @if ($isInvited || $isCreator || $isAdmin)
+    {{-- يظهر للمدعوين، المنشئ، الأدمن، وكل عملاء المشروع --}}
+    @if ($isInvited || $isCreator || $isAdmin || $isProjectClient)
     <div
         class="border dark:border-gray-700 p-5 rounded-2xl bg-gray-50/50 dark:bg-gray-900/30 transition-all relative overflow-hidden">
         <div class="absolute right-0 top-0 bottom-0 w-1 {{ $meeting->status_color }}"></div>
@@ -84,7 +78,7 @@ $allPossibleAttendees = $allPossibleAttendees->unique('id');
                             class="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full border dark:border-gray-700 shadow-sm">
                             <span
                                 class="text-[11px] font-bold {{ $participant->id == auth()->id() ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300' }}">
-                                {{ $participant->name }}
+                                {{ $participant->display_name }}
                             </span>
                             <span class="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500">
                                 {{ ['pending' => 'بانتظار الرد', 'accepted' => 'موافق', 'declined' => 'يعتذر', 'attended' => 'حضر الاجتماع', 'absent' => 'غائب'][$participant->pivot->status] ?? $participant->pivot->status }}
@@ -97,7 +91,7 @@ $allPossibleAttendees = $allPossibleAttendees->unique('id');
 
             {{-- أزرار الموافقة والاعتذار --}}
             <div class="flex flex-col gap-2">
-                @if (!$isCreator && $currentUserStatus === 'pending' && now() < $meeting->end_at)
+                @if (!$isCreator && ($isInvited || $isProjectClient) && $currentUserStatus === 'pending' && now() < $meeting->end_at)
                     <div class="flex gap-2">
                         <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
                             @csrf @method('PATCH')
@@ -152,7 +146,7 @@ $allPossibleAttendees = $allPossibleAttendees->unique('id');
                             class="flex items-center gap-2 cursor-pointer hover:bg-white dark:hover:bg-gray-800 p-1 rounded transition">
                             <input type="checkbox" name="attendees[]" value="{{ $person->id }}"
                                 class="rounded text-black">
-                            <span class="text-xs dark:text-gray-300">{{ $person->name }}</span>
+                            <span class="text-xs dark:text-gray-300">{{ $person->display_name }}</span>
                         </label>
                         @endforeach
                     </div>

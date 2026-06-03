@@ -10,6 +10,7 @@ use App\Models\Performance;
 use App\Models\PartnerSystem;
 use App\Models\SpecialRequestPartner;
 use App\Services\WhatsAppOTPService;
+use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\SpecialRequest;
@@ -38,10 +39,8 @@ class RequestsController extends Controller
             $baseSpecialRequests = SpecialRequest::whereIn('id', $assignedSpecialIds);
             $basePartnerSpecialRequests = SpecialRequestPartner::where('partner_id', $user->id);
         } else {
-            $reqIds     = \DB::table('request_clients')->where('user_id', $user->id)->pluck('request_id');
-            $specialIds = \DB::table('special_request_clients')->where('user_id', $user->id)->pluck('special_request_id');
-            $baseRequests = Requests::whereIn('id', $reqIds);
-            $baseSpecialRequests = SpecialRequest::whereIn('id', $specialIds);
+            $baseRequests = Requests::forClient($user->id);
+            $baseSpecialRequests = SpecialRequest::forClient($user->id);
             $basePartnerSpecialRequests = SpecialRequestPartner::whereRaw('1 = 0');
         }
         // حالات الطلبات العادية (Requests) في قاعدة البيانات
@@ -122,8 +121,8 @@ class RequestsController extends Controller
     public function create()
     {
         $systems = System::all();
-        $partners = User::where('role', 'partner')->get();
-        $clients = User::where('role', 'client')->get();
+        $partners = User::where('role', 'partner')->notBlocked()->get();
+        $clients = User::where('role', 'client')->notBlocked()->get();
         return view('dashboard.requests.create', compact('systems', 'partners', 'clients'));
     }
 
@@ -137,7 +136,8 @@ class RequestsController extends Controller
             'status' => 'required',
         ]);
 
-        $request = Requests::create($request->all());
+        $requestModel = Requests::create($request->all());
+        $requestModel->attachProjectClient((int) $requestModel->client_id);
 
         return redirect()->route('dashboard.requests.index')->with('success', 'تم حفظ الطلب بنجاح');
     }
@@ -153,7 +153,8 @@ class RequestsController extends Controller
 
         $validated['order_number'] = 'REQ' . time() . rand(1, 9);
 
-        Requests::create($validated);
+        $requestModel = Requests::create($validated);
+        $requestModel->attachProjectClient((int) $requestModel->client_id);
 
         $whatsapp = app(WhatsAppOTPService::class);
         $client   = Auth::user();
@@ -194,19 +195,31 @@ class RequestsController extends Controller
             'user',
             'system',
             'client',
+            'clients',
             'partners',
+            'tasks',
+            'stages',
+            'issues.user',
+            'issues.comments.user',
             'requestFiles.user',
             'projectMeetings.participants',
+            'activities.user',
             'messages.user'
         ])->findOrFail($id);
 
+        if (Auth::user()->role === 'client' && !$SpecialRequest->isClientMember(Auth::id())) {
+            abort(403, 'غير مصرح لك بعرض هذا المشروع.');
+        }
+
         $assignedPartnerIds = $SpecialRequest->partners->pluck('id')->toArray();
         $partners = User::where('role', 'partner')
+            ->notBlocked()
             ->whereNotIn('id', $assignedPartnerIds)
             ->get();
 
         $managers = User::where('role', 'partner')
             ->where('is_employee', 1)
+            ->notBlocked()
             ->get();
 
         // استخدم نظام الرسائل الجديد
@@ -228,8 +241,8 @@ class RequestsController extends Controller
     {
         $userRequest = Requests::with('user', 'system')->findOrFail($id);
         $systems = System::all();
-        $partners = User::where('role', 'partner')->get();
-        $clients = User::where('role', 'client')->get();
+        $partners = User::where('role', 'partner')->notBlocked()->get();
+        $clients = User::where('role', 'client')->notBlocked()->get();
 
         return view('dashboard.requests.edit', compact('userRequest', 'systems', 'partners', 'clients'));
     }
@@ -246,6 +259,7 @@ class RequestsController extends Controller
 
         $requestModel = Requests::findOrFail($id);
         $requestModel->update($validated);
+        $requestModel->attachProjectClient((int) $requestModel->client_id);
 
         return redirect()->route('dashboard.requests.index')
             ->with('success', 'تم تعديل الطلب بنجاح');
@@ -400,14 +414,19 @@ class RequestsController extends Controller
         $oldStatus = $stage->status;
         $stage->update($data);
 
-        try {
-            $whatsapp     = app(WhatsAppOTPService::class);
-            $userRequest  = Requests::find($stage->request_id);
-            $projectTitle = $userRequest?->system->name_ar ?? "طلب #{$stage->request_id}";
-            $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
-            $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
-        } catch (\Exception $e) {
-            \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        $logger = app(ProjectActivityLogger::class);
+        if (!$logger->isStageCompleted($oldStatus) && $logger->isStageCompleted($data['status'])) {
+            $logger->logStageCompleted($stage->fresh(), auth()->id());
+        } else {
+            try {
+                $whatsapp     = app(WhatsAppOTPService::class);
+                $userRequest  = Requests::find($stage->request_id);
+                $projectTitle = $userRequest?->system->name_ar ?? "طلب #{$stage->request_id}";
+                $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
+                $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
+            } catch (\Exception $e) {
+                \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'تم تحديث المرحلة بنجاح');

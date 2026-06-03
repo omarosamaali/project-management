@@ -7,6 +7,8 @@ use App\Models\Task;
 use App\Models\SpecialRequest;
 use App\Models\Requests as ProjectRequest;
 use App\Services\WhatsAppOTPService;
+use App\Services\ProjectActivityLogger;
+use App\Support\TaskPermissions;
 use Carbon\Carbon;
 
 class TaskController extends Controller
@@ -38,6 +40,10 @@ class TaskController extends Controller
             'project_stage_id' => 'nullable|exists:project_stages,id',
             'status' => 'required'
         ]);
+
+        $project = SpecialRequest::findOrFail($request->special_request_id);
+        TaskPermissions::authorizeManageProject(auth()->user(), $project);
+
         Task::create($validated);
         \App\Models\ProjectActivity::create([
             'special_request_id' => $request->special_request_id,
@@ -100,7 +106,18 @@ class TaskController extends Controller
             'request_stage_id.exists'   => 'مرحلة الطلب غير موجودة',
         ])->validate();
 
-        // إنشاء المهمة
+        if (!empty($validated['special_request_id'])) {
+            TaskPermissions::authorizeManageProject(
+                auth()->user(),
+                SpecialRequest::findOrFail($validated['special_request_id'])
+            );
+        } elseif (!empty($validated['request_id'])) {
+            TaskPermissions::authorizeManageProject(
+                auth()->user(),
+                ProjectRequest::findOrFail($validated['request_id'])
+            );
+        }
+
         $task = Task::create($validated);
 
         // تسجيل النشاط
@@ -173,7 +190,8 @@ class TaskController extends Controller
 
     public function edit(Task $task)
     {
-        // تحميل العلاقات لجلب الأسماء
+        TaskPermissions::authorizeManage(auth()->user(), $task);
+
         $task->load(['user', 'stage']);
 
         return response()->json([
@@ -195,27 +213,44 @@ class TaskController extends Controller
     // تحديث المهمة
     public function update(Request $request, Task $task)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'title' => 'required|string|max:255',
-            'details' => 'nullable|string',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'project_stage_id' => 'nullable|exists:project_stages,id',
-            'status' => 'required'
-        ]);
+        TaskPermissions::authorizeManage(auth()->user(), $task);
+
+        $rules = [
+            'user_id'            => 'required|exists:users,id',
+            'title'              => 'required|string|max:255',
+            'details'            => 'nullable|string',
+            'start_date'         => 'required|date',
+            'end_date'           => 'required|date|after_or_equal:start_date',
+            'project_stage_id'   => 'nullable|exists:project_stages,id',
+            'request_stage_id'   => 'nullable|exists:request_stages,id',
+        ];
+
+        if (auth()->user()->role === 'admin') {
+            $rules['status'] = 'required|string';
+        }
+
+        $validated = $request->validate($rules);
+
+        if (auth()->user()->role !== 'admin') {
+            $validated['status'] = $task->status;
+        }
 
         $oldStatus = $task->status;
         $task->update($validated);
 
-        try {
-            $whatsapp = app(WhatsAppOTPService::class);
-            $project  = $task->specialRequest ?? $task->projectRequest;
-            $title    = $project->title ?? "مهمة #{$task->id}";
-            $statusChanged = $oldStatus !== $validated['status'] ? " (الحالة: {$oldStatus} ← {$validated['status']})" : '';
-            $whatsapp->notifyManager("تم تعديل المهمة: ({$task->title}){$statusChanged}", $title);
-        } catch (\Exception $e) {
-            \Log::error("[TASK_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        $logger = app(ProjectActivityLogger::class);
+        if (!$logger->isTaskCompleted($oldStatus) && $logger->isTaskCompleted($validated['status'])) {
+            $logger->logTaskCompleted($task->fresh(), auth()->id());
+        } else {
+            try {
+                $whatsapp = app(WhatsAppOTPService::class);
+                $project  = $task->specialRequest ?? $task->request;
+                $title    = $project?->title ?? $project?->system?->name_ar ?? "مهمة #{$task->id}";
+                $statusChanged = $oldStatus !== $validated['status'] ? " (الحالة: {$oldStatus} ← {$validated['status']})" : '';
+                $whatsapp->notifyManager("تم تعديل المهمة: ({$task->title}){$statusChanged}", $title);
+            } catch (\Exception $e) {
+                \Log::error("[TASK_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('success', 'تم تعديل المهمة بنجاح');
@@ -223,6 +258,8 @@ class TaskController extends Controller
 
     public function startTimer(Task $task)
     {
+        TaskPermissions::authorizeTrack(auth()->user(), $task);
+
         if (!$task->is_timer_running) {
             $task->timer_started_at = now();
             $task->is_timer_running = true;
@@ -240,6 +277,8 @@ class TaskController extends Controller
 
     public function pauseTimer(Task $task)
     {
+        TaskPermissions::authorizeTrack(auth()->user(), $task);
+
         $this->accumulateRunningTime($task);
 
         if ($task->status !== 'منتهية') {
@@ -252,9 +291,17 @@ class TaskController extends Controller
 
     public function finishTimer(Task $task)
     {
+        TaskPermissions::authorizeTrack(auth()->user(), $task);
+
+        $wasCompleted = app(ProjectActivityLogger::class)->isTaskCompleted($task->status);
+
         $this->accumulateRunningTime($task);
         $task->status = 'منتهية';
         $task->save();
+
+        if (!$wasCompleted) {
+            app(ProjectActivityLogger::class)->logTaskCompleted($task->fresh(), auth()->id());
+        }
 
         return redirect()->back()->with('success', 'تم إنهاء المهمة وتثبيت الوقت');
     }
@@ -262,6 +309,8 @@ class TaskController extends Controller
     // حذف المهمة
     public function destroy(Task $task)
     {
+        TaskPermissions::authorizeManage(auth()->user(), $task);
+
         $task->delete();
         return redirect()->back()->with('success', 'تم حذف المهمة بنجاح');
     }

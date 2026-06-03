@@ -19,6 +19,7 @@ use App\Models\RequestPayment;
 use App\Models\RequestStage;
 use App\Models\RequestActivity;
 use App\Services\WhatsAppOTPService;
+use App\Services\ProjectActivityLogger;
 
 class SpecialRequestController extends Controller
 {
@@ -129,6 +130,7 @@ class SpecialRequestController extends Controller
     {
         $search = $request->input('search');
         $specialRequests = SpecialRequest::query()
+            ->when(auth()->user()->role === 'client', fn ($q) => $q->forClient(auth()->id()))
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('title', 'like', "%{$search}%")
@@ -147,10 +149,27 @@ class SpecialRequestController extends Controller
 
     public function show(SpecialRequest $SpecialRequest, Request $request)
     {
+        if (auth()->user()->role === 'client' && !$SpecialRequest->isClientMember(auth()->id())) {
+            abort(403, 'غير مصرح لك بعرض هذا المشروع.');
+        }
+
+        $SpecialRequest->load([
+            'clients',
+            'tasks',
+            'stages',
+            'issues.user',
+            'issues.comments.user',
+            'projectMeetings.participants',
+            'activities.user',
+        ]);
+
         $assignedPartnerIds = $SpecialRequest->partners()->pluck('partner_id')->toArray();
         $requiredServiceType = $SpecialRequest->project_type;
-        $partners = User::whereIn('role', ['partner', 'independent_partner'])->whereNotIn('id', $assignedPartnerIds)->get();
-        $managers = User::where('role', 'partner')->where('is_employee', 1)->get();
+        $partners = User::whereIn('role', ['partner', 'independent_partner'])
+            ->notBlocked()
+            ->whereNotIn('id', $assignedPartnerIds)
+            ->get();
+        $managers = User::where('role', 'partner')->where('is_employee', 1)->notBlocked()->get();
 
         $collection1 = Support::where('request_id', $SpecialRequest->id)
             ->with(['user', 'unreadMessages', 'messages'])
@@ -519,14 +538,19 @@ class SpecialRequestController extends Controller
         $oldStatus = $stage->status;
         $stage->update($data);
 
-        try {
-            $whatsapp    = app(WhatsAppOTPService::class);
-            $project     = $stage->specialRequest;
-            $projectTitle = $project->title ?? "مشروع #{$stage->special_request_id}";
-            $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
-            $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
-        } catch (\Exception $e) {
-            \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        $logger = app(ProjectActivityLogger::class);
+        if (!$logger->isStageCompleted($oldStatus) && $logger->isStageCompleted($data['status'])) {
+            $logger->logStageCompleted($stage->fresh(), auth()->id());
+        } else {
+            try {
+                $whatsapp    = app(WhatsAppOTPService::class);
+                $project     = $stage->specialRequest;
+                $projectTitle = $project->title ?? "مشروع #{$stage->special_request_id}";
+                $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
+                $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
+            } catch (\Exception $e) {
+                \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'تم تحديث المرحلة بنجاح');
@@ -545,14 +569,19 @@ class SpecialRequestController extends Controller
         $oldStatus = $stage->status;
         $stage->update($data);
 
-        try {
-            $whatsapp     = app(WhatsAppOTPService::class);
-            $project      = $stage->request;
-            $projectTitle = $project->title ?? "طلب #{$stage->request_id}";
-            $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
-            $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
-        } catch (\Exception $e) {
-            \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+        $logger = app(ProjectActivityLogger::class);
+        if (!$logger->isStageCompleted($oldStatus) && $logger->isStageCompleted($data['status'])) {
+            $logger->logStageCompleted($stage->fresh(), auth()->id());
+        } else {
+            try {
+                $whatsapp     = app(WhatsAppOTPService::class);
+                $project      = $stage->request;
+                $projectTitle = $project->system?->name_ar ?? "طلب #{$stage->request_id}";
+                $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
+                $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
+            } catch (\Exception $e) {
+                \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'تم تحديث المرحلة بنجاح');
@@ -911,9 +940,9 @@ class SpecialRequestController extends Controller
             return back()->withErrors(['user_id' => 'يجب أن يكون المستخدم عميلاً']);
         }
 
-        $specialRequest->clients()->syncWithoutDetaching([$request->user_id]);
+        $specialRequest->attachProjectClient((int) $request->user_id);
 
-        return back()->with('success', "تم إضافة العميل {$user->name} للمشروع");
+        return back()->with('success', "تم إضافة العميل {$user->name} للمشروع — سيظهر المشروع في قائمة مشاريعه");
     }
 
     public function removeClient(Request $request, SpecialRequest $specialRequest, \App\Models\User $user)
@@ -936,9 +965,9 @@ class SpecialRequestController extends Controller
             return back()->withErrors(['user_id' => 'يجب أن يكون المستخدم عميلاً']);
         }
 
-        $requestModel->clients()->syncWithoutDetaching([$request->user_id]);
+        $requestModel->attachProjectClient((int) $request->user_id);
 
-        return back()->with('success', "تم إضافة العميل {$user->name} للمشروع");
+        return back()->with('success', "تم إضافة العميل {$user->name} للمشروع — سيظهر المشروع في قائمة مشاريعه");
     }
 
     public function removeRequestClient(Request $request, \App\Models\Requests $requestModel, \App\Models\User $user)
@@ -1038,12 +1067,16 @@ class SpecialRequestController extends Controller
     {
         $request = SpecialRequest::findOrFail($id);
 
-        if (auth()->id() !== $request->user_id) {
+        $userId = auth()->id();
+        $owns = $request->isClientMember($userId);
+
+        if (!$owns) {
             return back()->with('error', 'هذا الطلب لا يخصك');
         }
 
         $request->update([
-            'status' => 'completed'
+            'status'       => 'completed',
+            'delivered_at' => now(),
         ]);
 
         return back()->with('success', 'تم تأكيد الاستلام بنجاح، يسعدنا التعامل معك!');

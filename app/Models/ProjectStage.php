@@ -9,6 +9,11 @@ class ProjectStage extends Model
     protected $fillable = ['special_request_id', 'title', 'details', 'end_date', 'status'];
 
     // علاقة مع المهام
+    public function specialRequest()
+    {
+        return $this->belongsTo(SpecialRequest::class, 'special_request_id');
+    }
+
     public function tasks()
     {
         return $this->hasMany(Task::class, 'project_stage_id');

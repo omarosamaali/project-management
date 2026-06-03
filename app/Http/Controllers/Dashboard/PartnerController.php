@@ -17,6 +17,7 @@ class PartnerController extends Controller
         $search = $request->input('search');
 
         $partners = User::where('role', 'partner')
+            ->notBlocked()
             ->when($search, function ($query, $search) {
                 return $query->where('name', 'LIKE', '%' . $search . '%');
             })

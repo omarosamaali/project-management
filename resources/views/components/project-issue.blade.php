@@ -24,12 +24,13 @@
             <i class="fas fa-users-cog"></i> الأشخاص المتاحون للمعالجة
         </h3>
         <div class="flex flex-wrap gap-3 text-sm">
-<span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">
-    العميل: {{ $SpecialRequest->user?->name ?? 'غير معروف' }}
-</span>
-            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-bold">مدير النظام</span>
-            @foreach ($SpecialRequest->partners as $partner)
-            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-bold">{{ $partner->name }}</span>
+            @foreach ($SpecialRequest->allProjectClients() as $projectClient)
+            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">
+                عميل: {{ $projectClient->name }}
+            </span>
+            @endforeach
+            @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-bold">{{ $member->display_name }}</span>
             @endforeach
         </div>
     </div>
@@ -40,14 +41,19 @@
 $currentUserId = auth()->id();
 $userRole = auth()->user()->role;
 
-// جلب المشاكل التي يكون المستخدم الحالي معنياً بها
-$allIssues = $SpecialRequest->issues->filter(function($issue) use ($currentUserId, $userRole) {
+// جلب المشاكل المرئية للمستخدم
+$allIssues = $SpecialRequest->issues->filter(function($issue) use ($currentUserId, $userRole, $SpecialRequest) {
 // المسؤول يرى كل شيء
 if ($userRole === 'admin') {
 return true;
 }
 
-// صاحب المشكلة يراها
+// كل عملاء المشروع (الأصلي + المضافون) يرون كل المعوقات
+if ($SpecialRequest->userCanViewAllProjectIssues($currentUserId, $userRole)) {
+return true;
+}
+
+// صاحب تسجيل المعوق يراه
 if ($issue->user_id == $currentUserId) {
 return true;
 }
@@ -109,8 +115,9 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
                                 $assignedIds = is_array($assignedData) ? $assignedData : (is_string($assignedData) ?
                                 json_decode($assignedData, true) ?: [] : []);
                                 
-                                $assignedUsers = !empty($assignedIds) ? \App\Models\User::whereIn('id',
-                                $assignedIds)->get() : collect();
+                                $assignedUsers = !empty($assignedIds)
+                                    ? \App\Models\User::whereIn('id', $assignedIds)->notBlocked()->get()
+                                    : collect();
                                 @endphp
                                 @forelse($assignedUsers as $user)
                                 <b
@@ -297,15 +304,14 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
                             <label class="block text-sm font-bold mb-1 dark:text-white">المعنيين بالمعالجة</label>
                             <select name="assigned_users[]" multiple required
                                 class="w-full p-3 rounded-xl border dark:bg-gray-700 dark:text-white h-32 focus:ring-2 focus:ring-blue-500">
-                                <option value="{{ $SpecialRequest?->user->id }}" {{ in_array($SpecialRequest?->user->id,
-                                    $assignedIds) ? 'selected' : '' }}>
-                                    العميل: {{ $SpecialRequest?->user->name }}
+                                @foreach ($SpecialRequest->allProjectClients() as $projectClient)
+                                <option value="{{ $projectClient->id }}" {{ in_array($projectClient->id, $assignedIds) ? 'selected' : '' }}>
+                                    عميل: {{ $projectClient->name }}
                                 </option>
-                                <option value="1" {{ in_array(1, $assignedIds) ? 'selected' : '' }}>مدير النظام</option>
-                                @foreach ($SpecialRequest->partners as $partner)
-                                <option value="{{ $partner->id }}" {{ in_array($partner->id, $assignedIds) ? 'selected'
-                                    : '' }}>
-                                    {{ $partner->name }}
+                                @endforeach
+                                @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+                                <option value="{{ $member->id }}" {{ in_array($member->id, $assignedIds) ? 'selected' : '' }}>
+                                    {{ $member->display_name }}
                                 </option>
                                 @endforeach
                             </select>
@@ -393,7 +399,7 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
     @endif
 
     {{-- رسالة فارغة --}}
-    @if($SpecialRequest->issues->count() == 0)
+    @if($allIssues->count() == 0 && $SpecialRequest->issues->count() == 0)
     <div
         class="text-center py-20 bg-white dark:bg-gray-800 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-700 mt-8">
         <div class="bg-gray-100 dark:bg-gray-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -429,11 +435,11 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
                 <select name="assigned_users[]" multiple required
                     class="w-full p-3 rounded-xl border dark:bg-gray-700 dark:text-white h-32 focus:ring-2 focus:ring-blue-500">
 {{-- الجزء المتسبب في الخطأ داخل الـ Modal --}}
-<option value="{{ $SpecialRequest->user?->id }}">
-    العميل: {{ $SpecialRequest->user?->name ?? 'غير متوفر' }}
-</option>                    <option value="1">مدير النظام</option>
-                    @foreach ($SpecialRequest->partners as $partner)
-                    <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                    @foreach ($SpecialRequest->allProjectClients() as $projectClient)
+                    <option value="{{ $projectClient->id }}">عميل: {{ $projectClient->name }}</option>
+                    @endforeach
+                    @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+                    <option value="{{ $member->id }}">{{ $member->display_name }}</option>
                     @endforeach
                 </select>
             </div>

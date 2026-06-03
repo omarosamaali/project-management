@@ -18,30 +18,11 @@
             </button>
         </div>
 
-        <div class="bg-white shadow-none rounded-xl overflow-hidden border-2 border-black print-container">
+        <div class="bg-white shadow-none rounded-xl overflow-hidden border-2 border-black print-container invoice-mono">
 
-            <div class="grid lg:grid-cols-3 md:grid-cols-1 text-black p-8 border-b border-black">
-                <div class="bg-white p-2 rounded-lg w-fit mx-auto lg:order-2">
-                    <img src="{{ asset('assets/images/logo.webp') }}" alt="iFork Logo"
-                        class="h-24 w-24 object-contain grayscale">
-                </div>
+            @include('partials.invoice-header', ['mono' => true])
 
-                <div class="text-right lg:order-1">
-                    <h1 class="text-xl text-black font-bold mb-1">ايفورك للتكنولوجيا</h1>
-                    <p class="text-sm text-black">الامارات العربية المتحدة, إمارة دبي</p>
-                    <p class="text-sm text-black">منطقة الورقاء2</p>
-                    <p class="text-sm text-black">شركة مرخصة من دائرة الاقتصاد والسياحة بدبي</p>
-                </div>
-
-                <div class="text-left lg:order-3">
-                    <h1 class="text-xl text-black font-bold mb-1">EVORQ TECHNOLOGIES</h1>
-                    <p class="text-sm text-black">United Arab Emirates, Dubai</p>
-                    <p class="text-sm text-black">Al Warqa 2</p>
-                    <p class="text-sm text-black">A company licensed by the Dubai Department of Economy and Tourism</p>
-                </div>
-            </div>
-
-            <div class="p-8 grid md:grid-cols-2 gap-8 border-b border-gray-300">
+            <div class="p-8 invoice-two-cols grid md:grid-cols-2 gap-8 border-b border-gray-300">
                 <div>
                     <h3 class="text-lg font-bold text-black mb-3 flex items-center gap-2">
                         <i class="fas fa-user text-black"></i>
@@ -222,7 +203,7 @@
             </div>
 
             <div class="bg-gray-50 p-8 border-t-2 border-black">
-                <div class="grid md:grid-cols-2 gap-8 text-black">
+                <div class="invoice-footer-cols grid md:grid-cols-2 gap-8 text-black">
                     <div>
                         <h4 class="font-bold mb-2">ملاحظات</h4>
                         <p class="text-sm leading-relaxed">
@@ -243,72 +224,23 @@
     </div>
 </section>
 
+@include('partials.invoice-print-styles')
 <style>
     @media print {
-        @page {
-            size: A4;
-            margin: 1cm;
-        }
-
-        * {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: white !important;
-        }
-
-        /* إخفاء عناصر التنقل والأزرار */
-        .no-print,
-        nav,
-        aside,
-        header,
-        footer,
-        .sidebar {
-            display: none !important;
-        }
-
-        /* تصحيح موضع حاوية الطباعة */
-        .print-container {
-            position: static !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            box-shadow: none !important;
+        .invoice-mono.print-container {
             border: 2px solid black !important;
-            page-break-inside: avoid;
         }
 
-        section {
-            padding: 0 !important;
-        }
-
-        .mx-auto {
-            margin: 0 !important;
-            max-width: 100% !important;
-        }
-
-        img {
+        .invoice-mono img {
             filter: grayscale(100%);
         }
 
-        .bg-gray-50 {
+        .invoice-mono .bg-gray-50 {
             background-color: #f9fafb !important;
         }
 
-        .bg-gray-100 {
+        .invoice-mono .bg-gray-100 {
             background-color: #f3f4f6 !important;
-        }
-
-        table {
-            page-break-inside: auto;
-        }
-
-        tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
         }
     }
 </style>

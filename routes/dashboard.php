@@ -31,12 +31,14 @@ use App\Http\Controllers\Admin\SessionRequestController;
 use App\Http\Controllers\ProjectManagerController;
 use App\Http\Controllers\IssueCommentController;
 use App\Http\Controllers\WorkTimeController;
+use App\Http\Controllers\WorkTimeCalendarController;
 use App\Http\Controllers\RequestFileController;
 use App\Http\Controllers\PartnerSystemController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\AdminRemarkController;
 use App\Http\Controllers\CreateRequestController;
 use App\Http\Controllers\Dashboard\AdjustmentController;
+use App\Http\Controllers\Dashboard\HolidayController;
 use App\Http\Controllers\Dashboard\IndependentPartnerController;
 use App\Http\Controllers\Dashboard\MyStoreController;
 use App\Http\Controllers\ProjectMeetingController;
@@ -82,9 +84,12 @@ Route::middleware(['auth'])->group(function () {
 });
     
 Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(function () {
+    Route::get('work-times/calendar/events', [WorkTimeCalendarController::class, 'events'])->name('work-times.calendar.events');
+    Route::get('work-times/calendar', [WorkTimeCalendarController::class, 'index'])->name('work-times.calendar');
     Route::resource('work-times', WorkTimeController::class);
     Route::post('work-times/quick-action', [WorkTimeController::class, 'quickAction'])->name('work-times.quick-action');
     Route::get('work-times/my-status', [WorkTimeController::class, 'myStatus'])->name('work-times.my-status');
+    Route::get('work-times/country-time', [WorkTimeController::class, 'countryTime'])->name('work-times.country-time');
     Route::resource('educational_resources', EducationalResourceController::class);
 
     Route::post('special-request/{specialRequest}/store-stage', [SpecialRequestController::class, 'storeStage'])
@@ -173,10 +178,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('salaries', SalaryController::class)->names('dashboard.salaries');
     Route::resource('dashboard/admin-remarks', AdminRemarkController::class)->names('dashboard.admin_remarks');
     Route::resource('adjustments', AdjustmentController::class)->names('dashboard.adjustments');
+    Route::resource('holidays', HolidayController::class)->names('dashboard.holidays');
     Route::resource('dashboard/independent-partners', IndependentPartnerController::class)
         ->names('dashboard.independent-partners');
 });
 Route::get('/dashboard/salaries/fetch-attendance/{user_id}', [SalaryController::class, 'fetchAttendance'])->name('salaries.fetchAttendance');
+Route::get('/dashboard/salaries/fetch-adjustments/{user_id}', [SalaryController::class, 'fetchAdjustments'])->name('dashboard.salaries.fetchAdjustments');
 // Register Partner
 Route::get('/register/partner', [PartnerRegistrationController::class, 'create'])->name('register.partner');
 Route::post('/register/partner', [PartnerRegistrationController::class, 'store'])->name('register.partner.store');

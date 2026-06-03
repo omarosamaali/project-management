@@ -24,31 +24,10 @@
 
             <!-- Header الفاتورة مع الشعار -->
             
-            <div class="grid lg:grid-cols-3 md:grid-cols-1 text-white p-8 border-b border-t">
-                
-                <div class="bg-white p-2 rounded-lg w-fit mx-auto lg:order-2">
-                    <img src="{{ asset('assets/images/logo.webp') }}" alt="iFork Logo" class="h-24 w-24 object-contain">
-                </div>
-
-                <div class="text-right lg:order-1">
-                    <h1 class="text-xl text-gray-700 font-bold mb-1">ايفورك للتكنولوجيا</h1>
-                    <p class="text-sm opacity-90 text-gray-700">الامارات العربية المتحدة, إمارة دبي</p>
-                    <p class="text-sm opacity-90 text-gray-700">منطقة الورقاء2</p>
-                    <p class="text-sm opacity-90 text-gray-700">شركة مرخصة من دائرة الاقتصاد والسياحة بدبي</p>
-                </div>
-
-                <div class="text-left lg:order-3">
-                    <h1 class="text-xl text-gray-700 font-bold mb-1">EVORQ TECHNOLOGIES</h1>
-                    <p class="text-sm opacity-90 text-gray-700">United Arab Emirates, Dubai</p>
-                    <p class="text-sm opacity-90 text-gray-700">Al Warqa 2</p>
-                    <p class="text-sm opacity-90 text-gray-700">A company licensed by the Dubai Department of Economy
-                        and Tourism
-                    </p>
-                </div>
-            </div>
+            @include('partials.invoice-header')
 
             <!-- معلومات الشركة والعميل -->
-            <div class="p-8 grid md:grid-cols-2 gap-8 border-b">
+            <div class="p-8 invoice-two-cols grid md:grid-cols-2 gap-8 border-b">
                 <!-- معلومات الشركة -->
                 {{-- <div>
                     <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -159,7 +138,7 @@
             <div class="bg-gray-50 p-8 border-t-2 border-gray-200">
                 <div>
                     <h4 class="font-bold text-gray-800 mb-2">ملاحظات / Notes:</h4>
-                    <div class="grid md:grid-cols-2 gap-8">
+                    <div class="invoice-footer-cols grid md:grid-cols-2 gap-8">
                         <p class="text-gray-600 text-sm">تم إنشاء وإصدار هذه الفاتوره إلكترونيا ولا تحتاج لتصديق
                         </p>
                         <p class="text-left text-gray-600 text-sm">This invoice was created and issued electronically
@@ -189,53 +168,5 @@
     </div>
 </section>
 
-<style>
-    @media print {
-
-        /* إخفاء كل عناصر الصفحة عند الطباعة */
-        body * {
-            visibility: hidden;
-        }
-
-        /* إظهار الفاتورة فقط */
-        .print-container,
-        .print-container * {
-            visibility: visible;
-        }
-
-        /* وضع الفاتورة في أعلى الصفحة */
-        .print-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-
-        /* إخفاء الأزرار والعناصر غير المطلوبة */
-        .no-print {
-            display: none !important;
-        }
-
-        /* إزالة خلفية الصفحة */
-        body {
-            background: white !important;
-        }
-
-        /* إزالة الـ padding والـ margin */
-        section {
-            padding: 0 !important;
-        }
-
-        /* ضبط الهوامش */
-        @page {
-            margin: 1cm;
-            size: A4;
-        }
-
-        /* التأكد من عدم قطع المحتوى */
-        .print-container {
-            page-break-inside: avoid;
-        }
-    }
-</style>
+@include('partials.invoice-print-styles')
 @endsection

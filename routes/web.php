@@ -34,13 +34,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/verify-otp/email', [OTPController::class, 'verifyEmail'])->name('otp.email.check');
 });
 
-// تطبيق الحماية على صفحات الداشبورد
-Route::middleware(['auth', \App\Http\Middleware\CheckOtpVerification::class])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
-
 Route::post('/request-messages', [RequestMessageController::class, 'store'])
     ->name('dashboard.request-messages.store');
 
@@ -131,75 +124,10 @@ Route::get('/special-request/show-special-request/{specialRequest}', [SpecialReq
 ->name('special-request.show-special-request');
 Route::resource('special-request', SpecialRequestController::class)->names('special-request')->except(['show']);
 
-// Dashboard
-Route::get('/dashboard', function () {
-    $user = auth()->user();
-
-    // إحصائيات المشاريع
-    if ($user->role === 'admin') {
-        $baseReq     = \App\Models\Requests::query();
-        $baseSpecial = \App\Models\SpecialRequest::query();
-    } elseif ($user->role === 'partner') {
-        $systemIds   = \App\Models\PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
-        $baseReq     = \App\Models\Requests::whereIn('system_id', $systemIds);
-        $assignedIds = \App\Models\SpecialRequestPartner::where('partner_id', $user->id)->whereNotNull('special_request_id')->pluck('special_request_id');
-        $baseSpecial = \App\Models\SpecialRequest::whereIn('id', $assignedIds);
-    } else {
-        // العميل يرى المشاريع الأصلية + المشاريع المضافة إليه عبر الجدول الوسيط
-        $reqIds     = \DB::table('request_clients')->where('user_id', $user->id)->pluck('request_id');
-        $specialIds = \DB::table('special_request_clients')->where('user_id', $user->id)->pluck('special_request_id');
-        $baseReq     = \App\Models\Requests::whereIn('id', $reqIds);
-        $baseSpecial = \App\Models\SpecialRequest::whereIn('id', $specialIds);
-    }
-
-    $allRequestsCount          = (clone $baseReq)->count() + (clone $baseSpecial)->count();
-    $newRequestsCount          = (clone $baseReq)->whereIn('status', ['new', 'جديد'])->count()
-                               + (clone $baseSpecial)->whereIn('status', ['pending', 'جديد'])->count();
-    $underProcessRequestsCount = (clone $baseReq)->whereIn('status', ['in_progress', 'تحت الاجراء', 'waiting_client'])->count()
-                               + (clone $baseSpecial)->whereIn('status', ['in_progress', 'تحت الاجراء', 'active', 'in_review'])->count();
-    $pendingRequestsCount      = (clone $baseReq)->whereIn('status', ['pending', 'معلقة', 'suspended'])->count()
-                               + (clone $baseSpecial)->whereIn('status', ['معلقة', 'بانتظار الدفع', 'بانتظار عروض الاسعار'])->count();
-    $closedRequestsCount       = (clone $baseReq)->whereIn('status', ['closed', 'completed', 'منتهية'])->count()
-                               + (clone $baseSpecial)->whereIn('status', ['completed', 'canceled', 'منتهية'])->count();
-
-    // إحصائيات الدورات
-    $now = \Carbon\Carbon::now();
-    $allCoursePayments = \App\Models\Payment::where('user_id', $user->id)
-        ->whereNotNull('course_id')
-        ->with('course')
-        ->get();
-
-    $allCoursesCount      = $allCoursePayments->count();
-    $activeCoursesCount   = $allCoursePayments->filter(fn($p) => $p->course
-        && $now->between(
-            \Carbon\Carbon::parse($p->course->start_date),
-            \Carbon\Carbon::parse($p->course->end_date)
-        ))->count();
-    $upcomingCoursesCount = $allCoursePayments->filter(fn($p) => $p->course
-        && $now->lt(\Carbon\Carbon::parse($p->course->start_date)))->count();
-    $endedCoursesCount    = $allCoursePayments->filter(fn($p) => $p->course
-        && $now->gt(\Carbon\Carbon::parse($p->course->end_date)))->count();
-
-    // الإشعارات غير المقروءة
-    $notifications = \App\Models\AppNotification::where('user_id', $user->id)
-        ->where('is_read', false)
-        ->latest()
-        ->take(10)
-        ->get();
-
-    return view('dashboard', compact(
-        'allRequestsCount',
-        'newRequestsCount',
-        'underProcessRequestsCount',
-        'pendingRequestsCount',
-        'closedRequestsCount',
-        'allCoursesCount',
-        'activeCoursesCount',
-        'upcomingCoursesCount',
-        'endedCoursesCount',
-        'notifications'
-    ));
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Dashboard — قمرة القيادة
+Route::get('/dashboard', [\App\Http\Controllers\Dashboard\CockpitController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Profile
 Route::middleware('auth')->group(function () {

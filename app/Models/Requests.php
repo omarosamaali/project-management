@@ -5,8 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 use Carbon\Carbon;
+use App\Models\Concerns\HasMaintenanceSupport;
+use App\Models\Concerns\HasProjectClients;
+use App\Models\Concerns\HasProjectWorkTimeMetrics;
+
 class Requests extends Model
 {
+    use HasMaintenanceSupport, HasProjectClients, HasProjectWorkTimeMetrics;
+
+    protected function projectOwnerColumn(): string
+    {
+        return 'client_id';
+    }
     protected $table = 'requests';
 
     protected $fillable = [
@@ -41,9 +51,11 @@ class Requests extends Model
 
     public function partners()
     {
-        // أضفنا اسم الجدول 'special_request_partner' كمعامل ثاني
         return $this->belongsToMany(User::class, 'special_request_partner', 'request_id', 'partner_id')
-            ->withPivot('status', 'notes', 'profit_share_percentage', 'created_at') // تأكد من إضافة الحقول هنا لتعمل في pivot
+            ->where(function ($q) {
+                $q->where('users.status', '!=', 'blocked')->orWhereNull('users.status');
+            })
+            ->withPivot('status', 'notes', 'profit_share_percentage', 'created_at')
             ->withTimestamps();
     }
 
@@ -170,17 +182,51 @@ class Requests extends Model
             : Carbon::parse($this->delivered_at);
     }
 
+    public function getSupportEndDateAttribute(): ?Carbon
+    {
+        if ($this->usesProjectMaintenance()) {
+            return $this->getMaintenanceEndDate();
+        }
+
+        $start = $this->support_start_date;
+        $days  = (int) ($this->system?->support_days ?? 0);
+
+        if (!$start || $days <= 0) {
+            return null;
+        }
+
+        return $start->copy()->addDays($days);
+    }
+
+    public function getProjectDisplayNameAttribute(): string
+    {
+        return $this->system?->name_ar ?? ('مشروع #' . $this->id);
+    }
+
+    public function getSupportTotalDaysAttribute(): int
+    {
+        if ($this->usesProjectMaintenance()) {
+            return $this->maintenance_total_days;
+        }
+
+        return (int) ($this->system?->support_days ?? 0);
+    }
+
     /**
-     * الأيام المتبقية تنازلياً: 365 → 364 → 363 ...
+     * الأيام المتبقية للدعم (صيانة المشروع بعد التسليم أو أيام النظام)
      */
     public function getSupportRemainingDaysAttribute(): ?int
     {
+        if ($this->usesProjectMaintenance()) {
+            return $this->maintenance_remaining_days;
+        }
+
         $total = (int) ($this->system?->support_days ?? 0);
 
-        if ($total <= 0)           return null;
-        if (!$this->delivered_at)  return null;
+        if ($total <= 0 || !$this->delivered_at) {
+            return null;
+        }
 
-        // parse آمن بغض النظر عن نوع البيانات
         $startDate = $this->delivered_at instanceof Carbon
             ? $this->delivered_at
             : Carbon::parse($this->delivered_at);
@@ -188,35 +234,62 @@ class Requests extends Model
         $passed = (int) $startDate->copy()->startOfDay()
             ->diffInDays(now()->startOfDay(), false);
 
-        return $total - $passed;
+        return max(0, $total - $passed);
     }
 
     public function getHasActiveSupportAttribute(): bool
     {
+        if (!$this->delivered_at || $this->status !== 'closed') {
+            return false;
+        }
+
+        if ($this->usesProjectMaintenance()) {
+            return $this->has_active_maintenance;
+        }
+
         $r = $this->support_remaining_days;
+
         return $r !== null && $r > 0;
     }
 
     public function getSupportPercentageAttribute(): int
     {
+        if ($this->usesProjectMaintenance()) {
+            return $this->maintenance_percentage;
+        }
+
         $total = (int) ($this->system?->support_days ?? 0);
         $r     = $this->support_remaining_days;
 
-        if ($total <= 0 || $r === null || $r <= 0) return 0;
+        if ($total <= 0 || $r === null || $r <= 0) {
+            return 0;
+        }
+
         return (int) min(100, ($r / $total) * 100);
     }
 
     public function getSupportColorAttribute(): string
     {
+        if ($this->usesProjectMaintenance()) {
+            return $this->maintenance_color;
+        }
+
         $r     = $this->support_remaining_days;
         $total = (int) ($this->system?->support_days ?? 1);
 
-        if ($r === null || $r <= 0 || $total <= 0) return 'gray';
+        if ($r === null || $r <= 0 || $total <= 0) {
+            return 'gray';
+        }
 
         $pct = ($r / $total) * 100;
 
-        if ($pct > 50) return 'green';
-        if ($pct > 20) return 'yellow';
+        if ($pct > 50) {
+            return 'green';
+        }
+        if ($pct > 20) {
+            return 'yellow';
+        }
+
         return 'red';
     }
 }

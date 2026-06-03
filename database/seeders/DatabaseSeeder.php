@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         User::factory()->create([
-            'name' => 'مدير النظام',
+            'name' => 'طارق بن كلبان',
             'email' => 'admin@admin.com',
             'email_verified_at' => now(),
             'phone' => '+971 50 177 4477',

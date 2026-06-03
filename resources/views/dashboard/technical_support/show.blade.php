@@ -81,15 +81,20 @@
                         {{ $ticket->status_label }}</span>
                 </div>
                 <div class="col-span-2">
-                    <p class="font-medium text-gray-500 dark:text-gray-400">رقم الطلب المرتبط:</p>
+                    <p class="font-medium text-gray-500 dark:text-gray-400">المشروع المرتبط:</p>
                     <p class="text-gray-900 dark:text-white">
-                        @if($ticket->request_id)
+                        @if($ticket->special_request_id)
+                        <a href="{{ route('dashboard.special-request.show', $ticket->special_request_id) }}"
+                            class="text-blue-600 hover:underline">
+                            {{ $ticket->specialRequest->title ?? ('مشروع #' . $ticket->special_request_id) }}
+                        </a>
+                        @elseif($ticket->request_id)
                         <a href="{{ route('dashboard.requests.show', $ticket->request_id) }}"
                             class="text-blue-600 hover:underline">
-                            {{ $ticket->request->order_number ?? 'N/A' }}
+                            {{ $ticket->request->order_number ?? $ticket->project_name }}
                         </a>
                         @else
-                        لا يوجد طلب مرتبط
+                        لا يوجد مشروع مرتبط
                         @endif
                     </p>
                 </div>

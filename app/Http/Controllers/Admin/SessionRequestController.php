@@ -34,7 +34,7 @@ class SessionRequestController extends Controller
         if (!$isAdmin && !$isOwner && !$isInvited) {
             abort(403, 'غير مسموح لك بالدخول');
         }
-        $users = User::where('role', '!=', 'admin')->get();
+        $users = User::where('role', '!=', 'admin')->notBlocked()->get();
         return view('dashboard.sessions.show', compact('session', 'users'));
     }
 

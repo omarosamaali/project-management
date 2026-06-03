@@ -7,19 +7,14 @@ $currentRequest = $SpecialRequest;
 // 2. جلب الحضور بناءً على الطلب المتاح
 $allPossibleAttendees = collect();
 if ($currentRequest) {
-if ($currentRequest->user) $allPossibleAttendees->push($currentRequest->user);
-
-if (isset($currentRequest->partners)) {
-foreach ($currentRequest->partners as $partner) {
-$allPossibleAttendees->push($partner);
+    $allPossibleAttendees = $currentRequest->allProjectClients();
+    foreach ($currentRequest->assignableTeamMembers() as $member) {
+        $allPossibleAttendees->push($member);
+    }
 }
-}
-
-if (isset($currentRequest->projectManager) && $currentRequest->projectManager->user) {
-$allPossibleAttendees->push($currentRequest->projectManager->user);
-}
-}
-$allPossibleAttendees = $allPossibleAttendees->unique('id');
+$allPossibleAttendees = $allPossibleAttendees
+    ->filter(fn ($u) => ($u->status ?? 'active') !== 'blocked')
+    ->unique('id');
 
 // 3. جلب الاجتماعات (تأكد أن العلاقة معرفة في الموديلين بنفس الاسم)
 $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
@@ -58,8 +53,14 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
         $isTimeForLink = $diffInMinutes <= 10 && now() <=$meeting->end_at;
         $canSeeLink = $isTimeForLink && $currentUserStatus === 'accepted';
         $isCreator = $meeting->created_by == auth()->id();
+        $isInvited = $participants->contains('id', auth()->id());
+        $isAdmin = auth()->user()->role === 'admin';
+        $isProjectClient = $currentRequest
+            ? $currentRequest->userCanViewAllProjectIssues(auth()->id(), auth()->user()->role)
+            : false;
         @endphp
 
+        @if ($isInvited || $isCreator || $isAdmin || $isProjectClient)
             <div
                 class="border dark:border-gray-700 p-5 rounded-2xl bg-gray-50/50 dark:bg-gray-900/30 transition-all relative overflow-hidden">
                 <div class="absolute right-0 top-0 bottom-0 w-1 {{ $meeting->status_color }}"></div>
@@ -86,12 +87,12 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 @foreach ($participants as $participant)
                                 {{-- شرط: إظهار الجميع للمنشئ، وإظهار الشخص لنفسه فقط للآخرين --}}
-                                @if ($isCreator || auth()->user()->role === 'admin' || $participant->id == auth()->id())
+                                @if ($isCreator || $isAdmin || $isProjectClient || $participant->id == auth()->id())
                                 <div
                                     class="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-2 rounded-xl border {{ $participant->id == auth()->id() ? 'border-blue-200' : 'border-gray-100' }}">
                                     <span
                                         class="text-[11px] font-bold {{ $participant->id == auth()->id() ? 'text-blue-600' : 'text-gray-600' }}">
-                                        {{ $participant->name }}
+                                        {{ $participant->display_name }}
                                         {{ $participant->id == auth()->id() ? '(أنت)' : '' }}
                                     </span>
 
@@ -119,7 +120,7 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                     {{-- الأكشن --}}
                     <div class="flex flex-col gap-3 w-full lg:w-auto">
                         {{-- إضافة شرط التأكد من أن الاجتماع لم ينتهِ بعد --}}
-                        @if (!$isCreator && $currentUserStatus === 'pending' && now() < $meeting->end_at)
+                        @if (!$isCreator && ($isInvited || $isProjectClient) && $currentUserStatus === 'pending' && now() < $meeting->end_at)
                             <div class="flex gap-2">
                                 <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST"
                                     class="flex-1">
@@ -148,6 +149,7 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                             @endif 
                     </div>
                 </div>
+        @endif
                 @empty
                 <div class="text-center py-12 text-gray-400 border-2 border-dashed rounded-3xl dark:border-gray-700">
                     لا توجد اجتماعات مسجلة حالياً
@@ -186,7 +188,7 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                             class="flex items-center gap-2 cursor-pointer hover:bg-white dark:hover:bg-gray-800 p-1 rounded transition">
                             <input type="checkbox" name="attendees[]" value="{{ $person->id }}"
                                 class="rounded text-black">
-                            <span class="text-xs dark:text-gray-300">{{ $person->name }}</span>
+                            <span class="text-xs dark:text-gray-300">{{ $person->display_name }}</span>
                         </label>
                         @endforeach
                     </div>

@@ -51,8 +51,10 @@ class CreateRequestController extends Controller
             $validated['user_id'] = $defaultClient->id;
         }
 
-        // إنشاء الطلب
-        SpecialRequest::create($validated);
+        $specialRequest = SpecialRequest::create($validated);
+        if (!empty($specialRequest->user_id)) {
+            $specialRequest->attachProjectClient((int) $specialRequest->user_id);
+        }
 
         return redirect()
             ->route('dashboard.requests.index')

@@ -32,6 +32,9 @@
                 enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="year" value="{{ $salary->year }}">
+                <input type="hidden" name="month" value="{{ $salary->month }}">
+                <input type="hidden" name="attendance_deduction" id="attendance_deduction" value="0">
 
                 {{-- المرفق الحالي --}}
                 <div class="border-b pb-6">
@@ -82,6 +85,21 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الدولة:</label>
                         <input type="text" id="display_country" readonly value="{{ $salary->user->country_name }}"
                             class="bg-gray-100 dark:bg-gray-600 w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-500">
+                    </div>
+                </div>
+
+                <div id="adjustments_summary"
+                    class="hidden p-4 bg-purple-50 dark:bg-gray-700 border border-purple-200 rounded-xl">
+                    <h4 class="text-purple-800 font-bold text-sm mb-2">
+                        <i class="fas fa-percent"></i> خصومات ومكافآت {{ $salary->month }}/{{ $salary->year }} (تلقائي)
+                    </h4>
+                    <div class="grid grid-cols-2 gap-4 text-center text-sm">
+                        <div><span class="text-gray-500">مكافآت</span>
+                            <p id="adjustment_bonus_total" class="font-bold text-green-600">0</p>
+                        </div>
+                        <div><span class="text-gray-500">خصومات</span>
+                            <p id="adjustment_deduction_total" class="font-bold text-red-600">0</p>
+                        </div>
                     </div>
                 </div>
 
@@ -184,26 +202,70 @@
         calculate(); // إعادة الحساب فور تغيير الموظف
     });
 
-    // 3. الحساب التلقائي الاحترافي
+    let adjustmentBonus = 0;
+    let adjustmentDeduction = 0;
+    let attendanceDeduction = 0;
+    const salaryYear = {{ (int) $salary->year }};
+    const salaryMonth = {{ (int) $salary->month }};
+
     const inputs = document.querySelectorAll('.calc-input');
     const totalInput = document.getElementById('total_due');
     const baseSalaryInput = document.getElementById('base_salary');
+    const deductionInput = document.querySelector('[name="deduction_value"]');
 
     function calculate() {
-        let base = parseFloat(baseSalaryInput.value) || 0;
-        let overtime = parseFloat(document.querySelector('[name="overtime_value"]').value) || 0;
-        let carried = parseFloat(document.querySelector('[name="carried_forward"]').value) || 0;
-        let deduction = parseFloat(document.querySelector('[name="deduction_value"]').value) || 0;
-        
-        // المعادلة: الأساسي + الإضافي + المترحل - الخصومات
-        let total = (base + overtime + carried) - deduction;
-        totalInput.value = total.toFixed(2);
+        const base = parseFloat(baseSalaryInput.value) || 0;
+        const overtime = parseFloat(document.querySelector('[name="overtime_value"]').value) || 0;
+        const carried = parseFloat(document.querySelector('[name="carried_forward"]').value) || 0;
+        const totalDeduction = attendanceDeduction + adjustmentDeduction;
+        deductionInput.value = totalDeduction.toFixed(2);
+        document.getElementById('attendance_deduction').value = attendanceDeduction.toFixed(2);
+        totalInput.value = (base + overtime + carried + adjustmentBonus - totalDeduction).toFixed(2);
     }
 
+    function fetchAdjustments(userId) {
+        if (!userId) return;
+        fetch(`{{ url('/dashboard/salaries/fetch-adjustments') }}/${userId}?year=${salaryYear}&month=${salaryMonth}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('adjustments_summary')?.classList.remove('hidden');
+                adjustmentBonus = parseFloat(data.bonus_total) || 0;
+                adjustmentDeduction = parseFloat(data.deduction_total) || 0;
+                document.getElementById('adjustment_bonus_total').innerText = adjustmentBonus.toFixed(2);
+                document.getElementById('adjustment_deduction_total').innerText = adjustmentDeduction.toFixed(2);
+                calculate();
+            });
+    }
+
+    function loadAttendance(userId) {
+        if (!userId) return;
+        fetch(`{{ url('/dashboard/salaries/fetch-attendance') }}/${userId}?year=${salaryYear}&month=${salaryMonth}`)
+            .then(r => r.json())
+            .then(data => {
+                document.querySelector('[name="overtime_value"]').value = (parseFloat(data.overtime_amount) || 0).toFixed(2);
+                attendanceDeduction = parseFloat(data.deduction_amount) || 0;
+                fetchAdjustments(userId);
+            })
+            .catch(() => fetchAdjustments(userId));
+    }
+
+    document.getElementById('employee_select').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        document.getElementById('display_country').value = selectedOption.getAttribute('data-country') || '';
+        document.getElementById('base_salary').value = parseFloat(selectedOption.getAttribute('data-salary') || 0).toFixed(2);
+        loadAttendance(this.value);
+    });
+
     inputs.forEach(input => input.addEventListener('input', calculate));
-    
-    // تشغيل الحساب لأول مرة عند تحميل الصفحة
-    window.onload = calculate;
+
+    window.addEventListener('load', function() {
+        const userId = document.getElementById('employee_select').value;
+        if (userId) {
+            loadAttendance(userId);
+        } else {
+            calculate();
+        }
+    });
 </script>
 
 @endsection

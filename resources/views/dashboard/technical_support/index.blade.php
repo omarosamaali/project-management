@@ -21,10 +21,12 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 @foreach($activeRequests as $req)
                 @php
+                $isSpecial = $req instanceof \App\Models\SpecialRequest;
                 $remaining = $req->support_remaining_days;
-                $total = $req->system->support_days ?? 1;
+                $total = $isSpecial ? $req->support_total_days : ($req->support_total_days ?: ($req->system->support_days ?? 1));
                 $percent = $req->support_percentage;
                 $color = $req->support_color;
+                $name = $req->project_display_name;
                 $colorMap = [
                 'green' => ['border'=>'border-green-200 dark:border-green-700','num'=>'text-green-600
                 dark:text-green-400','bar'=>'bg-green-500'],
@@ -39,7 +41,7 @@
                 @endphp
                 <div class="border {{ $c['border'] }} rounded-xl p-3 flex flex-col gap-2 bg-gray-50 dark:bg-gray-750">
                     <div class="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">
-                        {{ $req->system->name_ar ?? ('مشروع #' . $req->id) }}
+                        {{ $name }}
                     </div>
                     <div class="flex items-end gap-1.5">
                         <span class="text-3xl font-black tabular-nums leading-none {{ $c['num'] }}">
@@ -50,9 +52,9 @@
                     <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1 overflow-hidden">
                         <div class="{{ $c['bar'] }} h-1 rounded-full" style="width:{{ $percent }}%"></div>
                     </div>
-                    @if($req->support_start_date)
+                    @if($req->support_end_date)
                     <div class="text-xs text-gray-400">
-                        ينتهي: {{ $req->support_start_date->copy()->addDays($total)->format('Y/m/d') }}
+                        ينتهي: {{ $req->support_end_date->format('Y/m/d') }}
                     </div>
                     @endif
                 </div>
@@ -153,7 +155,7 @@
                             {{-- المشروع --}}
                             <td class="px-4 py-3">
                                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300">
-                                    {{ $ticket->request->system->name_ar ?? '—' }}
+                                    {{ $ticket->project_name }}
                                 </span>
                             </td>
 

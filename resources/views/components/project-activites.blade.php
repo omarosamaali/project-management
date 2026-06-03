@@ -11,7 +11,7 @@
             {{-- نقطة التايم لاين --}}
             <span
                 class="absolute -right-[41px] top-0 w-5 h-5 rounded-full border-4 border-white dark:border-gray-800 
-                    {{ $activity->type == 'status' ? 'bg-emerald-500' : ($activity->type == 'invoice' ? 'bg-amber-500' : 'bg-blue-500') }}">
+                    {{ in_array($activity->type, ['task_completed', 'stage_completed', 'status']) ? 'bg-emerald-500' : ($activity->type == 'invoice' ? 'bg-amber-500' : 'bg-blue-500') }}">
             </span>
 
             <div class="flex flex-col gap-1">
@@ -26,7 +26,7 @@
 
                 <div class="flex items-center gap-2 text-xs text-gray-500">
                     <i class="fas fa-user-circle text-[10px]"></i>
-                    <span>بواسطة: {{ $activity->user->name }}</span>
+                    <span>بواسطة: {{ $activity->user?->name ?? 'النظام' }}</span>
                     <span class="mx-1">•</span>
                     <span>{{ $activity->created_at->format('Y/m/d - h:i A') }}</span>
                 </div>

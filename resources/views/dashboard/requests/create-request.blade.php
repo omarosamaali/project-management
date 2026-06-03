@@ -102,7 +102,7 @@
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
                                 <option value="">-- اختر نوع الطلب --</option>
                                 @foreach ($services as $service)
-                                <option value="{{ $service->id }}" {{ old('project_type')==$service->id ? 'selected' :
+                                <option value="{{ $service->name_ar }}" {{ old('project_type')==$service->name_ar || old('project_type')==$service->id ? 'selected' :
                                     '' }}>
                                     {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
                                 </option>

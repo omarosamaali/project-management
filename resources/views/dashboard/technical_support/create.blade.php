@@ -10,35 +10,28 @@
 
     <div class="mx-auto w-full max-w-4xl space-y-6">
 
-        {{-- ════ بطاقات الدعم الفني — $supportProjects هي Requests فقط ════ --}}
         @if(isset($supportProjects) && $supportProjects->isNotEmpty())
         <div>
             <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-3 flex items-center gap-2">
                 <i class="fas fa-shield-alt text-blue-500"></i>
-                مشاريعك النشطة — مدة الدعم الفني المتبقية
+                مشاريعك النشطة — مدة الدعم الفني / الصيانة المتبقية
             </h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($supportProjects as $req)
                 @php
+                $isSpecial = $req instanceof \App\Models\SpecialRequest;
                 $remaining = $req->support_remaining_days;
-                $total = $req->system->support_days ?? 1;
+                $total = $isSpecial ? $req->support_total_days : ($req->support_total_days ?: ($req->system->support_days ?? 1));
                 $percent = $req->support_percentage;
                 $color = $req->support_color;
+                $name = $req->project_display_name;
+                $orderNum = $isSpecial ? ($req->order_number ?? $req->id) : ($req->order_number ?? $req->id);
 
                 $colors = [
-                'green' => ['border'=>'border-green-200 dark:border-green-700','bg'=>'bg-green-50
-                dark:bg-green-900/10','num'=>'text-green-600
-                dark:text-green-400','bar'=>'bg-green-500','badge'=>'bg-green-100 text-green-700','label'=>'نشط ✓'],
-                'yellow' => ['border'=>'border-yellow-200 dark:border-yellow-700','bg'=>'bg-yellow-50
-                dark:bg-yellow-900/10','num'=>'text-yellow-500
-                dark:text-yellow-400','bar'=>'bg-yellow-400','badge'=>'bg-yellow-100 text-yellow-700','label'=>'قارب على
-                الانتهاء ⚠'],
-                'red' => ['border'=>'border-red-200 dark:border-red-700','bg'=>'bg-red-50
-                dark:bg-red-900/10','num'=>'text-red-500 dark:text-red-400','bar'=>'bg-red-500','badge'=>'bg-red-100
-                text-red-700','label'=>'ينتهي قريباً !'],
-                'gray' => ['border'=>'border-gray-200 dark:border-gray-600','bg'=>'bg-gray-50
-                dark:bg-gray-800','num'=>'text-gray-400','bar'=>'bg-gray-400','badge'=>'bg-gray-100
-                text-gray-500','label'=>'غير نشط'],
+                'green' => ['border'=>'border-green-200 dark:border-green-700','bg'=>'bg-green-50 dark:bg-green-900/10','num'=>'text-green-600 dark:text-green-400','bar'=>'bg-green-500','badge'=>'bg-green-100 text-green-700','label'=>'نشط ✓'],
+                'yellow' => ['border'=>'border-yellow-200 dark:border-yellow-700','bg'=>'bg-yellow-50 dark:bg-yellow-900/10','num'=>'text-yellow-500 dark:text-yellow-400','bar'=>'bg-yellow-400','badge'=>'bg-yellow-100 text-yellow-700','label'=>'قارب على الانتهاء ⚠'],
+                'red' => ['border'=>'border-red-200 dark:border-red-700','bg'=>'bg-red-50 dark:bg-red-900/10','num'=>'text-red-500 dark:text-red-400','bar'=>'bg-red-500','badge'=>'bg-red-100 text-red-700','label'=>'ينتهي قريباً !'],
+                'gray' => ['border'=>'border-gray-200 dark:border-gray-600','bg'=>'bg-gray-50 dark:bg-gray-800','num'=>'text-gray-400','bar'=>'bg-gray-400','badge'=>'bg-gray-100 text-gray-500','label'=>'غير نشط'],
                 ];
                 $c = $colors[$color] ?? $colors['gray'];
                 @endphp
@@ -46,9 +39,9 @@
 
                     <div class="flex items-start justify-between gap-2">
                         <span class="font-bold text-sm text-gray-800 dark:text-white leading-tight">
-                            {{ $req->system->name_ar ?? ('مشروع #' . $req->id) }}
+                            {{ $name }}
                         </span>
-                        <span class="text-xs text-gray-400 whitespace-nowrap">#{{ $req->order_number }}</span>
+                        <span class="text-xs text-gray-400 whitespace-nowrap">#{{ $orderNum }}</span>
                     </div>
 
                     <div class="flex items-end gap-2">
@@ -69,10 +62,10 @@
                             style="width: {{ $percent }}%"></div>
                     </div>
 
-                    @if($req->support_start_date)
+                    @if($req->support_start_date && $req->support_end_date)
                     <div class="flex justify-between text-xs text-gray-400">
                         <span>بدأ: {{ $req->support_start_date->format('Y/m/d') }}</span>
-                        <span>ينتهي: {{ $req->support_start_date->copy()->addDays($total)->format('Y/m/d') }}</span>
+                        <span>ينتهي: {{ $req->support_end_date->format('Y/m/d') }}</span>
                     </div>
                     @endif
                 </div>
@@ -81,7 +74,6 @@
         </div>
         @endif
 
-        {{-- ════ نموذج فتح التذكرة ════ --}}
         <div class="bg-white dark:bg-gray-800 shadow-md sm:rounded-lg p-6">
 
             <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-6">نموذج فتح تذكرة دعم جديدة</h2>
@@ -93,29 +85,33 @@
             </div>
             @endif
 
+            @if($userRequests->isEmpty())
+            <div class="p-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700">
+                لا يوجد مشروع في فترة الدعم الفني أو الصيانة حالياً. يمكنك فتح تذكرة فقط للمشاريع المُسلَّمة والتي ما زالت فترة الصيانة سارية.
+            </div>
+            @else
             <form action="{{ route('dashboard.technical_support.store') }}" method="POST" class="space-y-5">
                 @csrf
 
-                {{-- اختيار المشروع --}}
                 <div>
-                    <label for="request_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    <label for="project_key" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                         ربط التذكرة بمشروع <span class="text-red-500">*</span>
                     </label>
-                    <select id="request_id" name="request_id" required onchange="showSupportBadge(this)"
-                        class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('request_id') border-red-500 @enderror">
+                    <select id="project_key" name="project_key" required onchange="showSupportBadge(this)"
+                        class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('project_key') border-red-500 @enderror">
                         <option value="">-- اختر المشروع --</option>
                         @foreach($userRequests as $req)
                         @php
-                        // SpecialRequest ليس عندها support_remaining_days
                         $isRequest = $req instanceof \App\Models\Requests;
-                        $r = $isRequest ? $req->support_remaining_days : null;
-                        $total = $isRequest ? ($req->system->support_days ?? 0) : 0;
-                        $name = $isRequest
-                        ? ($req->system->name_ar ?? ('مشروع #' . $req->id))
-                        : ($req->title ?? ('طلب خاص #' . $req->id));
+                        $key = $isRequest ? 'request:' . $req->id : 'special:' . $req->id;
+                        $r = $req->support_remaining_days;
+                        $total = $isRequest
+                            ? ($req->support_total_days ?: ($req->system->support_days ?? 0))
+                            : $req->support_total_days;
+                        $name = $req->project_display_name;
                         $daysLabel = $r !== null ? " ({$r} يوم متبقي)" : '';
                         @endphp
-                        <option value="{{ $req->id }}" {{ old('request_id')==$req->id ? 'selected' : '' }}
+                        <option value="{{ $key }}" {{ old('project_key') == $key ? 'selected' : '' }}
                             data-remaining="{{ $r ?? '' }}"
                             data-total="{{ $total }}">
                             {{ $name }}{{ $daysLabel }}
@@ -123,16 +119,14 @@
                         @endforeach
                     </select>
 
-                    {{-- مؤشر ديناميكي --}}
                     <div id="supportBadge"
                         class="hidden mt-2 text-sm px-3 py-2 rounded-lg border flex items-center gap-2"></div>
 
-                    @error('request_id')
+                    @error('project_key')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- الموضوع --}}
                 <div>
                     <label for="subject" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                         موضوع التذكرة <span class="text-red-500">*</span>
@@ -145,7 +139,6 @@
                     @enderror
                 </div>
 
-                {{-- الوصف --}}
                 <div>
                     <label for="description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                         تفاصيل المشكلة <span class="text-red-500">*</span>
@@ -164,6 +157,7 @@
                     فتح تذكرة الدعم الآن
                 </button>
             </form>
+            @endif
         </div>
     </div>
 </section>

@@ -4,118 +4,139 @@ namespace App\Http\Controllers;
 
 use App\Models\WorkTime;
 use App\Models\User;
+use App\Support\CountryTimezone;
+use App\Support\WorkAttendanceState;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class WorkTimeController extends Controller
 {
-    private function resolveWorkState(User $user): array
+    private function denyUnlessAdmin(): void
     {
-        $today = Carbon::today()->toDateString();
-        $records = WorkTime::where('user_id', $user->id)
-            ->where('date', $today)
-            ->orderBy('start_time')
-            ->orderBy('id')
-            ->get();
-
-        $status = 'off';
-        $runningSince = null;
-        $workedSeconds = 0;
-        $currentStart = null;
-
-        foreach ($records as $record) {
-            if (in_array($record->type, ['حضور', 'دخول من الاستراحة'])) {
-                $currentStart = Carbon::parse($today . ' ' . $record->start_time);
-                $status = 'working';
-                $runningSince = $currentStart;
-            } elseif ($record->type === 'خروج للاستراحة') {
-                if ($currentStart) {
-                    $workedSeconds += $currentStart->diffInSeconds(Carbon::parse($today . ' ' . $record->start_time));
-                }
-                $currentStart = null;
-                $status = 'break';
-                $runningSince = null;
-            } elseif ($record->type === 'انصراف') {
-                if ($currentStart) {
-                    $workedSeconds += $currentStart->diffInSeconds(Carbon::parse($today . ' ' . $record->start_time));
-                }
-                $currentStart = null;
-                $status = 'off';
-                $runningSince = null;
-            }
+        $user = Auth::user();
+        if (!$user || $user->role !== 'admin') {
+            abort(403, 'غير مصرح لك');
         }
-
-        if ($status === 'working' && $currentStart) {
-            $workedSeconds += $currentStart->diffInSeconds(now());
-        }
-
-        return [
-            'status' => $status,
-            'worked_seconds' => max(0, (int) $workedSeconds),
-            'running_since' => $runningSince?->toIso8601String(),
-        ];
-    }
-
-    private function statusLabel(string $status): string
-    {
-        return match ($status) {
-            'working' => 'يعمل الآن',
-            'break' => 'في استراحة',
-            default => 'خارج الدوام',
-        };
     }
 
     public function index(Request $request)
     {
-        $query = WorkTime::with('user');
-        if ($request->search) {
+        $user = Auth::user();
+        $isEmployeeView = WorkAttendanceState::isEmployeePartner($user);
+
+        $query = WorkTime::with('user')
+            ->whereHas('user', fn ($u) => $u->notBlocked());
+
+        if ($isEmployeeView) {
+            $query->where('user_id', $user->id);
+        } elseif ($request->search) {
             $query->whereHas('user', function ($q) use ($request) {
                 $q->where('name', 'like', '%' . $request->search . '%');
             });
         }
+
         $workTimes = $query->latest()->paginate(10);
-        $allCount = WorkTime::count();
-        $attendanceCount = WorkTime::where('type', 'حضور')->count();
-        $leaveCount = WorkTime::where('type', 'انصراف')->count();
-        return view('dashboard.work-times.index', compact('workTimes', 'allCount', 'attendanceCount', 'leaveCount'));
+
+        if ($isEmployeeView) {
+            $allCount = WorkTime::where('user_id', $user->id)->count();
+            $attendanceCount = WorkTime::where('user_id', $user->id)->where('type', 'حضور')->count();
+            $leaveCount = WorkTime::where('user_id', $user->id)->where('type', 'انصراف')->count();
+        } else {
+            $allCount = WorkTime::count();
+            $attendanceCount = WorkTime::where('type', 'حضور')->count();
+            $leaveCount = WorkTime::where('type', 'انصراف')->count();
+        }
+
+        return view('dashboard.work-times.index', compact(
+            'workTimes',
+            'allCount',
+            'attendanceCount',
+            'leaveCount',
+            'isEmployeeView'
+        ));
     }
 
     public function create()
     {
-        $employees = User::where('is_employee', 1)->get();
+        $this->denyUnlessAdmin();
+        $employees = User::where('is_employee', 1)->notBlocked()->get();
         return view('dashboard.work-times.create', compact('employees'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $this->denyUnlessAdmin();
+        $data = $request->validate([
             'user_id' => 'required',
+            'country' => 'required|string|max:5',
             'type' => 'required',
             'date' => 'required|date',
             'start_time' => 'required',
+            'timezone' => 'nullable|string|max:64',
+            'notes' => 'nullable|string',
         ]);
 
-        WorkTime::create($request->all());
+        $data['source'] = WorkTime::SOURCE_MANUAL;
+        $data['country'] = strtoupper($data['country']);
+        $data['timezone'] = $data['timezone']
+            ?? CountryTimezone::timezoneForCountry($data['country']);
+
+        WorkTime::create($data);
         return redirect()->route('dashboard.work-times.index')->with('success', 'تم تسجيل الوقت بنجاح');
     }
 
     public function edit(WorkTime $workTime)
     {
+        $this->denyUnlessAdmin();
         $employees = User::all();
         return view('dashboard.work-times.edit', compact('workTime', 'employees'));
     }
 
     public function update(Request $request, WorkTime $workTime)
     {
+        $this->denyUnlessAdmin();
         $workTime->update($request->all());
         return redirect()->route('dashboard.work-times.index')->with('success', 'تم تحديث البيانات بنجاح');
     }
 
     public function destroy(WorkTime $workTime)
     {
+        $this->denyUnlessAdmin();
         $workTime->delete();
         return redirect()->route('dashboard.work-times.index')->with('success', 'تم حذف السجل بنجاح');
+    }
+
+    public function countryTime(Request $request)
+    {
+        $this->denyUnlessAdmin();
+
+        $countryCode = $request->query('country');
+        $user = null;
+
+        if ($request->filled('user_id')) {
+            $user = User::notBlocked()->find($request->query('user_id'));
+            if ($user && $user->country) {
+                $countryCode = $user->country;
+            }
+        }
+
+        if (!$countryCode && $request->boolean('use_ip')) {
+            $fromIp = CountryTimezone::detectFromIp($request->ip());
+            if ($fromIp) {
+                return response()->json(array_merge($fromIp, [
+                    'work_start' => $user
+                        ? (CountryTimezone::localNow($fromIp['country_code'], $user)['work_start'] ?? '09:00')
+                        : '09:00',
+                ]));
+            }
+        }
+
+        if (!$countryCode) {
+            return response()->json(['message' => 'حدد الدولة أو الموظف'], 422);
+        }
+
+        return response()->json(CountryTimezone::localNow($countryCode, $user));
     }
 
     public function quickAction(Request $request)
@@ -125,11 +146,11 @@ class WorkTimeController extends Controller
         ]);
 
         $user = Auth::user();
-        if (!$user || $user->role !== 'partner' || !$user->is_employee) {
+        if (!WorkAttendanceState::isEmployeePartner($user)) {
             return response()->json(['message' => 'غير مصرح لك'], 403);
         }
 
-        $state = $this->resolveWorkState($user);
+        $state = WorkAttendanceState::resolve($user);
         $action = $request->action;
 
         if ($action === 'check_in' && $state['status'] !== 'off') {
@@ -156,18 +177,19 @@ class WorkTimeController extends Controller
             'user_id' => $user->id,
             'country' => strtoupper($user->country ?? 'AE'),
             'type' => $typeMap[$action],
+            'source' => WorkTime::SOURCE_WEB,
             'date' => Carbon::today()->toDateString(),
             'start_time' => now()->format('H:i:s'),
             'timezone' => config('app.timezone', 'UTC'),
-            'notes' => 'تسجيل تلقائي من أزرار الدوام',
+            'notes' => 'تسجيل من أزرار الدوام في الموقع',
         ]);
 
-        $newState = $this->resolveWorkState($user);
+        $newState = WorkAttendanceState::resolve($user);
 
         return response()->json([
             'ok' => true,
             'status' => $newState['status'],
-            'status_label' => $this->statusLabel($newState['status']),
+            'status_label' => WorkAttendanceState::statusLabel($newState['status']),
             'worked_seconds' => $newState['worked_seconds'],
         ]);
     }
@@ -175,14 +197,14 @@ class WorkTimeController extends Controller
     public function myStatus()
     {
         $user = Auth::user();
-        if (!$user) {
+        if (!WorkAttendanceState::isEmployeePartner($user)) {
             return response()->json(['message' => 'غير مصرح'], 403);
         }
 
-        $state = $this->resolveWorkState($user);
+        $state = WorkAttendanceState::resolve($user);
         return response()->json([
             'status' => $state['status'],
-            'status_label' => $this->statusLabel($state['status']),
+            'status_label' => WorkAttendanceState::statusLabel($state['status']),
             'worked_seconds' => $state['worked_seconds'],
         ]);
     }

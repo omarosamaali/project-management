@@ -214,7 +214,7 @@ document.getElementById('purchaseModal')?.addEventListener('click', function(e) 
 
             <p class="mb-4">
                 <span class="font-medium text-gray-700 dark:text-gray-400 block">نوع الطلب:</span>
-                <span class="text-gray-900 dark:text-white">{{ $specialRequest->project_type }}</span>
+                <span class="text-gray-900 dark:text-white">{{ $specialRequest->project_type_label }}</span>
             </p>
 
             <p class="mb-4">

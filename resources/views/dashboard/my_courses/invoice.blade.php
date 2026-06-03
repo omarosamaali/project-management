@@ -21,26 +21,10 @@
         <div class="bg-white shadow-2xl rounded-xl overflow-hidden border-2 border-gray-200 print-container">
 
             {{-- الهيدر --}}
-            <div class="grid lg:grid-cols-3 md:grid-cols-1 text-white p-8 border-b border-t">
-                <div class="bg-white p-2 rounded-lg w-fit mx-auto lg:order-2">
-                    <img src="{{ asset('assets/images/logo.webp') }}" alt="Logo" class="h-24 w-24 object-contain">
-                </div>
-
-                <div class="text-right lg:order-1">
-                    <h1 class="text-xl text-gray-700 font-bold mb-1">ايفورك للتكنولوجيا</h1>
-                    <p class="text-sm opacity-90 text-gray-700">الامارات العربية المتحدة, دبي</p>
-                    <p class="text-sm opacity-90 text-gray-700">شركة مرخصة من دائرة الاقتصاد والسياحة</p>
-                </div>
-
-                <div class="text-left lg:order-3">
-                    <h1 class="text-xl text-gray-700 font-bold mb-1">EVORQ TECHNOLOGIES</h1>
-                    <p class="text-sm opacity-90 text-gray-700">UAE, Dubai, Al Warqa 2</p>
-                    <p class="text-sm opacity-90 text-gray-700">Licensed by Dubai Economy & Tourism</p>
-                </div>
-            </div>
+            @include('partials.invoice-header')
 
             {{-- بيانات العميل --}}
-            <div class="p-8 grid md:grid-cols-2 gap-8 border-b">
+            <div class="p-8 invoice-two-cols grid md:grid-cols-2 gap-8 border-b">
                 <div>
                     <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                         <i class="fas fa-user text-gray-600"></i> بيانات العميل / Customer Details
@@ -120,7 +104,7 @@
 
             {{-- Footer --}}
             <div class="bg-gray-50 p-8 border-t-2 border-gray-200">
-                <div class="grid md:grid-cols-2 gap-8">
+                <div class="invoice-footer-cols grid md:grid-cols-2 gap-8">
                     <div>
                         <h4 class="font-bold text-gray-800 mb-2">ملاحظات</h4>
                         <p class="text-gray-600 text-sm">تم إنشاء وإصدار هذه الفاتورة إلكترونياً ولا تحتاج لتوقيع.</p>
@@ -136,32 +120,5 @@
     </div>
 </section>
 
-<style>
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-
-        .print-container,
-        .print-container * {
-            visibility: visible;
-        }
-
-        .print-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-        }
-
-        .no-print {
-            display: none !important;
-        }
-
-        @page {
-            margin: 1cm;
-            size: A4;
-        }
-    }
-</style>
+@include('partials.invoice-print-styles')
 @endsection

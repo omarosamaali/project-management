@@ -6,106 +6,199 @@
 
 <section class="!pl-0 p-3 sm:p-5 space-y-6">
 
-    {{-- ====== كروت إحصائيات المشاريع ====== --}}
+    {{-- ====== كروت المهام ====== --}}
     <div>
         <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
-            <i class="fas fa-project-diagram text-blue-600"></i> إحصائيات المشاريع
+            <i class="fas fa-tasks text-indigo-600"></i>
+            إحصائيات {{ $taskStats['scope_label'] }}
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            <a href="{{ route('dashboard.requests.index') }}" class="flex bg-black justify-between rounded-lg">
-                <div class="p-4 pr-6 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white whitespace-nowrap">جميع المشاريع</h1>
-                    <p class="text-2xl flex items-center text-white">{{ $allRequestsCount }}</p>
-                </div>
-                <div class="p-5 bg-[#181818] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
-            </a>
-            <a href="{{ route('dashboard.requests.index') }}?status=جديد" class="flex bg-[#333333] justify-between rounded-lg">
-                <div class="p-4 pr-4 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white whitespace-nowrap">طلبات جديدة</h1>
-                    <p class="text-xl text-white">{{ $newRequestsCount }}</p>
-                </div>
-                <div class="p-5 bg-[#202020] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
-            </a>
-            <a href="{{ route('dashboard.requests.index') }}?status=تحت الاجراء" class="flex bg-[#595959] justify-between rounded-lg">
-                <div class="p-4 pr-4 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white">تحت الإجراء</h1>
-                    <p class="text-xl text-white">{{ $underProcessRequestsCount }}</p>
-                </div>
-                <div class="p-5 bg-[#4b4b4b] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
-            </a>
-            <a href="{{ route('dashboard.requests.index') }}?status=معلقة" class="flex bg-[#808080] justify-between rounded-lg">
-                <div class="p-4 pr-4 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white">طلبات معلقة</h1>
-                    <p class="text-xl text-white">{{ $pendingRequestsCount }}</p>
-                </div>
-                <div class="p-5 bg-[#6b6b6b] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
-            </a>
-            <a href="{{ route('dashboard.requests.index') }}?status=منتهية" class="flex bg-[#999999] justify-between rounded-lg">
-                <div class="p-4 pr-4 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white">طلبات منتهية</h1>
-                    <p class="text-xl text-white">{{ $closedRequestsCount }}</p>
-                </div>
-                <div class="p-5 bg-[#858585] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
-            </a>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="rounded-lg bg-indigo-900 text-white p-4 flex flex-col justify-between min-h-[100px]">
+                <span class="text-xs opacity-80">الإجمالي</span>
+                <span class="text-2xl font-black">{{ $taskStats['total'] }}</span>
+            </div>
+            <div class="rounded-lg bg-green-700 text-white p-4 flex flex-col justify-between min-h-[100px]">
+                <span class="text-xs opacity-80">منتهية</span>
+                <span class="text-2xl font-black">{{ $taskStats['completed'] }}</span>
+            </div>
+            <div class="rounded-lg bg-slate-700 text-white p-4 flex flex-col justify-between min-h-[100px]">
+                <span class="text-xs opacity-80">متبقية</span>
+                <span class="text-2xl font-black">{{ $taskStats['remaining'] }}</span>
+            </div>
+            <div class="rounded-lg bg-blue-600 text-white p-4 flex flex-col justify-between min-h-[100px]">
+                <span class="text-xs opacity-80">قيد الإنجاز</span>
+                <span class="text-2xl font-black">{{ $taskStats['in_progress'] }}</span>
+            </div>
+            <div class="rounded-lg bg-red-600 text-white p-4 flex flex-col justify-between min-h-[100px]">
+                <span class="text-xs opacity-80">متأخرة</span>
+                <span class="text-2xl font-black">{{ $taskStats['late'] }}</span>
+            </div>
+            <div class="rounded-lg bg-amber-600 text-white p-4 flex flex-col justify-between min-h-[100px]">
+                <span class="text-xs opacity-80">بالانتظار</span>
+                <span class="text-2xl font-black">{{ $taskStats['waiting'] }}</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs text-gray-500 dark:text-gray-400">متوسط سرعة الإنجاز (أيام)</p>
+                <p class="text-xl font-bold text-gray-900 dark:text-white mt-1">
+                    {{ $taskStats['avg_completion_days'] !== null ? $taskStats['avg_completion_days'] . ' يوم' : '—' }}
+                </p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs text-gray-500 dark:text-gray-400">نسبة الإنجاز في الموعد</p>
+                <p class="text-xl font-bold text-green-600 mt-1">
+                    {{ $taskStats['on_time_rate'] !== null ? $taskStats['on_time_rate'] . '%' : '—' }}
+                </p>
+            </div>
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <p class="text-xs text-gray-500 dark:text-gray-400">ساعات العمل على المهام (تتبع الوقت)</p>
+                <p class="text-xl font-bold text-indigo-600 mt-1">{{ $taskStats['total_tracked_hours'] }} ساعة</p>
+            </div>
         </div>
     </div>
 
-    {{-- ====== كروت إحصائيات الدورات ====== --}}
+    @if($attendanceStats)
+    {{-- ====== كروت الحضور والرواتب ====== --}}
     <div>
-        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
-            <i class="fas fa-graduation-cap text-green-600"></i> إحصائيات الدورات
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-1 flex items-center gap-2">
+            <i class="fas fa-clock text-orange-600"></i>
+            الحضور والدوام
+            <span class="text-sm font-normal text-gray-500">({{ $attendanceStats['period_label'] }})</span>
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <a href="{{ route('dashboard.my_courses.index') }}" class="flex bg-black justify-between rounded-lg hover:-translate-y-1 transition-transform">
-                <div class="p-4 pr-6 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white whitespace-nowrap">إجمالي الدورات</h1>
-                    <p class="text-2xl flex items-center text-white">{{ $allCoursesCount }}</p>
-                </div>
-                <div class="p-5 bg-[#181818] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
+        <p class="text-xs text-gray-500 mb-3">اليوم: {{ $attendanceStats['status_today'] }} — {{ $attendanceStats['worked_hours_today'] }} ساعة</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <a href="{{ route('dashboard.work-times.calendar') }}"
+                class="rounded-lg bg-orange-700 text-white p-4 hover:bg-orange-800 transition min-h-[100px] flex flex-col justify-between">
+                <span class="text-xs opacity-90"><i class="fas fa-business-time ml-1"></i>ساعات العمل</span>
+                <span class="text-2xl font-black">{{ $attendanceStats['worked_hours'] }}<span class="text-sm font-normal"> س</span></span>
             </a>
-            <a href="{{ route('dashboard.my_courses.index') }}?filter=active" class="flex bg-green-700 justify-between rounded-lg hover:-translate-y-1 transition-transform">
-                <div class="p-4 pr-6 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات نشطة</h1>
-                    <p class="text-2xl text-white">{{ $activeCoursesCount }}</p>
-                </div>
-                <div class="p-5 bg-green-800 rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
+            <div class="rounded-lg bg-yellow-600 text-white p-4 min-h-[100px] flex flex-col justify-between">
+                <span class="text-xs opacity-90">دقائق التأخير</span>
+                <span class="text-2xl font-black">{{ $attendanceStats['late_minutes'] }}</span>
+            </div>
+            <div class="rounded-lg bg-teal-700 text-white p-4 min-h-[100px] flex flex-col justify-between">
+                <span class="text-xs opacity-90">قيمة الإضافي</span>
+                <span class="text-xl font-black">{{ number_format($attendanceStats['overtime_amount'], 0) }}</span>
+            </div>
+            <div class="rounded-lg bg-red-700 text-white p-4 min-h-[100px] flex flex-col justify-between">
+                <span class="text-xs opacity-90">خصم حضور</span>
+                <span class="text-xl font-black">{{ number_format($attendanceStats['attendance_deduction'], 0) }}</span>
+            </div>
+            <a href="{{ route('dashboard.adjustments.index') }}"
+                class="rounded-lg bg-green-600 text-white p-4 hover:bg-green-700 transition min-h-[100px] flex flex-col justify-between">
+                <span class="text-xs opacity-90"><i class="fas fa-gift ml-1"></i>مكافآت</span>
+                <span class="text-xl font-black">{{ number_format($attendanceStats['bonus_total'], 0) }}</span>
             </a>
-            <a href="{{ route('dashboard.my_courses.index') }}?filter=upcoming" class="flex bg-blue-600 justify-between rounded-lg hover:-translate-y-1 transition-transform">
-                <div class="p-4 pr-6 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات قادمة</h1>
-                    <p class="text-2xl text-white">{{ $upcomingCoursesCount }}</p>
-                </div>
-                <div class="p-5 bg-blue-700 rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
+            <a href="{{ route('dashboard.adjustments.index') }}"
+                class="rounded-lg bg-rose-700 text-white p-4 hover:bg-rose-800 transition min-h-[100px] flex flex-col justify-between">
+                <span class="text-xs opacity-90"><i class="fas fa-minus-circle ml-1"></i>خصومات</span>
+                <span class="text-xl font-black">{{ number_format($attendanceStats['adjustment_deduction'], 0) }}</span>
             </a>
-            <a href="{{ route('dashboard.my_courses.index') }}?filter=ended" class="flex bg-[#808080] justify-between rounded-lg hover:-translate-y-1 transition-transform">
-                <div class="p-4 pr-6 flex flex-col justify-between">
-                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات منتهية</h1>
-                    <p class="text-2xl text-white">{{ $endedCoursesCount }}</p>
-                </div>
-                <div class="p-5 bg-[#6b6b6b] rounded-lg">
-                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-20 h-20 opacity-50" alt="">
-                </div>
-            </a>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">أيام حضور مسجّلة هذا الشهر: {{ $attendanceStats['attendance_days'] }}</p>
+    </div>
+    @endif
+
+    {{-- ====== جميع المهام والمراحل ====== --}}
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-tasks text-indigo-600"></i>
+                    جميع المهام
+                    <span class="text-sm font-normal text-gray-500">({{ $allTasks->count() }})</span>
+                </h2>
+            </div>
+            <div class="max-h-[420px] overflow-y-auto">
+                @forelse($allTasks as $task)
+                @php
+                    $projectName = $task->special_request_id
+                        ? ($task->specialRequest?->title ?? 'مشروع #' . $task->special_request_id)
+                        : ($task->request?->system?->name_ar ?? 'طلب #' . $task->request_id);
+                    $projectUrl = $task->special_request_id
+                        ? route('dashboard.special-request.show', $task->special_request_id)
+                        : route('dashboard.requests.show', $task->request_id);
+                    $stageName = $task->stage?->title ?? $task->requestStage?->title ?? '—';
+                    $statusClasses = [
+                        'منتهية' => 'bg-green-100 text-green-700',
+                        'قيد الإنجاز' => 'bg-blue-100 text-blue-700',
+                        'متأخرة' => 'bg-red-100 text-red-700',
+                        'بالانتظار' => 'bg-gray-100 text-gray-600',
+                    ];
+                @endphp
+                <a href="{{ $projectUrl }}"
+                    class="block px-4 py-3 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-900 dark:text-white truncate">{{ $task->title }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5 truncate">
+                                <i class="fas fa-folder-open ml-1"></i>{{ $projectName }}
+                            </p>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                {{ $task->user?->display_name ?? '—' }} · {{ $stageName }}
+                            </p>
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full font-bold whitespace-nowrap {{ $statusClasses[$task->status] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ $task->status }}
+                        </span>
+                    </div>
+                </a>
+                @empty
+                <p class="p-8 text-center text-gray-400 text-sm">لا توجد مهام حالياً</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-layer-group text-purple-600"></i>
+                    جميع المراحل
+                    <span class="text-sm font-normal text-gray-500">({{ $allStages->count() }})</span>
+                </h2>
+            </div>
+            <div class="max-h-[420px] overflow-y-auto">
+                @forelse($allStages as $stage)
+                @php
+                    $stageStatusLabels = [
+                        'completed' => 'منتهية',
+                        'pending' => 'بالانتظار',
+                        'in_progress' => 'قيد التنفيذ',
+                    ];
+                    $stageLabel = $stageStatusLabels[$stage['status']] ?? $stage['status'];
+                    $stageStatusClasses = [
+                        'completed' => 'bg-green-100 text-green-700',
+                        'منتهية' => 'bg-green-100 text-green-700',
+                        'pending' => 'bg-gray-100 text-gray-600',
+                        'in_progress' => 'bg-blue-100 text-blue-700',
+                    ];
+                @endphp
+                <a href="{{ $stage['url'] }}"
+                    class="block px-4 py-3 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-900 dark:text-white truncate">{{ $stage['title'] }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5 truncate">
+                                <i class="fas fa-folder-open ml-1"></i>{{ $stage['project_name'] }}
+                            </p>
+                            @if($stage['end_date'])
+                            <p class="text-xs text-gray-400 mt-0.5">موعد: {{ $stage['end_date'] }}</p>
+                            @endif
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full font-bold whitespace-nowrap {{ $stageStatusClasses[$stage['status']] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ $stageLabel }}
+                        </span>
+                    </div>
+                </a>
+                @empty
+                <p class="p-8 text-center text-gray-400 text-sm">لا توجد مراحل حالياً</p>
+                @endforelse
+            </div>
         </div>
     </div>
 
-    {{-- ====== قسم الإشعارات ====== --}}
+    {{-- ====== الإشعارات ====== --}}
     <div>
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-lg font-bold text-gray-700 dark:text-white flex items-center gap-2">

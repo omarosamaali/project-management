@@ -128,7 +128,7 @@ class WhatsAppOTPService
             [
                 "type" => "body",
                 "parameters" => [
-                    ["type" => "text", "text" => "مدير النظام"],
+                    ["type" => "text", "text" => \App\Support\SystemManager::displayName()],
                     ["type" => "text", "text" => $bodyText],
                 ]
             ],
@@ -236,6 +236,79 @@ class WhatsAppOTPService
                     ["type" => "image", "image" => ["link" => 'https://evorq.online/assets/images/salaray.jpeg']]
                 ]
             ]
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
+    /**
+     * إشعار الموظف عند تسجيل خصم أو مكافأة — template: trabar
+     */
+    public function sendAdjustmentNotification(
+        string $phone,
+        string $employeeName,
+        string $typeLabel,
+        float $amount,
+        string $currency,
+        string $date,
+        ?string $notes = null
+    ): bool {
+        $amountFormatted = number_format($amount, 2);
+        $bodyText = "تم تسجيل {$typeLabel} بمبلغ {$amountFormatted} {$currency} بتاريخ {$date}.";
+        if ($notes && trim($notes) !== '') {
+            $bodyText .= " ملاحظات: " . trim($notes);
+        }
+
+        $params = [
+            [
+                'type' => 'body',
+                'parameters' => [
+                    ['type' => 'text', 'text' => $employeeName],
+                    ['type' => 'text', 'text' => $bodyText],
+                ],
+            ],
+            [
+                'type' => 'header',
+                'parameters' => [
+                    ['type' => 'image', 'image' => ['link' => 'https://evorq.online/assets/images/salaray.jpeg']],
+                ],
+            ],
+        ];
+
+        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+    }
+
+    /**
+     * إشعار الموظف عند تسجيل عطلة — template: trabar
+     */
+    public function sendHolidayNotification(
+        string $phone,
+        string $employeeName,
+        string $holidayName,
+        string $typeLabel,
+        string $dateRange,
+        string $salaryNote,
+        ?string $details = null
+    ): bool {
+        $bodyText = "عطلة: {$holidayName} ({$typeLabel}) للفترة {$dateRange}. {$salaryNote}";
+        if ($details && trim($details) !== '') {
+            $bodyText .= ' تفاصيل: ' . trim($details);
+        }
+
+        $params = [
+            [
+                'type' => 'body',
+                'parameters' => [
+                    ['type' => 'text', 'text' => $employeeName],
+                    ['type' => 'text', 'text' => $bodyText],
+                ],
+            ],
+            [
+                'type' => 'header',
+                'parameters' => [
+                    ['type' => 'image', 'image' => ['link' => 'https://evorq.online/assets/images/salaray.jpeg']],
+                ],
+            ],
         ];
 
         return $this->executeRequest($phone, 'trabar', 'ar', $params);

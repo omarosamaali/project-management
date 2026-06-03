@@ -95,7 +95,7 @@
                                     {{ Str::limit($request->title, 30) }}
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ $request->project_type }}
+                                    {{ $request->project_type_label }}
                                 </td>
                                 <td class="px-4 py-3">
                                     {{ Str::limit($request->description, 60) }}

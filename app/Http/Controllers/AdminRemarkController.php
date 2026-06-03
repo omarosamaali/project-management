@@ -21,7 +21,7 @@ class AdminRemarkController extends Controller
 
     public function edit(AdminRemark $adminRemark)
     {
-        $employees = User::where('role', 'partner')->where('is_employee', 1)->get();
+        $employees = User::where('role', 'partner')->where('is_employee', 1)->notBlocked()->get();
         return view('dashboard.admin_remarks.edit', ['remark' => $adminRemark, 'employees' => $employees]);
     }
 
@@ -49,7 +49,7 @@ class AdminRemarkController extends Controller
     public function create()
     {
         // جلب الموظفين (شركاء + موظف)
-        $employees = User::where('role', 'partner')->where('is_employee', 1)->get();
+        $employees = User::where('role', 'partner')->where('is_employee', 1)->notBlocked()->get();
         return view('dashboard.admin_remarks.create', compact('employees'));
     }
 

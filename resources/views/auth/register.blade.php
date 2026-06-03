@@ -56,8 +56,51 @@
             </p>
         </div>
 
-        <form class="space-y-6" method="POST" action="{{ route('register') }}">
+        <form class="space-y-6" method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
             @csrf
+
+            <!-- نوع الحساب -->
+            <div>
+                <x-input-label :value="__('messages.account_type')" />
+                <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label
+                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition account-type-option {{ old('account_type', 'personal') === 'personal' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
+                        <input type="radio" name="account_type" value="personal" class="text-black focus:ring-black"
+                            {{ old('account_type', 'personal') === 'personal' ? 'checked' : '' }} required>
+                        <span>
+                            <span class="block font-bold text-gray-800">{{ __('messages.account_personal') }}</span>
+                            <span class="text-xs text-gray-500">{{ __('messages.account_personal_hint') }}</span>
+                        </span>
+                    </label>
+                    <label
+                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition account-type-option {{ old('account_type') === 'business' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
+                        <input type="radio" name="account_type" value="business" class="text-black focus:ring-black"
+                            {{ old('account_type') === 'business' ? 'checked' : '' }}>
+                        <span>
+                            <span class="block font-bold text-gray-800">{{ __('messages.account_business') }}</span>
+                            <span class="text-xs text-gray-500">{{ __('messages.account_business_hint') }}</span>
+                        </span>
+                    </label>
+                </div>
+                <x-input-error :messages="$errors->get('account_type')" class="mt-2" />
+            </div>
+
+            <!-- بيانات الشركة (حساب تجاري) -->
+            <div id="business-fields" class="space-y-4 {{ old('account_type') === 'business' ? '' : 'hidden' }}">
+                <div>
+                    <x-input-label for="company_name" :value="__('messages.company_name')" />
+                    <x-text-input id="company_name" class="block mt-1 w-full" type="text" name="company_name"
+                        :value="old('company_name')" autocomplete="organization" />
+                    <x-input-error :messages="$errors->get('company_name')" class="mt-2" />
+                </div>
+                <div>
+                    <x-input-label for="company_logo" :value="__('messages.company_logo')" />
+                    <input id="company_logo" type="file" name="company_logo" accept="image/*"
+                        class="block mt-1 w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-black file:text-white hover:file:bg-gray-800" />
+                    <p class="text-xs text-gray-500 mt-1">{{ __('messages.company_logo_hint') }}</p>
+                    <x-input-error :messages="$errors->get('company_logo')" class="mt-2" />
+                </div>
+            </div>
 
             <!-- الاسم -->
             <div>
@@ -164,6 +207,33 @@
                     console.error('حدث خطأ أثناء تحميل قائمة الدول:', error);
                     $('#country_select2').empty().append(new Option("تعذر تحميل الدول", "", true, true));
                 });
+
+            const businessFields = document.getElementById('business-fields');
+            const companyName = document.getElementById('company_name');
+            const companyLogo = document.getElementById('company_logo');
+            const accountRadios = document.querySelectorAll('input[name="account_type"]');
+            const accountOptions = document.querySelectorAll('.account-type-option');
+
+            function syncAccountType() {
+                const isBusiness = document.querySelector('input[name="account_type"]:checked')?.value === 'business';
+                businessFields.classList.toggle('hidden', !isBusiness);
+                if (companyName) {
+                    companyName.required = isBusiness;
+                }
+                if (companyLogo) {
+                    companyLogo.required = isBusiness;
+                }
+                accountOptions.forEach((label) => {
+                    const radio = label.querySelector('input[type="radio"]');
+                    const selected = radio?.checked;
+                    label.classList.toggle('border-black', selected);
+                    label.classList.toggle('bg-gray-50', selected);
+                    label.classList.toggle('border-gray-200', !selected);
+                });
+            }
+
+            accountRadios.forEach((radio) => radio.addEventListener('change', syncAccountType));
+            syncAccountType();
         });
 </script>
 @endsection

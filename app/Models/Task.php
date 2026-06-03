@@ -60,12 +60,19 @@ class Task extends Model
         return $this->belongsTo(RequestStage::class, 'request_stage_id');
     }
 
+    /** الوقت المخزّن فقط (بعد إيقاف/حفظ العداد). */
+    public function getStoredTrackedSecondsAttribute(): int
+    {
+        return max((int) ($this->tracked_seconds ?? 0), 0);
+    }
+
+    /** المخزّن + جلسة العداد الجارية (للعرض أثناء التشغيل). */
     public function getElapsedTrackedSecondsAttribute(): int
     {
-        $seconds = (int) ($this->tracked_seconds ?? 0);
+        $seconds = $this->stored_tracked_seconds;
 
         if ($this->is_timer_running && $this->timer_started_at) {
-            $seconds += $this->timer_started_at->diffInSeconds(now());
+            $seconds += (int) $this->timer_started_at->diffInSeconds(now());
         }
 
         return max($seconds, 0);

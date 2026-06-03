@@ -24,12 +24,13 @@
             <i class="fas fa-users-cog"></i> الأشخاص المتاحون للمعالجة
         </h3>
         <div class="flex flex-wrap gap-3 text-sm">
+            @foreach ($SpecialRequest->allProjectClients() as $projectClient)
             <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">
-                العميل: {{ $SpecialRequest->user?->name ?? 'غير معروف' }}
+                عميل: {{ $projectClient->name }}
             </span>
-            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-bold">مدير النظام</span>
-            @foreach ($SpecialRequest->partners as $partner)
-            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full font-bold">{{ $partner->name }}</span>
+            @endforeach
+            @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-bold">{{ $member->display_name }}</span>
             @endforeach
         </div>
     </div>
@@ -59,10 +60,12 @@ $resolvedIssues = $allIssues->where('status', 'resolved');
     true) ?: [] : []);
 
     // ب. جلب موديل المستخدمين المعنيين (للعرض)
-    $assignedUsers = !empty($assignedIds) ? \App\Models\User::whereIn('id', $assignedIds)->get() : collect();
+    $assignedUsers = !empty($assignedIds)
+        ? \App\Models\User::whereIn('id', $assignedIds)->notBlocked()->get()
+        : collect();
 
-    // ج. فحص الصلاحية (عمر أسامة لن يراها إلا إذا كان معنياً)
     $isAuthorized = (Auth::user()->role === 'admin') ||
+    $SpecialRequest->userCanViewAllProjectIssues(Auth::id(), Auth::user()->role) ||
     ($issue->user_id == Auth::id()) ||
     (in_array(Auth::id(), $assignedIds));
     @endphp
@@ -150,8 +153,10 @@ $resolvedIssues = $allIssues->where('status', 'resolved');
     $assignedData = $issue->assigned_users;
     $assignedIds = is_array($assignedData) ? $assignedData : (is_string($assignedData) ? json_decode($assignedData,
     true) ?: [] : []);
-    $isAuthorized = (Auth::user()->role === 'admin') || ($issue->user_id == Auth::id()) || (in_array(Auth::id(),
-    $assignedIds));
+    $isAuthorized = (Auth::user()->role === 'admin') ||
+    $SpecialRequest->userCanViewAllProjectIssues(Auth::id(), Auth::user()->role) ||
+    ($issue->user_id == Auth::id()) ||
+    (in_array(Auth::id(), $assignedIds));
     @endphp
 
     @if($isAuthorized)
@@ -222,12 +227,11 @@ $resolvedIssues = $allIssues->where('status', 'resolved');
                 <select name="assigned_users[]" multiple required
                     class="w-full p-3 rounded-xl border dark:bg-gray-700 dark:text-white h-32 focus:ring-2 focus:ring-blue-500">
                     {{-- الجزء المتسبب في الخطأ داخل الـ Modal --}}
-                    <option value="{{ $SpecialRequest->user?->id }}">
-                        العميل: {{ $SpecialRequest->user->name ?? $SpecialRequest->client->name }}
-                    </option>
-                    <option value="1">مدير النظام</option>
-                    @foreach ($SpecialRequest->partners as $partner)
-                    <option value="{{ $partner->id }}">{{ $partner->name }}</option>
+                    @foreach ($SpecialRequest->allProjectClients() as $projectClient)
+                    <option value="{{ $projectClient->id }}">عميل: {{ $projectClient->name }}</option>
+                    @endforeach
+                    @foreach ($SpecialRequest->assignableTeamMembers() as $member)
+                    <option value="{{ $member->id }}">{{ $member->display_name }}</option>
                     @endforeach
                 </select>
             </div>

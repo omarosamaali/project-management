@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('special_requests', function (Blueprint $table) {
+            $table->timestamp('delivered_at')->nullable()->after('status');
+        });
+
+        DB::statement("
+            UPDATE special_requests
+            SET delivered_at = updated_at
+            WHERE status = 'completed' AND delivered_at IS NULL
+        ");
+    }
+
+    public function down(): void
+    {
+        Schema::table('special_requests', function (Blueprint $table) {
+            $table->dropColumn('delivered_at');
+        });
+    }
+};
