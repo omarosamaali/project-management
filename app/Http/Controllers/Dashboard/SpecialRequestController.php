@@ -20,6 +20,7 @@ use App\Models\RequestStage;
 use App\Models\RequestActivity;
 use App\Services\WhatsAppOTPService;
 use App\Services\ProjectActivityLogger;
+use Illuminate\Support\Facades\Schema;
 
 class SpecialRequestController extends Controller
 {
@@ -201,7 +202,7 @@ class SpecialRequestController extends Controller
             ->orderBy('created_at', 'asc')
             ->get();
 
-   
+
         $allClients = User::where('role', 'client')->get();
 
         return view('dashboard.special-request.show', [
@@ -1011,7 +1012,7 @@ class SpecialRequestController extends Controller
         return back()->with('success', $message);
     }
 
-    
+
     public function deliverProject($id)
     {
         $request = SpecialRequest::findOrFail($id);

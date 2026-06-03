@@ -322,11 +322,13 @@
                     ملفات المشروع
                 </button>
 
+@if(\Illuminate\Support\Facades\Schema::hasTable('project_approvals'))
                 <button type="button" onclick="openTab(event, 'approvals')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
                     <i class="fas fa-stamp"></i>
                     الاعتمادات
                 </button>
+@endif
 
                 <button type="button" onclick="openTab(event, 'meetings')"
                     class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300 flex items-center gap-2">
@@ -410,10 +412,12 @@
                 <x-project-files :SpecialRequest="$SpecialRequest" />
             </div>
 
+            @if(\Illuminate\Support\Facades\Schema::hasTable('project_approvals'))
             <!-- الاعتمادات -->
             <div id="approvals" class="tab-content hidden">
                 <x-project-approvals :SpecialRequest="$SpecialRequest" />
             </div>
+            @endif
 
             <!-- الأنشطة -->
             <div id="activities" class="tab-content hidden">

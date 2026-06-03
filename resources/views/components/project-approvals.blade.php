@@ -1,7 +1,8 @@
 @props(['SpecialRequest'])
 
 @php
-    $approvals = $SpecialRequest->projectApprovals ?? collect();
+    $approvalsTableReady = \Illuminate\Support\Facades\Schema::hasTable('project_approvals');
+    $approvals = $approvalsTableReady ? ($SpecialRequest->projectApprovals ?? collect()) : collect();
     $candidates = collect()
         ->merge($SpecialRequest->partners ?? collect())
         ->merge($SpecialRequest->clients ?? collect())
