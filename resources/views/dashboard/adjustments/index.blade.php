@@ -42,6 +42,9 @@
                             <th class="px-4 py-3">المبلغ</th>
                             <th class="px-4 py-3">التاريخ</th>
                             <th class="px-4 py-3">ملاحظات</th>
+                            @if(empty($isEmployeeView))
+                            <th class="px-4 py-3 text-center">إجراءات</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -60,10 +63,31 @@
                             </td>
                             <td class="px-4 py-3">{{ $adj->date?->format('Y-m-d') ?? $adj->date }}</td>
                             <td class="px-4 py-3 text-gray-600 dark:text-gray-300">{{ $adj->notes ?: '—' }}</td>
+                            @if(empty($isEmployeeView))
+                            <td class="px-4 py-3 text-center">
+                                <div class="flex justify-center gap-2">
+                                    <a href="{{ route('dashboard.adjustments.edit', $adj) }}"
+                                        class="text-blue-600 hover:text-blue-900 bg-blue-100 dark:bg-blue-900/40 p-2 rounded-lg transition"
+                                        title="تعديل">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form action="{{ route('dashboard.adjustments.destroy', $adj) }}" method="POST"
+                                        onsubmit="return confirm('هل أنت متأكد من حذف هذا السجل؟');" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="text-red-700 hover:text-red-900 bg-red-100 dark:bg-red-900/40 p-2 rounded-lg transition"
+                                            title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            @endif
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ empty($isEmployeeView) ? 5 : 4 }}" class="text-center px-4 py-8 text-gray-500">
+                            <td colspan="{{ empty($isEmployeeView) ? 6 : 4 }}" class="text-center px-4 py-8 text-gray-500">
                                 {{ !empty($isEmployeeView) ? 'لا توجد سجلات خصومات أو مكافآت لك حتى الآن.' : 'لا توجد سجلات لعرضها.' }}
                             </td>
                         </tr>
