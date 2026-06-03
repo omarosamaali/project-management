@@ -181,22 +181,24 @@
                         </form>
                     </div>
                     @else
-                    <div class="flex flex-col items-end">
-                        @if($payment->status == 'paid')
+                    <div class="flex flex-col items-end gap-2">
+                        @if($payment->status === 'paid')
                         @php
-                        // البحث عن آخر دفعة مكتملة للطلب الخاص
-                        $paidPayment = \App\Models\Payment::where('special_request_id', $SpecialRequest->id)
-                        ->where('status', 'completed')
-                        ->latest()
-                        ->first();
+                        $ziinaPayment = \App\Models\Payment::where('request_payment_id', $payment->id)
+                            ->whereIn('status', ['completed', 'paid'])
+                            ->latest()
+                            ->first();
                         @endphp
-                        @if($paidPayment)
-                        <a href="{{ route('special-request.payment.invoice', ['specialRequest' => $SpecialRequest->id, 'payment' => $paidPayment->id]) }}"
-                            target="_blank" class="text-blue-600 hover:text-blue-800 underline font-medium">
-                            <i class="fas fa-file-invoice ml-1"></i> معاينة الفاتورة
+                        @if($ziinaPayment)
+                        <a href="{{ route('special-request.payment.invoice', [
+                            'specialRequest' => $SpecialRequest->id,
+                            'payment' => $ziinaPayment->id,
+                            'installment_id' => $payment->id,
+                        ]) }}" target="_blank"
+                            class="px-4 py-2 bg-emerald-100 dark:bg-emerald-700 text-emerald-700 dark:text-white rounded-lg text-sm font-medium hover:bg-emerald-200 dark:hover:bg-emerald-600 transition-colors flex items-center gap-2">
+                            <i class="fas fa-file-invoice"></i>
+                            معاينة الفاتورة
                         </a>
-                        @else
-                        <span class="text-gray-500 dark:text-gray-400 text-sm">لا توجد فاتورة متاحة</span>
                         @endif
                         @else
                         <span class="text-gray-400 dark:text-gray-500 text-sm italic">في انتظار الدفع</span>
