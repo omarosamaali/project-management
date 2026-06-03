@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\System;
+use App\Support\CountryNames;
 use App\Support\EmployeeProfileStats;
 use App\Support\WorkAttendanceState;
 use Illuminate\Http\Request;
@@ -54,6 +55,8 @@ class PartnerController extends Controller
 
         $partner->load(['systems', 'services']);
 
+        $this->sanitizePartnerForView($partner);
+
         $partner->loadCount([
             'systems as partner_requests_count' => function ($query) {
                 $query->join('requests', 'systems.id', '=', 'requests.system_id');
@@ -68,7 +71,10 @@ class PartnerController extends Controller
             ->latest('date')
             ->latest('start_time')
             ->limit(20)
-            ->get();
+            ->get()
+            ->each(function ($record) {
+                $record->notes = CountryNames::ensureUtf8($record->notes);
+            });
 
         $recentSalaries = $partner->salaries()
             ->latest('year')
@@ -79,7 +85,10 @@ class PartnerController extends Controller
         $recentAdjustments = $partner->employeeAdjustments()
             ->latest('date')
             ->limit(15)
-            ->get();
+            ->get()
+            ->each(function ($adj) {
+                $adj->notes = CountryNames::ensureUtf8($adj->notes);
+            });
 
         return view('dashboard.partners.show', compact(
             'partner',
@@ -105,6 +114,15 @@ class PartnerController extends Controller
             return;
         }
         abort(403, 'غير مصرح لك بعرض هذا الملف');
+    }
+
+    private function sanitizePartnerForView(User $partner): void
+    {
+        foreach (['name', 'email', 'phone', 'company_name', 'salary_notes', 'note_title', 'note_details'] as $field) {
+            if ($partner->{$field} !== null && $partner->{$field} !== '') {
+                $partner->{$field} = CountryNames::ensureUtf8((string) $partner->{$field});
+            }
+        }
     }
 
     // Create Method

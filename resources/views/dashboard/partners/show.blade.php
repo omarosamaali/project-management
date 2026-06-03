@@ -477,13 +477,21 @@
                             'دخول من الاستراحة' => 'bg-blue-100 text-blue-800',
                         ];
                         $typeClass = $typeColors[$record->type] ?? 'bg-gray-100 text-gray-600';
+                        $isLateAttendance = $record->type === 'حضور'
+                            && \App\Support\WorkHoursCalculator::isLateCheckIn($partner, $record->date, $record->start_time);
+                        $workStartLabel = \App\Support\WorkHoursCalculator::scheduledStartLabel($partner);
                     @endphp
                     <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-3 font-medium">{{ $record->date?->format('Y-m-d') ?? $record->date }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $typeClass }}">{{ $record->type }}</span>
                         </td>
-                        <td class="px-4 py-3 tabular-nums font-bold">{{ \Illuminate\Support\Str::limit($record->start_time, 8, '') }}</td>
+                        <td class="px-4 py-3 tabular-nums font-bold">
+                            {{ \Illuminate\Support\Str::limit($record->start_time, 8, '') }}
+                            @if($isLateAttendance)
+                            <p class="text-[10px] text-indigo-600 font-normal mt-0.5">يُحسب من {{ $workStartLabel }}</p>
+                            @endif
+                        </td>
                         <td class="px-4 py-3">{{ $record->country_name ?? $record->country }}</td>
                         <td class="px-4 py-3 text-xs">{{ $record->sourceLabel() }}</td>
                         <td class="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate">{{ $record->notes ?? '—' }}</td>

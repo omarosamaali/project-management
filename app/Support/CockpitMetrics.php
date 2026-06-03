@@ -228,40 +228,10 @@ class CockpitMetrics
         $totalSeconds = 0;
 
         foreach ($records->groupBy(fn ($r) => WorkTimeMoment::dateKey($r->date)) as $date => $dayRecords) {
-            $totalSeconds += self::workedSecondsForDay($date, $dayRecords);
+            $until = $date === Carbon::today()->toDateString() ? now() : null;
+            $totalSeconds += WorkHoursCalculator::workedSecondsForDay($user, $date, $dayRecords, $until);
         }
 
         return max(0, (int) $totalSeconds);
-    }
-
-    /**
-     * @param \Illuminate\Support\Collection<int, WorkTime> $dayRecords
-     */
-    private static function workedSecondsForDay(string $date, $dayRecords): int
-    {
-        $seconds = 0;
-        $currentStart = null;
-
-        foreach ($dayRecords as $record) {
-            if (in_array($record->type, ['حضور', 'دخول من الاستراحة'], true)) {
-                $currentStart = WorkTimeMoment::at($date, $record->start_time);
-            } elseif ($record->type === 'خروج للاستراحة') {
-                if ($currentStart) {
-                    $seconds += $currentStart->diffInSeconds(WorkTimeMoment::at($date, $record->start_time));
-                }
-                $currentStart = null;
-            } elseif ($record->type === 'انصراف') {
-                if ($currentStart) {
-                    $seconds += $currentStart->diffInSeconds(WorkTimeMoment::at($date, $record->start_time));
-                }
-                $currentStart = null;
-            }
-        }
-
-        if ($currentStart && WorkTimeMoment::dateKey($date) === Carbon::today()->toDateString()) {
-            $seconds += $currentStart->diffInSeconds(now());
-        }
-
-        return max(0, (int) $seconds);
     }
 }

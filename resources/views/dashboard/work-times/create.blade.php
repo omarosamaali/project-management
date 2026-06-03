@@ -43,34 +43,6 @@
             <form method="POST" action="{{ route('dashboard.work-times.store') }}" class="space-y-6">
                 @csrf
                 <input type="hidden" name="timezone" id="user_timezone">
-                <style>
-                    .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__clear {
-                        display: none !important;
-                    }
-
-                    .select2-container,
-                    .iti {
-                        width: 100%;
-                    }
-
-                    .select2-container--default .select2-selection--single {
-                        height: 49px !important;
-                    }
-
-                    .select2-container--default .select2-selection--single .select2-selection__placeholder,
-                    .select2-container[dir="rtl"] .select2-selection--single .select2-selection__rendered {
-                        position: relative !important;
-                        top: 4px !important;
-                    }
-
-                    .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__arrow {
-                        top: 9px !important;
-                    }
-
-                    .select2-container--default .select2-selection--single {
-                        border: 1px solid #d1d5db !important;
-                    }
-                </style>
                 {{-- الموظف والبلد --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 <div>
@@ -91,10 +63,12 @@
 
 <div>
     <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">الدولة</label>
-    <select id="country_select2" name="country" class="!py-3 placeholder-gray-400 block mt-1 w-full rtl:text-right"
-        required>
-        <option value="" disabled selected>اختر الموظف أولاً</option>
-    </select>
+    <input type="hidden" name="country" id="country_code_input" value="{{ old('country') }}">
+    <div id="country_display"
+        class="bg-gray-100 border border-gray-300 text-gray-700 text-sm rounded-lg block w-full px-3 py-3 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 cursor-not-allowed select-none">
+        <span id="country_display_text">اختر الموظف أولاً</span>
+    </div>
+    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">تُحدَّد تلقائياً من ملف الموظف ولا يمكن تعديلها.</p>
     <x-input-error :messages="$errors->get('country')" class="mt-2" />
 </div>
                 </div>
@@ -186,10 +160,6 @@
     </div>
 </section>
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
 <script>
     let countryClockTimer = null;
     let activeTimezone = null;
@@ -199,6 +169,18 @@
     const dateInput = document.querySelector('input[name="date"]');
     const timeInput = document.getElementById('start_time');
     const panel = document.getElementById('country_time_panel');
+    const countryCodeInput = document.getElementById('country_code_input');
+    const countryDisplayText = document.getElementById('country_display_text');
+
+    function setEmployeeCountry(code, name) {
+        if (code) {
+            countryCodeInput.value = code;
+            countryDisplayText.textContent = name || code;
+        } else {
+            countryCodeInput.value = '';
+            countryDisplayText.textContent = 'اختر الموظف أولاً';
+        }
+    }
 
     function formatInTimezone(timezone) {
         return new Intl.DateTimeFormat('ar-EG', {
@@ -294,10 +276,12 @@
         const code = opt?.getAttribute('data-country-code');
         const name = opt?.getAttribute('data-country-name');
         const workStart = opt?.getAttribute('data-work-start');
+        setEmployeeCountry(code, name);
         if (code) {
-            $('#country_select2').val(code).trigger('change.select2');
             document.getElementById('country_time_title').textContent =
                 name ? `التوقيت المحلي — ${name}` : 'التوقيت المحلي للدولة';
+        } else {
+            panel.classList.add('hidden');
         }
         if (workStart) {
             document.getElementById('country_work_start').textContent = workStart;
@@ -305,38 +289,23 @@
         fetchCountryTime(code, this.value, true);
     });
 
-    $(document).ready(function() {
-        fetch('https://raw.githubusercontent.com/mledoze/countries/master/countries.json')
-            .then(r => r.json())
-            .then(data => {
-                const selectElement = $('#country_select2');
-                selectElement.empty().append(new Option('اختر الدولة', '', true, true));
-                data.forEach(country => {
-                    const countryName = country.translations?.ara?.common || country.name.common;
-                    selectElement.append(new Option(countryName, country.cca2, false, false));
-                });
-                selectElement.select2({ placeholder: 'اختر الدولة', allowClear: true, dir: 'rtl' });
-                selectElement.on('change', function() {
-                    const code = $(this).val();
-                    const userId = document.getElementById('employee_select').value;
-                    fetchCountryTime(code, userId, false);
-                });
-
-                fetch(`{{ route('dashboard.work-times.country-time') }}?use_ip=1`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.source === 'ip' && data.country_code) {
-                            const hint = document.getElementById('ip_detect_hint');
-                            hint.textContent = `تقدير من IP: ${data.country_name || data.country_code}`;
-                            hint.classList.remove('hidden');
-                            if (!$('#country_select2').val()) {
-                                $('#country_select2').val(data.country_code).trigger('change');
-                            }
-                        }
-                    })
-                    .catch(() => {});
-            });
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!countryCodeInput.value) {
+            e.preventDefault();
+            alert('اختر الموظف أولاً لتحديد الدولة.');
+        }
     });
+
+    fetch(`{{ route('dashboard.work-times.country-time') }}?use_ip=1`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.source === 'ip' && data.country_code) {
+                const hint = document.getElementById('ip_detect_hint');
+                hint.textContent = `تقدير من IP: ${data.country_name || data.country_code}`;
+                hint.classList.remove('hidden');
+            }
+        })
+        .catch(() => {});
 
     document.querySelectorAll('input[type="time"], input[type="date"]').forEach(input => {
         input.addEventListener('click', function() {

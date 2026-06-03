@@ -90,6 +90,17 @@
                 </thead>
                 <tbody>
                     @forelse($workTimes as $time)
+                    @php
+                        $dateFormatted = $time->date instanceof \Carbon\Carbon
+                            ? $time->date->format('Y-m-d')
+                            : \App\Support\WorkTimeMoment::dateKey($time->date);
+                        $isLateAttendance = $time->type === 'حضور'
+                            && $time->user
+                            && \App\Support\WorkHoursCalculator::isLateCheckIn($time->user, $time->date, $time->start_time);
+                        $workStartLabel = $time->user
+                            ? \App\Support\WorkHoursCalculator::scheduledStartLabel($time->user)
+                            : '09:00';
+                    @endphp
                     <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                         @if(empty($isEmployeeView))
                         <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $time->user->name ?? '—' }}</td>
@@ -104,8 +115,15 @@
                         <td class="px-4 py-3">
                             <x-work-time-type-badge :record="$time" />
                         </td>
-                        <td class="px-4 py-3">{{ $time->date }}</td>
-                        <td class="px-4 py-3">{{ \Carbon\Carbon::parse($time->start_time)->format('g:i A') }}</td>
+                        <td class="px-4 py-3">{{ $dateFormatted }}</td>
+                        <td class="px-4 py-3">
+                            <span class="font-medium">{{ \Carbon\Carbon::parse($time->start_time)->format('g:i A') }}</span>
+                            @if($isLateAttendance)
+                            <p class="text-[10px] text-indigo-600 dark:text-indigo-300 mt-0.5">
+                                يُحسب من {{ $workStartLabel }}
+                            </p>
+                            @endif
+                        </td>
                         <td class="px-4 py-3">{{ $time->notes }}</td>
                         @if(empty($isEmployeeView))
                         <td class="px-4 py-3 text-center">

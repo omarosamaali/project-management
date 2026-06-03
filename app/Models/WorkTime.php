@@ -47,21 +47,6 @@ class WorkTime extends Model
 
     public function getCountryNameAttribute()
     {
-        $countryCode = strtoupper($this->country);
-
-        if (class_exists('Locale')) {
-            $name = \Locale::getDisplayRegion('-' . $countryCode, 'ar');
-            return $name ?: $countryCode;
-        }
-
-        $manualCountries = [
-            'EG' => 'مصر',
-            'SA' => 'السعودية',
-            'AE' => 'الإمارات',
-            'JO' => 'الأردن',
-            'AO' => 'أنجولا',
-        ];
-
-        return $manualCountries[$countryCode] ?? $countryCode;
+        return \App\Support\CountryNames::forCode($this->country) ?? strtoupper((string) $this->country);
     }
 }

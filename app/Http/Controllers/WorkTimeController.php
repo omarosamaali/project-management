@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Support\CountryNames;
 use App\Support\CountryTimezone;
 use App\Support\WorkAttendanceState;
+use App\Support\WorkHoursCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -88,10 +89,23 @@ class WorkTimeController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $employee = User::notBlocked()->where('is_employee', 1)->findOrFail($data['user_id']);
+        if (! $employee->country) {
+            return back()->withInput()->withErrors([
+                'country' => 'الموظف المختار ليس لديه دولة مسجّلة في ملفه.',
+            ]);
+        }
+        $data['country'] = strtoupper($employee->country);
+
         $data['source'] = WorkTime::SOURCE_MANUAL;
-        $data['country'] = strtoupper($data['country']);
         $data['timezone'] = $data['timezone']
             ?? CountryTimezone::timezoneForCountry($data['country']);
+
+        if ($data['type'] === 'حضور' && WorkHoursCalculator::isLateCheckIn($employee, $data['date'], $data['start_time'])) {
+            $countFrom = WorkHoursCalculator::scheduledStartLabel($employee);
+            $autoNote = 'احتساب من ' . $countFrom;
+            $data['notes'] = trim(($data['notes'] ?? '') . ' ' . $autoNote);
+        }
 
         WorkTime::create($data);
         return redirect()->route('dashboard.work-times.index')->with('success', 'تم تسجيل الوقت بنجاح');
