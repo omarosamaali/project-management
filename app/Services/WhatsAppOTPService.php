@@ -505,25 +505,12 @@ class WhatsAppOTPService
     }
 
     /**
-     * إرسال قالب trabar — body فقط أولاً (أكثر نجاحاً في التسليم)، ثم مع صورة header.
+     * إرسال قالب trabar — لازم header (صورة) + body (اسم + نص) حسب Meta.
      */
     private function sendTrabar(string $phone, string $recipientName, string $bodyText): bool
     {
         $recipientName = $this->sanitizeTrabarText($recipientName, 120);
         $bodyText = $this->sanitizeTrabarText($bodyText);
-
-        $bodyComponent = [
-            'type' => 'body',
-            'parameters' => [
-                ['type' => 'text', 'text' => $recipientName],
-                ['type' => 'text', 'text' => $bodyText],
-            ],
-        ];
-
-        $sent = $this->executeRequest($phone, 'trabar', 'ar', [$bodyComponent]);
-        if ($sent) {
-            return true;
-        }
 
         return $this->executeRequest($phone, 'trabar', 'ar', [
             [
@@ -532,7 +519,13 @@ class WhatsAppOTPService
                     ['type' => 'image', 'image' => ['link' => 'https://evorq.online/assets/images/salaray.jpeg']],
                 ],
             ],
-            $bodyComponent,
+            [
+                'type' => 'body',
+                'parameters' => [
+                    ['type' => 'text', 'text' => $recipientName],
+                    ['type' => 'text', 'text' => $bodyText],
+                ],
+            ],
         ]);
     }
 
