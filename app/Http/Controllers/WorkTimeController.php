@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\WorkTime;
 use App\Models\User;
+use App\Support\CountryNames;
 use App\Support\CountryTimezone;
 use App\Support\WorkAttendanceState;
 use Illuminate\Http\Request;
@@ -60,7 +61,17 @@ class WorkTimeController extends Controller
     public function create()
     {
         $this->denyUnlessAdmin();
-        $employees = User::where('is_employee', 1)->notBlocked()->get();
+        $employees = User::where('is_employee', 1)
+            ->notBlocked()
+            ->get(['id', 'name', 'country', 'work_start_time'])
+            ->map(fn (User $emp) => (object) [
+                'id' => $emp->id,
+                'name' => CountryNames::ensureUtf8($emp->name) ?? '',
+                'country_code' => strtoupper((string) ($emp->country ?? '')),
+                'country_name' => CountryNames::forCode($emp->country) ?? '',
+                'work_start' => CountryNames::formatWorkStart($emp->work_start_time),
+            ]);
+
         return view('dashboard.work-times.create', compact('employees'));
     }
 

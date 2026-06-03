@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Carbon\Carbon;
+
 class CountryNames
 {
     private const CACHE_KEY = 'country_names_ar_v2';
@@ -34,6 +36,25 @@ class CountryNames
         $name = self::arabicNames()[$code] ?? $code;
 
         return self::ensureUtf8($name);
+    }
+
+    public static function formatWorkStart(?string $raw, string $default = '09:00'): string
+    {
+        if ($raw === null || trim((string) $raw) === '') {
+            return $default;
+        }
+
+        $raw = self::ensureUtf8(trim((string) $raw));
+
+        try {
+            return Carbon::parse($raw)->format('H:i');
+        } catch (\Throwable) {
+            if (preg_match('/^\d{1,2}:\d{2}/', $raw, $matches)) {
+                return substr($matches[0], 0, 5);
+            }
+
+            return $default;
+        }
     }
 
     public static function ensureUtf8(?string $value): ?string

@@ -80,10 +80,10 @@
         <option selected disabled>اختر الموظف</option>
         @foreach($employees as $emp)
         <option value="{{ $emp->id }}"
-            data-country-code="{{ strtoupper($emp->country ?? '') }}"
-            data-country-name="{{ e(\App\Support\CountryNames::forCode($emp->country)) }}"
-            data-work-start="{{ $emp->work_start_time ? \Carbon\Carbon::parse($emp->work_start_time)->format('H:i') : '09:00' }}">
-            {{ \App\Support\CountryNames::ensureUtf8($emp->name) }}
+            data-country-code="{{ $emp->country_code }}"
+            data-country-name="{{ e($emp->country_name) }}"
+            data-work-start="{{ $emp->work_start }}">
+            {{ $emp->name }}
         </option>
         @endforeach
     </select>
