@@ -49,6 +49,11 @@ class SpecialRequest extends Model
         return $this->hasMany(ProjectFile::class, 'special_request_id');
     }
 
+    public function projectApprovals()
+    {
+        return $this->hasMany(ProjectApproval::class, 'special_request_id')->latest();
+    }
+
     protected $casts = [
         'installments_data' => 'array',
         'is_project' => 'boolean',

@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\RequestsExpense;
+use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ExpensesRequestController extends Controller
 {
-    // حفظ مصروف جديد
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -29,20 +29,18 @@ class ExpensesRequestController extends Controller
         $validated['user_id'] = Auth::user()->id;
 
         RequestsExpense::create($validated);
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $request->request_id,
-            'user_id' => auth()->id(),
-            'type' => 'file', // أو status, invoice, etc
-            'description' => 'تم اضافة مصروف جديد',
-        ]);
+
+        app(ProjectActivityLogger::class)->logRequest(
+            (int) $request->request_id,
+            'تم إضافة مصروف جديد: «'.$validated['title'].'» ('.$validated['price'].' جنيه)',
+            'expense',
+        );
+
         return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
     }
-    
-    // تحديث مصروف موجود
+
     public function update(Request $request, RequestsExpense $expense)
     {
-        // ملاحظة: تأكد أن اسم المتغير في الـ Route هو {expense} ليعمل الـ Binding تلقائياً
-
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'price'       => 'required|numeric|min:0',
@@ -52,7 +50,6 @@ class ExpensesRequestController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            // حذف الصورة القديمة إذا وجدت
             if ($expense->image) {
                 Storage::disk('public')->delete($expense->image);
             }
@@ -62,18 +59,31 @@ class ExpensesRequestController extends Controller
 
         $expense->update($validated);
 
+        app(ProjectActivityLogger::class)->logRequest(
+            $expense->request_id,
+            'تم تعديل مصروف: «'.$expense->title.'»',
+            'expense',
+        );
+
         return redirect()->back()->with('success', 'تم تحديث بيانات المصروف');
     }
 
-    // حذف مصروف
     public function destroy(RequestsExpense $expense)
     {
-        // حذف الصورة من التخزين قبل حذف السجل
         if ($expense->image) {
             Storage::disk('public')->delete($expense->image);
         }
 
+        $title = $expense->title;
+        $requestId = $expense->request_id;
+
         $expense->delete();
+
+        app(ProjectActivityLogger::class)->logRequest(
+            $requestId,
+            'تم حذف مصروف: «'.$title.'»',
+            'expense',
+        );
 
         return redirect()->back()->with('success', 'تم حذف المصروف بنجاح');
     }

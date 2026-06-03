@@ -88,7 +88,12 @@
                                 {{ $loop->iteration }}
                             </td>
                             <td class="px-4 py-3">
-                                {{ $client->name }}
+                                @if(($client->account_type ?? 'personal') === 'business' && filled($client->company_name))
+                                    <div class="font-bold text-gray-900 dark:text-white">{{ $client->company_name }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $client->name }}</div>
+                                @else
+                                    <span class="font-medium text-gray-900 dark:text-white">{{ $client->name }}</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 {{ $client->email }}
@@ -146,7 +151,7 @@
                     @endforeach
                     @else
                     <tr>
-                        <td colspan="5"
+                        <td colspan="6"
                             class="text-center px-4 py-3 font-medium text-gray-700 whitespace-nowrap bg-gray-50">
                             <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
                             لا يوجد عملاء لعرضهم.

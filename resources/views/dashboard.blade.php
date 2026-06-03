@@ -6,6 +6,105 @@
 
 <section class="!pl-0 p-3 sm:p-5 space-y-6">
 
+    {{-- ====== كروت فلتر المشاريع ====== --}}
+    <div>
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
+            <i class="fas fa-project-diagram text-blue-600"></i> إحصائيات المشاريع
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+            <a href="{{ route('dashboard.requests.index') }}" class="flex bg-black justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">جميع المشاريع</h1>
+                    <p class="text-2xl text-white">{{ $projectStats['all'] }}</p>
+                </div>
+                <div class="p-5 bg-[#181818] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=جديد" class="flex bg-[#333333] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">طلبات جديدة</h1>
+                    <p class="text-xl text-white">{{ $projectStats['new'] }}</p>
+                </div>
+                <div class="p-5 bg-[#202020] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=تحت الاجراء" class="flex bg-[#595959] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white">تحت الإجراء</h1>
+                    <p class="text-xl text-white">{{ $projectStats['in_progress'] }}</p>
+                </div>
+                <div class="p-5 bg-[#4b4b4b] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=معلقة" class="flex bg-[#808080] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white">طلبات معلقة</h1>
+                    <p class="text-xl text-white">{{ $projectStats['pending'] }}</p>
+                </div>
+                <div class="p-5 bg-[#6b6b6b] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=منتهية" class="flex bg-[#999999] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white">طلبات منتهية</h1>
+                    <p class="text-xl text-white">{{ $projectStats['closed'] }}</p>
+                </div>
+                <div class="p-5 bg-[#858585] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {{-- ====== كروت فلتر الدورات ====== --}}
+    <div>
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
+            <i class="fas fa-graduation-cap text-green-600"></i> إحصائيات الدورات
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="{{ route('dashboard.my_courses.index') }}" class="flex bg-black justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">إجمالي الدورات</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['all'] }}</p>
+                </div>
+                <div class="p-5 bg-[#181818] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=active" class="flex bg-green-700 justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات نشطة</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['active'] }}</p>
+                </div>
+                <div class="p-5 bg-green-800 rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=upcoming" class="flex bg-blue-600 justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات قادمة</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['upcoming'] }}</p>
+                </div>
+                <div class="p-5 bg-blue-700 rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=ended" class="flex bg-[#808080] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات منتهية</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['ended'] }}</p>
+                </div>
+                <div class="p-5 bg-[#6b6b6b] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+        </div>
+    </div>
+
     {{-- ====== كروت المهام ====== --}}
     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
@@ -15,24 +114,32 @@
             </h2>
         </div>
         <div class="p-4 space-y-4">
-            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 auto-rows-fr">
-                @php
-                    $taskCards = [
-                        ['label' => 'الإجمالي', 'value' => $taskStats['total'], 'bg' => 'bg-indigo-900'],
-                        ['label' => 'منتهية', 'value' => $taskStats['completed'], 'bg' => 'bg-green-700'],
-                        ['label' => 'متبقية', 'value' => $taskStats['remaining'], 'bg' => 'bg-slate-600'],
-                        ['label' => 'قيد الإنجاز', 'value' => $taskStats['in_progress'], 'bg' => 'bg-blue-600'],
-                        ['label' => 'متأخرة', 'value' => $taskStats['late'], 'bg' => 'bg-red-600'],
-                        ['label' => 'بالانتظار', 'value' => $taskStats['waiting'], 'bg' => 'bg-amber-600'],
-                    ];
-                @endphp
-                @foreach($taskCards as $card)
-                <div class="{{ $card['bg'] }} text-white rounded-xl p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+            @php
+                $taskFilterCards = [
+                    ['label' => 'منتهية', 'value' => $taskStats['completed'], 'bg' => 'bg-green-700', 'status' => 'منتهية'],
+                    ['label' => 'بالانتظار', 'value' => $taskStats['waiting'], 'bg' => 'bg-amber-600', 'status' => 'بالانتظار'],
+                    ['label' => 'متأخرة', 'value' => $taskStats['late'], 'bg' => 'bg-red-600', 'status' => 'متأخرة'],
+                    ['label' => 'قيد الإنجاز', 'value' => $taskStats['in_progress'], 'bg' => 'bg-blue-600', 'status' => 'قيد الإنجاز'],
+                    ['label' => 'الإجمالي', 'value' => $taskStats['total'], 'bg' => 'bg-indigo-900', 'status' => 'all'],
+                    ['label' => 'متبقية', 'value' => $taskStats['remaining'], 'bg' => 'bg-slate-600', 'status' => 'remaining'],
+                ];
+            @endphp
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                @foreach($taskFilterCards as $card)
+                <a href="{{ route('dashboard', ['task_status' => $card['status']]) }}#tasks-list"
+                    class="{{ $card['bg'] }} text-white rounded-xl p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm hover:opacity-95 transition ring-2 {{ ($taskStatusFilter ?? '') === $card['status'] ? 'ring-white ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800' : 'ring-transparent' }}">
                     <span class="text-[11px] sm:text-xs font-medium opacity-90 leading-tight">{{ $card['label'] }}</span>
                     <span class="text-2xl sm:text-3xl font-black tabular-nums leading-none">{{ $card['value'] }}</span>
-                </div>
+                </a>
                 @endforeach
             </div>
+            @if($taskStatusFilter)
+            <p class="text-xs text-gray-500 flex items-center gap-2">
+                <i class="fas fa-filter"></i>
+                فلتر المهام نشط —
+                <a href="{{ route('dashboard') }}#tasks-list" class="text-blue-600 hover:underline">إلغاء الفلتر</a>
+            </p>
+            @endif
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
                     <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">متوسط سرعة الإنجاز (أيام)</p>
@@ -103,12 +210,12 @@
     @endif
 
     {{-- ====== جميع المهام والمراحل ====== --}}
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div id="tasks-list" class="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                 <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                     <i class="fas fa-tasks text-indigo-600"></i>
-                    جميع المهام
+                    {{ $taskStats['scope_label'] }}
                     <span class="text-sm font-normal text-gray-500">({{ $allTasks->count() }})</span>
                 </h2>
             </div>
@@ -156,7 +263,7 @@
             <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                 <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
                     <i class="fas fa-layer-group text-purple-600"></i>
-                    جميع المراحل
+                    {{ auth()->user()->role === 'admin' ? 'مراحلي' : 'جميع المراحل' }}
                     <span class="text-sm font-normal text-gray-500">({{ $allStages->count() }})</span>
                 </h2>
             </div>

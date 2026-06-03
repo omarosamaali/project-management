@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\Task;
 use App\Models\SpecialRequest;
 use App\Models\Requests as ProjectRequest;
-use App\Services\WhatsAppOTPService;
 use App\Services\ProjectActivityLogger;
 use App\Support\TaskPermissions;
 use Carbon\Carbon;
@@ -45,36 +44,23 @@ class TaskController extends Controller
         TaskPermissions::authorizeManageProject(auth()->user(), $project);
 
         Task::create($validated);
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $request->special_request_id,
-            'user_id' => auth()->id(),
-            'type' => 'file',
-            'description' => 'تم اضافة مهمة جديدة للمشروع',
-        ]);
 
-        // إشعار واتساب لأعضاء المشروع
-        $specialRequest = SpecialRequest::find($request->special_request_id);
-        if ($specialRequest) {
-            $whatsapp = app(WhatsAppOTPService::class);
-            foreach ($specialRequest->partners()->get() as $member) {
-                if ($member->phone) {
-                    try {
-                        $whatsapp->sendNewTaskNotification(
-                            phone: $member->phone,
-                            memberName: $member->name,
-                            taskTitle: $validated['title'],
-                            projectTitle: $specialRequest->title,
-                        );
-                    } catch (\Exception $e) {
-                        \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
-                    }
-                }
-            }
-            try {
-                $whatsapp->notifyManager("تم إضافة مهمة جديدة: ({$validated['title']})", $specialRequest->title);
-            } catch (\Exception $e) {
-                \Log::error("[TASK] فشل إشعار المدير: " . $e->getMessage());
-            }
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            (int) $request->special_request_id,
+            'تم إضافة مهمة جديدة: «'.$validated['title'].'»',
+            'task',
+        );
+
+        if ((int) $validated['user_id'] !== (int) auth()->id()) {
+            $project = SpecialRequest::find($request->special_request_id);
+            \App\Models\AppNotification::notify(
+                (int) $validated['user_id'],
+                $project?->title ?? 'مشروع',
+                'تم إسناد مهمة جديدة إليك: «'.$validated['title'].'»',
+                route('dashboard.special-request.show', $request->special_request_id),
+                'fa-tasks',
+                'info',
+            );
         }
 
         return redirect()->back()->with('success', 'تم إضافة المهمة بنجاح');
@@ -120,69 +106,13 @@ class TaskController extends Controller
 
         $task = Task::create($validated);
 
-        // تسجيل النشاط
-        if (!empty($validated['special_request_id'])) {
-            \App\Models\ProjectActivity::create([
-                'special_request_id' => $validated['special_request_id'],
-                'user_id'            => auth()->id(),
-                'type'               => 'task',
-                'description'        => 'تم إضافة مهمة جديدة: ' . $task->title,
-            ]);
-        }
-
-        // إشعار واتساب لأعضاء المشروع أو الطلب
-        $whatsapp = app(WhatsAppOTPService::class);
+        $logger = app(ProjectActivityLogger::class);
+        $description = 'تم إضافة مهمة جديدة: «'.$task->title.'»';
 
         if (!empty($validated['special_request_id'])) {
-            $specialRequest = SpecialRequest::find($validated['special_request_id']);
-            if ($specialRequest) {
-                $projectTitle = $specialRequest->title;
-                $members = $specialRequest->partners()->get();
-                foreach ($members as $member) {
-                    if ($member->phone) {
-                        try {
-                            $whatsapp->sendNewTaskNotification(
-                                phone: $member->phone,
-                                memberName: $member->name,
-                                taskTitle: $task->title,
-                                projectTitle: $projectTitle,
-                            );
-                        } catch (\Exception $e) {
-                            \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
-                        }
-                    }
-                }
-                try {
-                    $whatsapp->notifyManager("تم إضافة مهمة جديدة: ({$task->title})", $projectTitle);
-                } catch (\Exception $e) {
-                    \Log::error("[TASK] فشل إشعار المدير: " . $e->getMessage());
-                }
-            }
+            $logger->logSpecialRequest((int) $validated['special_request_id'], $description, 'task');
         } elseif (!empty($validated['request_id'])) {
-            $projectRequest = ProjectRequest::find($validated['request_id']);
-            if ($projectRequest) {
-                $projectTitle = $projectRequest->title ?? "طلب #{$projectRequest->id}";
-                $members = $projectRequest->partners()->get();
-                foreach ($members as $member) {
-                    if ($member->phone) {
-                        try {
-                            $whatsapp->sendNewTaskNotification(
-                                phone: $member->phone,
-                                memberName: $member->name,
-                                taskTitle: $task->title,
-                                projectTitle: $projectTitle,
-                            );
-                        } catch (\Exception $e) {
-                            \Log::error("[TASK] فشل إرسال إشعار لـ {$member->name}: " . $e->getMessage());
-                        }
-                    }
-                }
-                try {
-                    $whatsapp->notifyManager("تم إضافة مهمة جديدة: ({$task->title})", $projectTitle);
-                } catch (\Exception $e) {
-                    \Log::error("[TASK] فشل إشعار المدير: " . $e->getMessage());
-                }
-            }
+            $logger->logRequest((int) $validated['request_id'], $description, 'task');
         }
 
         return redirect()->back()->with('success', 'تم إضافة المهمة بنجاح');
@@ -242,14 +172,12 @@ class TaskController extends Controller
         if (!$logger->isTaskCompleted($oldStatus) && $logger->isTaskCompleted($validated['status'])) {
             $logger->logTaskCompleted($task->fresh(), auth()->id());
         } else {
-            try {
-                $whatsapp = app(WhatsAppOTPService::class);
-                $project  = $task->specialRequest ?? $task->request;
-                $title    = $project?->title ?? $project?->system?->name_ar ?? "مهمة #{$task->id}";
-                $statusChanged = $oldStatus !== $validated['status'] ? " (الحالة: {$oldStatus} ← {$validated['status']})" : '';
-                $whatsapp->notifyManager("تم تعديل المهمة: ({$task->title}){$statusChanged}", $title);
-            } catch (\Exception $e) {
-                \Log::error("[TASK_UPDATE] فشل إشعار المدير: " . $e->getMessage());
+            $statusChanged = $oldStatus !== $validated['status'] ? " (الحالة: {$oldStatus} → {$validated['status']})" : '';
+            $description = 'تم تعديل المهمة: «'.$task->title.'»'.$statusChanged;
+            if ($task->special_request_id) {
+                $logger->logSpecialRequest($task->special_request_id, $description, 'task');
+            } elseif ($task->request_id) {
+                $logger->logRequest($task->request_id, $description, 'task');
             }
         }
 
@@ -311,7 +239,20 @@ class TaskController extends Controller
     {
         TaskPermissions::authorizeManage(auth()->user(), $task);
 
+        $title = $task->title;
+        $specialId = $task->special_request_id;
+        $requestId = $task->request_id;
+
         $task->delete();
+
+        $logger = app(ProjectActivityLogger::class);
+        $description = 'تم حذف المهمة: «'.$title.'»';
+        if ($specialId) {
+            $logger->logSpecialRequest($specialId, $description, 'task');
+        } elseif ($requestId) {
+            $logger->logRequest($requestId, $description, 'task');
+        }
+
         return redirect()->back()->with('success', 'تم حذف المهمة بنجاح');
     }
 }

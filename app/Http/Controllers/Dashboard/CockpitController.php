@@ -13,18 +13,22 @@ use App\Models\SpecialRequestPartner;
 use App\Models\Task;
 use App\Support\CockpitMetrics;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class CockpitController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $user = auth()->user();
         [$requestIds, $specialIds] = $this->accessibleProjectIds($user);
 
         $taskStats = CockpitMetrics::taskStatsFor($user, $requestIds, $specialIds);
+        $projectStats = CockpitMetrics::projectStatsFor($user);
+        $courseStats = CockpitMetrics::courseStatsFor($user);
         $attendanceStats = CockpitMetrics::attendanceStatsFor($user);
+        $taskStatusFilter = $request->query('task_status');
 
         $notifications = AppNotification::where('user_id', $user->id)
             ->where('is_read', false)
@@ -32,15 +36,18 @@ class CockpitController extends Controller
             ->take(10)
             ->get();
 
-        $allTasks = $this->loadAllTasks($user, $requestIds, $specialIds);
+        $allTasks = $this->loadAllTasks($user, $requestIds, $specialIds, $taskStatusFilter);
         $allStages = $this->loadAllStages($user, $requestIds, $specialIds);
 
         return view('dashboard', compact(
             'taskStats',
+            'projectStats',
+            'courseStats',
             'attendanceStats',
             'notifications',
             'allTasks',
             'allStages',
+            'taskStatusFilter',
         ));
     }
 
@@ -70,16 +77,14 @@ class CockpitController extends Controller
         ];
     }
 
-    private function loadAllTasks($user, array $requestIds, array $specialIds): Collection
+    private function loadAllTasks($user, array $requestIds, array $specialIds, ?string $statusFilter = null): Collection
     {
         $query = Task::with(['user', 'specialRequest', 'request.system', 'stage', 'requestStage']);
 
         if ($user->role === 'admin') {
-            return $query->orderByDesc('updated_at')->get();
-        }
-
-        return $query
-            ->where(function ($q) use ($requestIds, $specialIds) {
+            $query->where('user_id', $user->id);
+        } else {
+            $query->where(function ($q) use ($requestIds, $specialIds) {
                 if (!empty($specialIds)) {
                     $q->whereIn('special_request_id', $specialIds);
                 }
@@ -89,9 +94,20 @@ class CockpitController extends Controller
                 if (empty($specialIds) && empty($requestIds)) {
                     $q->whereRaw('0 = 1');
                 }
-            })
-            ->orderByDesc('updated_at')
-            ->get();
+            });
+        }
+
+        if ($statusFilter !== null && $statusFilter !== '') {
+            if ($statusFilter === 'all') {
+                // no filter
+            } elseif ($statusFilter === 'remaining') {
+                $query->where('status', '!=', 'منتهية');
+            } else {
+                $query->where('status', $statusFilter);
+            }
+        }
+
+        return $query->orderByDesc('updated_at')->get();
     }
 
     private function loadAllStages($user, array $requestIds, array $specialIds): Collection
@@ -101,7 +117,28 @@ class CockpitController extends Controller
         $projectStagesQuery = ProjectStage::with('specialRequest');
         $requestStagesQuery = RequestStage::with('request.system');
 
-        if ($user->role !== 'admin') {
+        if ($user->role === 'admin') {
+            $projectStageIds = Task::where('user_id', $user->id)
+                ->whereNotNull('project_stage_id')
+                ->distinct()
+                ->pluck('project_stage_id');
+            $requestStageIds = Task::where('user_id', $user->id)
+                ->whereNotNull('request_stage_id')
+                ->distinct()
+                ->pluck('request_stage_id');
+
+            if ($projectStageIds->isEmpty()) {
+                $projectStagesQuery->whereRaw('0 = 1');
+            } else {
+                $projectStagesQuery->whereIn('id', $projectStageIds);
+            }
+
+            if ($requestStageIds->isEmpty()) {
+                $requestStagesQuery->whereRaw('0 = 1');
+            } else {
+                $requestStagesQuery->whereIn('id', $requestStageIds);
+            }
+        } else {
             if (!empty($specialIds)) {
                 $projectStagesQuery->whereIn('special_request_id', $specialIds);
             } else {

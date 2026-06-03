@@ -2,14 +2,102 @@
 
 namespace App\Support;
 
+use App\Models\PartnerSystem;
+use App\Models\Payment;
+use App\Models\Requests;
+use App\Models\SpecialRequest;
+use App\Models\SpecialRequestPartner;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\WorkTime;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class CockpitMetrics
 {
+    /**
+     * @return array{0: \Illuminate\Database\Eloquent\Builder, 1: \Illuminate\Database\Eloquent\Builder}
+     */
+    public static function projectQueriesFor(User $user): array
+    {
+        if ($user->role === 'admin') {
+            return [Requests::query(), SpecialRequest::query()];
+        }
+
+        if ($user->role === 'partner') {
+            $systemIds = PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
+            $assignedIds = SpecialRequestPartner::where('partner_id', $user->id)
+                ->whereNotNull('special_request_id')
+                ->pluck('special_request_id');
+
+            return [
+                Requests::whereIn('system_id', $systemIds),
+                SpecialRequest::whereIn('id', $assignedIds),
+            ];
+        }
+
+        $reqIds = DB::table('request_clients')->where('user_id', $user->id)->pluck('request_id');
+        $specialIds = DB::table('special_request_clients')->where('user_id', $user->id)->pluck('special_request_id');
+
+        return [
+            Requests::whereIn('id', $reqIds),
+            SpecialRequest::whereIn('id', $specialIds),
+        ];
+    }
+
+    public static function projectStatsFor(User $user): array
+    {
+        [$baseReq, $baseSpecial] = self::projectQueriesFor($user);
+
+        $newStatusesRequests = ['new', 'جديد'];
+        $underProcessStatusesRequests = ['in_progress', 'تحت الاجراء', 'waiting_client'];
+        $pendingStatusesRequests = ['pending', 'معلقة', 'suspended'];
+        $closedStatusesRequests = ['closed', 'completed', 'منتهية'];
+
+        $newStatusesSpecial = ['pending', 'جديد'];
+        $underProcessStatusesSpecial = ['in_progress', 'تحت الاجراء', 'active', 'in_review'];
+        $pendingStatusesSpecial = ['معلقة', 'بانتظار الدفع', 'بانتظار عروض الاسعار'];
+        $closedStatusesSpecial = ['completed', 'canceled', 'منتهية'];
+
+        return [
+            'all' => (clone $baseReq)->count() + (clone $baseSpecial)->count(),
+            'new' => (clone $baseReq)->whereIn('status', $newStatusesRequests)->count()
+                + (clone $baseSpecial)->whereIn('status', $newStatusesSpecial)->count(),
+            'in_progress' => (clone $baseReq)->whereIn('status', $underProcessStatusesRequests)->count()
+                + (clone $baseSpecial)->whereIn('status', $underProcessStatusesSpecial)->count(),
+            'pending' => (clone $baseReq)->whereIn('status', $pendingStatusesRequests)->count()
+                + (clone $baseSpecial)->whereIn('status', $pendingStatusesSpecial)->count(),
+            'closed' => (clone $baseReq)->whereIn('status', $closedStatusesRequests)->count()
+                + (clone $baseSpecial)->whereIn('status', $closedStatusesSpecial)->count(),
+        ];
+    }
+
+    public static function courseStatsFor(User $user): array
+    {
+        $now = Carbon::now();
+        $payments = Payment::where('user_id', $user->id)
+            ->whereNotNull('course_id')
+            ->with('course')
+            ->get();
+
+        $withCourse = $payments->filter(fn ($p) => $p->course !== null);
+
+        return [
+            'all' => $withCourse->count(),
+            'active' => $withCourse->filter(fn ($p) => $now->between(
+                Carbon::parse($p->course->start_date)->startOfDay(),
+                Carbon::parse($p->course->end_date)->endOfDay()
+            ))->count(),
+            'upcoming' => $withCourse->filter(fn ($p) => $now->lt(
+                Carbon::parse($p->course->start_date)->startOfDay()
+            ))->count(),
+            'ended' => $withCourse->filter(fn ($p) => $now->gt(
+                Carbon::parse($p->course->end_date)->endOfDay()
+            ))->count(),
+        ];
+    }
+
     /**
      * مهام المستخدم (مسؤول عنها) ضمن المشاريع المتاحة.
      */
@@ -32,12 +120,12 @@ class CockpitMetrics
         }
 
         if ($user->role === 'admin') {
-            $tasks = $query->get();
+            $tasks = $query->where('user_id', $user->id)->get();
         } else {
             $tasks = $query->where('user_id', $user->id)->get();
         }
 
-        return self::buildTaskStats($tasks, $user->role === 'admin');
+        return self::buildTaskStats($tasks, false);
     }
 
     private static function buildTaskStats(Collection $tasks, bool $isAdminScope): array

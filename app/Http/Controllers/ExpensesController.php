@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expenses;
+use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -29,12 +30,13 @@ class ExpensesController extends Controller
         $validated['user_id'] = Auth::user()->id;
 
         Expenses::create($validated);
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $request->special_request_id,
-            'user_id' => auth()->id(),
-            'type' => 'file', // أو status, invoice, etc
-            'description' => 'تم اضافة مصروف جديد',
-        ]);
+
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            (int) $request->special_request_id,
+            'تم إضافة مصروف جديد: «'.$validated['title'].'» ('.$validated['price'].' جنيه)',
+            'expense',
+        );
+
         return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
     }
     public function storeRequest(Request $request)
@@ -56,12 +58,13 @@ class ExpensesController extends Controller
         $validated['user_id'] = Auth::user()->id;
 
         Expenses::create($validated);
-        \App\Models\ProjectActivity::create([
-            'request_id' => $request->request_id,
-            'user_id' => auth()->id(),
-            'type' => 'file', // أو status, invoice, etc
-            'description' => 'تم اضافة مصروف جديد',
-        ]);
+
+        app(ProjectActivityLogger::class)->logRequest(
+            (int) $request->request_id,
+            'تم إضافة مصروف جديد: «'.$validated['title'].'» ('.$validated['price'].' جنيه)',
+            'expense',
+        );
+
         return redirect()->back()->with('success', 'تم إضافة المصروف بنجاح');
     }
     
@@ -89,18 +92,34 @@ class ExpensesController extends Controller
 
         $expense->update($validated);
 
+        $description = 'تم تعديل مصروف: «'.$expense->title.'»';
+        if ($expense->special_request_id) {
+            app(ProjectActivityLogger::class)->logSpecialRequest($expense->special_request_id, $description, 'expense');
+        } elseif ($expense->request_id) {
+            app(ProjectActivityLogger::class)->logRequest($expense->request_id, $description, 'expense');
+        }
+
         return redirect()->back()->with('success', 'تم تحديث بيانات المصروف');
     }
 
-    // حذف مصروف
     public function destroy(Expenses $expense)
     {
-        // حذف الصورة من التخزين قبل حذف السجل
         if ($expense->image) {
             Storage::disk('public')->delete($expense->image);
         }
 
+        $title = $expense->title;
+        $specialId = $expense->special_request_id;
+        $requestId = $expense->request_id;
+
         $expense->delete();
+
+        $description = 'تم حذف مصروف: «'.$title.'»';
+        if ($specialId) {
+            app(ProjectActivityLogger::class)->logSpecialRequest($specialId, $description, 'expense');
+        } elseif ($requestId) {
+            app(ProjectActivityLogger::class)->logRequest($requestId, $description, 'expense');
+        }
 
         return redirect()->back()->with('success', 'تم حذف المصروف بنجاح');
     }

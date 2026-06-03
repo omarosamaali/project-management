@@ -155,12 +155,15 @@ class SpecialRequestController extends Controller
 
         $SpecialRequest->load([
             'clients',
+            'partners',
             'tasks',
             'stages',
             'issues.user',
             'issues.comments.user',
             'projectMeetings.participants',
             'activities.user',
+            'projectApprovals.user',
+            'projectApprovals.approvers',
         ]);
 
         $assignedPartnerIds = $SpecialRequest->partners()->pluck('partner_id')->toArray();
@@ -308,15 +311,14 @@ class SpecialRequestController extends Controller
                         'fixed_amount'            => $type === 'fixed' ? (float)$request->fixed_amount[$partnerId] : 0,
                         'notes'                   => $request->notes,
                     ]);
-
-                    \App\Models\ProjectActivity::create([
-                        'special_request_id' => $specialRequest->id,
-                        'user_id'            => auth()->id(),
-                        'type'               => 'file',
-                        'description'        => 'تم إسناد شريك جديد للمشروع وتحديث حالة الطلب',
-                    ]);
                 }
             });
+
+            app(ProjectActivityLogger::class)->logSpecialRequest(
+                $specialRequest->fresh(),
+                'تم إسناد شركاء جديدين للمشروع وتحديث حالة الطلب',
+                'team',
+            );
 
             return redirect()->route('dashboard.special-request.show', $specialRequest)
                 ->with('success', 'تم إسناد الشركاء وتحديث حالة المشروع بنجاح.');
@@ -415,17 +417,16 @@ class SpecialRequestController extends Controller
                             'notes'                   => $request->notes,
                         ]);
 
-                        RequestActivity::create([
-                            'request_id'  => $specialRequest->id,
-                            'user_id'     => auth()->id(),
-                            'type'        => 'system',
-                            'description' => $type === 'percentage'
-                                ? 'تم إسناد شريك جديد بنسبة ' . ($request->profit_share_percentage[$partnerId] ?? 0) . '%'
-                                : 'تم إسناد شريك جديد بمبلغ ثابت ' . number_format((float) ($request->fixed_amount[$partnerId] ?? 0), 2) . ' جنيه',
-                        ]);
                     }
                 }
             });
+
+            app(ProjectActivityLogger::class)->logRequest(
+                $specialRequest,
+                'تم إسناد شركاء جديدين للطلب',
+                'team',
+            );
+
             return redirect()->route('dashboard.requests.show', $specialRequest->id)
                 ->with('success', 'تمت عملية الإسناد وتخزين الشركاء بنجاح.');
         } catch (\Exception $e) {
@@ -474,53 +475,11 @@ class SpecialRequestController extends Controller
 
         $specialRequest->update(['status' => 'active']);
 
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $specialRequest->id,
-            'user_id' => auth()->id(),
-            'type' => 'stage_added',
-            'description' => "تم إضافة مرحلة جديدة: {$data['title']} وتحديث حالة المشروع إلى جاري العمل به",
-        ]);
-
-        // إرسال إشعار واتساب لكل أعضاء فريق المشروع
-        $whatsapp = app(WhatsAppOTPService::class);
-        $members = $specialRequest->partners()->get();
-
-        \Log::info("[STAGE] بدء إرسال إشعارات المرحلة الجديدة", [
-            'special_request_id' => $specialRequest->id,
-            'stage_title'        => $data['title'],
-            'members_count'      => $members->count(),
-            'members'            => $members->map(fn($m) => ['id' => $m->id, 'name' => $m->name, 'phone' => $m->phone])->toArray(),
-        ]);
-
-        foreach ($members as $member) {
-            if ($member->phone) {
-                try {
-                    $result = $whatsapp->sendNewStageNotification(
-                        phone: $member->phone,
-                        memberName: $member->name,
-                        stageName: $data['title'],
-                        projectTitle: $specialRequest->title,
-                    );
-                    \Log::info("[STAGE] إرسال إشعار لـ {$member->name}", [
-                        'phone'  => $member->phone,
-                        'result' => $result ? 'نجح ✓' : 'فشل ✗',
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::error("[STAGE] استثناء عند إرسال إشعار لـ {$member->name}", [
-                        'phone' => $member->phone,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            } else {
-                \Log::warning("[STAGE] العضو {$member->name} (id={$member->id}) ليس لديه رقم هاتف");
-            }
-        }
-
-        try {
-            $whatsapp->notifyManager("تم إضافة مرحلة جديدة: ({$data['title']})", $specialRequest->title);
-        } catch (\Exception $e) {
-            \Log::error("[STAGE] فشل إشعار المدير: " . $e->getMessage());
-        }
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            $specialRequest,
+            'تم إضافة مرحلة جديدة: «'.$data['title'].'» وتحديث حالة المشروع',
+            'stage_added',
+        );
 
         return back()->with('success', 'تمت إضافة المرحلة بنجاح وتنشيط المشروع');
     }
@@ -542,15 +501,12 @@ class SpecialRequestController extends Controller
         if (!$logger->isStageCompleted($oldStatus) && $logger->isStageCompleted($data['status'])) {
             $logger->logStageCompleted($stage->fresh(), auth()->id());
         } else {
-            try {
-                $whatsapp    = app(WhatsAppOTPService::class);
-                $project     = $stage->specialRequest;
-                $projectTitle = $project->title ?? "مشروع #{$stage->special_request_id}";
-                $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
-                $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
-            } catch (\Exception $e) {
-                \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
-            }
+            $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} → {$data['status']})" : '';
+            $logger->logSpecialRequest(
+                $stage->special_request_id,
+                'تم تحديث المرحلة: «'.$stage->title.'»'.$statusChanged,
+                'stage',
+            );
         }
 
         return back()->with('success', 'تم تحديث المرحلة بنجاح');
@@ -573,15 +529,12 @@ class SpecialRequestController extends Controller
         if (!$logger->isStageCompleted($oldStatus) && $logger->isStageCompleted($data['status'])) {
             $logger->logStageCompleted($stage->fresh(), auth()->id());
         } else {
-            try {
-                $whatsapp     = app(WhatsAppOTPService::class);
-                $project      = $stage->request;
-                $projectTitle = $project->system?->name_ar ?? "طلب #{$stage->request_id}";
-                $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} ← {$data['status']})" : '';
-                $whatsapp->notifyManager("تم تحديث المرحلة: ({$stage->title}){$statusChanged}", $projectTitle);
-            } catch (\Exception $e) {
-                \Log::error("[STAGE_UPDATE] فشل إشعار المدير: " . $e->getMessage());
-            }
+            $statusChanged = $oldStatus !== $data['status'] ? " (الحالة: {$oldStatus} → {$data['status']})" : '';
+            $logger->logRequest(
+                $stage->request_id,
+                'تم تحديث المرحلة: «'.$stage->title.'»'.$statusChanged,
+                'stage',
+            );
         }
 
         return back()->with('success', 'تم تحديث المرحلة بنجاح');
@@ -596,7 +549,15 @@ class SpecialRequestController extends Controller
             return back()->with('error', 'لا يمكن حذف هذه المرحلة لأنها تحتوي على ' . $stage->tasks()->count() . ' مهمة مرتبطة بها. قم بحذف المهام أولاً.');
         }
 
+        $title = $stage->title;
+        $projectId = $stage->special_request_id;
         $stage->delete();
+
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            $projectId,
+            'تم حذف مرحلة: «'.$title.'»',
+            'stage',
+        );
 
         return back()->with('success', 'تم حذف المرحلة بنجاح');
     }
@@ -610,7 +571,15 @@ class SpecialRequestController extends Controller
             return back()->with('error', 'لا يمكن حذف هذه المرحلة لأنها تحتوي على ' . $stage->tasks()->count() . ' مهمة مرتبطة بها. قم بحذف المهام أولاً.');
         }
 
+        $title = $stage->title;
+        $requestId = $stage->request_id;
         $stage->delete();
+
+        app(ProjectActivityLogger::class)->logRequest(
+            $requestId,
+            'تم حذف مرحلة: «'.$title.'»',
+            'stage',
+        );
 
         return back()->with('success', 'تم حذف المرحلة بنجاح');
     }
@@ -652,24 +621,11 @@ class SpecialRequestController extends Controller
             'visible_to_client' => $request->has('visible_to_client'),
         ]);
 
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $special_request->id,
-            'user_id' => auth()->id(),
-            'type' => 'file',
-            'description' => 'تم إضافة ملاحظة جديدة للمشروع: ' . $data['title'],
-        ]);
-
-        try {
-            $whatsapp = app(WhatsAppOTPService::class);
-            foreach ($special_request->partners()->get() as $member) {
-                if ($member->phone) {
-                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تمت إضافة ملاحظة جديدة: ({$data['title']})", $special_request->title);
-                }
-            }
-            $whatsapp->notifyManager("تمت إضافة ملاحظة جديدة: ({$data['title']})", $special_request->title);
-        } catch (\Exception $e) {
-            \Log::error("[NOTE_NOTIFY] " . $e->getMessage());
-        }
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            $special_request,
+            'تم إضافة ملاحظة جديدة: «'.$data['title'].'»',
+            'note',
+        );
 
         return back()->with('success', 'تمت إضافة الملاحظة بنجاح');
     }
@@ -690,6 +646,14 @@ class SpecialRequestController extends Controller
 
         $note->update($data);
 
+        if ($note->special_request_id) {
+            app(ProjectActivityLogger::class)->logSpecialRequest(
+                $note->special_request_id,
+                'تم تعديل ملاحظة: «'.$note->title.'»',
+                'note',
+            );
+        }
+
         return back()->with('success', 'تم تحديث الملاحظة بنجاح');
     }
 
@@ -699,7 +663,18 @@ class SpecialRequestController extends Controller
             abort(403, 'غير مصرح لك بحذف هذه الملاحظة');
         }
 
+        $title = $note->title;
+        $projectId = $note->special_request_id;
+
         $note->delete();
+
+        if ($projectId) {
+            app(ProjectActivityLogger::class)->logSpecialRequest(
+                $projectId,
+                'تم حذف ملاحظة: «'.$title.'»',
+                'note',
+            );
+        }
 
         return back()->with('success', 'تم حذف الملاحظة بنجاح');
     }
@@ -717,24 +692,12 @@ class SpecialRequestController extends Controller
         $data['visible_to_client'] = $request->has('visible_to_client') ? true : false;
 
         $specialRequest->notes()->create($data);
-        RequestActivity::create([
-            'request_id' => $specialRequest->id,
-            'user_id' => auth()->id(),
-            'type' => 'file',
-            'description' => 'تم اضافة ملاحظة جديدة للمشروع',
-        ]);
 
-        try {
-            $whatsapp = app(WhatsAppOTPService::class);
-            foreach ($specialRequest->partners()->get() as $member) {
-                if ($member->phone) {
-                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تمت إضافة ملاحظة جديدة: ({$data['title']})", $specialRequest->title ?? "طلب #{$specialRequest->id}");
-                }
-            }
-            $whatsapp->notifyManager("تمت إضافة ملاحظة جديدة: ({$data['title']})", $specialRequest->title ?? "طلب #{$specialRequest->id}");
-        } catch (\Exception $e) {
-            \Log::error("[NOTE_NOTIFY] " . $e->getMessage());
-        }
+        app(ProjectActivityLogger::class)->logRequest(
+            $specialRequest,
+            'تم إضافة ملاحظة جديدة: «'.$data['title'].'»',
+            'note',
+        );
 
         return back()->with('success', 'تمت إضافة الملاحظة بنجاح');
     }

@@ -3,14 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Meeting;
-use App\Models\ProjectActivity;
+use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 
 class MeetingController extends Controller
 {
     public function store(Request $request)
     {
-        // 1. إنشاء الاجتماع
         $meeting = Meeting::create([
             'special_request_id' => $request->special_request_id,
             'created_by' => auth()->id(),
@@ -20,9 +19,16 @@ class MeetingController extends Controller
             'end_at' => $request->end_at,
         ]);
 
-        // 2. ربط الحضور في جدول meeting_participants (هنا السر)
         if ($request->has('attendees')) {
             $meeting->participants()->attach($request->attendees);
+        }
+
+        if ($request->special_request_id) {
+            app(ProjectActivityLogger::class)->logSpecialRequest(
+                (int) $request->special_request_id,
+                'تم جدولة اجتماع: «'.$request->title.'»',
+                'meeting',
+            );
         }
 
         return back()->with('success', 'تم جدولة الاجتماع وإرسال الدعوات');
@@ -44,16 +50,36 @@ class MeetingController extends Controller
             'meeting_link' => 'nullable|url',
             'start_at' => 'required',
             'end_at' => 'required|after:start_at',
-        ], $messages); // تمرير الرسائل هنا
+        ], $messages);
 
         $meeting->update($data);
+
+        if ($meeting->special_request_id) {
+            app(ProjectActivityLogger::class)->logSpecialRequest(
+                $meeting->special_request_id,
+                'تم تعديل اجتماع: «'.$meeting->title.'»',
+                'meeting',
+            );
+        }
 
         return back()->with('success', 'تم تحديث الاجتماع بنجاح');
     }
 
     public function destroy(Meeting $meeting)
     {
+        $title = $meeting->title;
+        $projectId = $meeting->special_request_id;
+
         $meeting->delete();
+
+        if ($projectId) {
+            app(ProjectActivityLogger::class)->logSpecialRequest(
+                $projectId,
+                'تم حذف اجتماع: «'.$title.'»',
+                'meeting',
+            );
+        }
+
         return back()->with('success', 'تم حذف الاجتماع');
     }
 }

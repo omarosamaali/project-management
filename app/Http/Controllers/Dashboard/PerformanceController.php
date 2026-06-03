@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Models\Performance;
+use App\Models\EmployeeAdjustment;
+use App\Models\WorkTime;
+use App\Support\UserPerformanceStats;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\WorkTime;
-use App\Models\EmployeeAdjustment;
-use Carbon\Carbon;
 
 class PerformanceController extends Controller
 {
@@ -34,25 +34,15 @@ class PerformanceController extends Controller
         $financials = EmployeeAdjustment::where('user_id', $userId)
             ->whereBetween('date', [$startOfMonth, $endOfMonth])
             ->selectRaw('
-            SUM(CASE WHEN type = "bonus" THEN amount ELSE 0 END) as total_bonuses,
-            SUM(CASE WHEN type = "deduction" THEN amount ELSE 0 END) as total_deductions
-        ')->first();
-
-        $latestPerformance = Performance::where('user_id', $userId)->latest('performance_date')->first()
-            ?? new Performance(['total_score' => 0]);
-
-        $weeklyData = Performance::where('user_id', $userId)
-            ->where('performance_date', '>=', Carbon::now()->subDays(7))
-            ->orderBy('performance_date')->get();
-
-        $averages = Performance::where('user_id', $userId)
-            ->selectRaw('SUM(support_tickets_closed) as total_support, SUM(completed_tasks) as total_tasks')
+                SUM(CASE WHEN type = "bonus" THEN amount ELSE 0 END) as total_bonuses,
+                SUM(CASE WHEN type = "deduction" THEN amount ELSE 0 END) as total_deductions
+            ')
             ->first();
 
+        $stats = UserPerformanceStats::forUser($userId)->build();
+
         return view('dashboard.performance.show', compact(
-            'latestPerformance',
-            'weeklyData',
-            'averages',
+            'stats',
             'totalLateMinutes',
             'financials',
             'workStats'

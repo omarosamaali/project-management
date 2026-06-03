@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProjectMeeting;
 use App\Models\SpecialRequest;
 use App\Models\Requests as ProjectRequest;
-use App\Services\WhatsAppOTPService;
+use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 use App\Models\ProjectProposal;
 
@@ -46,30 +46,12 @@ class ProjectMeetingController extends Controller
 
         $meeting->participants()->attach($validated['attendees'], ['status' => 'pending']);
 
-        // إشعار أعضاء المشروع
-        try {
-            $whatsapp = app(WhatsAppOTPService::class);
-            if ($request->filled('special_request_id')) {
-                $project = SpecialRequest::find($request->special_request_id);
-                $members = collect()
-                    ->merge($project?->partners ?? [])
-                    ->merge($project?->allProjectClients() ?? []);
-                $title = $project?->title ?? '';
-            } else {
-                $project = ProjectRequest::find($request->request_id);
-                $members = collect()
-                    ->merge($project?->partners ?? [])
-                    ->merge($project?->allProjectClients() ?? []);
-                $title = $project?->system?->name_ar ?? "طلب #{$request->request_id}";
-            }
-            $members = $members->unique('id');
-            foreach ($members as $member) {
-                if ($member->phone) {
-                    $whatsapp->sendProjectNotification($member->phone, $member->name, "تم جدولة اجتماع جديد: ({$validated['title']})", $title, $member->email ?? null);
-                }
-            }
-        } catch (\Exception $e) {
-            \Log::error("[MEETING_NOTIFY] " . $e->getMessage());
+        $description = 'تم جدولة اجتماع جديد: «'.$validated['title'].'»';
+        $logger = app(ProjectActivityLogger::class);
+        if ($request->filled('special_request_id')) {
+            $logger->logSpecialRequest((int) $request->special_request_id, $description, 'meeting');
+        } elseif ($request->filled('request_id')) {
+            $logger->logRequest((int) $request->request_id, $description, 'meeting');
         }
 
         return back()->with('success', 'تم جدولة الاجتماع بنجاح');
@@ -77,7 +59,20 @@ class ProjectMeetingController extends Controller
     // يجب أن يكون الاسم هنا أيضاً $meeting ليطابق الراوت
     public function destroy(ProjectMeeting $meeting)
     {
+        $title = $meeting->title;
+        $specialId = $meeting->special_request_id;
+        $requestId = $meeting->request_id;
+
         $meeting->delete();
+
+        $description = 'تم حذف اجتماع: «'.$title.'»';
+        $logger = app(ProjectActivityLogger::class);
+        if ($specialId) {
+            $logger->logSpecialRequest($specialId, $description, 'meeting');
+        } elseif ($requestId) {
+            $logger->logRequest($requestId, $description, 'meeting');
+        }
+
         return back()->with('success', 'تم الحذف');
     }
 
@@ -101,6 +96,14 @@ class ProjectMeetingController extends Controller
         // تحديث قائمة الحضور في الجدول الوسيط
         if ($request->has('attendees')) {
             $meeting->participants()->sync($request->attendees);
+        }
+
+        $description = 'تم تعديل اجتماع: «'.$meeting->title.'»';
+        $logger = app(ProjectActivityLogger::class);
+        if ($meeting->special_request_id) {
+            $logger->logSpecialRequest($meeting->special_request_id, $description, 'meeting');
+        } elseif ($meeting->request_id) {
+            $logger->logRequest($meeting->request_id, $description, 'meeting');
         }
 
         return back()->with('success', 'تم تحديث بيانات الاجتماع.');

@@ -30,8 +30,21 @@ class IssueCommentController extends Controller
 
         IssueComment::create($data);
 
-        // تم إزالة كود تحديث الحالة إلى "discussing" بناءً على طلبك
-        // الحالة ستبقى كما هي حتى يتم الضغط على "اختيار كحل"
+        $preview = mb_substr($data['comment'], 0, 80);
+        $description = 'تعليق جديد على المعوق «'.$issue->title.'»: «'.$preview.'»';
+        if ($issue->special_request_id) {
+            app(\App\Services\ProjectActivityLogger::class)->logSpecialRequest(
+                $issue->special_request_id,
+                $description,
+                'issue',
+            );
+        } elseif ($issue->request_id) {
+            app(\App\Services\ProjectActivityLogger::class)->logRequest(
+                $issue->request_id,
+                $description,
+                'issue',
+            );
+        }
 
         return back()->with('success', 'تم إضافة التعليق');
     }
@@ -60,13 +73,19 @@ class IssueCommentController extends Controller
         // تحديث علامة الحل في التعليق
         $comment->update(['is_solution' => true]);
 
-        // تسجيل النشاط
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $issue->special_request_id,
-            'user_id' => auth()->id(),
-            'type' => 'status',
-            'description' => 'تم حل المشكلة: ' . $issue->title,
-        ]);
+        if ($issue->special_request_id) {
+            app(\App\Services\ProjectActivityLogger::class)->logSpecialRequest(
+                $issue->special_request_id,
+                'تم حل المشكلة: «'.$issue->title.'»',
+                'issue',
+            );
+        } elseif ($issue->request_id) {
+            app(\App\Services\ProjectActivityLogger::class)->logRequest(
+                $issue->request_id,
+                'تم حل المشكلة: «'.$issue->title.'»',
+                'issue',
+            );
+        }
 
         return back()->with('success', 'تم تحديد التعليق كحل للمشكلة');
     }

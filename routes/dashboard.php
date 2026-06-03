@@ -206,6 +206,12 @@ Route::middleware('auth')->group(function () {
     Route::put('/project-files/{file}', [ProjectFileController::class, 'update'])->name('files.update');
     Route::delete('/project-files/{file}', [ProjectFileController::class, 'destroy'])->name('files.destroy');
 
+    // Project Approvals
+    Route::post('/project-approvals/store', [\App\Http\Controllers\ProjectApprovalController::class, 'store'])->name('approvals.store');
+    Route::put('/project-approvals/{approval}', [\App\Http\Controllers\ProjectApprovalController::class, 'update'])->name('approvals.update');
+    Route::post('/project-approvals/{approval}/approve', [\App\Http\Controllers\ProjectApprovalController::class, 'approve'])->name('approvals.approve');
+    Route::delete('/project-approvals/{approval}', [\App\Http\Controllers\ProjectApprovalController::class, 'destroy'])->name('approvals.destroy');
+
     // Issues
     Route::post('/issues/store', [IssueController::class, 'store'])->name('issues.store');
     Route::post('/issues-request/store', [IssueController::class, 'storeRequest'])->name('issues-request.store');

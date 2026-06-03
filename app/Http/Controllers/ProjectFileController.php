@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProjectFile;
-use App\Models\SpecialRequest;
-use App\Services\WhatsAppOTPService;
+use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -27,38 +26,43 @@ class ProjectFileController extends Controller
             'file_path' => $path,
             'file_type' => $request->file('file')->getClientOriginalExtension(),
         ]);
-        \App\Models\ProjectActivity::create([
-            'special_request_id' => $request->special_request_id,
-            'user_id' => auth()->id(),
-            'type' => 'file',
-            'description' => 'تم رفع ملف جديد للمشروع',
-        ]);
-        try {
-            $project = SpecialRequest::find($request->special_request_id);
-            if ($project) {
-                $whatsapp = app(WhatsAppOTPService::class);
-                foreach ($project->partners()->get() as $member) {
-                    if ($member->phone) {
-                        $whatsapp->sendProjectNotification($member->phone, $member->name, "تم رفع ملف جديد: ({$request->title})", $project->title);
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            \Log::error("[FILE_NOTIFY] " . $e->getMessage());
-        }
+
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            (int) $request->special_request_id,
+            'تم رفع ملف جديد: «'.$request->title.'»',
+            'file',
+        );
+
         return back()->with('success', 'تم رفع الملف بنجاح');
     }
 
     public function update(Request $request, ProjectFile $file)
     {
         $file->update($request->only('title', 'description'));
+
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            $file->special_request_id,
+            'تم تعديل ملف: «'.$file->title.'»',
+            'file',
+        );
+
         return back()->with('success', 'تم تحديث البيانات');
     }
 
     public function destroy(ProjectFile $file)
     {
+        $title = $file->title;
+        $projectId = $file->special_request_id;
+
         Storage::disk('public')->delete($file->file_path);
         $file->delete();
+
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            $projectId,
+            'تم حذف ملف: «'.$title.'»',
+            'file',
+        );
+
         return back()->with('success', 'تم حذف الملف');
     }
 }

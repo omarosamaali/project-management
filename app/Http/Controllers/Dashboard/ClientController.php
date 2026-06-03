@@ -13,12 +13,17 @@ class ClientController extends Controller
     // Index Method
     public function index(Request $request)
     {
-        $search = $request->input('search');
-        if ($search) {
-            $clients = User::where('role', 'client')->where('name', 'LIKE', '%' . $search . '%')->latest()->paginate(8);
-        } else {
-            $clients = User::where('role', 'client')->latest()->paginate(8);
-        }
+        $search = trim((string) $request->input('search', ''));
+        $clients = User::where('role', 'client')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('company_name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            })
+            ->latest()
+            ->paginate(8);
         return view('dashboard.clients.index', compact('clients'));
     }
 
