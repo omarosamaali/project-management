@@ -267,7 +267,7 @@ class WhatsAppOTPService
     }
 
     /**
-     * إشعار فوري بالخصم/المكافأة للموظف والإدارة (واتساب + بريد مباشرة).
+     * إشعار فوري بالخصم/المكافأة — واتساب فقط (الإيميل معطّل مؤقتاً).
      *
      * @return array{employee_whatsapp: bool, employee_email: bool, manager: bool}
      */
@@ -282,10 +282,6 @@ class WhatsAppOTPService
     ): array {
         $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
         $employeeTitle = $isUpdate ? "تعديل {$typeLabel}" : "إشعار {$typeLabel}";
-        $employeeBody = "{$actionWord} {$typeLabel} بمبلغ " . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
-        if ($notes && trim($notes) !== '') {
-            $employeeBody .= "\nملاحظات: " . trim($notes);
-        }
 
         $adminBody = "{$actionWord} {$typeLabel} للموظف {$user->name} بمبلغ "
             . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
@@ -314,18 +310,9 @@ class WhatsAppOTPService
             );
         }
 
-        if ($user->email) {
-            $results['employee_email'] = $this->sendEmailNotification(
-                $user->email,
-                $user->name,
-                $employeeTitle,
-                $employeeBody,
-            );
-        }
+        $results['manager'] = $this->notifyManager($adminBody, 'الخصومات والمكافآت', sendEmail: false);
 
-        $results['manager'] = $this->notifyManager($adminBody, 'الخصومات والمكافآت');
-
-        Log::info('[ADJUSTMENT] إرسال فوري', [
+        Log::info('[ADJUSTMENT] إرسال فوري (واتساب فقط)', [
             'user_id' => $user->id,
             'results' => $results,
         ]);
@@ -370,10 +357,13 @@ class WhatsAppOTPService
     }
 
     // ── إشعار المدير والأدمن بأي حدث في المشروع ────────
-    public function notifyManager(string $eventText, string $projectTitle): bool
+    public function notifyManager(string $eventText, string $projectTitle, bool $sendEmail = true): bool
     {
-        $r1 = $this->sendProjectNotification(self::MANAGER_PHONE, 'المدير', $eventText, $projectTitle, self::MANAGER_EMAIL);
-        $r2 = $this->sendProjectNotification(self::ADMIN_PHONE,   'الأدمن', $eventText, $projectTitle, self::ADMIN_EMAIL);
+        $managerEmail = $sendEmail ? self::MANAGER_EMAIL : null;
+        $adminEmail = $sendEmail ? self::ADMIN_EMAIL : null;
+
+        $r1 = $this->sendProjectNotification(self::MANAGER_PHONE, 'المدير', $eventText, $projectTitle, $managerEmail);
+        $r2 = $this->sendProjectNotification(self::ADMIN_PHONE,   'الأدمن', $eventText, $projectTitle, $adminEmail);
         return $r1 || $r2;
     }
 
