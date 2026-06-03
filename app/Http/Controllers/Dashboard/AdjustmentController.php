@@ -126,32 +126,56 @@ class AdjustmentController extends Controller
 
     private function notifyAdjustment(EmployeeAdjustment $adjustment, bool $isUpdate = false): void
     {
+        $user = $adjustment->user ?? User::find($adjustment->user_id);
+
+        if (!$user || $user->isBlocked()) {
+            Log::warning('[ADJUSTMENT] تخطي إشعار — موظف غير موجود أو محظور', [
+                'adjustment_id' => $adjustment->id,
+                'user_id' => $adjustment->user_id,
+            ]);
+
+            return;
+        }
+
+        $typeLabel = $adjustment->type === 'bonus' ? 'مكافأة' : 'خصm';
+        $currency = $user->salary_currency ?? $user->salary_currency_scale ?? 'USD';
+        $date = $adjustment->date instanceof \Carbon\Carbon
+            ? $adjustment->date->format('Y-m-d')
+            : (string) $adjustment->date;
+
+        $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
+        $employeeTitle = $isUpdate ? "تعديل {$typeLabel}" : "إشعار {$typeLabel}";
+        $employeeBody = $this->adjustmentMessageBody($typeLabel, (float) $adjustment->amount, $currency, $date, $adjustment->notes, $isUpdate);
+        $adminBody = "{$actionWord} {$typeLabel} للموظف «{$user->name}» بمبلغ "
+            . number_format((float) $adjustment->amount, 2) . " {$currency} بتاريخ {$date}.";
+        if ($adjustment->notes) {
+            $adminBody .= " ملاحظات: {$adjustment->notes}";
+        }
+
+        $url = route('dashboard.adjustments.index');
+        $uiType = $adjustment->type === 'bonus' ? 'success' : 'warning';
+        $icon = $adjustment->type === 'bonus' ? 'fa-gift' : 'fa-minus-circle';
+
+        // 1) واتساب + بريد فوراً (لا يعتمد على جدول الإشعارات)
         try {
-            $user = $adjustment->user ?? User::find($adjustment->user_id);
+            app(WhatsAppOTPService::class)->notifyAdjustmentImmediate(
+                user: $user,
+                typeLabel: $typeLabel,
+                amount: (float) $adjustment->amount,
+                currency: $currency,
+                date: $date,
+                notes: $adjustment->notes,
+                isUpdate: $isUpdate,
+            );
+        } catch (\Throwable $e) {
+            Log::error('[ADJUSTMENT] فشل الإرسال الفوري', [
+                'adjustment_id' => $adjustment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
-            if (!$user || $user->isBlocked()) {
-                return;
-            }
-
-            $typeLabel = $adjustment->type === 'bonus' ? 'مكافأة' : 'خصm';
-            $currency = $user->salary_currency ?? $user->salary_currency_scale ?? 'USD';
-            $date = $adjustment->date instanceof \Carbon\Carbon
-                ? $adjustment->date->format('Y-m-d')
-                : (string) $adjustment->date;
-
-            $employeeBody = $this->adjustmentMessageBody($typeLabel, (float) $adjustment->amount, $currency, $date, $adjustment->notes);
-            $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
-            $employeeTitle = $isUpdate ? "تعديل {$typeLabel}" : "إشعار {$typeLabel}";
-            $adminBody = "{$actionWord} {$typeLabel} للموظف «{$user->name}» بمبلغ "
-                . number_format((float) $adjustment->amount, 2) . " {$currency} بتاريخ {$date}.";
-            if ($adjustment->notes) {
-                $adminBody .= " ملاحظات: {$adjustment->notes}";
-            }
-
-            $url = route('dashboard.adjustments.index');
-            $uiType = $adjustment->type === 'bonus' ? 'success' : 'warning';
-            $icon = $adjustment->type === 'bonus' ? 'fa-gift' : 'fa-minus-circle';
-
+        // 2) إشعارات داخل التطبيق (منفصلة — لا توقف الواتساب/البريد)
+        try {
             AppNotification::notify(
                 $user->id,
                 $employeeTitle,
@@ -160,51 +184,25 @@ class AdjustmentController extends Controller
                 $icon,
                 $uiType,
             );
+        } catch (\Throwable $e) {
+            Log::warning('[ADJUSTMENT] فشل إشعار التطبيق للموظف', [
+                'adjustment_id' => $adjustment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
-            $whatsapp = app(WhatsAppOTPService::class);
-
-            if ($user->email) {
-                $whatsapp->sendEmailNotification(
-                    $user->email,
-                    $user->name,
-                    $employeeTitle,
-                    $employeeBody,
-                );
-            } else {
-                Log::info("[ADJUSTMENT] لا يوجد بريد للموظف #{$user->id}");
+        User::where('role', 'admin')->get()->each(function (User $admin) use (
+            $adminBody,
+            $url,
+            $icon,
+            $uiType,
+            $user,
+        ) {
+            if ((int) $admin->id === (int) $user->id) {
+                return;
             }
 
-            if ($user->phone) {
-                $sent = $whatsapp->sendAdjustmentNotification(
-                    phone: $user->phone,
-                    employeeName: $user->name,
-                    typeLabel: $typeLabel,
-                    amount: (float) $adjustment->amount,
-                    currency: $currency,
-                    date: $date,
-                    notes: $adjustment->notes,
-                );
-                Log::info('[ADJUSTMENT] واتساب الموظف: ' . ($sent ? 'نجح' : 'فشل'), [
-                    'adjustment_id' => $adjustment->id,
-                    'user_id' => $user->id,
-                ]);
-            } else {
-                Log::info("[ADJUSTMENT] لا يوجد رقم هاتف للموظف #{$user->id}");
-            }
-
-            $whatsapp->notifyManager($adminBody, 'الخصومات والمكافآت');
-
-            User::where('role', 'admin')->get()->each(function (User $admin) use (
-                $adminBody,
-                $url,
-                $icon,
-                $uiType,
-                $user,
-            ) {
-                if ((int) $admin->id === (int) $user->id) {
-                    return;
-                }
-
+            try {
                 AppNotification::notify(
                     $admin->id,
                     'خصومات ومكافآت',
@@ -213,22 +211,29 @@ class AdjustmentController extends Controller
                     $icon,
                     $uiType,
                 );
+            } catch (\Throwable $e) {
+                Log::warning('[ADJUSTMENT] فشل إشعار التطبيق للأدمن', [
+                    'admin_id' => $admin->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
-                if ($admin->email) {
+            if ($admin->email) {
+                try {
                     app(WhatsAppOTPService::class)->sendEmailNotification(
                         $admin->email,
                         $admin->name,
                         'إشعار خصومات ومكافآت',
                         $adminBody,
                     );
+                } catch (\Throwable $e) {
+                    Log::warning('[ADJUSTMENT] فشل بريد الأدمن', [
+                        'admin_id' => $admin->id,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
-            });
-        } catch (\Exception $e) {
-            Log::error('[ADJUSTMENT] فشل إرسال إشعار الخصm/المكافأة', [
-                'adjustment_id' => $adjustment->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
+            }
+        });
     }
 
     private function adjustmentMessageBody(
@@ -237,8 +242,10 @@ class AdjustmentController extends Controller
         string $currency,
         string $date,
         ?string $notes,
+        bool $isUpdate = false,
     ): string {
-        $body = "تم تسجيل {$typeLabel} بمبلغ " . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
+        $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
+        $body = "{$actionWord} {$typeLabel} بمبلغ " . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
         if ($notes && trim($notes) !== '') {
             $body .= "\nملاحظات: " . trim($notes);
         }

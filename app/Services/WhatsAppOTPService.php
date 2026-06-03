@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -251,10 +252,14 @@ class WhatsAppOTPService
         float $amount,
         string $currency,
         string $date,
-        ?string $notes = null
+        ?string $notes = null,
+        ?string $email = null,
+        ?string $emailSubject = null,
+        bool $isUpdate = false,
     ): bool {
         $amountFormatted = number_format($amount, 2);
-        $bodyText = "تم تسجيل {$typeLabel} بمبلغ {$amountFormatted} {$currency} بتاريخ {$date}.";
+        $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
+        $bodyText = "{$actionWord} {$typeLabel} بمبلغ {$amountFormatted} {$currency} بتاريخ {$date}.";
         if ($notes && trim($notes) !== '') {
             $bodyText .= " ملاحظات: " . trim($notes);
         }
@@ -275,7 +280,80 @@ class WhatsAppOTPService
             ],
         ];
 
-        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+        $result = $this->executeRequest($phone, 'trabar', 'ar', $params);
+
+        if ($email) {
+            $this->sendEmailNotification(
+                $email,
+                $employeeName,
+                $emailSubject ?? "إشعار {$typeLabel}",
+                $bodyText,
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * إشعار فوري بالخصم/المكافأة للموظف والإدارة (واتساب + بريد مباشرة).
+     *
+     * @return array{employee_whatsapp: bool, employee_email: bool, manager: bool}
+     */
+    public function notifyAdjustmentImmediate(
+        User $user,
+        string $typeLabel,
+        float $amount,
+        string $currency,
+        string $date,
+        ?string $notes,
+        bool $isUpdate = false,
+    ): array {
+        $actionWord = $isUpdate ? 'تم تعديل' : 'تم تسجيل';
+        $employeeTitle = $isUpdate ? "تعديل {$typeLabel}" : "إشعار {$typeLabel}";
+        $employeeBody = "{$actionWord} {$typeLabel} بمبلغ " . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
+        if ($notes && trim($notes) !== '') {
+            $employeeBody .= "\nملاحظات: " . trim($notes);
+        }
+
+        $adminBody = "{$actionWord} {$typeLabel} للموظف «{$user->name}» بمبلغ "
+            . number_format($amount, 2) . " {$currency} بتاريخ {$date}.";
+        if ($notes && trim($notes) !== '') {
+            $adminBody .= " ملاحظات: " . trim($notes);
+        }
+
+        $results = [
+            'employee_whatsapp' => false,
+            'employee_email'    => false,
+            'manager'           => false,
+        ];
+
+        if ($user->phone) {
+            $results['employee_whatsapp'] = $this->sendAdjustmentNotification(
+                phone: $user->phone,
+                employeeName: $user->name,
+                typeLabel: $typeLabel,
+                amount: $amount,
+                currency: $currency,
+                date: $date,
+                notes: $notes,
+                email: $user->email,
+                emailSubject: $employeeTitle,
+                isUpdate: $isUpdate,
+            );
+            $results['employee_email'] = (bool) $user->email;
+        } elseif ($user->email) {
+            $this->sendEmailNotification($user->email, $user->name, $employeeTitle, $employeeBody);
+            $results['employee_email'] = true;
+        }
+
+        $results['manager'] = $this->notifyManager($adminBody, 'الخصومات والمكافآت');
+
+        Log::info('[ADJUSTMENT] إرسال فوري', [
+            'user_id' => $user->id,
+            'results' => $results,
+        ]);
+
+        return $results;
     }
 
     /**
