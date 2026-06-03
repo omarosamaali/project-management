@@ -82,7 +82,7 @@ class AdjustmentController extends Controller
         $this->notifyAdjustment($adjustment);
 
         return redirect()->route('dashboard.adjustments.index')
-            ->with('success', 'تم حفظ السجل وإرسال إشعار واتساب بنجاح');
+            ->with('success', 'تم حفظ السجل وإرسال الإشعارات بنجاح');
     }
 
     public function edit(EmployeeAdjustment $adjustment)
@@ -112,7 +112,7 @@ class AdjustmentController extends Controller
         $this->notifyAdjustment($adjustment, true);
 
         return redirect()->route('dashboard.adjustments.index')
-            ->with('success', 'تم تعديل السجل وإرسال إشعار واتساب بنجاح');
+            ->with('success', 'تم تعديل السجل وإرسال الإشعارات بنجاح');
     }
 
     public function destroy(EmployeeAdjustment $adjustment)
@@ -156,7 +156,7 @@ class AdjustmentController extends Controller
         $uiType = $adjustment->type === 'bonus' ? 'success' : 'warning';
         $icon = $adjustment->type === 'bonus' ? 'fa-gift' : 'fa-minus-circle';
 
-        // 1) واتساب فقط (الإيميل معطّل مؤقتاً)
+        // 1) واتساب + بريد فوراً
         try {
             app(WhatsAppOTPService::class)->notifyAdjustmentImmediate(
                 user: $user,
@@ -216,6 +216,22 @@ class AdjustmentController extends Controller
                     'admin_id' => $admin->id,
                     'error' => $e->getMessage(),
                 ]);
+            }
+
+            if ($admin->email) {
+                try {
+                    app(WhatsAppOTPService::class)->sendEmailNotification(
+                        $admin->email,
+                        $admin->name,
+                        'إشعار خصومات ومكافآت',
+                        $adminBody,
+                    );
+                } catch (\Throwable $e) {
+                    Log::warning('[ADJUSTMENT] فشل بريد الأدمن', [
+                        'admin_id' => $admin->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         });
     }
