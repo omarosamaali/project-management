@@ -80,26 +80,28 @@ class WorkTimeCalendarController extends Controller
             try {
                 $start = WorkTimeMoment::at($record->date, $record->start_time);
                 $date = WorkTimeMoment::dateKey($record->date);
+                $timeLabel = $start->format('g:i A');
 
                 $employeeName = $record->user->name ?? 'موظف';
                 $title = $showAllEmployees
-                    ? "{$record->type} — {$employeeName}"
-                    : $record->type;
+                    ? "{$timeLabel} — {$record->type} — {$employeeName}"
+                    : "{$timeLabel} — {$record->type}";
 
                 $icon = $record->isFromWeb() ? ' 🌐' : '';
 
+                // allDay + تاريخ اليوم فقط — يمنع امتداد الشريط ليوم تالي في عرض الشهر
                 return [
                     'id' => $record->id,
                     'title' => $title . $icon,
-                    'start' => $start->toIso8601String(),
-                    'allDay' => false,
+                    'start' => $date,
+                    'allDay' => true,
                     'backgroundColor' => $this->colorForType($record->type),
                     'borderColor' => $this->colorForType($record->type),
                     'textColor' => '#ffffff',
                     'extendedProps' => [
                         'type' => $record->type,
                         'employee' => $employeeName,
-                        'time' => $start->format('g:i A'),
+                        'time' => $timeLabel,
                         'date' => $date,
                         'source' => $record->sourceLabel(),
                         'from_web' => $record->isFromWeb(),

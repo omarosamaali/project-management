@@ -144,26 +144,7 @@ class User extends Authenticatable
 
     public function getCountryNameAttribute()
     {
-        if (!$this->country) {
-            return null;
-        }
-        $cacheKey = 'country_names_ar';
-        $countries = cache()->remember($cacheKey, now()->addMonth(), function () {
-            try {
-                $response = file_get_contents('https://raw.githubusercontent.com/mledoze/countries/master/countries.json');
-                $data = json_decode($response, true);
-                $list = [];
-                foreach ($data as $country) {
-                    $code = $country['cca2'];
-                    $name = $country['translations']['ara']['common'] ?? $country['name']['common'];
-                    $list[$code] = $name;
-                }
-                return $list;
-            } catch (\Exception $e) {
-                return [];
-            }
-        });
-        return $countries[strtoupper($this->country)] ?? $this->country;
+        return \App\Support\CountryNames::forCode($this->country);
     }
 
     public function getDisplayNameAttribute(): string

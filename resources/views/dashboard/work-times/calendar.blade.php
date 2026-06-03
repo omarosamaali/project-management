@@ -2,6 +2,21 @@
 @section('title', !empty($isEmployeeView) ? 'تقويم حضوري' : 'تقويم الحضور والإنصراف')
 @section('content')
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet" />
+<style>
+    #attendance_calendar .fc-daygrid-event {
+        white-space: normal;
+        border-radius: 6px;
+        margin-bottom: 2px;
+        font-size: 11px;
+        line-height: 1.35;
+    }
+    #attendance_calendar .fc-daygrid-day-events {
+        margin-bottom: 2px;
+    }
+    #attendance_calendar .fc-daygrid-event-harness {
+        margin-top: 1px;
+    }
+</style>
 
 <section class="!pl-0 p-3 sm:p-5">
     <x-breadcrumb
@@ -89,6 +104,14 @@
             height: 'auto',
             navLinks: true,
             nowIndicator: true,
+            dayMaxEvents: 5,
+            moreLinkClick: 'popover',
+            views: {
+                dayGridMonth: {
+                    eventDisplay: 'list-item',
+                    dayMaxEvents: 6,
+                },
+            },
             events: function(info, successCallback, failureCallback) {
                 const params = new URLSearchParams({
                     start: info.startStr,

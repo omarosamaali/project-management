@@ -81,9 +81,9 @@
         @foreach($employees as $emp)
         <option value="{{ $emp->id }}"
             data-country-code="{{ strtoupper($emp->country ?? '') }}"
-            data-country-name="{{ $emp->country_name }}"
+            data-country-name="{{ e(\App\Support\CountryNames::forCode($emp->country)) }}"
             data-work-start="{{ $emp->work_start_time ? \Carbon\Carbon::parse($emp->work_start_time)->format('H:i') : '09:00' }}">
-            {{ $emp->name }}
+            {{ \App\Support\CountryNames::ensureUtf8($emp->name) }}
         </option>
         @endforeach
     </select>
