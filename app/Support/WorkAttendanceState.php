@@ -23,17 +23,17 @@ class WorkAttendanceState
 
         foreach ($records as $record) {
             if (in_array($record->type, ['حضور', 'دخول من الاستراحة'], true)) {
-                $currentStart = Carbon::parse($today . ' ' . $record->start_time);
+                $currentStart = WorkTimeMoment::at($today, $record->start_time);
                 $status = 'working';
             } elseif ($record->type === 'خروج للاستراحة') {
                 if ($currentStart) {
-                    $workedSeconds += $currentStart->diffInSeconds(Carbon::parse($today . ' ' . $record->start_time));
+                    $workedSeconds += $currentStart->diffInSeconds(WorkTimeMoment::at($today, $record->start_time));
                 }
                 $currentStart = null;
                 $status = 'break';
             } elseif ($record->type === 'انصراف') {
                 if ($currentStart) {
-                    $workedSeconds += $currentStart->diffInSeconds(Carbon::parse($today . ' ' . $record->start_time));
+                    $workedSeconds += $currentStart->diffInSeconds(WorkTimeMoment::at($today, $record->start_time));
                 }
                 $currentStart = null;
                 $status = 'off';

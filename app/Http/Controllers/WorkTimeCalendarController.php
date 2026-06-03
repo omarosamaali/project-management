@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\WorkTime;
 use App\Support\WorkAttendanceState;
+use App\Support\WorkTimeMoment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -75,11 +76,7 @@ class WorkTimeCalendarController extends Controller
         $showAllEmployees = !$isEmployeeView && !$request->filled('user_id');
 
         $events = $query->orderBy('date')->orderBy('start_time')->get()->map(function (WorkTime $record) use ($showAllEmployees) {
-            $date = $record->date instanceof Carbon
-                ? $record->date->format('Y-m-d')
-                : (string) $record->date;
-            $time = Carbon::parse($record->start_time)->format('H:i:s');
-            $start = Carbon::parse("{$date} {$time}");
+            $start = WorkTimeMoment::at($record->date, $record->start_time);
 
             $employeeName = $record->user->name ?? 'موظف';
             $title = $showAllEmployees

@@ -45,7 +45,7 @@ class SalaryAttendanceSummary
         $totalOvertimeAmount = 0;
         $attendanceDays = 0;
 
-        foreach ($records->groupBy('date') as $date => $dayRecords) {
+        foreach ($records->groupBy(fn ($r) => WorkTimeMoment::dateKey($r->date)) as $date => $dayRecords) {
             $checkIn = $dayRecords->first(fn ($r) => $r->type === 'حضور')
                 ?? $dayRecords->first(fn ($r) => $r->type === 'دخول من الاستراحة');
 
@@ -53,8 +53,8 @@ class SalaryAttendanceSummary
 
             if ($checkIn && $checkIn->start_time) {
                 $attendanceDays++;
-                $checkInTime = Carbon::parse($date . ' ' . $checkIn->start_time);
-                $scheduledStart = Carbon::parse($date . ' ' . $workStart);
+                $checkInTime = WorkTimeMoment::at($date, $checkIn->start_time);
+                $scheduledStart = WorkTimeMoment::at($date, $workStart);
                 $graceEnd = $scheduledStart->copy()->addMinutes($graceMinutes);
 
                 if ($checkInTime->gt($graceEnd)) {
@@ -69,8 +69,8 @@ class SalaryAttendanceSummary
             }
 
             if ($checkOut && $checkOut->start_time) {
-                $checkOutTime = Carbon::parse($date . ' ' . $checkOut->start_time);
-                $scheduledEnd = Carbon::parse($date . ' ' . $workEnd);
+                $checkOutTime = WorkTimeMoment::at($date, $checkOut->start_time);
+                $scheduledEnd = WorkTimeMoment::at($date, $workEnd);
 
                 if ($checkOutTime->gt($scheduledEnd)) {
                     $overtimeMinutes = $checkOutTime->diffInMinutes($scheduledEnd);
