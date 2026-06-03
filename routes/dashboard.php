@@ -163,6 +163,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/course/payment/cancel', [ZiinaPaymentController::class, 'courseCancel'])->name('course.payment.cancel');
         
     Route::get('/stores/{store}', [CourseController::class, 'userShowStore'])->name('stores.show');
+    Route::get('my-profile', [PartnerController::class, 'myProfile'])->name('dashboard.my-profile');
     Route::resource('partners', PartnerController::class)->names('dashboard.partners');
     Route::resource('clients', ClientController::class)->names('dashboard.clients');
     Route::resource('requests', RequestsController::class)->names('dashboard.requests');

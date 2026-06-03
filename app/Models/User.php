@@ -9,6 +9,9 @@ use App\Models\WithdrawalRequest;
 use App\Models\Payment;
 use App\Models\Requests;
 use App\Models\System;
+use App\Models\WorkTime;
+use App\Models\Salary;
+use App\Models\EmployeeAdjustment;
 use App\Support\SystemManager;
 
 class User extends Authenticatable
@@ -295,5 +298,20 @@ class User extends Authenticatable
     public function whatsappMessages()
     {
         return $this->hasMany(WhatsAppMessage::class);
+    }
+
+    public function workTimes()
+    {
+        return $this->hasMany(WorkTime::class);
+    }
+
+    public function salaries()
+    {
+        return $this->hasMany(Salary::class);
+    }
+
+    public function employeeAdjustments()
+    {
+        return $this->hasMany(EmployeeAdjustment::class);
     }
 }

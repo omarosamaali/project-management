@@ -491,6 +491,12 @@
                     @endif
 
                     @if(Auth::user()->role == 'partner' && Auth::user()->is_employee)
+                    <a href="{{ route('dashboard.my-profile') }}"
+                        class="{{ Route::currentRouteName() == 'dashboard.my-profile' || Route::currentRouteName() == 'dashboard.partners.show' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <i
+                            class="{{ Route::currentRouteName() == 'dashboard.my-profile' || Route::currentRouteName() == 'dashboard.partners.show' ? 'text-white' : '' }} fas fa-id-card text-gray-500 pl-2"></i>
+                        <span class="ml-3">ملفي الوظيفي</span>
+                    </a>
                     <a href="{{ route('dashboard.work-times.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.work-times.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i

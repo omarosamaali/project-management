@@ -1,12 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'عرض تفاصيل الشريك')
+@section('title', !empty($isOwnProfile) ? 'ملفي الوظيفي' : 'عرض تفاصيل الشريك')
 
 @section('content')
 <section class="p-3 sm:p-5">
-    <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.partners.index') }}" second="الشركاء" third="عرض الشريك" />
+    <x-breadcrumb
+        first="الرئيسية"
+        :link="!empty($isOwnProfile) ? route('dashboard.my-profile') : route('dashboard.partners.index')"
+        :second="!empty($isOwnProfile) ? 'ملفي الوظيفي' : 'الشركاء'"
+        :third="!empty($isOwnProfile) ? 'بياناتي' : 'عرض الشريك'" />
 
-    <div class="mx-auto max-w-4xl w-full">
+    <div class="mx-auto max-w-6xl w-full">
         <div class="bg-white dark:bg-gray-800 relative shadow-2xl border rounded-xl overflow-hidden">
 
             {{-- الهيدر العلوي --}}
@@ -18,21 +22,68 @@
                             {{ $partner->name }}
                         </h1>
                         <p class="text-gray-600 dark:text-gray-300">
-                            الملف الشخصي والبيانات المالية والصلاحيات
+                            {{ !empty($isOwnProfile) ? 'جميع بياناتك: الراتب، الدوام، الحضور والإنصراف' : 'الملف الشخصي والبيانات المالية والصلاحيات' }}
                         </p>
                     </div>
                     <div class="flex gap-2">
+                        @if(!empty($isAdminView))
                         <a href="{{ route('dashboard.partners.edit', $partner->id) }}"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-1 shadow-md">
                             <i class="fas fa-edit"></i> تعديل
                         </a>
-                        <a href="{{ route('dashboard.partners.index') }}"
+                        @endif
+                        <a href="{{ !empty($isOwnProfile) ? route('dashboard.performance.show') : route('dashboard.partners.index') }}"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center gap-1">
                             <i class="fas fa-arrow-right"></i> رجوع
                         </a>
                     </div>
                 </div>
             </div>
+
+            {{-- ملخص سريع: هذا الشهر + حالة اليوم --}}
+            @if($partner->is_employee || $partner->apply_working_hours || $partner->salary_amount)
+            <div class="p-6 bg-gray-50 dark:bg-gray-900/40 border-b">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-bar text-indigo-600"></i>
+                    ملخص {{ $profileStats['month_label'] }}
+                </h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border shadow-sm text-center">
+                        <p class="text-xs text-gray-500 mb-1">حالة اليوم</p>
+                        <p class="font-bold text-indigo-600 text-sm">{{ $profileStats['today_status_label'] }}</p>
+                        @if($profileStats['today_worked_seconds'] > 0)
+                        <p class="text-[10px] text-gray-400 mt-1">
+                            {{ floor($profileStats['today_worked_seconds'] / 3600) }}س
+                            {{ floor(($profileStats['today_worked_seconds'] % 3600) / 60) }}د عمل
+                        </p>
+                        @endif
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border shadow-sm text-center">
+                        <p class="text-xs text-gray-500 mb-1">أيام حضور</p>
+                        <p class="text-2xl font-black text-green-600">{{ $profileStats['attendance_days'] }}</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border shadow-sm text-center">
+                        <p class="text-xs text-gray-500 mb-1">أيام انصراف</p>
+                        <p class="text-2xl font-black text-gray-700 dark:text-gray-200">{{ $profileStats['checkout_days'] }}</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border shadow-sm text-center">
+                        <p class="text-xs text-gray-500 mb-1">جلسات استراحة</p>
+                        <p class="text-2xl font-black text-orange-500">{{ $profileStats['break_sessions'] }}</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border shadow-sm text-center">
+                        <p class="text-xs text-gray-500 mb-1">تأخير الشهر</p>
+                        <p class="text-2xl font-black text-red-600">{{ $profileStats['total_late_minutes'] }}</p>
+                        <p class="text-[10px] text-gray-400">دقيقة</p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border shadow-sm text-center">
+                        <p class="text-xs text-gray-500 mb-1">مكافآت / خصومات</p>
+                        <p class="text-sm font-bold text-green-600">+{{ number_format($profileStats['total_bonuses'], 2) }}</p>
+                        <p class="text-sm font-bold text-red-600">-{{ number_format($profileStats['total_deductions'], 2) }}</p>
+                    </div>
+                </div>
+            </div>
+            @endif
+
 <div class="p-6 space-y-8">
 
     {{-- القسم 1: بيانات التواصل والتعاقد الأساسية --}}
@@ -49,10 +100,18 @@
                 <label class="block text-sm font-medium text-gray-500 mb-1">البريد الإلكتروني</label>
                 <span class="text-lg font-bold text-blue-600">{{ $partner->email }}</span>
             </div>
+            @if($partner->phone)
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-100">
+                <label class="block text-sm font-medium text-gray-500 mb-1">الهاتف</label>
+                <span class="text-lg font-bold text-gray-800 dark:text-white">{{ $partner->phone }}</span>
+            </div>
+            @endif
+            @if(empty($isOwnProfile))
             <div class="bg-green-50 dark:bg-gray-700 p-4 rounded-lg border border-green-100">
                 <label class="block text-sm font-medium text-gray-500 mb-1">نسبة الشريك (%)</label>
                 <span class="text-2xl font-black text-green-600">{{ number_format($partner->percentage, 2) }}%</span>
             </div>
+            @endif
             <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-100">
                 <label class="block text-sm font-medium text-gray-500 mb-1">الدولة الأساسية</label>
                 <span class="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-bold">
@@ -125,6 +184,7 @@
     @endif
 
     {{-- القسم 3: الأنظمة والخدمات --}}
+    @if(empty($isOwnProfile))
     <div class="grid md:grid-cols-2 gap-8 pb-6 border-b">
         <div>
             <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
@@ -157,8 +217,10 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- القسم 4: جميع الصلاحيات --}}
+    @if(empty($isOwnProfile))
     <div class="pb-6 border-b">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i class="fas fa-user-shield text-black"></i> صلاحيات الوصول والإدارة
@@ -187,6 +249,7 @@
             @endforeach
         </div>
     </div>
+    @endif
 
     {{-- القسم 5: تفاصيل الدوام وساعات العمل --}}
     @if($partner->work_start_time || $partner->daily_work_hours)
@@ -304,7 +367,7 @@
     @endif
 
     {{-- القسم 7: الملاحظات الإدارية --}}
-    @if($partner->note_title || $partner->note_details)
+    @if(($partner->note_title || $partner->note_details) && (empty($isOwnProfile) || $partner->is_visible_to_employee))
     <div class="pb-6 border-b">
         <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
             <i class="fas fa-sticky-note text-yellow-500"></i> ملاحظة إدارية إضافية
@@ -378,7 +441,167 @@
     </div>
     @endif
 
+    {{-- سجل الحضور والإنصراف --}}
+    @if($partner->is_employee || $partner->apply_working_hours)
+    <div class="pb-6 border-b">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-history text-green-600"></i> سجل الحضور والإنصراف
+            </h2>
+            @if(!empty($isOwnProfile))
+            <a href="{{ route('dashboard.work-times.index') }}"
+                class="text-sm text-blue-600 hover:underline font-medium">
+                عرض الكل <i class="fas fa-external-link-alt text-xs"></i>
+            </a>
+            @endif
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
+            <table class="w-full text-sm text-right text-gray-600 dark:text-gray-300">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                    <tr>
+                        <th class="px-4 py-3">التاريخ</th>
+                        <th class="px-4 py-3">النوع</th>
+                        <th class="px-4 py-3">الوقت</th>
+                        <th class="px-4 py-3">الدولة</th>
+                        <th class="px-4 py-3">المصدر</th>
+                        <th class="px-4 py-3">ملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentWorkTimes as $record)
+                    @php
+                        $typeColors = [
+                            'حضور' => 'bg-green-100 text-green-800',
+                            'انصراف' => 'bg-gray-200 text-gray-800',
+                            'خروج للاستراحة' => 'bg-orange-100 text-orange-800',
+                            'دخول من الاستراحة' => 'bg-blue-100 text-blue-800',
+                        ];
+                        $typeClass = $typeColors[$record->type] ?? 'bg-gray-100 text-gray-600';
+                    @endphp
+                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td class="px-4 py-3 font-medium">{{ $record->date?->format('Y-m-d') ?? $record->date }}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $typeClass }}">{{ $record->type }}</span>
+                        </td>
+                        <td class="px-4 py-3 tabular-nums font-bold">{{ \Illuminate\Support\Str::limit($record->start_time, 8, '') }}</td>
+                        <td class="px-4 py-3">{{ $record->country_name ?? $record->country }}</td>
+                        <td class="px-4 py-3 text-xs">{{ $record->sourceLabel() }}</td>
+                        <td class="px-4 py-3 text-xs text-gray-500 max-w-[200px] truncate">{{ $record->notes ?? '—' }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-400 italic">لا توجد سجلات حضور بعد.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- سجل الرواتب --}}
+    @if($partner->is_employee || $partner->salary_amount || $recentSalaries->isNotEmpty())
+    <div class="pb-6 border-b">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-wallet text-blue-600"></i> سجل الرواتب الشهرية
+            </h2>
+            @if(!empty($isOwnProfile))
+            <a href="{{ route('dashboard.salaries.index') }}"
+                class="text-sm text-blue-600 hover:underline font-medium">
+                عرض الكل <i class="fas fa-external-link-alt text-xs"></i>
+            </a>
+            @endif
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
+            <table class="w-full text-sm text-right text-gray-600 dark:text-gray-300">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3">الفترة</th>
+                        <th class="px-4 py-3">إضافي</th>
+                        <th class="px-4 py-3">خصم</th>
+                        <th class="px-4 py-3">مترحّل</th>
+                        <th class="px-4 py-3">المستحق</th>
+                        <th class="px-4 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentSalaries as $salary)
+                    <tr class="border-b dark:border-gray-700">
+                        <td class="px-4 py-3 font-bold">{{ $salary->month }}/{{ $salary->year }}</td>
+                        <td class="px-4 py-3 text-green-600">+{{ number_format($salary->overtime_value, 2) }}</td>
+                        <td class="px-4 py-3 text-red-600">-{{ number_format($salary->deduction_value, 2) }}</td>
+                        <td class="px-4 py-3">{{ number_format($salary->carried_forward, 2) }}</td>
+                        <td class="px-4 py-3 font-black text-blue-700 dark:text-blue-300">{{ number_format($salary->total_due, 2) }}</td>
+                        <td class="px-4 py-3">
+                            <a href="{{ route('dashboard.salaries.show', $salary) }}"
+                                class="text-blue-600 hover:underline text-xs">تفاصيل</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-4 py-8 text-center text-gray-400 italic">لا توجد سجلات رواتب مسجّلة.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- المكافآت والخصومات --}}
+    @if($partner->is_employee || $recentAdjustments->isNotEmpty())
+    <div class="pb-6 border-b">
+        <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-percent text-purple-600"></i> المكافآت والخصومات
+            </h2>
+            @if(!empty($isOwnProfile))
+            <a href="{{ route('dashboard.adjustments.index') }}"
+                class="text-sm text-blue-600 hover:underline font-medium">
+                عرض الكل <i class="fas fa-external-link-alt text-xs"></i>
+            </a>
+            @endif
+        </div>
+        <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-600">
+            <table class="w-full text-sm text-right text-gray-600 dark:text-gray-300">
+                <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3">التاريخ</th>
+                        <th class="px-4 py-3">النوع</th>
+                        <th class="px-4 py-3">المبلغ</th>
+                        <th class="px-4 py-3">ملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($recentAdjustments as $adj)
+                    <tr class="border-b dark:border-gray-700">
+                        <td class="px-4 py-3">{{ $adj->date?->format('Y-m-d') ?? $adj->date }}</td>
+                        <td class="px-4 py-3">
+                            @if($adj->type === 'bonus')
+                            <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-bold">مكافأة</span>
+                            @else
+                            <span class="px-2 py-0.5 bg-red-100 text-red-800 rounded-full text-xs font-bold">خصم</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 font-bold {{ $adj->type === 'bonus' ? 'text-green-600' : 'text-red-600' }}">
+                            {{ $adj->type === 'bonus' ? '+' : '-' }}{{ number_format($adj->amount, 2) }}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-500">{{ $adj->notes ?? '—' }}</td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4" class="px-4 py-8 text-center text-gray-400 italic">لا توجد مكافآت أو خصومات.</td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
     {{-- القسم الأخير: التواريخ --}}
+    @if(empty($isOwnProfile))
     <div class="border-t pt-6 grid grid-cols-2 gap-4 text-xs text-gray-400">
         <div>
             <i class="fas fa-clock"></i> تاريخ الإضافة:
@@ -389,6 +612,7 @@
             <span class="font-semibold">{{ $partner->updated_at->format('Y-m-d H:i') }}</span>
         </div>
     </div>
+    @endif
 
 </div>
         </div>

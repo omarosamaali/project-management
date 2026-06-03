@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\System;
+use App\Support\EmployeeProfileStats;
+use App\Support\WorkAttendanceState;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PartnerController extends Controller
@@ -34,10 +37,22 @@ class PartnerController extends Controller
         return view('dashboard.partners.index', compact('partners', 'services'));
     }
 
+    public function myProfile()
+    {
+        $user = Auth::user();
+        if (!WorkAttendanceState::isEmployeePartner($user)) {
+            abort(403, 'غير مصرح لك');
+        }
+
+        return $this->show($user);
+    }
+
     // Show Method
     public function show(User $partner)
     {
-        $partner->load('systems');
+        $this->authorizePartnerView($partner);
+
+        $partner->load(['systems', 'services']);
 
         $partner->loadCount([
             'systems as partner_requests_count' => function ($query) {
@@ -45,7 +60,51 @@ class PartnerController extends Controller
             }
         ]);
 
-        return view('dashboard.partners.show', compact('partner'));
+        $isAdminView = Auth::user()->role === 'admin';
+        $isOwnProfile = (int) Auth::id() === (int) $partner->id;
+        $profileStats = EmployeeProfileStats::forUser($partner);
+
+        $recentWorkTimes = $partner->workTimes()
+            ->latest('date')
+            ->latest('start_time')
+            ->limit(20)
+            ->get();
+
+        $recentSalaries = $partner->salaries()
+            ->latest('year')
+            ->latest('month')
+            ->limit(12)
+            ->get();
+
+        $recentAdjustments = $partner->employeeAdjustments()
+            ->latest('date')
+            ->limit(15)
+            ->get();
+
+        return view('dashboard.partners.show', compact(
+            'partner',
+            'isAdminView',
+            'isOwnProfile',
+            'profileStats',
+            'recentWorkTimes',
+            'recentSalaries',
+            'recentAdjustments'
+        ));
+    }
+
+    private function authorizePartnerView(User $partner): void
+    {
+        $auth = Auth::user();
+        if (!$auth) {
+            abort(403);
+        }
+        if ($auth->role === 'admin') {
+            return;
+        }
+        if (WorkAttendanceState::isEmployeePartner($auth) && (int) $auth->id === (int) $partner->id) {
+            return;
+        }
+        abort(403, 'غير مصرح لك بعرض هذا الملف');
     }
 
     // Create Method

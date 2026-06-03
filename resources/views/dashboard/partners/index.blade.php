@@ -153,7 +153,8 @@
                                         <li>
                                             <a href="{{ route('dashboard.partners.show', $partner) }}"
                                                 class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                                                عرض
+                                                <i class="fas fa-id-card ml-1 text-blue-500"></i>
+                                                الملف الوظيفي
                                             </a>
                                         </li>
                                         <li>
