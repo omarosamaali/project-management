@@ -238,7 +238,7 @@ $projectTrackedLabel = \App\Support\DurationFormatter::format($projectTrackedSec
                                     title="عرض التفاصيل">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                @if($canManageProjectTasks)
+                                @if(auth()->user()->role === 'admin' || (int)($task->created_by ?? 0) === auth()->id())
                                 <button onclick="openEditModal({{ $task->id }})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="تعديل">
                                     <i class="fas fa-edit"></i>
                                 </button>

@@ -44,6 +44,7 @@ class TaskController extends Controller
         $project = SpecialRequest::findOrFail($request->special_request_id);
         TaskPermissions::authorizeManageProject(auth()->user(), $project);
 
+        $validated['created_by'] = auth()->id();
         Task::create($validated);
 
         app(ProjectActivityLogger::class)->logSpecialRequest(
@@ -105,6 +106,7 @@ class TaskController extends Controller
             );
         }
 
+        $validated['created_by'] = auth()->id();
         $task = Task::create($validated);
 
         $logger = app(ProjectActivityLogger::class);

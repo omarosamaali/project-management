@@ -12,8 +12,9 @@ class Task extends Model
         'special_request_id',
         'request_id',
         'project_stage_id',
-        'request_stage_id', // أضف هذا العمود لأنه موجود في جدولك
+        'request_stage_id',
         'user_id',
+        'created_by',
         'title',
         'details',
         'start_date',
