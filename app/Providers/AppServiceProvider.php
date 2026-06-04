@@ -9,6 +9,8 @@ use App\Observers\RequestObserver;
 use App\Observers\RequestsObserver;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use App\Support\CountryNames;
 use App\Support\WorkAttendanceState;
 
 class AppServiceProvider extends ServiceProvider
@@ -29,6 +31,21 @@ class AppServiceProvider extends ServiceProvider
         Requests::observe(RequestObserver::class);
         Requests::observe(RequestsObserver::class);
 
+        View::composer('*', function () {
+            if (! Auth::check()) {
+                return;
+            }
+
+            $user = Auth::user();
+            $user->name = CountryNames::ensureUtf8($user->name) ?? '';
+            $user->email = CountryNames::ensureUtf8($user->email) ?? '';
+            foreach (['note_title', 'note_details', 'company_name', 'withdrawal_notes'] as $field) {
+                if ($user->{$field} !== null && $user->{$field} !== '') {
+                    $user->{$field} = CountryNames::ensureUtf8((string) $user->{$field});
+                }
+            }
+        });
+
         View::composer(['layouts.app', 'dashboard'], function ($view) {
             $attendanceWidget = null;
             $support = null;
@@ -38,12 +55,24 @@ class AppServiceProvider extends ServiceProvider
             }
 
             if (Auth::check() && WorkAttendanceState::isEmployeePartner(Auth::user())) {
-                $state = WorkAttendanceState::resolve(Auth::user());
-                $attendanceWidget = [
-                    'status' => $state['status'],
-                    'worked_seconds' => $state['worked_seconds'],
-                    'show' => true,
-                ];
+                try {
+                    $state = WorkAttendanceState::resolve(Auth::user());
+                    $attendanceWidget = [
+                        'status' => $state['status'],
+                        'worked_seconds' => $state['worked_seconds'],
+                        'show' => true,
+                    ];
+                } catch (\Throwable $e) {
+                    Log::warning('[ATTENDANCE_WIDGET] resolve failed', [
+                        'user_id' => Auth::id(),
+                        'error' => $e->getMessage(),
+                    ]);
+                    $attendanceWidget = [
+                        'status' => 'off',
+                        'worked_seconds' => 0,
+                        'show' => true,
+                    ];
+                }
             }
 
             $view->with('support', $support);

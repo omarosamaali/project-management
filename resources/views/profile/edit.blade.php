@@ -9,6 +9,7 @@
         <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
             <div class="max-w-xl">
                 @include('profile.partials.update-profile-information-form')
+                @include('profile.partials.employee-work-profile', ['user' => $user, 'employeeStats' => $employeeStats ?? null])
             </div>
         </div>
 

@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\WorkTime;
 use App\Models\User;
+use App\Support\AttendanceRules;
+use App\Support\AttendanceTaskSync;
 use App\Support\CountryNames;
 use App\Support\CountryTimezone;
 use App\Support\WorkAttendanceState;
 use App\Support\WorkHoursCalculator;
+use App\Support\WorkTimeMoment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -101,13 +104,37 @@ class WorkTimeController extends Controller
         $data['timezone'] = $data['timezone']
             ?? CountryTimezone::timezoneForCountry($data['country']);
 
-        if ($data['type'] === 'حضور' && WorkHoursCalculator::isLateCheckIn($employee, $data['date'], $data['start_time'])) {
-            $countFrom = WorkHoursCalculator::scheduledStartLabel($employee);
-            $autoNote = 'احتساب من ' . $countFrom;
-            $data['notes'] = trim(($data['notes'] ?? '') . ' ' . $autoNote);
+        if ($data['type'] === 'حضور') {
+            $at = WorkTimeMoment::at($data['date'], $data['start_time']);
+            $records = AttendanceRules::dayRecords($employee, WorkTimeMoment::dateKey($data['date']));
+
+            if ($records->isEmpty()) {
+                $evaluation = AttendanceRules::evaluateFirstCheckInOfDay($employee, $at);
+                if ($evaluation['blocked']) {
+                    return back()->withInput()->withErrors([
+                        'type' => $evaluation['message'] ?? 'لا يمكن تسجيل هذا الحضور.',
+                    ]);
+                }
+            } elseif (! AttendanceRules::isOvertimeCheckInAllowed($employee, $records, WorkTimeMoment::dateKey($data['date']))) {
+                $existingCheckIn = $records->where('type', 'حضور')->count();
+                if ($existingCheckIn >= 1) {
+                    return back()->withInput()->withErrors([
+                        'type' => 'حضور إضافي يتطلب انصرافاً بعد نهاية الدوام أولاً.',
+                    ]);
+                }
+            }
+
+            if (WorkHoursCalculator::isLateCheckIn($employee, $data['date'], $data['start_time'])) {
+                $countFrom = WorkHoursCalculator::scheduledStartLabel($employee);
+                $autoNote = 'احتساب من ' . $countFrom;
+                $data['notes'] = trim(($data['notes'] ?? '') . ' ' . $autoNote);
+            }
         }
 
         WorkTime::create($data);
+
+        $this->applyPostRecordRules($employee, $data['type'], WorkTimeMoment::dateKey($data['date']), WorkTimeMoment::at($data['date'], $data['start_time']));
+
         return redirect()->route('dashboard.work-times.index')->with('success', 'تم تسجيل الوقت بنجاح');
     }
 
@@ -177,10 +204,22 @@ class WorkTimeController extends Controller
 
         $state = WorkAttendanceState::resolve($user);
         $action = $request->action;
+        $now = now();
+        $today = $now->toDateString();
 
-        if ($action === 'check_in' && $state['status'] !== 'off') {
-            return response()->json(['message' => 'تم تسجيل الحضور مسبقاً اليوم'], 422);
+        if ($action === 'check_in') {
+            if ($state['status'] !== 'off') {
+                return response()->json(['message' => 'أنت مسجّل حضوراً بالفعل أو في استراحة'], 422);
+            }
+
+            $evaluation = AttendanceRules::evaluateCheckIn($user, $now);
+            if ($evaluation['blocked'] || ! $evaluation['allowed']) {
+                return response()->json([
+                    'message' => $evaluation['message'] ?? 'لا يمكن تسجيل الحضور',
+                ], 422);
+            }
         }
+
         if ($action === 'break_start' && $state['status'] !== 'working') {
             return response()->json(['message' => 'لا يمكن بدء الاستراحة الآن'], 422);
         }
@@ -198,23 +237,31 @@ class WorkTimeController extends Controller
             'check_out' => 'انصراف',
         ];
 
+        $type = $typeMap[$action];
+
         WorkTime::create([
             'user_id' => $user->id,
             'country' => strtoupper($user->country ?? 'AE'),
-            'type' => $typeMap[$action],
+            'type' => $type,
             'source' => WorkTime::SOURCE_WEB,
-            'date' => Carbon::today()->toDateString(),
-            'start_time' => now()->format('H:i:s'),
+            'date' => $today,
+            'start_time' => $now->format('H:i:s'),
             'timezone' => config('app.timezone', 'UTC'),
             'notes' => 'تسجيل من أزرار الدوام في الموقع',
         ]);
+
+        if (in_array($action, ['break_start', 'check_out'], true)) {
+            AttendanceTaskSync::pauseRunningTasks($user);
+        }
+
+        $this->applyPostRecordRules($user, $type, $today, $now);
 
         $newState = WorkAttendanceState::resolve($user);
 
         return response()->json([
             'ok' => true,
             'status' => $newState['status'],
-            'status_label' => WorkAttendanceState::statusLabel($newState['status']),
+            'status_label' => WorkAttendanceState::statusLabel($newState['status'], $user),
             'worked_seconds' => $newState['worked_seconds'],
         ]);
     }
@@ -229,8 +276,43 @@ class WorkTimeController extends Controller
         $state = WorkAttendanceState::resolve($user);
         return response()->json([
             'status' => $state['status'],
-            'status_label' => WorkAttendanceState::statusLabel($state['status']),
+            'status_label' => WorkAttendanceState::statusLabel($state['status'], $user),
             'worked_seconds' => $state['worked_seconds'],
         ]);
+    }
+
+    private function applyPostRecordRules(User $user, string $type, string $date, Carbon $at): void
+    {
+        $records = AttendanceRules::dayRecords($user, $date);
+
+        if ($type === 'حضور' && $records->where('type', 'حضور')->count() === 1) {
+            $late = AttendanceRules::lateDeductionForCheckIn($user, $date, $at);
+            AttendanceRules::createDeductionIfNeeded(
+                $user,
+                $date,
+                $late['amount'],
+                'خصم تأخير صباحي'
+            );
+        }
+
+        if ($type === 'دخول من الاستراحة') {
+            $break = AttendanceRules::evaluateBreakReturn($user, $date, $records);
+            AttendanceRules::createDeductionIfNeeded(
+                $user,
+                $date,
+                $break['amount'],
+                'خصم تجاوز وقت الاستراحة'
+            );
+        }
+
+        if ($type === 'انصراف') {
+            $early = AttendanceRules::evaluateEarlyLeave($user, $date, $at);
+            AttendanceRules::createDeductionIfNeeded(
+                $user,
+                $date,
+                $early['amount'],
+                'خصم خروج مبكر'
+            );
+        }
     }
 }

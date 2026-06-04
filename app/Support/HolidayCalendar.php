@@ -29,7 +29,7 @@ class HolidayCalendar
     {
         $day = $date instanceof Carbon ? $date->copy() : Carbon::parse($date);
 
-        if ($day->isFriday()) {
+        if (AttendanceRules::isWeeklyOff($user, $day)) {
             return true;
         }
 
@@ -45,7 +45,7 @@ class HolidayCalendar
         $period = CarbonPeriod::create($start->copy()->startOfDay(), $end->copy()->startOfDay());
 
         foreach ($period as $day) {
-            if ($day->isFriday()) {
+            if (AttendanceRules::isWeeklyOff($user, $day)) {
                 continue;
             }
 

@@ -13,6 +13,7 @@ use App\Models\WorkTime;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CockpitMetrics
 {
@@ -186,31 +187,51 @@ class CockpitMetrics
      */
     public static function attendanceStatsFor(User $user): ?array
     {
-        if (!WorkAttendanceState::isEmployeePartner($user)) {
+        if (! WorkAttendanceState::isEmployeePartner($user)) {
             return null;
         }
 
-        $year = (int) now()->year;
-        $month = (int) now()->month;
+        try {
+            $year = (int) now()->year;
+            $month = (int) now()->month;
 
-        $workedSeconds = self::workedSecondsInCalendarMonth($user, $year, $month);
-        $payroll = SalaryAttendanceSummary::forPeriod($user->id, $year, $month, $user);
-        $adjustments = SalaryAdjustmentTotals::forPeriod($user->id, $year, $month);
+            $workedSeconds = self::workedSecondsInCalendarMonth($user, $year, $month);
+            $payroll = SalaryAttendanceSummary::forPeriod($user->id, $year, $month, $user);
+            $adjustments = SalaryAdjustmentTotals::forPeriod($user->id, $year, $month);
 
-        $state = WorkAttendanceState::resolve($user);
+            $state = WorkAttendanceState::resolve($user);
 
-        return [
-            'period_label' => $payroll['period_label'] ?? now()->translatedFormat('F Y'),
-            'worked_hours' => round($workedSeconds / 3600, 1),
-            'worked_hours_today' => round(($state['worked_seconds'] ?? 0) / 3600, 1),
-            'status_today' => WorkAttendanceState::statusLabel($state['status']),
-            'late_minutes' => $payroll['late_minutes'],
-            'overtime_amount' => $payroll['overtime_amount'],
-            'attendance_deduction' => $payroll['deduction_amount'],
-            'bonus_total' => $adjustments['bonus_total'],
-            'adjustment_deduction' => $adjustments['deduction_total'],
-            'attendance_days' => $payroll['days_count'],
-        ];
+            return [
+                'period_label' => $payroll['period_label'] ?? now()->translatedFormat('F Y'),
+                'worked_hours' => round($workedSeconds / 3600, 1),
+                'worked_hours_today' => round(($state['worked_seconds'] ?? 0) / 3600, 1),
+                'status_today' => WorkAttendanceState::statusLabel($state['status'], $user),
+                'late_minutes' => $payroll['late_minutes'],
+                'overtime_amount' => $payroll['overtime_amount'],
+                'attendance_deduction' => $payroll['deduction_amount'],
+                'bonus_total' => $adjustments['bonus_total'],
+                'adjustment_deduction' => $adjustments['deduction_total'],
+                'attendance_days' => $payroll['days_count'],
+            ];
+        } catch (\Throwable $e) {
+            Log::warning('[COCKPIT] attendanceStatsFor failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'period_label' => now()->translatedFormat('F Y'),
+                'worked_hours' => 0,
+                'worked_hours_today' => 0,
+                'status_today' => WorkAttendanceState::statusLabel('off', $user),
+                'late_minutes' => 0,
+                'overtime_amount' => 0,
+                'attendance_deduction' => 0,
+                'bonus_total' => 0,
+                'adjustment_deduction' => 0,
+                'attendance_days' => 0,
+            ];
+        }
     }
 
     public static function workedSecondsInCalendarMonth(User $user, int $year, int $month): int

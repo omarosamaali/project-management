@@ -9,9 +9,11 @@ use App\Models\System;
 use App\Support\CountryNames;
 use App\Support\EmployeeProfileStats;
 use App\Support\WorkAttendanceState;
+use App\Support\WorkHoursCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class PartnerController extends Controller
 {
@@ -32,8 +34,13 @@ class PartnerController extends Controller
                 }
             ])
             ->latest()
-            ->paginate(8);
-        $services = Service::all();
+            ->paginate(8)
+            ->through(function (User $partner) {
+                CountryNames::sanitizeModelAttributes($partner);
+
+                return $partner;
+            });
+        $services = Service::all()->each(fn ($s) => CountryNames::sanitizeModelAttributes($s));
 
         return view('dashboard.partners.index', compact('partners', 'services'));
     }
@@ -65,29 +72,69 @@ class PartnerController extends Controller
 
         $isAdminView = Auth::user()->role === 'admin';
         $isOwnProfile = (int) Auth::id() === (int) $partner->id;
-        $profileStats = EmployeeProfileStats::forUser($partner);
+
+        try {
+            $profileStats = EmployeeProfileStats::forUser($partner);
+        } catch (\Throwable $e) {
+            Log::warning('[PARTNER_SHOW] profileStats failed', [
+                'partner_id' => $partner->id,
+                'error' => CountryNames::ensureUtf8($e->getMessage()) ?? 'unknown',
+            ]);
+            $profileStats = [
+                'month_label' => now()->translatedFormat('F Y'),
+                'attendance_days' => 0,
+                'checkout_days' => 0,
+                'break_sessions' => 0,
+                'total_late_minutes' => 0,
+                'total_bonuses' => 0.0,
+                'total_deductions' => 0.0,
+                'today_status' => 'off',
+                'today_status_label' => WorkAttendanceState::statusLabel('off', $partner),
+                'today_worked_seconds' => 0,
+            ];
+        }
+
+        $workStartLabel = WorkHoursCalculator::scheduledStartLabel($partner);
 
         $recentWorkTimes = $partner->workTimes()
             ->latest('date')
             ->latest('start_time')
             ->limit(20)
             ->get()
-            ->each(function ($record) {
-                $record->notes = CountryNames::ensureUtf8($record->notes);
+            ->map(function ($record) use ($partner, $workStartLabel) {
+                CountryNames::sanitizeModelAttributes($record);
+                $record->setAttribute('display_country', CountryNames::ensureUtf8(
+                    $record->country_name ?? (string) $record->country
+                ) ?? '');
+                try {
+                    $record->setAttribute(
+                        'is_late_for_display',
+                        $record->type === 'حضور'
+                            && WorkHoursCalculator::isLateCheckIn($partner, $record->date, $record->start_time)
+                    );
+                } catch (\Throwable) {
+                    $record->setAttribute('is_late_for_display', false);
+                }
+                $record->setAttribute('work_start_label', $workStartLabel);
+
+                return $record;
             });
 
         $recentSalaries = $partner->salaries()
             ->latest('year')
             ->latest('month')
             ->limit(12)
-            ->get();
+            ->get()
+            ->each(function ($salary) {
+                CountryNames::sanitizeModelAttributes($salary);
+            });
 
         $recentAdjustments = $partner->employeeAdjustments()
             ->latest('date')
             ->limit(15)
             ->get()
             ->each(function ($adj) {
-                $adj->notes = CountryNames::ensureUtf8($adj->notes);
+                CountryNames::sanitizeModelAttributes($adj);
             });
 
         return view('dashboard.partners.show', compact(
@@ -118,25 +165,45 @@ class PartnerController extends Controller
 
     private function sanitizePartnerForView(User $partner): void
     {
-        foreach (['name', 'email', 'phone', 'company_name', 'salary_notes', 'note_title', 'note_details'] as $field) {
-            if ($partner->{$field} !== null && $partner->{$field} !== '') {
-                $partner->{$field} = CountryNames::ensureUtf8((string) $partner->{$field});
-            }
+        CountryNames::sanitizeModelAttributes($partner);
+
+        if (is_array($partner->vacation_days)) {
+            $partner->vacation_days = array_map(
+                fn ($day) => CountryNames::ensureUtf8((string) $day) ?? (string) $day,
+                $partner->vacation_days
+            );
         }
+
+        if (is_array($partner->skills)) {
+            $partner->skills = array_map(function ($skill) {
+                if (is_string($skill)) {
+                    return CountryNames::ensureUtf8($skill) ?? '';
+                }
+                if (is_array($skill)) {
+                    return array_map(
+                        fn ($v) => is_string($v) ? (CountryNames::ensureUtf8($v) ?? '') : $v,
+                        $skill
+                    );
+                }
+
+                return $skill;
+            }, $partner->skills);
+        }
+
+        $partner->setAttribute(
+            'country_name',
+            CountryNames::ensureUtf8(CountryNames::forCode($partner->country) ?? '') ?? ''
+        );
 
         if ($partner->relationLoaded('systems')) {
             foreach ($partner->systems as $system) {
-                if (! empty($system->name_ar)) {
-                    $system->name_ar = CountryNames::ensureUtf8($system->name_ar);
-                }
+                CountryNames::sanitizeModelAttributes($system);
             }
         }
 
         if ($partner->relationLoaded('services')) {
             foreach ($partner->services as $service) {
-                if (! empty($service->name_ar)) {
-                    $service->name_ar = CountryNames::ensureUtf8($service->name_ar);
-                }
+                CountryNames::sanitizeModelAttributes($service);
             }
         }
     }

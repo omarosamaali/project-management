@@ -41,8 +41,8 @@ class CockpitController extends Controller
                 $notification->message = CountryNames::ensureUtf8($notification->message);
             });
 
-        $allTasks = $this->loadAllTasks($user, $requestIds, $specialIds, $taskStatusFilter);
-        $allStages = $this->loadAllStages($user, $requestIds, $specialIds);
+        $allTasks = $this->sanitizeTasks($this->loadAllTasks($user, $requestIds, $specialIds, $taskStatusFilter));
+        $allStages = $this->sanitizeStages($this->loadAllStages($user, $requestIds, $specialIds));
 
         return view('dashboard', compact(
             'taskStats',
@@ -184,5 +184,38 @@ class CockpitController extends Controller
         }
 
         return $stages->sortByDesc(fn ($s) => $s['end_date'] ?? '')->values();
+    }
+
+    private function sanitizeTasks(Collection $tasks): Collection
+    {
+        return $tasks->each(function (Task $task) {
+            $task->title = CountryNames::ensureUtf8($task->title) ?? '';
+            $task->status = CountryNames::ensureUtf8($task->status) ?? '';
+            if ($task->user) {
+                $task->user->name = CountryNames::ensureUtf8($task->user->name) ?? '';
+            }
+            if ($task->specialRequest) {
+                $task->specialRequest->title = CountryNames::ensureUtf8($task->specialRequest->title) ?? '';
+            }
+            if ($task->request?->system) {
+                $task->request->system->name_ar = CountryNames::ensureUtf8($task->request->system->name_ar) ?? '';
+            }
+            if ($task->stage) {
+                $task->stage->title = CountryNames::ensureUtf8($task->stage->title) ?? '';
+            }
+            if ($task->requestStage) {
+                $task->requestStage->title = CountryNames::ensureUtf8($task->requestStage->title) ?? '';
+            }
+        });
+    }
+
+    private function sanitizeStages(Collection $stages): Collection
+    {
+        return $stages->map(function (array $stage) {
+            $stage['title'] = CountryNames::ensureUtf8($stage['title'] ?? '') ?? '';
+            $stage['project_name'] = CountryNames::ensureUtf8($stage['project_name'] ?? '') ?? '';
+
+            return $stage;
+        });
     }
 }

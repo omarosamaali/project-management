@@ -49,7 +49,7 @@ class EmployeeProfileStats
             'total_bonuses' => round((float) $adjustments->where('type', 'bonus')->sum('amount'), 2),
             'total_deductions' => round((float) $adjustments->where('type', 'deduction')->sum('amount'), 2),
             'today_status' => $todayState['status'],
-            'today_status_label' => WorkAttendanceState::statusLabel($todayState['status']),
+            'today_status_label' => WorkAttendanceState::statusLabel($todayState['status'], $user),
             'today_worked_seconds' => $todayState['worked_seconds'],
         ];
     }

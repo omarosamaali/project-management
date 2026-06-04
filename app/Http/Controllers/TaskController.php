@@ -8,6 +8,7 @@ use App\Models\SpecialRequest;
 use App\Models\Requests as ProjectRequest;
 use App\Services\ProjectActivityLogger;
 use App\Support\TaskPermissions;
+use App\Support\WorkAttendanceState;
 use Carbon\Carbon;
 
 class TaskController extends Controller
@@ -186,7 +187,17 @@ class TaskController extends Controller
 
     public function startTimer(Task $task)
     {
-        TaskPermissions::authorizeTrack(auth()->user(), $task);
+        $user = auth()->user();
+        TaskPermissions::authorizeTrack($user, $task);
+
+        if (WorkAttendanceState::isEmployeePartner($user)) {
+            $state = WorkAttendanceState::resolve($user);
+            if ($state['status'] !== 'working') {
+                return redirect()->back()->withErrors([
+                    'attendance' => 'يجب تسجيل الحضور أولاً قبل البدء بالعمل على المهام.',
+                ]);
+            }
+        }
 
         if (!$task->is_timer_running) {
             $task->timer_started_at = now();

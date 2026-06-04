@@ -658,7 +658,7 @@
             const root = state.root;
             const timerEls = root.querySelectorAll('.attendance-timer');
             const statusEls = root.querySelectorAll('.attendance-status-text');
-            const label = state.status === 'working' ? 'يعمل الآن' : (state.status === 'break' ? 'في استراحة' : 'خارج الدوام');
+            const label = state.statusLabel || (state.status === 'working' ? 'يعمل الآن' : (state.status === 'break' ? 'في استراحة' : 'خارج الدوام'));
             const timeStr = fmtAttendanceTime(state.seconds);
 
             timerEls.forEach((el) => { el.textContent = timeStr; });
@@ -694,6 +694,7 @@
             }
             attendanceStates.forEach((state) => {
                 state.status = data.status;
+                state.statusLabel = data.status_label || null;
                 state.seconds = parseInt(data.worked_seconds || 0, 10);
             });
             refreshAllAttendanceUI();
@@ -705,6 +706,7 @@
                 root,
                 buttons: Array.from(buttons),
                 status: root.dataset.status || 'off',
+                statusLabel: null,
                 seconds: parseInt(root.dataset.seconds || '0', 10),
             });
 

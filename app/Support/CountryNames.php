@@ -24,7 +24,15 @@ class CountryNames
 
             $list = require $path;
 
-            return is_array($list) ? $list : [];
+            if (! is_array($list)) {
+                return [];
+            }
+
+            foreach ($list as $code => $name) {
+                $list[$code] = self::ensureUtf8((string) $name) ?? (string) $name;
+            }
+
+            return $list;
         });
     }
 
@@ -65,10 +73,41 @@ class CountryNames
             return $value;
         }
 
-        if (mb_check_encoding($value, 'UTF-8')) {
-            return $value;
+        if (function_exists('iconv')) {
+            $clean = @iconv('UTF-8', 'UTF-8//IGNORE', $value);
+            if ($clean !== false) {
+                $value = $clean;
+            }
         }
 
-        return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+        if (! mb_check_encoding($value, 'UTF-8')) {
+            $converted = @mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1');
+            if ($converted !== false && mb_check_encoding($converted, 'UTF-8')) {
+                $value = $converted;
+            } else {
+                $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            }
+        }
+
+        return $value;
+    }
+
+    /**
+     * تنظيف كل الحقول النصية على موديل Eloquent قبل العرض.
+     */
+    public static function sanitizeModelAttributes(object $model, array $extraStringKeys = []): void
+    {
+        foreach ($model->getAttributes() as $key => $value) {
+            if (is_string($value)) {
+                $model->setAttribute($key, self::ensureUtf8($value) ?? '');
+            }
+        }
+
+        foreach ($extraStringKeys as $key) {
+            $value = $model->{$key} ?? null;
+            if (is_string($value) && $value !== '') {
+                $model->setAttribute($key, self::ensureUtf8($value) ?? '');
+            }
+        }
     }
 }

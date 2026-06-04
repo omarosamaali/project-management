@@ -22,6 +22,22 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\JsonException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'خطأ في ترميز البيانات. تواصل مع الدعم.'], 500);
+            }
+
+            return response(
+                '<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>خطأ</title></head>'
+                . '<body style="font-family:sans-serif;padding:2rem;text-align:center">'
+                . '<h1>تعذّر عرض الصفحة</h1>'
+                . '<p>بيانات غير صالحة في النظام (ترميز UTF-8). راجع <code>storage/logs/laravel.log</code> أو تواصل مع الدعم.</p>'
+                . '</body></html>',
+                500,
+                ['Content-Type' => 'text/html; charset=UTF-8']
+            );
+        });
+
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
             $previous = url()->previous();
             $registerUrl = route('register');

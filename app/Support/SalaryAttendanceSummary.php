@@ -24,14 +24,6 @@ class SalaryAttendanceSummary
         $user = $user ?? User::notBlocked()->findOrFail($userId);
         [$startDate, $endDate] = self::payrollPeriodBounds($year, $month);
 
-        $baseSalary = (float) ($user->salary_amount ?? $user->salary_amount_scale ?? 0);
-        $hourRate = $baseSalary > 0 ? ($baseSalary / 26 / 9) : 0;
-        $minuteRate = $hourRate / 60;
-
-        $workStart = self::normalizeTime($user->work_start_time, '09:00:00');
-        $workEnd = self::normalizeTime($user->work_end_time, '18:00:00');
-        $graceMinutes = 10;
-
         $records = WorkTime::where('user_id', $userId)
             ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
             ->orderBy('date')
@@ -41,51 +33,31 @@ class SalaryAttendanceSummary
 
         $totalLateMinutes = 0;
         $totalOvertimeMinutes = 0;
-        $totalDeductionAmount = 0;
-        $totalOvertimeAmount = 0;
+        $totalDeductionAmount = 0.0;
+        $totalOvertimeAmount = 0.0;
         $attendanceDays = 0;
 
         foreach ($records->groupBy(fn ($r) => WorkTimeMoment::dateKey($r->date)) as $date => $dayRecords) {
-            $checkIn = $dayRecords->first(fn ($r) => $r->type === 'حضور')
-                ?? $dayRecords->first(fn ($r) => $r->type === 'دخول من الاستراحة');
+            $hasCheckIn = $dayRecords->contains(fn ($r) => in_array($r->type, ['حضور', 'دخول من الاستراحة'], true));
 
-            $checkOut = $dayRecords->where('type', 'انصراف')->sortByDesc('start_time')->first();
-
-            if ($checkIn && $checkIn->start_time) {
+            if ($hasCheckIn) {
                 $attendanceDays++;
-                $checkInTime = WorkTimeMoment::at($date, $checkIn->start_time);
-                $scheduledStart = WorkTimeMoment::at($date, $workStart);
-                $graceEnd = $scheduledStart->copy()->addMinutes($graceMinutes);
-
-                if ($checkInTime->gt($graceEnd)) {
-                    $lateMinutes = $checkInTime->diffInMinutes($scheduledStart);
-                    $totalLateMinutes += $lateMinutes;
-                    $totalDeductionAmount += (90 * $minuteRate);
-                } elseif ($checkInTime->gt($scheduledStart)) {
-                    $lateMinutes = $checkInTime->diffInMinutes($scheduledStart);
-                    $totalLateMinutes += $lateMinutes;
-                    $totalDeductionAmount += ($lateMinutes * $minuteRate);
-                }
             }
 
-            if ($checkOut && $checkOut->start_time) {
-                $checkOutTime = WorkTimeMoment::at($date, $checkOut->start_time);
-                $scheduledEnd = WorkTimeMoment::at($date, $workEnd);
-
-                if ($checkOutTime->gt($scheduledEnd)) {
-                    $overtimeMinutes = $checkOutTime->diffInMinutes($scheduledEnd);
-                    $totalOvertimeMinutes += $overtimeMinutes;
-                    $totalOvertimeAmount += ($overtimeMinutes * $minuteRate);
-                }
-            }
+            $summary = AttendanceRules::summarizeDay($user, $date, $dayRecords);
+            $totalLateMinutes += $summary['late_minutes'];
+            $totalDeductionAmount += $summary['late_amount']
+                + $summary['break_excess_amount']
+                + $summary['early_leave_amount'];
+            $totalOvertimeMinutes += $summary['overtime_minutes'];
+            $totalOvertimeAmount += $summary['overtime_amount'];
         }
 
         $unpaidHolidayDays = HolidayCalendar::unpaidHolidayDaysInPeriod($user, $startDate, $endDate);
         $dayRate = HolidayCalendar::dailySalaryRate($user);
         $holidayDeduction = round($unpaidHolidayDays * $dayRate, 2);
-        $deductionAmount = round(abs($totalDeductionAmount) + $holidayDeduction, 2);
-
-        $overtimeAmount = round(abs($totalOvertimeAmount), 2);
+        $deductionAmount = round($totalDeductionAmount + $holidayDeduction, 2);
+        $overtimeAmount = round($totalOvertimeAmount, 2);
 
         return [
             'range' => $startDate->format('Y/m/d') . ' إلى ' . $endDate->format('Y/m/d'),
@@ -95,22 +67,11 @@ class SalaryAttendanceSummary
             'days_count' => $attendanceDays,
             'unpaid_holiday_days' => $unpaidHolidayDays,
             'holiday_deduction' => $holidayDeduction,
-            'late_minutes' => (int) abs($totalLateMinutes),
-            'overtime_minutes' => (int) abs($totalOvertimeMinutes),
+            'late_minutes' => (int) $totalLateMinutes,
+            'overtime_minutes' => (int) $totalOvertimeMinutes,
             'deduction_amount' => $deductionAmount,
             'overtime_amount' => $overtimeAmount,
             'net_amount' => round($overtimeAmount - $deductionAmount, 2),
         ];
-    }
-
-    private static function normalizeTime(?string $time, string $fallback): string
-    {
-        if (!$time || trim($time) === '') {
-            return $fallback;
-        }
-
-        $parsed = Carbon::parse($time);
-
-        return $parsed->format('H:i:s');
     }
 }

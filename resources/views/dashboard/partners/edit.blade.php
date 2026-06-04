@@ -346,6 +346,7 @@
                                             placeholder="0.00" readonly>
                                         <p class="text-xs text-gray-500 mt-1">(يُحسب تلقائيًا: ساعة ونصف من الساعة
                                             العادية)</p>
+                                        <p class="text-xs text-amber-700 mt-1">العمل الإضافي: انصراف بعد نهاية الدوام ثم تسجيل حضور مجدداً.</p>
                                     </div>
 
                                 </div>

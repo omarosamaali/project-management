@@ -149,6 +149,9 @@ $projectTrackedLabel = \App\Support\DurationFormatter::format($projectTrackedSec
                         $storedLabel = \App\Support\DurationFormatter::format($storedSeconds);
                         $isTimerRunning = $task->is_timer_running && $task->timer_started_at;
                         $canTrackTask = \App\Support\TaskPermissions::canTrack(auth()->user(), $task, $SpecialRequest);
+                        $attendanceWorking = ! \App\Support\WorkAttendanceState::isEmployeePartner(auth()->user())
+                            || \App\Support\WorkAttendanceState::resolve(auth()->user())['status'] === 'working';
+                        $canStartTaskTimer = $canTrackTask && $attendanceWorking && $task->status !== 'منتهية';
                     @endphp
                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                         <td class="p-4">
@@ -206,12 +209,18 @@ $projectTrackedLabel = \App\Support\DurationFormatter::format($projectTrackedSec
                             <div class="flex items-center justify-center gap-2">
                                 @if($canTrackTask && $task->status !== 'منتهية')
                                 @if(!$task->is_timer_running)
+                                @if($canStartTaskTimer)
                                 <form action="{{ route('tasks.start-timer', $task) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit" class="px-2 py-1 text-[10px] font-bold bg-green-100 text-green-700 rounded-md hover:bg-green-200">
                                         ابدأ
                                     </button>
                                 </form>
+                                @else
+                                <span class="px-2 py-1 text-[10px] font-bold bg-gray-100 text-gray-500 rounded-md cursor-not-allowed" title="سجّل الحضور أولاً">
+                                    ابدأ
+                                </span>
+                                @endif
                                 @else
                                 <form action="{{ route('tasks.pause-timer', $task) }}" method="POST" class="inline">
                                     @csrf

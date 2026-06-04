@@ -24,11 +24,6 @@ class MarkAttendanceAbsences extends Command
             ? Carbon::parse($this->option('date'))->startOfDay()
             : Carbon::today();
 
-        if ($date->isFriday()) {
-            $this->info('يوم الجمعة — لا يُسجَّل غياب.');
-            return self::SUCCESS;
-        }
-
         $employees = User::query()
             ->where('role', 'partner')
             ->where('is_employee', true)
@@ -39,7 +34,7 @@ class MarkAttendanceAbsences extends Command
         $marked = 0;
 
         foreach ($employees as $employee) {
-            if (HolidayCalendar::isHolidayForUser($employee, $date)) {
+            if (HolidayCalendar::isNonWorkingDay($employee, $date)) {
                 continue;
             }
 

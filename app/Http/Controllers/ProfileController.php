@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Support\ClientCompanyFields;
+use App\Support\EmployeeProfileStats;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +18,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $employeeStats = ($user->role === 'partner' && $user->is_employee)
+            ? EmployeeProfileStats::forUser($user)
+            : null;
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'employeeStats' => $employeeStats,
         ]);
     }
 
