@@ -698,6 +698,9 @@
                 state.seconds = parseInt(data.worked_seconds || 0, 10);
             });
             refreshAllAttendanceUI();
+            if (data.late_message) {
+                Swal.fire({ icon: 'warning', title: 'تسجيل حضور متأخر', text: data.late_message, confirmButtonText: 'حسناً' });
+            }
         }
 
         attendanceWidgets.forEach((root, index) => {

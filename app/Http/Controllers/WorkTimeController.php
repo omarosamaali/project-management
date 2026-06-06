@@ -268,11 +268,30 @@ class WorkTimeController extends Controller
 
         $newState = WorkAttendanceState::resolve($user);
 
+        $lateMessage = null;
+        if ($action === 'check_in') {
+            $late = AttendanceRules::lateDeductionForCheckIn($user, $today, $now);
+            if ($late['minutes'] > 0) {
+                $allowedLate = (int) ($user->allowed_late_minutes ?? 0);
+                $billable = max(0, $late['minutes'] - $allowedLate);
+                $lateMessage = 'تنبيه: أنت متأخر ' . $late['minutes'] . ' دقيقة عن بداية الدوام';
+                if ($allowedLate > 0) {
+                    $lateMessage .= ' (المسموح: ' . $allowedLate . ' دقيقة)';
+                }
+                if ($late['amount'] > 0) {
+                    $lateMessage .= ' — تم احتساب خصم: ' . number_format($late['amount'], 2);
+                } elseif ($billable > 0) {
+                    $lateMessage .= ' — لم يُحتسب خصم (يرجى تحديث بيانات الراتب)';
+                }
+            }
+        }
+
         return response()->json([
             'ok' => true,
             'status' => $newState['status'],
             'status_label' => WorkAttendanceState::statusLabel($newState['status'], $user),
             'worked_seconds' => $newState['worked_seconds'],
+            'late_message' => $lateMessage,
         ]);
     }
 
