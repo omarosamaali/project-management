@@ -148,7 +148,17 @@ class WorkTimeController extends Controller
     public function update(Request $request, WorkTime $workTime)
     {
         $this->denyUnlessAdmin();
-        $workTime->update($request->all());
+        $data = $request->validate([
+            'user_id'    => 'required|exists:users,id',
+            'country'    => 'required|string|max:5',
+            'type'       => 'required|string',
+            'date'       => 'required|date',
+            'start_time' => 'required',
+            'end_time'   => 'nullable',
+            'notes'      => 'nullable|string',
+            'timezone'   => 'nullable|string|max:64',
+        ]);
+        $workTime->update($data);
         return redirect()->route('dashboard.work-times.index')->with('success', 'تم تحديث البيانات بنجاح');
     }
 

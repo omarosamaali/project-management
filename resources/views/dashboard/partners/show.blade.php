@@ -232,7 +232,8 @@
             @endif
         </div>
 
-        @if($partner->vacation_days && count($partner->vacation_days) > 0)
+        @php $vacationDays = is_array($partner->vacation_days) ? $partner->vacation_days : (is_string($partner->vacation_days) ? json_decode($partner->vacation_days, true) ?? [] : []); @endphp
+        @if(!empty($vacationDays))
         <div class="mt-4">
             <label class="text-xs text-gray-500 dark:text-gray-400 block mb-2 font-medium">
                 <i class="fas fa-calendar-times"></i> أيام الإجازة الأسبوعية:
@@ -244,7 +245,7 @@
                     'tuesday' => 'الثلاثاء', 'wednesday' => 'الأربعاء', 'thursday' => 'الخميس', 'friday' => 'الجمعة',
                 ];
                 @endphp
-                @foreach($partner->vacation_days as $day)
+                @foreach($vacationDays as $day)
                 @php $cleanDay = trim(strtolower($day)); @endphp
                 <span class="px-3 py-1 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-100 rounded-md text-xs font-bold">
                     <i class="fas fa-calendar-day"></i> {{ $daysMapping[$cleanDay] ?? $day }}

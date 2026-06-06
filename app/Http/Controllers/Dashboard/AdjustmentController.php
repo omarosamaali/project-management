@@ -137,7 +137,7 @@ class AdjustmentController extends Controller
             return;
         }
 
-        $typeLabel = $adjustment->type === 'bonus' ? 'مكافأة' : 'خصm';
+        $typeLabel = $adjustment->type === 'bonus' ? 'مكافأة' : 'خصم';
         $currency = $user->salary_currency ?? $user->salary_currency_scale ?? 'USD';
         $date = $adjustment->date instanceof \Carbon\Carbon
             ? $adjustment->date->format('Y-m-d')
