@@ -346,9 +346,10 @@ class AttendanceRules
         User $user,
         string $date,
         float $amount,
-        string $notePrefix
+        string $notePrefix,
+        bool $createIfZero = false
     ): ?EmployeeAdjustment {
-        if ($amount <= 0) {
+        if ($amount <= 0 && !$createIfZero) {
             return null;
         }
 

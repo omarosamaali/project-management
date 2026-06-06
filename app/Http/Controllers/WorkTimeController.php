@@ -297,12 +297,15 @@ class WorkTimeController extends Controller
 
         if ($type === 'حضور' && $records->where('type', 'حضور')->count() === 1) {
             $late = AttendanceRules::lateDeductionForCheckIn($user, $date, $at);
-            AttendanceRules::createDeductionIfNeeded(
-                $user,
-                $date,
-                $late['amount'],
-                'خصم تأخير صباحي'
-            );
+            if ($late['minutes'] > 0) {
+                AttendanceRules::createDeductionIfNeeded(
+                    $user,
+                    $date,
+                    $late['amount'],
+                    'خصم تأخير صباحي',
+                    createIfZero: true
+                );
+            }
         }
 
         if ($type === 'دخول من الاستراحة') {
