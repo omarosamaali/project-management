@@ -478,25 +478,6 @@
                     @endif --}}
 
                     {{-- independent partner screens --}}
-                    @if(Auth::user()->role == 'partner' && Auth::user()->is_employee == 1 &&
-                    Auth::user()->can_view_projects == 1)
-                    <a href="{{ route('dashboard.new_project.index') }}"
-                        class="{{ Route::currentRouteName() == 'dashboard.new_project.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <i
-                            class="{{ Route::currentRouteName() == 'dashboard.new_project.index' ? 'text-white' : '' }} fas fa-project-diagram text-gray-500 pl-2"></i>
-                        <span class="ml-3">المشاريع الجديدة</span>
-                    </a>
-                    @endif
-
-                    @if(Auth::user()->role == 'independent_partner' || Auth::user()->role == 'partner' &&
-                    Auth::user()->can_propose_quotes == 1)
-                    <a href="{{ route('dashboard.new_project.index') }}"
-                        class="{{ Route::currentRouteName() == 'dashboard.new_project.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                        <i
-                            class="{{ Route::currentRouteName() == 'dashboard.new_project.index' ? 'text-white' : '' }} fas fa-project-diagram text-gray-500 pl-2"></i>
-                        <span class="ml-3">المشاريع الجديدة</span>
-                    </a>
-                    @endif
 
                     @if(Auth::user()->role == 'partner' && Auth::user()->is_employee)
                     <a href="{{ route('dashboard.my-profile') }}"

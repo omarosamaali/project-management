@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\User;
 use App\Models\System;
+use App\Support\AttendanceRules;
 use App\Support\CountryNames;
 use App\Support\EmployeeProfileStats;
 use App\Support\WorkAttendanceState;
 use App\Support\WorkHoursCalculator;
+use App\Support\WorkTimeMoment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -380,7 +382,38 @@ class PartnerController extends Controller
         $partner->systems()->sync($request->systems_id ?? []);
         $partner->services()->sync($request->services_id);
 
+        // إعادة حساب خصم التأخير لأي حضور اليوم لم يُحتسب له خصم بعد
+        $this->recalculateTodayLateDeduction($partner->fresh());
+
         return redirect()->route('dashboard.partners.index')->with('success', 'تم تحديث بيانات الشريك بنجاح');
+    }
+
+    private function recalculateTodayLateDeduction(User $partner): void
+    {
+        try {
+            $today = now()->toDateString();
+            $records = AttendanceRules::dayRecords($partner, $today);
+            $firstCheckIn = $records->where('type', 'حضور')->sortBy('start_time')->first();
+
+            if (!$firstCheckIn) {
+                return;
+            }
+
+            $checkInTime = WorkTimeMoment::at($today, $firstCheckIn->start_time);
+            $late = AttendanceRules::lateDeductionForCheckIn($partner, $today, $checkInTime);
+
+            if ($late['minutes'] > 0) {
+                AttendanceRules::createDeductionIfNeeded(
+                    $partner,
+                    $today,
+                    $late['amount'],
+                    'خصم تأخير صباحي',
+                    createIfZero: true
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::error('[recalculate late] ' . $e->getMessage());
+        }
     }
 
     // Destroy Method
