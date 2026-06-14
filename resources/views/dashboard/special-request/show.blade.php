@@ -29,7 +29,14 @@
                     <div>
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
                             <i class="fas fa-file-alt text-blue-600"></i>
-                            {{ $SpecialRequest->title }} - 
+                            <span id="project-title-text">{{ $SpecialRequest->title }}</span>
+                            @if(auth()->user()->role === 'admin')
+                            <button type="button" onclick="openTitleModal()"
+                                class="text-gray-400 hover:text-blue-600 transition" title="تغيير الاسم">
+                                <i class="fas fa-pen text-base"></i>
+                            </button>
+                            @endif
+                             -
                             @if($SpecialRequest->status == 'active')
                             جديد
                             @elseif($SpecialRequest->status == 'in_progress')
@@ -42,6 +49,40 @@
                             {{ $SpecialRequest->status }}
                             @endif
                         </h1>
+
+                        {{-- Modal تغيير الاسم --}}
+                        @if(auth()->user()->role === 'admin')
+                        <div id="title-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+                                <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">تغيير اسم المشروع</h3>
+                                <form method="POST" action="{{ route('dashboard.special-request.update-title', $SpecialRequest->id) }}">
+                                    @csrf @method('PATCH')
+                                    <input type="text" name="title" id="title-input"
+                                        value="{{ $SpecialRequest->title }}"
+                                        class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-gray-900 dark:text-white dark:bg-gray-700 mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        required>
+                                    <div class="flex gap-3 justify-end">
+                                        <button type="button" onclick="closeTitleModal()"
+                                            class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold">إلغاء</button>
+                                        <button type="submit"
+                                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold">حفظ</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <script>
+                            function openTitleModal() {
+                                document.getElementById('title-modal').classList.remove('hidden');
+                                document.getElementById('title-input').focus();
+                            }
+                            function closeTitleModal() {
+                                document.getElementById('title-modal').classList.add('hidden');
+                            }
+                            document.getElementById('title-modal')?.addEventListener('click', function(e) {
+                                if (e.target === this) closeTitleModal();
+                            });
+                        </script>
+                        @endif
                         {{-- <span class="text-[13px] text-[#646464] font-bold">{{ $SpecialRequest->project_type }}</span> --}}
                     </div>
                     <div class="flex gap-2">

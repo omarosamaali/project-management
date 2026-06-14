@@ -943,6 +943,18 @@ class SpecialRequestController extends Controller
         return back()->with('success', "تم إزالة العميل {$user->name} من المشروع");
     }
 
+    public function updateTitle(Request $request, SpecialRequest $specialRequest)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403);
+        }
+
+        $request->validate(['title' => 'required|string|max:255']);
+        $specialRequest->update(['title' => $request->title]);
+
+        return redirect()->back()->with('success', 'تم تغيير اسم المشروع بنجاح');
+    }
+
     public function updateProjectStatus(Request $request, SpecialRequest $specialRequest)
     {
         if (auth()->user()->role !== 'admin') {

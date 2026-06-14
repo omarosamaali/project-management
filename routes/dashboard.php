@@ -229,6 +229,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/special-request/{specialRequest}/update-project-status', [SpecialRequestController::class, 'updateProjectStatus'])
         ->name('dashboard.special-request.update-project-status');
 
+    Route::patch('/special-request/{specialRequest}/update-title', [SpecialRequestController::class, 'updateTitle'])
+        ->name('dashboard.special-request.update-title');
+
     Route::post('/request/{specialRequest}/update-project-status', [SpecialRequestController::class, 'updateRequestStatus'])
         ->name('dashboard.request.update-project-status');
     
