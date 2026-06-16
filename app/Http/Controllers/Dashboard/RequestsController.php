@@ -30,7 +30,7 @@ class RequestsController extends Controller
             $baseRequests = Requests::query();
             $baseSpecialRequests = SpecialRequest::query();
             $basePartnerSpecialRequests = SpecialRequestPartner::query();
-        } elseif ($user->role == 'partner') {
+        } elseif (in_array($user->role, ['partner', 'independent_partner'])) {
             $systemIds = PartnerSystem::where('partner_id', $user->id)->pluck('system_id');
             $baseRequests = Requests::whereIn('system_id', $systemIds);
             $assignedSpecialIds = SpecialRequestPartner::where('partner_id', $user->id)
