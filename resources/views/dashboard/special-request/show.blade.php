@@ -43,6 +43,8 @@
                             جاري العمل به
                             @elseif($SpecialRequest->status == 'pending')
                             قيد المراجعة
+                            @elseif($SpecialRequest->status == 'in_review')
+                            قيد المراجعة النهائية
                             @elseif($SpecialRequest->status == 'completed')
                             مكتمل
                             @else
@@ -109,7 +111,7 @@
                             @endif
                             @endif
 
-                            @if(auth()->user()->role === 'client' && $SpecialRequest->status === 'in_review')
+                            @if($SpecialRequest->status === 'in_review' && (auth()->user()->role === 'client' || (int)$SpecialRequest->user_id === auth()->id()))
                             <button
                                 onclick="confirmReceipt('{{ route('dashboard.special-requests.receive', $SpecialRequest->id) }}')"
                                 class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all flex items-center gap-2 shadow-md">
