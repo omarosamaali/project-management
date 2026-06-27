@@ -46,7 +46,15 @@ class ProjectMeetingController extends Controller
             'end_at' => $validated['end_at'],
         ]);
 
-        $meeting->participants()->attach($validated['attendees'], ['status' => 'pending']);
+        $creatorId = auth()->id();
+        $attendees = collect($validated['attendees'])->map('intval')->unique();
+        if (!$attendees->contains($creatorId)) {
+            $attendees->push($creatorId);
+        }
+        $attendeesData = $attendees->mapWithKeys(fn($id) => [
+            $id => ['status' => $id === $creatorId ? 'accepted' : 'pending']
+        ])->all();
+        $meeting->participants()->attach($attendeesData);
 
         $description = 'تم جدولة اجتماع جديد: «'.$validated['title'].'»';
         $logger = app(ProjectActivityLogger::class);

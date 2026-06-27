@@ -70,11 +70,10 @@ class ProjectMeeting extends Model
         $start = $this->start_at->timezone($timezone);
         $end   = $this->end_at->timezone($timezone);
 
-        $dayName   = $arabicDays[$start->format('l')];
-        $monthName = $arabicMonths[(int) $start->format('n')];
-        $dayNum    = $start->format('j');
-        $amPm      = $end->format('A') === 'AM' ? 'ص' : 'م';
+        $dayName = $arabicDays[$start->format('l')];
+        $amPm    = $end->format('A') === 'AM' ? 'ص' : 'م';
+        $date    = $start->format('j-n-Y');
 
-        return "{$dayName}، {$dayNum} {$monthName} · {$start->format('g:i')} – {$end->format('g:i')} {$amPm}";
+        return "{$dayName}، {$date} · {$start->format('g:i')} – {$end->format('g:i')} {$amPm}";
     }
 }

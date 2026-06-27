@@ -119,21 +119,54 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
 
                     {{-- الأكشن --}}
                     <div class="flex flex-col gap-3 w-full lg:w-auto">
-                        @if (!$isCreator && ($isInvited || $isProjectClient) && $currentUserStatus === 'pending' && now() < $meeting->end_at)
-                            <div class="flex gap-2">
-                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="flex-1">
+
+                        {{-- زر إلغاء الاجتماع للمنشئ --}}
+                        @if (($isCreator || $isAdmin) && now() < $meeting->end_at)
+                            <form action="{{ route('meetings.destroy', $meeting->id) }}" method="POST"
+                                onsubmit="return confirm('هل أنت متأكد من إلغاء هذا الاجتماع؟ سيتم حذفه نهائياً.')">
+                                @csrf @method('DELETE')
+                                <button class="w-full bg-red-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-700">
+                                    <i class="fas fa-trash-alt ml-1"></i> إلغاء الاجتماع
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- أزرار الرد للمدعو --}}
+                        @if (!$isCreator && ($isInvited || $isProjectClient) && now() < $meeting->end_at)
+                            @if ($currentUserStatus === 'pending')
+                                <div class="flex gap-2">
+                                    <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="flex-1">
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="status" value="accepted">
+                                        <input type="hidden" name="request_id" value="{{ $currentRequest?->id }}">
+                                        <button class="w-full bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700">موافقة</button>
+                                    </form>
+                                    <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="flex-1">
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="status" value="declined">
+                                        <button class="w-full bg-red-100 text-black px-4 py-2 rounded-xl text-xs font-bold">اعتذار</button>
+                                    </form>
+                                </div>
+                            @elseif ($currentUserStatus === 'accepted')
+                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST"
+                                    onsubmit="return confirm('هل تريد إلغاء موافقتك على هذا الاجتماع؟')">
+                                    @csrf @method('PATCH')
+                                    <input type="hidden" name="status" value="declined">
+                                    <button class="w-full bg-orange-100 text-orange-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-orange-200">
+                                        <i class="fas fa-times ml-1"></i> إلغاء الموافقة
+                                    </button>
+                                </form>
+                            @elseif ($currentUserStatus === 'declined')
+                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="accepted">
                                     <input type="hidden" name="request_id" value="{{ $currentRequest?->id }}">
-                                    <button class="w-full bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700">موافقة</button>
+                                    <button class="w-full bg-green-100 text-green-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-200">
+                                        <i class="fas fa-check ml-1"></i> الموافقة مجدداً
+                                    </button>
                                 </form>
-                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="flex-1">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="status" value="declined">
-                                    <button class="w-full bg-red-100 text-black px-4 py-2 rounded-xl text-xs font-bold">اعتذار</button>
-                                </form>
-                            </div>
-                        @elseif(!$isCreator && $currentUserStatus === 'pending' && now() >= $meeting->end_at)
+                            @endif
+                        @elseif (!$isCreator && $currentUserStatus === 'pending' && now() >= $meeting->end_at)
                             <span class="text-[10px] text-gray-400 bg-gray-50 p-2 rounded-lg text-center border border-gray-100">
                                 انتهى وقت الرد على هذا الاجتماع
                             </span>
