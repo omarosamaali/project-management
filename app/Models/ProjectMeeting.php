@@ -56,7 +56,7 @@ class ProjectMeeting extends Model
             : 'bg-blue-100 text-blue-700';
     }
 
-    public function getFormattedDateRangeAttribute(string $timezone = 'Asia/Dubai'): string
+    public function formattedDateRange(string $timezone = 'Asia/Dubai'): string
     {
         $arabicDays = [
             'Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء',

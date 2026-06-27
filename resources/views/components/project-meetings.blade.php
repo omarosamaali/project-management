@@ -70,7 +70,7 @@ $allPossibleAttendees = $allPossibleAttendees
 
                         {{-- التاريخ والوقت بالصيغة العربية --}}
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">
-                            {{ $meeting->formatted_date_range }}
+                            {{ $meeting->formattedDateRange() }}
                         </p>
                         <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                             <i class="fas fa-globe ml-1"></i>المنطقة الزمنية: Asia/Dubai

@@ -29,8 +29,9 @@ class SendMeetingReminders extends Command
         }
 
         foreach ($meetings as $meeting) {
+            /** @var ProjectMeeting $meeting */
             $projectTitle   = $meeting->title;
-            $dateRange      = $meeting->formatted_date_range;
+            $dateRange      = $meeting->formattedDateRange();
             $meetingLink    = $meeting->meeting_link ?? 'لا يوجد رابط';
             $meetingTypeLabel = $meeting->meeting_type_label;
 
