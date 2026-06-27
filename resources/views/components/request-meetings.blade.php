@@ -87,6 +87,11 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                             <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
                                 <i class="fas fa-globe ml-1"></i>المنطقة الزمنية: Asia/Dubai
                             </p>
+                            @if (!$isOnline && $meeting->location)
+                            <p class="text-[12px] text-orange-600 dark:text-orange-400 mt-1 font-medium">
+                                <i class="fas fa-map-marker-alt ml-1"></i>{{ $meeting->location }}
+                            </p>
+                            @endif
 
                             {{-- جدول حالات الحضور --}}
                             <div class="mt-4 flex flex-wrap gap-2">
@@ -187,7 +192,7 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
 <div id="addMeetingModal"
     class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-right"
     dir="rtl">
-    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto mx-auto">
         <div class="flex justify-between items-center mb-6 border-b pb-4 dark:border-gray-700">
             <h3 class="text-xl font-bold dark:text-white">جدولة اجتماع جديد</h3>
             <button onclick="toggleModal('addMeetingModal', false)"
@@ -242,10 +247,19 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                 </div>
             </div>
 
+            {{-- رابط الاجتماع (يظهر للأونلاين) --}}
             <div id="meeting_link_section">
                 <label class="block text-sm font-bold mb-1 dark:text-gray-300">رابط الاجتماع</label>
                 <input type="url" name="meeting_link" id="meeting_link_input"
                     class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none">
+            </div>
+
+            {{-- مكان الاجتماع (يظهر للحضوري) --}}
+            <div id="meeting_location_section" class="hidden">
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300">مكان الاجتماع</label>
+                <input type="text" name="location" id="meeting_location_input"
+                    placeholder="مثال: مكتب الشركة - الطابق الثاني"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-orange-400">
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -283,16 +297,24 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
     @endif
 
     document.addEventListener('DOMContentLoaded', function() {
-        // تغيير نوع الاجتماع يخفي/يظهر حقل الرابط
+        // تغيير نوع الاجتماع يخفي/يظهر حقل الرابط أو المكان
         const radios = document.querySelectorAll('input[name="meeting_type"]');
         const linkSection = document.getElementById('meeting_link_section');
+        const locationSection = document.getElementById('meeting_location_section');
+
+        function toggleMeetingFields(type) {
+            if (type === 'in_person') {
+                linkSection.classList.add('hidden');
+                locationSection.classList.remove('hidden');
+            } else {
+                linkSection.classList.remove('hidden');
+                locationSection.classList.add('hidden');
+            }
+        }
+
         radios.forEach(function(radio) {
             radio.addEventListener('change', function() {
-                if (this.value === 'in_person') {
-                    linkSection.style.opacity = '0.5';
-                } else {
-                    linkSection.style.opacity = '1';
-                }
+                toggleMeetingFields(this.value);
             });
         });
 

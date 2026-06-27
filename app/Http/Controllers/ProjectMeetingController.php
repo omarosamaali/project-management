@@ -20,6 +20,7 @@ class ProjectMeetingController extends Controller
             'end_at' => 'required|date|after:start_at',
             'meeting_link' => 'nullable|url',
             'meeting_type' => 'nullable|in:online,in_person',
+            'location' => 'nullable|string|max:255',
             'attendees' => 'required|array'
         ];
 
@@ -42,6 +43,7 @@ class ProjectMeetingController extends Controller
             'title' => $validated['title'],
             'meeting_link' => $validated['meeting_link'] ?? null,
             'meeting_type' => $validated['meeting_type'] ?? 'online',
+            'location' => $validated['location'] ?? null,
             'start_at' => $validated['start_at'],
             'end_at' => $validated['end_at'],
         ]);
@@ -97,6 +99,7 @@ class ProjectMeetingController extends Controller
             'title' => 'required|string|max:255',
             'meeting_link' => 'nullable|url',
             'meeting_type' => 'nullable|in:online,in_person',
+            'location' => 'nullable|string|max:255',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
             'attendees' => 'required|array',
