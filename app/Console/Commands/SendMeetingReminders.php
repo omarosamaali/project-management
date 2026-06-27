@@ -29,16 +29,17 @@ class SendMeetingReminders extends Command
         }
 
         foreach ($meetings as $meeting) {
-            $projectTitle = $meeting->title;
-            $startTime    = Carbon::parse($meeting->start_at)->format('H:i');
-            $meetingLink  = $meeting->meeting_link ?? 'لا يوجد رابط';
+            $projectTitle   = $meeting->title;
+            $dateRange      = $meeting->formatted_date_range;
+            $meetingLink    = $meeting->meeting_link ?? 'لا يوجد رابط';
+            $meetingTypeLabel = $meeting->meeting_type_label;
 
             $acceptedParticipants = $meeting->participants
                 ->filter(fn($u) => $u->pivot->status === 'accepted');
 
             foreach ($acceptedParticipants as $participant) {
-                $this->sendWhatsAppReminder($whatsapp, $participant, $projectTitle, $startTime, $meetingLink);
-                $this->sendEmailReminder($whatsapp, $participant, $projectTitle, $startTime, $meetingLink);
+                $this->sendWhatsAppReminder($whatsapp, $participant, $projectTitle, $dateRange, $meetingLink, $meetingTypeLabel);
+                $this->sendEmailReminder($participant, $projectTitle, $dateRange, $meetingLink, $meetingTypeLabel);
             }
 
             $this->info("تم إرسال التذكيرات للاجتماع: {$meeting->title} ({$acceptedParticipants->count()} مشاركين)");
@@ -50,34 +51,45 @@ class SendMeetingReminders extends Command
         }
     }
 
-    private function sendWhatsAppReminder(WhatsAppOTPService $whatsapp, $participant, string $projectTitle, string $startTime, string $meetingLink): void
+    private function sendWhatsAppReminder(WhatsAppOTPService $whatsapp, \App\Models\User $participant, string $projectTitle, string $dateRange, string $meetingLink, string $meetingTypeLabel): void
     {
         if (!$participant->phone) {
             return;
         }
 
         try {
-            $eventText = "تذكير: اجتماع بعد 30 دقيقة — الوقت: {$startTime} — رابط الدخول: {$meetingLink}";
+            $linkPart = ($meetingTypeLabel === 'أونلاين' && $meetingLink !== 'لا يوجد رابط')
+                ? " — رابط الاجتماع: {$meetingLink}"
+                : '';
+            $eventText = "تذكير: اجتماع بعد 30 دقيقة"
+                . " — {$dateRange}"
+                . " — المنطقة الزمنية: Asia/Dubai"
+                . " — النوع: {$meetingTypeLabel}"
+                . $linkPart;
             $whatsapp->sendProjectNotification($participant->phone, $participant->name, $eventText, $projectTitle);
         } catch (\Exception $e) {
             Log::error("[MEETING_REMINDER] فشل الواتساب للمشارك #{$participant->id}: " . $e->getMessage());
         }
     }
 
-    private function sendEmailReminder(WhatsAppOTPService $whatsapp, $participant, string $projectTitle, string $startTime, string $meetingLink): void
+    private function sendEmailReminder(\App\Models\User $participant, string $projectTitle, string $dateRange, string $meetingLink, string $meetingTypeLabel): void
     {
         if (!$participant->email) {
             return;
         }
 
         $subject = "تذكير: اجتماع {$projectTitle} بعد 30 دقيقة";
-        $body    = "مرحباً {$participant->name},\n\n" .
-                   "نذكرك باجتماع مجدول بعد 30 دقيقة:\n\n" .
-                   "📌 المشروع: {$projectTitle}\n" .
-                   "🕐 وقت البدء: {$startTime}\n\n" .
-                   "للانضمام للاجتماع اضغط على الرابط:\n{$meetingLink}\n\n" .
-                   "في حال واجهتك أي مشكلة في الدخول يرجى التواصل مع مدير المشروع.\n\n" .
-                   "---\nفريق Evorq Technologies\ninfo@evorq.com";
+        $linkLine = $meetingTypeLabel === 'أونلاين'
+            ? "للانضمام للاجتماع اضغط على الرابط:\n{$meetingLink}\n\n"
+            : "الاجتماع حضوري، يرجى الحضور في الموعد المحدد.\n\n";
+        $body = "مرحباً {$participant->name},\n\n" .
+                "نذكرك باجتماع مجدول بعد 30 دقيقة:\n\n" .
+                "📌 الاجتماع: {$projectTitle}\n" .
+                "📅 {$dateRange}\n" .
+                "🏷️ النوع: {$meetingTypeLabel}\n\n" .
+                $linkLine .
+                "في حال واجهتك أي مشكلة يرجى التواصل مع مدير المشروع.\n\n" .
+                "---\nفريق Evorq Technologies\ninfo@evorq.com";
 
         try {
             \Illuminate\Support\Facades\Mail::raw(
