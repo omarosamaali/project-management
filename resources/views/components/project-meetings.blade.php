@@ -101,8 +101,22 @@ $allPossibleAttendees = $allPossibleAttendees
                 {{-- الأكشن --}}
                 <div class="flex flex-col gap-2">
 
-                    {{-- زر إلغاء الاجتماع للمنشئ --}}
+                    {{-- أزرار المنشئ / الأدمن --}}
                     @if (($isCreator || $isAdmin) && now() < $meeting->end_at)
+                        <button type="button"
+                            onclick="openPmEditModal(
+                                {{ $meeting->id }},
+                                '{{ addslashes($meeting->title) }}',
+                                '{{ $meeting->meeting_type ?? 'online' }}',
+                                '{{ $meeting->start_at->format('Y-m-d\TH:i') }}',
+                                '{{ $meeting->end_at->format('Y-m-d\TH:i') }}',
+                                '{{ addslashes($meeting->meeting_link ?? '') }}',
+                                '{{ addslashes($meeting->location ?? '') }}',
+                                [{{ $participants->pluck('id')->join(',') }}]
+                            )"
+                            class="w-full bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-900">
+                            <i class="fas fa-edit ml-1"></i> تعديل الاجتماع
+                        </button>
                         <form action="{{ route('meetings.destroy', $meeting->id) }}" method="POST"
                             onsubmit="return confirm('هل أنت متأكد من إلغاء هذا الاجتماع؟ سيتم حذفه نهائياً.')">
                             @csrf @method('DELETE')
@@ -254,6 +268,93 @@ $allPossibleAttendees = $allPossibleAttendees
     </div>
 </div>
 
+{{-- مودال تعديل الاجتماع --}}
+<div id="pmEditMeetingModal"
+    class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-right"
+    dir="rtl">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto mx-auto">
+        <div class="flex justify-between items-center mb-6 border-b pb-4 dark:border-gray-700">
+            <h3 class="text-xl font-bold dark:text-white">تعديل الاجتماع</h3>
+            <button onclick="toggleModal('pmEditMeetingModal', false)"
+                class="text-gray-400 hover:text-black text-2xl">&times;</button>
+        </div>
+        <form id="pmEditMeetingForm" action="" method="POST" class="space-y-4">
+            @csrf @method('PUT')
+
+            <div>
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300">عنوان الاجتماع</label>
+                <input type="text" name="title" id="pm_edit_title" required
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-gray-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2 dark:text-gray-300">نوع الاجتماع</label>
+                <div class="flex gap-3">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="meeting_type" id="pm_edit_type_online" value="online" class="sr-only peer">
+                        <div class="flex items-center justify-center gap-2 p-3 border-2 rounded-xl text-sm font-bold transition-all
+                            peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700
+                            border-gray-200 text-gray-500 dark:border-gray-600 dark:peer-checked:bg-blue-900/30">
+                            <i class="fas fa-video"></i><span>أونلاين</span>
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="meeting_type" id="pm_edit_type_inperson" value="in_person" class="sr-only peer">
+                        <div class="flex items-center justify-center gap-2 p-3 border-2 rounded-xl text-sm font-bold transition-all
+                            peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700
+                            border-gray-200 text-gray-500 dark:border-gray-600 dark:peer-checked:bg-orange-900/30">
+                            <i class="fas fa-map-marker-alt"></i><span>حضوري</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div id="pm_edit_link_section">
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300">رابط الاجتماع</label>
+                <input type="url" name="meeting_link" id="pm_edit_meeting_link"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none">
+            </div>
+            <div id="pm_edit_location_section" class="hidden">
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300">مكان الاجتماع</label>
+                <input type="text" name="location" id="pm_edit_location"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-orange-400">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت البدء</label>
+                    <input type="datetime-local" name="start_at" id="pm_edit_start_at" required
+                        class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت الانتهاء</label>
+                    <input type="datetime-local" name="end_at" id="pm_edit_end_at" required
+                        class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-2 dark:text-gray-300">الحضور</label>
+                <div class="grid grid-cols-2 gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl max-h-36 overflow-y-auto border dark:border-gray-700">
+                    @foreach ($allPossibleAttendees as $person)
+                    <label class="flex items-center gap-2 cursor-pointer hover:bg-white dark:hover:bg-gray-800 p-1 rounded transition">
+                        <input type="checkbox" name="attendees[]" value="{{ $person->id }}" class="pm-edit-attendee-check rounded text-black">
+                        <span class="text-xs dark:text-gray-300">{{ $person->display_name }}</span>
+                    </label>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-4">
+                <button type="submit"
+                    class="flex-1 bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-black">حفظ التعديلات</button>
+                <button type="button" onclick="toggleModal('pmEditMeetingModal', false)"
+                    class="flex-1 bg-gray-100 dark:bg-gray-700 dark:text-white py-3 rounded-xl">إلغاء</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const radios = document.querySelectorAll('#addMeetingModal input[name="meeting_type"]');
@@ -287,6 +388,48 @@ $allPossibleAttendees = $allPossibleAttendees
                 }
             });
         }
+    });
+
+    function openPmEditModal(id, title, type, startAt, endAt, link, location, attendeeIds) {
+        document.getElementById('pmEditMeetingForm').action = '/project-meetings/' + id;
+        document.getElementById('pm_edit_title').value = title;
+        document.getElementById('pm_edit_start_at').value = startAt;
+        document.getElementById('pm_edit_end_at').value = endAt;
+        document.getElementById('pm_edit_meeting_link').value = link;
+        document.getElementById('pm_edit_location').value = location;
+
+        document.getElementById('pm_edit_type_online').checked = (type !== 'in_person');
+        document.getElementById('pm_edit_type_inperson').checked = (type === 'in_person');
+
+        const pmLinkSec = document.getElementById('pm_edit_link_section');
+        const pmLocSec  = document.getElementById('pm_edit_location_section');
+        if (type === 'in_person') {
+            pmLinkSec.classList.add('hidden');
+            pmLocSec.classList.remove('hidden');
+        } else {
+            pmLinkSec.classList.remove('hidden');
+            pmLocSec.classList.add('hidden');
+        }
+
+        document.querySelectorAll('.pm-edit-attendee-check').forEach(function(cb) {
+            cb.checked = attendeeIds.includes(parseInt(cb.value));
+        });
+
+        toggleModal('pmEditMeetingModal', true);
+    }
+
+    document.querySelectorAll('#pmEditMeetingModal input[name="meeting_type"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            const pmLinkSec = document.getElementById('pm_edit_link_section');
+            const pmLocSec  = document.getElementById('pm_edit_location_section');
+            if (this.value === 'in_person') {
+                pmLinkSec.classList.add('hidden');
+                pmLocSec.classList.remove('hidden');
+            } else {
+                pmLinkSec.classList.remove('hidden');
+                pmLocSec.classList.add('hidden');
+            }
+        });
     });
 
     function joinMeeting(meetingId, url) {
