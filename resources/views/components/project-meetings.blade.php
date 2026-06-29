@@ -271,11 +271,12 @@ $allPossibleAttendees = $allPossibleAttendees
 {{-- مودال تعديل الاجتماع --}}
 <div id="pmEditMeetingModal"
     class="fixed inset-0 z-[110] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4 text-right"
+    onclick="if(event.target===this) closePmEditMeetingModal()"
     dir="rtl">
-    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto mx-auto">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto mx-auto" onclick="event.stopPropagation()">
         <div class="flex justify-between items-center mb-6 border-b pb-4 dark:border-gray-700">
             <h3 class="text-xl font-bold dark:text-white">تعديل الاجتماع</h3>
-            <button onclick="toggleModal('pmEditMeetingModal', false)"
+            <button onclick="closePmEditMeetingModal()"
                 class="text-gray-400 hover:text-black text-2xl">&times;</button>
         </div>
         <form id="pmEditMeetingForm" action="" method="POST" class="space-y-4">
@@ -348,7 +349,7 @@ $allPossibleAttendees = $allPossibleAttendees
             <div class="flex gap-2 pt-4">
                 <button type="submit"
                     class="flex-1 bg-gray-800 text-white py-3 rounded-xl font-bold hover:bg-black">حفظ التعديلات</button>
-                <button type="button" onclick="toggleModal('pmEditMeetingModal', false)"
+                <button type="button" onclick="closePmEditMeetingModal()"
                     class="flex-1 bg-gray-100 dark:bg-gray-700 dark:text-white py-3 rounded-xl">إلغاء</button>
             </div>
         </form>
@@ -401,8 +402,8 @@ $allPossibleAttendees = $allPossibleAttendees
         document.getElementById('pm_edit_type_online').checked = (type !== 'in_person');
         document.getElementById('pm_edit_type_inperson').checked = (type === 'in_person');
 
-        const pmLinkSec = document.getElementById('pm_edit_link_section');
-        const pmLocSec  = document.getElementById('pm_edit_location_section');
+        var pmLinkSec = document.getElementById('pm_edit_link_section');
+        var pmLocSec  = document.getElementById('pm_edit_location_section');
         if (type === 'in_person') {
             pmLinkSec.classList.add('hidden');
             pmLocSec.classList.remove('hidden');
@@ -415,7 +416,17 @@ $allPossibleAttendees = $allPossibleAttendees
             cb.checked = attendeeIds.includes(parseInt(cb.value));
         });
 
-        toggleModal('pmEditMeetingModal', true);
+        var modal = document.getElementById('pmEditMeetingModal');
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closePmEditMeetingModal() {
+        var modal = document.getElementById('pmEditMeetingModal');
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
     }
 
     document.querySelectorAll('#pmEditMeetingModal input[name="meeting_type"]').forEach(function(r) {
