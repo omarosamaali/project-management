@@ -108,13 +108,14 @@ class ProjectMeetingController extends Controller
         $meeting->update($validated);
 
         if ($request->filled('attendees')) {
-            $creatorId = $meeting->created_by;
-            $attendees = collect($request->attendees)->map('intval')->unique();
-            if (!$attendees->contains($creatorId)) {
+            $creatorId = (int) $meeting->created_by;
+            $attendees = collect($request->attendees)->map('intval')->filter(fn($id) => $id > 0)->unique();
+            if ($creatorId > 0 && !$attendees->contains($creatorId)) {
                 $attendees->push($creatorId);
             }
+            $existingStatuses = $meeting->participants->mapWithKeys(fn($p) => [$p->id => $p->pivot->status])->toArray();
             $syncData = $attendees->mapWithKeys(fn($id) => [
-                $id => ['status' => $meeting->participants()->where('users.id', $id)->first()?->pivot->status ?? 'pending']
+                $id => ['status' => $existingStatuses[$id] ?? 'pending']
             ])->all();
             $meeting->participants()->sync($syncData);
         }
