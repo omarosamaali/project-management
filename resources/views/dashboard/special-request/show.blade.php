@@ -91,7 +91,15 @@
 
                         {{-- الزر --}}
                         <div class="flex gap-2">
-                            {{-- زر الأدمن: تحويل أو تسليم --}}
+                            {{-- زر تعديل المشروع للأدمن والمنيجر --}}
+                            @if(in_array(auth()->user()->role, ['admin', 'manager']))
+                            <a href="{{ route('dashboard.special-request.edit', $SpecialRequest) }}"
+                                class="px-4 py-2 bg-gray-700 hover:bg-gray-900 text-white rounded-lg transition flex items-center gap-2">
+                                <i class="fas fa-edit"></i> تعديل المشروع
+                            </a>
+                            @endif
+
+                        {{-- زر الأدمن: تحويل أو تسليم --}}
                             @if(auth()->user()->role === 'admin')
                             <button onclick="openProjectStatusModal()"
                                 class="px-4 py-2 {{ $SpecialRequest->is_project ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white rounded-lg transition flex items-center gap-2">
@@ -166,7 +174,7 @@
 
                     {{-- Modal --}}
                     <div id="projectStatusModal"
-                        class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
                             <div
                                 class="p-6 border-b dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-700">

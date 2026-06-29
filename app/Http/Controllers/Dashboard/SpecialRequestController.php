@@ -1057,4 +1057,50 @@ class SpecialRequestController extends Controller
 
         return back()->with('success', 'تم تأكيد الاستلام بنجاح، يسعدنا التعامل معك!');
     }
+
+    public function edit(SpecialRequest $specialRequest)
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'manager'])) {
+            abort(403);
+        }
+
+        $services = \App\Models\Service::where('status', 'active')->get();
+
+        return view('dashboard.special-request.edit', compact('specialRequest', 'services'));
+    }
+
+    public function update(Request $httpRequest, SpecialRequest $specialRequest)
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'manager'])) {
+            abort(403);
+        }
+
+        $validated = $httpRequest->validate([
+            'title'              => 'required|string|max:255',
+            'project_type'       => 'required|string',
+            'description'        => 'required|string',
+            'core_features'      => 'required|string',
+            'examples'           => 'nullable|string|max:500',
+            'budget'             => 'nullable|numeric|min:0',
+            'deadline'           => 'nullable|date',
+            'status'             => 'required|string',
+            'price'              => 'nullable|numeric|min:0',
+            'payment_type'       => 'nullable|in:single,installments',
+            'maintenance_period' => 'nullable|integer|min:0',
+            'maintenance_unit'   => 'nullable|in:days,months,years',
+            'delivered_at'       => 'nullable|date',
+        ]);
+
+        $specialRequest->update($validated);
+
+        app(ProjectActivityLogger::class)->logSpecialRequest(
+            $specialRequest->id,
+            'تم تعديل بيانات المشروع بواسطة ' . auth()->user()->name,
+            'edit'
+        );
+
+        return redirect()
+            ->route('dashboard.special-request.show', $specialRequest)
+            ->with('success', 'تم تحديث بيانات المشروع بنجاح ✅');
+    }
 }

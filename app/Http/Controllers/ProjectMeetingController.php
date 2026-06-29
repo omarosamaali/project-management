@@ -102,14 +102,21 @@ class ProjectMeetingController extends Controller
             'location' => 'nullable|string|max:255',
             'start_at' => 'required|date',
             'end_at' => 'required|date|after:start_at',
-            'attendees' => 'required|array',
+            'attendees' => 'nullable|array',
         ]);
 
         $meeting->update($validated);
 
-        // تحديث قائمة الحضور في الجدول الوسيط
-        if ($request->has('attendees')) {
-            $meeting->participants()->sync($request->attendees);
+        if ($request->filled('attendees')) {
+            $creatorId = $meeting->created_by;
+            $attendees = collect($request->attendees)->map('intval')->unique();
+            if (!$attendees->contains($creatorId)) {
+                $attendees->push($creatorId);
+            }
+            $syncData = $attendees->mapWithKeys(fn($id) => [
+                $id => ['status' => $meeting->participants()->where('users.id', $id)->first()?->pivot->status ?? 'pending']
+            ])->all();
+            $meeting->participants()->sync($syncData);
         }
 
         $description = 'تم تعديل اجتماع: «'.$meeting->title.'»';
