@@ -72,11 +72,11 @@ class SalaryController extends Controller
             'user_id'              => 'required',
             'year'                 => 'required|integer',
             'month'                => 'required|integer|min:1|max:12',
-            'overtime_value'       => 'required|numeric',
-            'deduction_value'      => 'required|numeric',
-            'carried_forward'      => 'required|numeric',
-            'total_due'            => 'required|numeric',
-            'attendance_deduction' => 'nullable|numeric|min:0',
+            'overtime_value'       => 'nullable|numeric',
+            'deduction_value'      => 'nullable|numeric',
+            'carried_forward'      => 'nullable|numeric',
+            'total_due'            => 'nullable|numeric',
+            'attendance_deduction' => 'nullable|numeric',
             'attachment'           => 'nullable|image',
         ]);
 
@@ -119,11 +119,11 @@ class SalaryController extends Controller
             'user_id'              => 'required',
             'year'                 => 'required|integer',
             'month'                => 'required|integer|min:1|max:12',
-            'overtime_value'       => 'required|numeric',
-            'deduction_value'      => 'required|numeric',
-            'carried_forward'      => 'required|numeric',
-            'total_due'            => 'required|numeric',
-            'attendance_deduction' => 'nullable|numeric|min:0',
+            'overtime_value'       => 'nullable|numeric',
+            'deduction_value'      => 'nullable|numeric',
+            'carried_forward'      => 'nullable|numeric',
+            'total_due'            => 'nullable|numeric',
+            'attendance_deduction' => 'nullable|numeric',
             'attachment'           => 'nullable|image',
         ]);
 
