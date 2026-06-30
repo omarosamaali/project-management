@@ -126,7 +126,7 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                     <div class="flex flex-col gap-3 w-full lg:w-auto">
 
                         {{-- زر رابط الاجتماع --}}
-                        @if ($isOnline && $meeting->meeting_link && ($isCreator || $isAdmin || $currentUserStatus === 'accepted'))
+                        @if ($isOnline && $meeting->meeting_link && ($isCreator || $isAdmin || $currentUserStatus === 'accepted') && now()->diffInMinutes($meeting->start_at, false) <= 30 && now() <= $meeting->end_at)
                             <a href="{{ $meeting->meeting_link }}" target="_blank"
                                 class="w-full bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center justify-center gap-1">
                                 <i class="fas fa-video"></i> انضم للاجتماع
@@ -135,15 +135,17 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
 
                         {{-- أزرار المنشئ / الأدمن --}}
                         @if (($isCreator || $isAdmin) && now() < $meeting->end_at)
+                            @php $mtz = $meeting->getMeetingTimezone(); @endphp
                             <button type="button"
                                 onclick="openEditMeetingModal(
                                     {{ $meeting->id }},
                                     '{{ addslashes($meeting->title) }}',
                                     '{{ $meeting->meeting_type ?? 'online' }}',
-                                    '{{ $meeting->start_at->format('Y-m-d\TH:i') }}',
-                                    '{{ $meeting->end_at->format('Y-m-d\TH:i') }}',
+                                    '{{ $meeting->start_at->setTimezone($mtz)->format('Y-m-d\TH:i') }}',
+                                    '{{ $meeting->end_at->setTimezone($mtz)->format('Y-m-d\TH:i') }}',
                                     '{{ addslashes($meeting->meeting_link ?? '') }}',
                                     '{{ addslashes($meeting->location ?? '') }}',
+                                    '{{ $mtz }}',
                                     [{{ $participants->pluck('id')->join(',') }}]
                                 )"
                                 class="w-full bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-900">
@@ -284,6 +286,14 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                     class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-orange-400">
             </div>
 
+            <div>
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300"><i class="fas fa-globe ml-1 text-gray-400"></i>المنطقة الزمنية</label>
+                <select name="timezone" id="add_timezone"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-red-500 text-sm">
+                    @include('components.timezone-options', ['selected' => 'Asia/Dubai'])
+                </select>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت البدء</label>
@@ -363,6 +373,14 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                 <label class="block text-sm font-bold mb-1 dark:text-gray-300">مكان الاجتماع</label>
                 <input type="text" name="location" id="edit_location"
                     class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-orange-400">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300"><i class="fas fa-globe ml-1 text-gray-400"></i>المنطقة الزمنية</label>
+                <select name="timezone" id="edit_timezone"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none text-sm">
+                    @include('components.timezone-options', ['selected' => 'Asia/Dubai'])
+                </select>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -449,13 +467,16 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
         }
     });
 
-    function openEditMeetingModal(id, title, type, startAt, endAt, link, location, attendeeIds) {
+    function openEditMeetingModal(id, title, type, startAt, endAt, link, location, timezone, attendeeIds) {
         document.getElementById('editMeetingForm').action = '/project-meetings/' + id;
         document.getElementById('edit_title').value = title;
         document.getElementById('edit_start_at').value = startAt;
         document.getElementById('edit_end_at').value = endAt;
         document.getElementById('edit_meeting_link').value = link;
         document.getElementById('edit_location').value = location;
+
+        var tzSel = document.getElementById('edit_timezone');
+        if (tzSel) { tzSel.value = timezone; }
 
         document.getElementById('edit_type_online').checked = (type !== 'in_person');
         document.getElementById('edit_type_inperson').checked = (type === 'in_person');

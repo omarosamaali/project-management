@@ -102,7 +102,7 @@ $allPossibleAttendees = $allPossibleAttendees
                 <div class="flex flex-col gap-2">
 
                     {{-- زر رابط الاجتماع --}}
-                    @if ($isOnline && $meeting->meeting_link && ($isCreator || $isAdmin || $currentUserStatus === 'accepted'))
+                    @if ($isOnline && $meeting->meeting_link && ($isCreator || $isAdmin || $currentUserStatus === 'accepted') && now()->diffInMinutes($meeting->start_at, false) <= 30 && now() <= $meeting->end_at)
                         <a href="{{ $meeting->meeting_link }}" target="_blank"
                             class="w-full bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center justify-center gap-1">
                             <i class="fas fa-video"></i> انضم للاجتماع
@@ -111,15 +111,17 @@ $allPossibleAttendees = $allPossibleAttendees
 
                     {{-- أزرار المنشئ / الأدمن --}}
                     @if (($isCreator || $isAdmin) && now() < $meeting->end_at)
+                        @php $pmtz = $meeting->getMeetingTimezone(); @endphp
                         <button type="button"
                             onclick="openPmEditModal(
                                 {{ $meeting->id }},
                                 '{{ addslashes($meeting->title) }}',
                                 '{{ $meeting->meeting_type ?? 'online' }}',
-                                '{{ $meeting->start_at->format('Y-m-d\TH:i') }}',
-                                '{{ $meeting->end_at->format('Y-m-d\TH:i') }}',
+                                '{{ $meeting->start_at->setTimezone($pmtz)->format('Y-m-d\TH:i') }}',
+                                '{{ $meeting->end_at->setTimezone($pmtz)->format('Y-m-d\TH:i') }}',
                                 '{{ addslashes($meeting->meeting_link ?? '') }}',
                                 '{{ addslashes($meeting->location ?? '') }}',
+                                '{{ $pmtz }}',
                                 [{{ $participants->pluck('id')->join(',') }}]
                             )"
                             class="w-full bg-gray-700 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-900">
@@ -252,6 +254,14 @@ $allPossibleAttendees = $allPossibleAttendees
                     class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-orange-400">
             </div>
 
+            <div>
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300"><i class="fas fa-globe ml-1 text-gray-400"></i>المنطقة الزمنية</label>
+                <select name="timezone" id="pm_add_timezone"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none text-sm">
+                    @include('components.timezone-options', ['selected' => 'Asia/Dubai'])
+                </select>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت البدء</label>
@@ -329,6 +339,14 @@ $allPossibleAttendees = $allPossibleAttendees
                     class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-orange-400">
             </div>
 
+            <div>
+                <label class="block text-sm font-bold mb-1 dark:text-gray-300"><i class="fas fa-globe ml-1 text-gray-400"></i>المنطقة الزمنية</label>
+                <select name="timezone" id="pm_edit_timezone"
+                    class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none text-sm">
+                    @include('components.timezone-options', ['selected' => 'Asia/Dubai'])
+                </select>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت البدء</label>
@@ -399,13 +417,15 @@ $allPossibleAttendees = $allPossibleAttendees
         }
     });
 
-    function openPmEditModal(id, title, type, startAt, endAt, link, location, attendeeIds) {
+    function openPmEditModal(id, title, type, startAt, endAt, link, location, timezone, attendeeIds) {
         document.getElementById('pmEditMeetingForm').action = '/project-meetings/' + id;
         document.getElementById('pm_edit_title').value = title;
         document.getElementById('pm_edit_start_at').value = startAt;
         document.getElementById('pm_edit_end_at').value = endAt;
         document.getElementById('pm_edit_meeting_link').value = link;
         document.getElementById('pm_edit_location').value = location;
+        var pmTzSel = document.getElementById('pm_edit_timezone');
+        if (pmTzSel) { pmTzSel.value = timezone; }
 
         document.getElementById('pm_edit_type_online').checked = (type !== 'in_person');
         document.getElementById('pm_edit_type_inperson').checked = (type === 'in_person');

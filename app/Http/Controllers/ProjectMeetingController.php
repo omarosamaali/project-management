@@ -16,12 +16,13 @@ class ProjectMeetingController extends Controller
     {
         $rules = [
             'title' => 'required|string',
-            'start_at' => 'required|date',
-            'end_at' => 'required|date|after:start_at',
+            'start_at' => 'required|string',
+            'end_at' => 'required|string',
             'meeting_link' => 'nullable|url',
             'meeting_type' => 'nullable|in:online,in_person',
             'location' => 'nullable|string|max:255',
-            'attendees' => 'required|array'
+            'timezone' => 'nullable|string|max:50',
+            'attendees' => 'nullable|array'
         ];
 
         // إضافة validation فقط لو الحقل موجود ومش فاضي
@@ -36,6 +37,7 @@ class ProjectMeetingController extends Controller
         $validated = $request->validate($rules);
         $validated['attendees'] = $this->mergeProjectClientAttendees($request, $validated['attendees']);
 
+        $timezone = $validated['timezone'] ?? 'Asia/Dubai';
         $meeting = ProjectMeeting::create([
             'special_request_id' => $request->special_request_id,
             'request_id' => $request->request_id,
@@ -44,8 +46,9 @@ class ProjectMeetingController extends Controller
             'meeting_link' => $validated['meeting_link'] ?? null,
             'meeting_type' => $validated['meeting_type'] ?? 'online',
             'location' => $validated['location'] ?? null,
-            'start_at' => $validated['start_at'],
-            'end_at' => $validated['end_at'],
+            'timezone' => $timezone,
+            'start_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone),
+            'end_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'], $timezone),
         ]);
 
         $creatorId = (int) auth()->id();
@@ -100,19 +103,30 @@ class ProjectMeetingController extends Controller
             'meeting_link' => 'nullable|url',
             'meeting_type' => 'nullable|in:online,in_person',
             'location' => 'nullable|string|max:255',
-            'start_at' => 'required|date',
-            'end_at' => 'required|date|after:start_at',
+            'timezone' => 'nullable|string|max:50',
+            'start_at' => 'required|string',
+            'end_at' => 'required|string',
             'attendees' => 'nullable|array',
         ]);
 
-        $meeting->update($validated);
+        $timezone = $validated['timezone'] ?? $meeting->getMeetingTimezone();
 
-        if ($request->filled('attendees')) {
-            $creatorId = (int) $meeting->created_by;
-            $attendees = collect($request->attendees)->map('intval')->filter(fn($id) => $id > 0)->unique();
-            if ($creatorId > 0 && !$attendees->contains($creatorId)) {
-                $attendees->push($creatorId);
-            }
+        $meeting->update([
+            'title'        => $validated['title'],
+            'meeting_link' => $validated['meeting_link'] ?? null,
+            'meeting_type' => $validated['meeting_type'] ?? $meeting->meeting_type,
+            'location'     => $validated['location'] ?? null,
+            'timezone'     => $timezone,
+            'start_at'     => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone),
+            'end_at'       => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'], $timezone),
+        ]);
+
+        $creatorId = (int) $meeting->created_by;
+        $attendees = collect($request->input('attendees', []))->map('intval')->filter(fn($id) => $id > 0)->unique();
+        if ($creatorId > 0 && !$attendees->contains($creatorId)) {
+            $attendees->push($creatorId);
+        }
+        if ($attendees->isNotEmpty()) {
             $existingStatuses = $meeting->participants->mapWithKeys(fn($p) => [$p->id => $p->pivot->status])->toArray();
             $syncData = $attendees->mapWithKeys(fn($id) => [
                 $id => ['status' => $existingStatuses[$id] ?? 'pending']

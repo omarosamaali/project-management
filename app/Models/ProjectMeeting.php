@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProjectMeeting extends Model
 {
     protected $table = 'project_meetings';
-    protected $fillable = ['special_request_id', 'request_id', 'created_by', 'title', 'meeting_link', 'meeting_type', 'location', 'start_at', 'end_at'];
+    protected $fillable = ['special_request_id', 'request_id', 'created_by', 'title', 'meeting_link', 'meeting_type', 'location', 'timezone', 'start_at', 'end_at'];
     protected $casts = ['start_at' => 'datetime', 'end_at' => 'datetime'];
 
     public function participants()
@@ -56,8 +56,14 @@ class ProjectMeeting extends Model
             : 'bg-blue-100 text-blue-700';
     }
 
-    public function formattedDateRange(string $timezone = 'Asia/Dubai'): string
+    public function getMeetingTimezone(): string
     {
+        return $this->timezone ?? 'Asia/Dubai';
+    }
+
+    public function formattedDateRange(): string
+    {
+        $timezone = $this->getMeetingTimezone();
         $arabicDays = [
             'Sunday' => 'الأحد', 'Monday' => 'الاثنين', 'Tuesday' => 'الثلاثاء',
             'Wednesday' => 'الأربعاء', 'Thursday' => 'الخميس', 'Friday' => 'الجمعة', 'Saturday' => 'السبت',
