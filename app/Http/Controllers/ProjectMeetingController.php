@@ -38,6 +38,7 @@ class ProjectMeetingController extends Controller
         $validated['attendees'] = $this->mergeProjectClientAttendees($request, $validated['attendees']);
 
         $timezone = $validated['timezone'] ?? 'Asia/Dubai';
+        $appTz   = config('app.timezone');
         $meeting = ProjectMeeting::create([
             'special_request_id' => $request->special_request_id,
             'request_id' => $request->request_id,
@@ -47,8 +48,8 @@ class ProjectMeetingController extends Controller
             'meeting_type' => $validated['meeting_type'] ?? 'online',
             'location' => $validated['location'] ?? null,
             'timezone' => $timezone,
-            'start_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone),
-            'end_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'], $timezone),
+            'start_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone)->setTimezone($appTz),
+            'end_at'   => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'],   $timezone)->setTimezone($appTz),
         ]);
 
         $creatorId = (int) auth()->id();
@@ -110,6 +111,7 @@ class ProjectMeetingController extends Controller
         ]);
 
         $timezone = $validated['timezone'] ?? $meeting->getMeetingTimezone();
+        $appTz    = config('app.timezone');
 
         $meeting->update([
             'title'        => $validated['title'],
@@ -117,8 +119,8 @@ class ProjectMeetingController extends Controller
             'meeting_type' => $validated['meeting_type'] ?? $meeting->meeting_type,
             'location'     => $validated['location'] ?? null,
             'timezone'     => $timezone,
-            'start_at'     => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone),
-            'end_at'       => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'], $timezone),
+            'start_at'     => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone)->setTimezone($appTz),
+            'end_at'       => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'], $timezone)->setTimezone($appTz),
         ]);
 
         $creatorId = (int) $meeting->created_by;
@@ -126,13 +128,14 @@ class ProjectMeetingController extends Controller
         if ($creatorId > 0 && !$attendees->contains($creatorId)) {
             $attendees->push($creatorId);
         }
-        if ($attendees->isNotEmpty()) {
-            $existingStatuses = $meeting->participants->mapWithKeys(fn($p) => [$p->id => $p->pivot->status])->toArray();
-            $syncData = $attendees->mapWithKeys(fn($id) => [
-                $id => ['status' => $existingStatuses[$id] ?? 'pending']
-            ])->all();
-            $meeting->participants()->sync($syncData);
-        }
+        // جلب الـ statuses الحالية مباشرة من DB (بعد الـ update)
+        $existingStatuses = $meeting->participants()->get()
+            ->mapWithKeys(fn($p) => [$p->id => $p->pivot->status])
+            ->toArray();
+        $syncData = $attendees->mapWithKeys(fn($id) => [
+            $id => ['status' => $existingStatuses[$id] ?? 'pending']
+        ])->all();
+        $meeting->participants()->sync($syncData);
 
         $description = 'تم تعديل اجتماع: «'.$meeting->title.'»';
         $logger = app(ProjectActivityLogger::class);
