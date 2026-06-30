@@ -48,9 +48,9 @@ class ProjectMeetingController extends Controller
             'end_at' => $validated['end_at'],
         ]);
 
-        $creatorId = auth()->id();
-        $attendees = collect($validated['attendees'])->map('intval')->unique();
-        if (!$attendees->contains($creatorId)) {
+        $creatorId = (int) auth()->id();
+        $attendees = collect($validated['attendees'])->map('intval')->filter(fn($id) => $id > 0)->unique();
+        if ($creatorId > 0 && !$attendees->contains($creatorId)) {
             $attendees->push($creatorId);
         }
         $attendeesData = $attendees->mapWithKeys(fn($id) => [
