@@ -125,6 +125,14 @@ $meetings = $currentRequest ? $currentRequest->projectMeetings : collect();
                     {{-- الأكشن --}}
                     <div class="flex flex-col gap-3 w-full lg:w-auto">
 
+                        {{-- زر رابط الاجتماع --}}
+                        @if ($isOnline && $meeting->meeting_link && ($isCreator || $isAdmin || $currentUserStatus === 'accepted'))
+                            <a href="{{ $meeting->meeting_link }}" target="_blank"
+                                class="w-full bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center justify-center gap-1">
+                                <i class="fas fa-video"></i> انضم للاجتماع
+                            </a>
+                        @endif
+
                         {{-- أزرار المنشئ / الأدمن --}}
                         @if (($isCreator || $isAdmin) && now() < $meeting->end_at)
                             <button type="button"
