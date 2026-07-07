@@ -8,6 +8,7 @@ use App\Models\Requests as ProjectRequest;
 use App\Services\ProjectActivityLogger;
 use Illuminate\Http\Request;
 use App\Models\ProjectProposal;
+use App\Support\SystemManager;
 
 class ProjectMeetingController extends Controller
 {
@@ -75,6 +76,10 @@ class ProjectMeetingController extends Controller
     // يجب أن يكون الاسم هنا أيضاً $meeting ليطابق الراوت
     public function destroy(ProjectMeeting $meeting)
     {
+        if (!$this->userCanManageMeeting($meeting)) {
+            abort(403);
+        }
+
         $title = $meeting->title;
         $specialId = $meeting->special_request_id;
         $requestId = $meeting->request_id;
@@ -95,7 +100,7 @@ class ProjectMeetingController extends Controller
     // 2. ميثود تحديث البيانات (للتعديل)
     public function update(Request $request, ProjectMeeting $meeting)
     {
-        if ($meeting->created_by !== auth()->id() && auth()->user()->role !== 'admin') {
+        if (!$this->userCanManageMeeting($meeting)) {
             abort(403);
         }
 
@@ -213,6 +218,21 @@ class ProjectMeetingController extends Controller
         }
 
         return $meeting->participants()->where('users.id', $userId)->exists();
+    }
+
+    private function userCanManageMeeting(ProjectMeeting $meeting): bool
+    {
+        $user = auth()->user();
+
+        if ((int) $meeting->created_by === (int) $user->id) {
+            return true;
+        }
+
+        if (in_array($user->role, ['admin', 'manager'], true)) {
+            return true;
+        }
+
+        return SystemManager::is($user);
     }
 
     public function accept($id)

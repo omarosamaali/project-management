@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class ProjectMeeting extends Model
@@ -22,11 +23,31 @@ class ProjectMeeting extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** نهاية فعلية للاجتماع — تتعامل مع end_at الخاطئ أو الأقدم من start_at */
+    public function effectiveEndAt(): Carbon
+    {
+        if ($this->end_at && $this->start_at && $this->end_at->gt($this->start_at)) {
+            return $this->end_at->copy();
+        }
+
+        return $this->start_at->copy()->addHours(2);
+    }
+
+    public function isOpen(): bool
+    {
+        return now()->lt($this->effectiveEndAt());
+    }
+
     public function getStatusLabelAttribute()
     {
         $now = now();
-        if ($now->lt($this->start_at)) return 'قادم';
-        if ($now->between($this->start_at, $this->end_at)) return 'جارٍ الآن';
+        if ($now->lt($this->start_at)) {
+            return 'قادم';
+        }
+        if ($now->lte($this->effectiveEndAt())) {
+            return 'جارٍ الآن';
+        }
+
         return 'منتهي';
     }
 
