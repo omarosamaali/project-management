@@ -35,11 +35,34 @@ class ProjectMeetingController extends Controller
             $rules['request_id'] = 'exists:requests,id';
         }
 
+        $request->merge([
+            'meeting_link' => $request->input('meeting_link') ?: null,
+            'location' => $request->input('location') ?: null,
+        ]);
+
         $validated = $request->validate($rules);
-        $validated['attendees'] = $this->mergeProjectClientAttendees($request, $validated['attendees']);
+        $validated['attendees'] = $this->mergeProjectClientAttendees(
+            $request,
+            $validated['attendees'] ?? []
+        );
 
         $timezone = $validated['timezone'] ?? 'Asia/Dubai';
         $appTz   = config('app.timezone');
+
+        try {
+            [$startAt, $endAt] = $this->parseMeetingWindow(
+                $validated['start_at'],
+                $validated['end_at'],
+                $timezone,
+                $appTz
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()
+                ->withErrors(['end_at' => $e->getMessage()])
+                ->withInput()
+                ->with('open_tab', 'meetings');
+        }
+
         $meeting = ProjectMeeting::create([
             'special_request_id' => $request->special_request_id,
             'request_id' => $request->request_id,
@@ -49,8 +72,8 @@ class ProjectMeetingController extends Controller
             'meeting_type' => $validated['meeting_type'] ?? 'online',
             'location' => $validated['location'] ?? null,
             'timezone' => $timezone,
-            'start_at' => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone)->setTimezone($appTz),
-            'end_at'   => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'],   $timezone)->setTimezone($appTz),
+            'start_at' => $startAt,
+            'end_at'   => $endAt,
         ]);
 
         $creatorId = (int) auth()->id();
@@ -71,7 +94,9 @@ class ProjectMeetingController extends Controller
             $logger->logRequest((int) $request->request_id, $description, 'meeting');
         }
 
-        return back()->with('success', 'تم جدولة الاجتماع بنجاح');
+        return back()
+            ->with('success', 'تم جدولة الاجتماع بنجاح')
+            ->with('open_tab', 'meetings');
     }
     // يجب أن يكون الاسم هنا أيضاً $meeting ليطابق الراوت
     public function destroy(ProjectMeeting $meeting)
@@ -104,6 +129,11 @@ class ProjectMeetingController extends Controller
             abort(403);
         }
 
+        $request->merge([
+            'meeting_link' => $request->input('meeting_link') ?: null,
+            'location' => $request->input('location') ?: null,
+        ]);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'meeting_link' => 'nullable|url',
@@ -112,11 +142,35 @@ class ProjectMeetingController extends Controller
             'timezone' => 'nullable|string|max:50',
             'start_at' => 'required|string',
             'end_at' => 'required|string',
-            'attendees' => 'nullable|array',
+            'attendees' => 'required|array|min:1',
+            'attendees.*' => 'integer|exists:users,id',
+        ], [
+            'attendees.required' => 'يرجى اختيار حضور واحد على الأقل.',
+            'attendees.min' => 'يرجى اختيار حضور واحد على الأقل.',
+            'meeting_link.url' => 'رابط الاجتماع غير صحيح.',
         ]);
 
         $timezone = $validated['timezone'] ?? $meeting->getMeetingTimezone();
         $appTz    = config('app.timezone');
+
+        try {
+            [$startAt, $endAt] = $this->parseMeetingWindow(
+                $validated['start_at'],
+                $validated['end_at'],
+                $timezone,
+                $appTz
+            );
+        } catch (\InvalidArgumentException $e) {
+            return back()
+                ->withErrors(['end_at' => $e->getMessage()])
+                ->withInput()
+                ->with('open_tab', 'meetings');
+        }
+
+        $existingStatuses = $meeting->participants()
+            ->get()
+            ->mapWithKeys(fn ($participant) => [(int) $participant->id => $participant->pivot->status])
+            ->all();
 
         $meeting->update([
             'title'        => $validated['title'],
@@ -124,22 +178,25 @@ class ProjectMeetingController extends Controller
             'meeting_type' => $validated['meeting_type'] ?? $meeting->meeting_type,
             'location'     => $validated['location'] ?? null,
             'timezone'     => $timezone,
-            'start_at'     => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['start_at'], $timezone)->setTimezone($appTz),
-            'end_at'       => \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $validated['end_at'], $timezone)->setTimezone($appTz),
+            'start_at'     => $startAt,
+            'end_at'       => $endAt,
         ]);
 
         $creatorId = (int) $meeting->created_by;
-        $attendees = collect($request->input('attendees', []))->map('intval')->filter(fn($id) => $id > 0)->unique();
+        $attendees = collect($validated['attendees'])
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values();
+
         if ($creatorId > 0 && !$attendees->contains($creatorId)) {
             $attendees->push($creatorId);
         }
-        // جلب الـ statuses الحالية مباشرة من DB (بعد الـ update)
-        $existingStatuses = $meeting->participants()->get()
-            ->mapWithKeys(fn($p) => [$p->id => $p->pivot->status])
-            ->toArray();
-        $syncData = $attendees->mapWithKeys(fn($id) => [
-            $id => ['status' => $existingStatuses[$id] ?? 'pending']
+
+        $syncData = $attendees->mapWithKeys(fn ($id) => [
+            $id => ['status' => $existingStatuses[$id] ?? 'pending'],
         ])->all();
+
         $meeting->participants()->sync($syncData);
 
         $description = 'تم تعديل اجتماع: «'.$meeting->title.'»';
@@ -150,7 +207,9 @@ class ProjectMeetingController extends Controller
             $logger->logRequest($meeting->request_id, $description, 'meeting');
         }
 
-        return back()->with('success', 'تم تحديث بيانات الاجتماع.');
+        return back()
+            ->with('success', 'تم تحديث بيانات الاجتماع.')
+            ->with('open_tab', 'meetings');
     }
 
     // 3. ميثود تحديث الحالة (موافق/يعتذر/حضر)
@@ -174,6 +233,18 @@ class ProjectMeetingController extends Controller
         }
 
         return back()->with('success', 'تم تحديث الحالة بنجاح.');
+    }
+
+  private function parseMeetingWindow(string $startAt, string $endAt, string $timezone, string $appTz): array
+    {
+        $start = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $startAt, $timezone)->setTimezone($appTz);
+        $end = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $endAt, $timezone)->setTimezone($appTz);
+
+        if ($end->lte($start)) {
+            throw new \InvalidArgumentException('يجب أن يكون وقت الانتهاء بعد وقت البدء.');
+        }
+
+        return [$start, $end];
     }
 
     private function mergeProjectClientAttendees(Request $request, array $attendees): array

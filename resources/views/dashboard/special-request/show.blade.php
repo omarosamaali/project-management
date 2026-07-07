@@ -524,10 +524,12 @@
 
     // 3. كود التشغيل عند تحميل الصفحة (المنطق الوحيد المطلوب)
     document.addEventListener('DOMContentLoaded', function() {
-        // استرجاع التابة المحفوظة
         const savedTab = localStorage.getItem('activeTab_' + requestId);
-        
-        if (savedTab && document.getElementById(savedTab)) {
+        const serverTab = @json(session('open_tab'));
+
+        if (serverTab && document.getElementById(serverTab)) {
+            openTab(null, serverTab);
+        } else if (savedTab && document.getElementById(savedTab)) {
             openTab(null, savedTab);
         } else {
             // افتح أول تابة لو مفيش حاجة محفوظة

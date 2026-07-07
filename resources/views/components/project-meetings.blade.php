@@ -5,9 +5,19 @@ $allPossibleAttendees = $SpecialRequest->allProjectClients();
 foreach ($SpecialRequest->assignableTeamMembers() as $member) {
     $allPossibleAttendees->push($member);
 }
-$allPossibleAttendees = $allPossibleAttendees
+foreach ($SpecialRequest->partners as $partner) {
+    $allPossibleAttendees->push($partner);
+}
+foreach ($SpecialRequest->projectMeetings as $projectMeeting) {
+    foreach ($projectMeeting->participants as $participant) {
+        $allPossibleAttendees->push($participant);
+    }
+}
+$allPossibleAttendees = \App\Support\SystemManager::addToAttendeeCollection($allPossibleAttendees)
     ->filter(fn ($u) => ($u->status ?? 'active') !== 'blocked')
-    ->unique('id');
+    ->unique('id')
+    ->sortBy(fn ($u) => $u->display_name ?? $u->name)
+    ->values();
 @endphp
 
 <div class="p-6 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700">
@@ -303,7 +313,17 @@ $allPossibleAttendees = $allPossibleAttendees
                 class="text-gray-400 hover:text-black text-2xl">&times;</button>
         </div>
         <form id="pmEditMeetingForm" action="" method="POST" class="space-y-4">
-            @csrf @method('PUT')
+            @csrf @method('PATCH')
+
+            @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl text-sm">
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
 
             <div>
                 <label class="block text-sm font-bold mb-1 dark:text-gray-300">عنوان الاجتماع</label>
@@ -361,12 +381,14 @@ $allPossibleAttendees = $allPossibleAttendees
                 <div>
                     <label class="block text-xs font-bold mb-1 dark:text-gray-400">وقت الانتهاء</label>
                     <input type="datetime-local" name="end_at" id="pm_edit_end_at" required
-                        class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        class="w-full p-3 border rounded-xl dark:bg-gray-700 dark:border-gray-600 dark:text-white @error('end_at') border-red-500 @enderror">
+                    <p id="pm_edit_end_at_error" class="text-red-500 text-xs mt-1 font-bold hidden">يجب أن يكون وقت الانتهاء بعد وقت البدء</p>
                 </div>
             </div>
 
             <div>
                 <label class="block text-sm font-bold mb-2 dark:text-gray-300">الحضور</label>
+                <p class="text-[11px] text-gray-400 mb-2">اختر كل من تريد دعوته — أي شخص جديد تحدده سيُضاف عند الحفظ.</p>
                 <div class="grid grid-cols-2 gap-2 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl max-h-36 overflow-y-auto border dark:border-gray-700">
                     @foreach ($allPossibleAttendees as $person)
                     <label class="flex items-center gap-2 cursor-pointer hover:bg-white dark:hover:bg-gray-800 p-1 rounded transition">
@@ -388,6 +410,8 @@ $allPossibleAttendees = $allPossibleAttendees
 </div>
 
 <script>
+    const pmMeetingUpdateUrlTemplate = @json(route('meetings.update', ['meeting' => '__MEETING_ID__']));
+
     document.addEventListener('DOMContentLoaded', function() {
         const radios = document.querySelectorAll('#addMeetingModal input[name="meeting_type"]');
         const linkSection = document.getElementById('pm_meeting_link_section');
@@ -420,10 +444,42 @@ $allPossibleAttendees = $allPossibleAttendees
                 }
             });
         }
+
+        const editForm = document.getElementById('pmEditMeetingForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                const startAt = document.getElementById('pm_edit_start_at').value;
+                const endAt = document.getElementById('pm_edit_end_at').value;
+                const errorEl = document.getElementById('pm_edit_end_at_error');
+                const checkedAttendees = editForm.querySelectorAll('.pm-edit-attendee-check:checked').length;
+
+                if (startAt && endAt && endAt <= startAt) {
+                    e.preventDefault();
+                    errorEl.classList.remove('hidden');
+                    document.getElementById('pm_edit_end_at').classList.add('border-red-500');
+                    return;
+                }
+
+                errorEl.classList.add('hidden');
+                document.getElementById('pm_edit_end_at').classList.remove('border-red-500');
+
+                if (checkedAttendees === 0) {
+                    e.preventDefault();
+                    alert('يرجى اختيار حضور واحد على الأقل.');
+                }
+            });
+        }
+
+        @if ($errors->any())
+        openPmEditModalFromValidation();
+        @endif
     });
 
     function openPmEditModal(id, title, type, startAt, endAt, link, location, timezone, attendeeIds) {
-        document.getElementById('pmEditMeetingForm').action = '/project-meetings/' + id;
+        const payload = { id, title, type, startAt, endAt, link, location, timezone, attendeeIds };
+        sessionStorage.setItem('pm_edit_meeting', JSON.stringify(payload));
+
+        document.getElementById('pmEditMeetingForm').action = pmMeetingUpdateUrlTemplate.replace('__MEETING_ID__', id);
         document.getElementById('pm_edit_title').value = title;
         document.getElementById('pm_edit_start_at').value = startAt;
         document.getElementById('pm_edit_end_at').value = endAt;
@@ -453,6 +509,25 @@ $allPossibleAttendees = $allPossibleAttendees
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
+    }
+
+    function openPmEditModalFromValidation() {
+        const stored = sessionStorage.getItem('pm_edit_meeting');
+        if (!stored) return;
+        try {
+            const data = JSON.parse(stored);
+            openPmEditModal(
+                data.id,
+                data.title,
+                data.type,
+                data.startAt,
+                data.endAt,
+                data.link,
+                data.location,
+                data.timezone,
+                data.attendeeIds
+            );
+        } catch (e) {}
     }
 
     function closePmEditMeetingModal() {
