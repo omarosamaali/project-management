@@ -34,14 +34,19 @@ $allPossibleAttendees = $allPossibleAttendees
     <div class="grid grid-cols-1 gap-6">
         @forelse($SpecialRequest->projectMeetings as $meeting)
         @php
+        $authId = (int) auth()->id();
         $participants = $meeting->participants;
-        $isInvited = $participants->contains('id', auth()->id());
-        $isCreator = $meeting->created_by == auth()->id();
+        $isInvited = $participants->contains(fn ($p) => (int) $p->id === $authId);
+        $isCreator = (int) $meeting->created_by === $authId;
         $isAdmin = auth()->user()->role === 'admin';
-        $isProjectClient = $SpecialRequest->userCanViewAllProjectIssues(auth()->id(), auth()->user()->role);
+        $isProjectClient = $SpecialRequest->userCanViewAllProjectIssues($authId, auth()->user()->role);
 
-        $myParticipant = $participants->firstWhere('id', auth()->id());
-        $currentUserStatus = $myParticipant ? $myParticipant->pivot->status : 'pending';
+        $myParticipant = $participants->first(fn ($p) => (int) $p->id === $authId);
+        $currentUserStatus = $myParticipant?->pivot?->status ?? 'pending';
+
+        $canRespond = ($isInvited || $isCreator)
+            && $currentUserStatus === 'pending'
+            && now()->lt($meeting->end_at);
 
         $isOnline = ($meeting->meeting_type ?? 'online') !== 'in_person';
         @endphp
@@ -82,7 +87,7 @@ $allPossibleAttendees = $allPossibleAttendees
                         @endif
 
                         {{-- رد سريع على الدعوة (يظهر بوضوح للمدعو) --}}
-                        @if (!$isCreator && ($isInvited || $isProjectClient) && now() < $meeting->end_at && $currentUserStatus === 'pending')
+                        @if ($canRespond)
                         <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-wrap items-center justify-between gap-3">
                             <p class="text-sm font-bold text-blue-800 dark:text-blue-200">
                                 <i class="fas fa-bell ml-1"></i> لديك دعوة لهذا الاجتماع — يرجى الرد
@@ -91,12 +96,12 @@ $allPossibleAttendees = $allPossibleAttendees
                                 <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="accepted">
-                                    <button class="bg-green-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-green-700">موافقة</button>
+                                    <button type="submit" class="bg-green-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-green-700">موافقة</button>
                                 </form>
                                 <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="declined">
-                                    <button class="bg-red-100 text-red-600 px-5 py-2 rounded-xl text-xs font-bold hover:bg-red-200">اعتذار</button>
+                                    <button type="submit" class="bg-red-100 text-red-600 px-5 py-2 rounded-xl text-xs font-bold hover:bg-red-200">اعتذار</button>
                                 </form>
                             </div>
                         </div>
@@ -106,13 +111,27 @@ $allPossibleAttendees = $allPossibleAttendees
                         <div class="mt-4 flex flex-wrap gap-2">
                             <p class="w-full text-xs font-bold text-gray-400 mb-1">الحضور الموجهة لهم الدعوة:</p>
                             @foreach ($participants as $participant)
-                            <div class="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full border dark:border-gray-700 shadow-sm">
-                                <span class="text-[11px] font-bold {{ $participant->id == auth()->id() ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300' }}">
-                                    {{ $participant->display_name }}
+                            @php $isMe = (int) $participant->id === $authId; @endphp
+                            <div class="flex items-center gap-2 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-full border dark:border-gray-700 shadow-sm {{ $isMe && $canRespond ? 'ring-2 ring-blue-400' : '' }}">
+                                <span class="text-[11px] font-bold {{ $isMe ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300' }}">
+                                    {{ $participant->display_name }}{{ $isMe ? ' (أنت)' : '' }}
                                 </span>
+                                @if ($isMe && $canRespond)
+                                    <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="inline">
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="status" value="accepted">
+                                        <button type="submit" class="text-[10px] bg-green-600 text-white px-2.5 py-1 rounded-lg font-bold hover:bg-green-700">موافقة</button>
+                                    </form>
+                                    <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="inline">
+                                        @csrf @method('PATCH')
+                                        <input type="hidden" name="status" value="declined">
+                                        <button type="submit" class="text-[10px] bg-red-100 text-red-600 px-2.5 py-1 rounded-lg font-bold hover:bg-red-200">اعتذار</button>
+                                    </form>
+                                @else
                                 <span class="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500">
                                     {{ ['pending' => 'بانتظار الرد', 'accepted' => 'موافق', 'declined' => 'يعتذر', 'attended' => 'حضر الاجتماع', 'absent' => 'غائب'][$participant->pivot->status] ?? $participant->pivot->status }}
                                 </span>
+                                @endif
                             </div>
                             @endforeach
                         </div>
@@ -158,26 +177,26 @@ $allPossibleAttendees = $allPossibleAttendees
                     @endif
 
                     {{-- أزرار الرد للمدعو --}}
-                    @if (!$isCreator && ($isInvited || $isProjectClient) && now() < $meeting->end_at)
-                        @if ($currentUserStatus === 'pending')
-                            <div class="flex gap-2">
-                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="status" value="accepted">
-                                    <button class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold">موافقة</button>
-                                </form>
-                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
-                                    @csrf @method('PATCH')
-                                    <input type="hidden" name="status" value="declined">
-                                    <button class="bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold">اعتذار</button>
-                                </form>
-                            </div>
-                        @elseif ($currentUserStatus === 'accepted')
+                    @if ($canRespond)
+                        <div class="flex gap-2">
+                            <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="flex-1">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="status" value="accepted">
+                                <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700">موافقة</button>
+                            </form>
+                            <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST" class="flex-1">
+                                @csrf @method('PATCH')
+                                <input type="hidden" name="status" value="declined">
+                                <button type="submit" class="w-full bg-red-100 text-red-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-200">اعتذار</button>
+                            </form>
+                        </div>
+                    @elseif (($isInvited || $isCreator || $isProjectClient) && now() < $meeting->end_at)
+                        @if ($currentUserStatus === 'accepted')
                             <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST"
                                 onsubmit="return confirm('هل تريد إلغاء موافقتك على هذا الاجتماع؟')">
                                 @csrf @method('PATCH')
                                 <input type="hidden" name="status" value="declined">
-                                <button class="w-full bg-orange-100 text-orange-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-orange-200">
+                                <button type="submit" class="w-full bg-orange-100 text-orange-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-orange-200">
                                     <i class="fas fa-times ml-1"></i> إلغاء الموافقة
                                 </button>
                             </form>
@@ -185,7 +204,7 @@ $allPossibleAttendees = $allPossibleAttendees
                             <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
                                 @csrf @method('PATCH')
                                 <input type="hidden" name="status" value="accepted">
-                                <button class="w-full bg-green-100 text-green-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-200">
+                                <button type="submit" class="w-full bg-green-100 text-green-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-200">
                                     <i class="fas fa-check ml-1"></i> الموافقة مجدداً
                                 </button>
                             </form>
