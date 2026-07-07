@@ -81,6 +81,27 @@ $allPossibleAttendees = $allPossibleAttendees
                         </p>
                         @endif
 
+                        {{-- رد سريع على الدعوة (يظهر بوضوح للمدعو) --}}
+                        @if (!$isCreator && ($isInvited || $isProjectClient) && now() < $meeting->end_at && $currentUserStatus === 'pending')
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex flex-wrap items-center justify-between gap-3">
+                            <p class="text-sm font-bold text-blue-800 dark:text-blue-200">
+                                <i class="fas fa-bell ml-1"></i> لديك دعوة لهذا الاجتماع — يرجى الرد
+                            </p>
+                            <div class="flex gap-2">
+                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
+                                    @csrf @method('PATCH')
+                                    <input type="hidden" name="status" value="accepted">
+                                    <button class="bg-green-600 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-green-700">موافقة</button>
+                                </form>
+                                <form action="{{ route('meetings.updateStatus', $meeting->id) }}" method="POST">
+                                    @csrf @method('PATCH')
+                                    <input type="hidden" name="status" value="declined">
+                                    <button class="bg-red-100 text-red-600 px-5 py-2 rounded-xl text-xs font-bold hover:bg-red-200">اعتذار</button>
+                                </form>
+                            </div>
+                        </div>
+                        @endif
+
                         {{-- الحضور --}}
                         <div class="mt-4 flex flex-wrap gap-2">
                             <p class="w-full text-xs font-bold text-gray-400 mb-1">الحضور الموجهة لهم الدعوة:</p>
@@ -99,7 +120,7 @@ $allPossibleAttendees = $allPossibleAttendees
                 </div>
 
                 {{-- الأكشن --}}
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2 shrink-0 w-full lg:w-auto min-w-[9rem]">
 
                     {{-- زر رابط الاجتماع --}}
                     @if ($isOnline && $meeting->meeting_link && ($isCreator || $isAdmin || $currentUserStatus === 'accepted') && now()->diffInMinutes($meeting->start_at, false) <= 30 && now() <= $meeting->end_at)
