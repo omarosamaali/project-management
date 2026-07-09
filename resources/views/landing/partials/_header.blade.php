@@ -17,6 +17,20 @@
     <button class="scroll__top scroll-to-target" data-target="html">
         <i class="fas fa-angle-up"></i>
     </button>
+    <style>
+        .tgmenu__nav .logo {
+            height: 56px;
+            display: flex;
+            align-items: center;
+        }
+        .tgmenu__nav .logo img,
+        .tgmobile__menu .nav-logo img,
+        .offCanvas__logo img {
+            max-height: 54px;
+            width: auto;
+            object-fit: contain;
+        }
+    </style>
 
     <!-- header-area -->
     <header>
