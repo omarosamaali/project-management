@@ -41,7 +41,10 @@ class WorkTimeController extends Controller
             });
         }
 
-        $workTimes = $query->latest()->paginate(10);
+        $workTimes = $query
+            ->orderByDesc('date')
+            ->orderByDesc('start_time')
+            ->paginate(10);
 
         if ($isEmployeeView) {
             $allCount = WorkTime::where('user_id', $user->id)->count();
