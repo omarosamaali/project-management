@@ -1,237 +1,405 @@
 @extends('layouts.app')
-@php
-    $isAr = app()->getLocale() === 'ar';
-    $subscriptionData = \App\Support\ClinicSubscription::data($currentCompany ?? null);
-    $subscriptionExpiresAt = $subscriptionData['expires_at'] ?? null;
-@endphp
-@section('title', $isAr ? 'لوحة التحكم' : 'Dashboard')
+
+@section('title', 'قُمرة القيادة')
 
 @section('content')
-<section class="!pl-0 p-3 sm:p-5 space-y-5">
 
-    @if($subscriptionExpiresAt)
-    <div class="w-full rounded-2xl px-4 py-3 shadow-sm border border-green-200 bg-green-50 text-green-800 flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-            <i class="fab fa-whatsapp text-xl"></i>
-            <span class="text-sm font-bold">
-                {{ $isAr ? 'تاريخ انتهاء الاشتراك:' : 'Subscription expiry date:' }}
-            </span>
-        </div>
-        <span class="text-sm font-black">
-            {{ $subscriptionExpiresAt->translatedFormat('d F Y') }}
-        </span>
-    </div>
-    @endif
+<section class="!pl-0 p-3 sm:p-5 space-y-6">
 
-    {{-- Banner --}}
-    @if(!empty($dashboardBanner['image_url']))
-    <div class="w-full rounded-2xl overflow-hidden shadow-md">
-        @if(!empty($dashboardBanner['link_url']))
-            <a href="{{ $dashboardBanner['link_url'] }}" target="_blank" rel="noopener noreferrer" class="block">
-                <img src="{{ $dashboardBanner['image_url'] }}" alt="{{ $dashboardBanner['title'] ?? 'Banner' }}"
-                     style="display:block; width:100%; height:200px; object-fit:cover;">
+    {{-- ====== كروت فلتر المشاريع ====== --}}
+    <div>
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
+            <i class="fas fa-project-diagram text-blue-600"></i> إحصائيات المشاريع
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+            <a href="{{ route('dashboard.requests.index') }}" class="flex bg-black justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">جميع المشاريع</h1>
+                    <p class="text-2xl text-white">{{ $projectStats['all'] }}</p>
+                </div>
+                <div class="p-5 bg-[#181818] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
             </a>
-        @else
-            <img src="{{ $dashboardBanner['image_url'] }}" alt="{{ $dashboardBanner['title'] ?? 'Banner' }}"
-                 style="display:block; width:100%; height:200px; object-fit:cover;">
-        @endif
+            <a href="{{ route('dashboard.requests.index') }}?status=جديد" class="flex bg-[#333333] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">طلبات جديدة</h1>
+                    <p class="text-xl text-white">{{ $projectStats['new'] }}</p>
+                </div>
+                <div class="p-5 bg-[#202020] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=تحت الاجراء" class="flex bg-[#595959] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white">تحت الإجراء</h1>
+                    <p class="text-xl text-white">{{ $projectStats['in_progress'] }}</p>
+                </div>
+                <div class="p-5 bg-[#4b4b4b] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=معلقة" class="flex bg-[#808080] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white">طلبات معلقة</h1>
+                    <p class="text-xl text-white">{{ $projectStats['pending'] }}</p>
+                </div>
+                <div class="p-5 bg-[#6b6b6b] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.requests.index') }}?status=منتهية" class="flex bg-[#999999] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-4 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white">طلبات منتهية</h1>
+                    <p class="text-xl text-white">{{ $projectStats['closed'] }}</p>
+                </div>
+                <div class="p-5 bg-[#858585] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+        </div>
     </div>
-    @endif
 
-    {{-- Welcome --}}
-    <div class="rounded-2xl bg-gradient-to-l from-[#104776] to-[#336cfa] px-6 py-7 sm:py-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-lg">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-black text-white leading-snug">
-                {{ $isAr ? 'أهلاً،' : 'Hello,' }} {{ isset($currentCompany) ? $currentCompany->display_name : auth()->user()->name }}
-            </h1>
-            <p class="text-blue-200 text-sm mt-1.5">
-                {{ now()->translatedFormat('l، d F Y') }}
-                @if(isset($currentCompany))
-                    — {{ auth()->user()->name }}
-                @else
-                    — {{ $isAr ? 'لوحة تحكم العيادة' : 'Clinic Dashboard' }}
-                @endif
+    {{-- ====== كروت فلتر الدورات ====== --}}
+    <div>
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
+            <i class="fas fa-graduation-cap text-green-600"></i> إحصائيات الدورات
+        </h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="{{ route('dashboard.my_courses.index') }}" class="flex bg-black justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">إجمالي الدورات</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['all'] }}</p>
+                </div>
+                <div class="p-5 bg-[#181818] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=active" class="flex bg-green-700 justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات نشطة</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['active'] }}</p>
+                </div>
+                <div class="p-5 bg-green-800 rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=upcoming" class="flex bg-blue-600 justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات قادمة</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['upcoming'] }}</p>
+                </div>
+                <div class="p-5 bg-blue-700 rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+            <a href="{{ route('dashboard.my_courses.index') }}?filter=ended" class="flex bg-[#808080] justify-between rounded-lg hover:-translate-y-0.5 transition-transform">
+                <div class="p-4 pr-6 flex flex-col justify-between">
+                    <h1 class="text-md font-bold text-white whitespace-nowrap">دورات منتهية</h1>
+                    <p class="text-2xl text-white">{{ $courseStats['ended'] }}</p>
+                </div>
+                <div class="p-5 bg-[#6b6b6b] rounded-lg shrink-0">
+                    <img src="{{ asset('assets/images/white-logo.png') }}" class="w-16 h-16 sm:w-20 sm:h-20 opacity-50" alt="">
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {{-- ====== كروت المهام ====== --}}
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <i class="fas fa-tasks text-indigo-600"></i>
+                إحصائيات {{ $taskStats['scope_label'] }}
+            </h2>
+        </div>
+        <div class="p-4 space-y-4">
+            @php
+                $taskFilterCards = [
+                    ['label' => 'منتهية', 'value' => $taskStats['completed'], 'classes' => 'bg-green-700 hover:bg-green-800', 'status' => 'منتهية'],
+                    ['label' => 'بالانتظار', 'value' => $taskStats['waiting'], 'classes' => 'bg-amber-600 hover:bg-amber-700', 'status' => 'بالانتظار'],
+                    ['label' => 'متأخرة', 'value' => $taskStats['late'], 'classes' => 'bg-red-600 hover:bg-red-700', 'status' => 'متأخرة'],
+                    ['label' => 'قيد الإنجاز', 'value' => $taskStats['in_progress'], 'classes' => 'bg-blue-600 hover:bg-blue-700', 'status' => 'قيد الإنجاز'],
+                    ['label' => 'الإجمالي', 'value' => $taskStats['total'], 'classes' => 'bg-gray-900 hover:bg-black', 'status' => 'all'],
+                    ['label' => 'متبقية', 'value' => $taskStats['remaining'], 'classes' => 'bg-gray-600 hover:bg-gray-700', 'status' => 'remaining'],
+                ];
+            @endphp
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                @foreach($taskFilterCards as $card)
+                <a href="{{ route('dashboard', ['task_status' => $card['status']]) }}#tasks-list"
+                    class="{{ $card['classes'] }} text-white rounded-xl p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm transition ring-2 {{ ($taskStatusFilter ?? '') === $card['status'] ? 'ring-white ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800' : 'ring-transparent' }}">
+                    <span class="text-[11px] sm:text-xs font-medium opacity-90 leading-tight">{{ $card['label'] }}</span>
+                    <span class="text-2xl sm:text-3xl font-black tabular-nums leading-none">{{ $card['value'] }}</span>
+                </a>
+                @endforeach
+            </div>
+            @if($taskStatusFilter)
+            <p class="text-xs text-gray-500 flex items-center gap-2">
+                <i class="fas fa-filter"></i>
+                فلتر المهام نشط —
+                <a href="{{ route('dashboard') }}#tasks-list" class="text-blue-600 hover:underline">إلغاء الفلتر</a>
             </p>
-        </div>
-        <div class="flex items-center gap-3">
-            <div class="bg-white/10 rounded-xl px-5 py-3 text-center">
-                <p class="text-blue-200 text-xs mb-1">{{ $isAr ? 'مواعيد اليوم' : "Today's Appointments" }}</p>
-                <p class="text-white text-3xl font-black">{{ $stats['appointments_today'] }}</p>
+            @endif
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">متوسط سرعة الإنجاز (أيام)</p>
+                    <p class="text-xl font-bold text-gray-900 dark:text-white mt-2 tabular-nums">
+                        {{ $taskStats['avg_completion_days'] !== null ? $taskStats['avg_completion_days'] . ' يوم' : '—' }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">نسبة الإنجاز في الموعد</p>
+                    <p class="text-xl font-bold text-green-600 mt-2 tabular-nums">
+                        {{ $taskStats['on_time_rate'] !== null ? $taskStats['on_time_rate'] . '%' : '—' }}
+                    </p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/50 p-4 text-center sm:text-right min-h-[88px] flex flex-col justify-center">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug">ساعات العمل على المهام</p>
+                    <p class="text-xl font-bold text-indigo-600 mt-2 tabular-nums">{{ $taskStats['total_tracked_hours'] }} <span class="text-sm font-semibold">ساعة</span></p>
+                </div>
             </div>
-            <div class="bg-white/10 rounded-xl px-5 py-3 text-center">
-                <p class="text-blue-200 text-xs mb-1">{{ $isAr ? 'بانتظار التأكيد' : 'Awaiting Confirmation' }}</p>
-                <p class="text-white text-3xl font-black">{{ $stats['appointments_pending'] }}</p>
+        </div>
+    </div>
+
+    @if($attendanceStats)
+    {{-- ====== كروت الحضور والرواتب ====== --}}
+    <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
+            <h2 class="text-lg font-bold text-gray-800 dark:text-white flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span class="flex items-center gap-2">
+                    <i class="fas fa-clock text-orange-600"></i>
+                    الحضور والدوام
+                </span>
+                <span class="text-sm font-normal text-gray-500">({{ $attendanceStats['period_label'] }})</span>
+            </h2>
+            <p class="text-xs text-gray-500 mt-1">اليوم: {{ $attendanceStats['status_today'] }} — {{ $attendanceStats['worked_hours_today'] }} ساعة</p>
+        </div>
+        <div class="p-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 auto-rows-fr">
+                <a href="{{ route('dashboard.work-times.calendar') }}"
+                    class="rounded-xl bg-orange-700 text-white p-4 hover:bg-orange-800 transition min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90"><i class="fas fa-business-time ml-1"></i>ساعات العمل</span>
+                    <span class="text-2xl font-black tabular-nums">{{ $attendanceStats['worked_hours'] }}<span class="text-sm font-normal"> س</span></span>
+                </a>
+                <div class="rounded-xl bg-yellow-600 text-white p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90">دقائق التأخير</span>
+                    <span class="text-2xl font-black tabular-nums">{{ $attendanceStats['late_minutes'] }}</span>
+                </div>
+                <div class="rounded-xl bg-teal-700 text-white p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90">قيمة الإضافي</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['overtime_amount'], 0) }}</span>
+                </div>
+                <div class="rounded-xl bg-red-700 text-white p-4 min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90">خصم حضور</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['attendance_deduction'], 0) }}</span>
+                </div>
+                <a href="{{ route('dashboard.adjustments.index') }}"
+                    class="rounded-xl bg-green-600 text-white p-4 hover:bg-green-700 transition min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90"><i class="fas fa-gift ml-1"></i>مكافآت</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['bonus_total'], 0) }}</span>
+                </a>
+                <a href="{{ route('dashboard.adjustments.index') }}"
+                    class="rounded-xl bg-rose-700 text-white p-4 hover:bg-rose-800 transition min-h-[92px] flex flex-col items-center justify-center text-center gap-1 shadow-sm">
+                    <span class="text-[11px] sm:text-xs opacity-90"><i class="fas fa-minus-circle ml-1"></i>خصومات</span>
+                    <span class="text-xl font-black tabular-nums">{{ number_format($attendanceStats['adjustment_deduction'], 0) }}</span>
+                </a>
             </div>
+            <p class="text-xs text-gray-500 mt-3 text-center sm:text-right">أيام حضور مسجّلة هذا الشهر: {{ $attendanceStats['attendance_days'] }}</p>
         </div>
     </div>
+    @endif
 
-    {{-- Clients & Pets --}}
-    <div>
-        <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-5 bg-[#336cfa] rounded-full"></div>
-            <h2 class="text-base font-bold text-gray-700">{{ $isAr ? 'العملاء والحيوانات' : 'Clients & Pets' }}</h2>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            @php
-            $clientCards = [
-                ['label'=> $isAr ? 'العملاء'    : 'Clients',     'value'=>$stats['clients'],    'icon'=>'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', 'color'=>'blue',   'link'=>route('dashboard.clients.index')],
-                ['label'=> $isAr ? 'الحيوانات'  : 'Pets',        'value'=>$stats['pets'],       'icon'=>'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', 'color'=>'pink',   'link'=>route('dashboard.clients.index')],
-                ['label'=> $isAr ? 'المستشارين' : 'Consultants', 'value'=>$stats['doctors'],    'icon'=>'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', 'color'=>'teal',   'link'=>route('dashboard.doctors.index')],
-                ['label'=> $isAr ? 'المساعدون'  : 'Assistants',  'value'=>$stats['assistants'], 'icon'=>'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', 'color'=>'indigo', 'link'=>route('dashboard.assistants.index')],
-            ];
-            $colorMap = [
-                'blue'   => ['bg'=>'bg-blue-500',   'light'=>'bg-blue-50',   'text'=>'text-blue-600'],
-                'pink'   => ['bg'=>'bg-pink-500',   'light'=>'bg-pink-50',   'text'=>'text-pink-600'],
-                'teal'   => ['bg'=>'bg-teal-500',   'light'=>'bg-teal-50',   'text'=>'text-teal-600'],
-                'indigo' => ['bg'=>'bg-indigo-500', 'light'=>'bg-indigo-50', 'text'=>'text-indigo-600'],
-            ];
-            @endphp
-            @foreach($clientCards as $card)
-            @php $c = $colorMap[$card['color']]; @endphp
-            <a href="{{ $card['link'] }}" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3">
-                <div class="{{ $c['light'] }} {{ $c['text'] }} p-3 rounded-xl">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $card['icon'] }}"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-2xl font-black text-gray-800">{{ number_format($card['value']) }}</p>
-                    <p class="text-xs text-gray-500">{{ $card['label'] }}</p>
-                </div>
-            </a>
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Appointments & Requests --}}
-    <div>
-        <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-5 bg-[#336cfa] rounded-full"></div>
-            <h2 class="text-base font-bold text-gray-700">{{ $isAr ? 'المواعيد والطلبات' : 'Appointments & Requests' }}</h2>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            @php
-            $apptCards = [
-                ['label'=> $isAr ? 'إجمالي الطلبات' : 'Total Requests',      'value'=>$stats['appointments_total'],   'from'=>'from-gray-700',  'to'=>'to-gray-900',  'icon'=>'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', 'link'=>route('dashboard.clinic_requests.index')],
-                ['label'=> $isAr ? 'قيد الانتظار'   : 'Pending',             'value'=>$stats['appointments_pending'], 'from'=>'from-amber-500', 'to'=>'to-amber-700', 'icon'=>'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',            'link'=>route('dashboard.clinic_requests.index').'?status=pending'],
-                ['label'=> $isAr ? 'مواعيد اليوم'   : "Today's Appointments", 'value'=>$stats['appointments_today'],   'from'=>'from-[#336cfa]', 'to'=>'to-[#104776]', 'icon'=>'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z', 'link'=>route('dashboard.clinic_requests.index')],
-            ];
-            @endphp
-            @foreach($apptCards as $card)
-            <a href="{{ $card['link'] }}" class="group relative rounded-2xl bg-gradient-to-br {{ $card['from'] }} {{ $card['to'] }} p-4 shadow hover:shadow-lg hover:-translate-y-0.5 transition-all overflow-hidden">
-                <div class="absolute -left-3 -bottom-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <svg class="h-20 w-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="{{ $card['icon'] }}"/>
-                    </svg>
-                </div>
-                <p class="text-3xl font-black text-white">{{ number_format($card['value']) }}</p>
-                <p class="text-xs text-white/70 mt-1">{{ $card['label'] }}</p>
-            </a>
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Inventory & Services --}}
-    <div>
-        <div class="flex items-center gap-2 mb-3">
-            <div class="w-1 h-5 bg-[#336cfa] rounded-full"></div>
-            <h2 class="text-base font-bold text-gray-700">{{ $isAr ? 'المخزن والخدمات' : 'Inventory & Services' }}</h2>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            @php
-            $storeCards = [
-                ['label'=> $isAr ? 'الخدمات'             : 'Services',          'value'=>$stats['services'],  'color'=>'violet', 'icon'=>'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z', 'link'=>route('dashboard.our_services.index')],
-                ['label'=> $isAr ? 'المنتجات'            : 'Products',          'value'=>$stats['products'],  'color'=>'emerald','icon'=>'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'link'=>coroute('dashboard.products.index')],
-                ['label'=> $isAr ? 'الموردون'            : 'Suppliers',         'value'=>$stats['suppliers'], 'color'=>'cyan',   'icon'=>'M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z', 'link'=>route('dashboard.suppliers.index')],
-                ['label'=> $isAr ? 'المصروفات (الشهر)' : 'Expenses (Month)', 'value'=>number_format($stats['expenses_month'], 2), 'color'=>'rose', 'icon'=>'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 8v1m0-9a9 9 0 110 18A9 9 0 0112 3z', 'link'=>route('dashboard.admin_expenses.index')],
-            ];
-            $colorMap2 = [
-                'violet'  => ['bg'=>'bg-violet-500',  'light'=>'bg-violet-50',  'text'=>'text-violet-600'],
-                'emerald' => ['bg'=>'bg-emerald-500', 'light'=>'bg-emerald-50', 'text'=>'text-emerald-600'],
-                'cyan'    => ['bg'=>'bg-cyan-500',    'light'=>'bg-cyan-50',    'text'=>'text-cyan-600'],
-                'rose'    => ['bg'=>'bg-rose-500',    'light'=>'bg-rose-50',    'text'=>'text-rose-600'],
-            ];
-            @endphp
-            @foreach($storeCards as $card)
-            @php $c = $colorMap2[$card['color']]; @endphp
-            <a href="{{ $card['link'] }}" class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3">
-                <div class="{{ $c['light'] }} {{ $c['text'] }} p-3 rounded-xl">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $card['icon'] }}"/>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-2xl font-black text-gray-800">{{ $card['value'] }}</p>
-                    <p class="text-xs text-gray-500">{{ $card['label'] }}</p>
-                </div>
-            </a>
-            @endforeach
-        </div>
-    </div>
-
-    {{-- Recent Appointments + Recent Pets --}}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <h3 class="font-bold text-gray-700 text-sm">{{ $isAr ? 'آخر الطلبات' : 'Recent Requests' }}</h3>
-                <a href="{{ route('dashboard.clinic_requests.index') }}" class="text-xs text-[#336cfa] hover:underline">{{ $isAr ? 'عرض الكل' : 'View All' }}</a>
+    {{-- ====== جميع المهام والمراحل ====== --}}
+    <div id="tasks-list" class="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-tasks text-indigo-600"></i>
+                    {{ $taskStats['scope_label'] }}
+                    <span class="text-sm font-normal text-gray-500">({{ $allTasks->count() }})</span>
+                </h2>
             </div>
-            <div class="divide-y divide-gray-50">
-                @forelse($recent_appointments as $appt)
-                <div class="flex items-center gap-3 px-4 py-3">
-                    <div class="w-8 h-8 rounded-full bg-[#336cfa]/10 text-[#336cfa] flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {{ mb_substr($appt->pet?->name ?? '?', 0, 1) }}
+            <div class="max-h-[420px] overflow-y-auto">
+                @forelse($allTasks as $task)
+                @php
+                    $projectName = $task->special_request_id
+                        ? ($task->specialRequest?->title ?? 'مشروع #' . $task->special_request_id)
+                        : ($task->request?->system?->name_ar ?? 'طلب #' . $task->request_id);
+                    $projectUrl = $task->special_request_id
+                        ? route('dashboard.special-request.show', $task->special_request_id)
+                        : route('dashboard.requests.show', $task->request_id);
+                    $stageName = $task->stage?->title ?? $task->requestStage?->title ?? '—';
+                    $statusClasses = [
+                        'منتهية' => 'bg-green-100 text-green-700',
+                        'قيد الإنجاز' => 'bg-blue-100 text-blue-700',
+                        'متأخرة' => 'bg-red-100 text-red-700',
+                        'بالانتظار' => 'bg-gray-100 text-gray-600',
+                    ];
+                @endphp
+                <a href="{{ $projectUrl }}"
+                    class="block px-4 py-3 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-900 dark:text-white truncate">{{ $task->title }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5 truncate">
+                                <i class="fas fa-folder-open ml-1"></i>{{ $projectName }}
+                            </p>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                {{ $task->user?->display_name ?? '—' }} · {{ $stageName }}
+                            </p>
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full font-bold whitespace-nowrap {{ $statusClasses[$task->status] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ $task->status }}
+                        </span>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-gray-800 truncate">{{ $appt->pet?->name ?? '—' }}</p>
-                        <p class="text-xs text-gray-400">{{ $appt->doctor?->name ?? ($isAr ? 'بدون مستشار' : 'No consultant') }} · {{ $appt->appointment_date?->format('d/m/Y') }}</p>
-                    </div>
-                    @php
-                    $statusColor = match($appt->status) {
-                        'pending'   => 'bg-yellow-100 text-yellow-700',
-                        'approved'  => 'bg-green-100 text-green-700',
-                        'rejected'  => 'bg-red-100 text-red-700',
-                        'completed' => 'bg-teal-100 text-teal-700',
-                        default     => 'bg-gray-100 text-gray-600',
-                    };
-                    @endphp
-                    <span class="text-xs px-2 py-0.5 rounded-full {{ $statusColor }} flex-shrink-0">{{ $appt->status_label }}</span>
-                </div>
+                </a>
                 @empty
-                <div class="py-8 text-center text-gray-400 text-sm">{{ $isAr ? 'لا توجد طلبات بعد' : 'No requests yet' }}</div>
+                <p class="p-8 text-center text-gray-400 text-sm">لا توجد مهام حالياً</p>
                 @endforelse
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <h3 class="font-bold text-gray-700 text-sm">{{ $isAr ? 'آخر الحيوانات المضافة' : 'Recently Added Pets' }}</h3>
-                <a href="{{ route('dashboard.clients.index') }}" class="text-xs text-[#336cfa] hover:underline">{{ $isAr ? 'عرض العملاء' : 'View Clients' }}</a>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-layer-group text-purple-600"></i>
+                    {{ auth()->user()->role === 'admin' ? 'مراحلي' : 'جميع المراحل' }}
+                    <span class="text-sm font-normal text-gray-500">({{ $allStages->count() }})</span>
+                </h2>
             </div>
-            <div class="divide-y divide-gray-50">
-                @forelse($recent_pets as $pet)
-                <div class="flex items-center gap-3 px-4 py-3">
-                    @if($pet->image)
-                    <img src="{{ Storage::url($pet->image) }}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" alt="">
-                    @else
-                    <div class="w-8 h-8 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                        {{ mb_substr($pet->name, 0, 1) }}
+            <div class="max-h-[420px] overflow-y-auto">
+                @forelse($allStages as $stage)
+                @php
+                    $stageStatusLabels = [
+                        'completed' => 'منتهية',
+                        'pending' => 'بالانتظار',
+                        'in_progress' => 'قيد التنفيذ',
+                    ];
+                    $stageLabel = $stageStatusLabels[$stage['status']] ?? $stage['status'];
+                    $stageStatusClasses = [
+                        'completed' => 'bg-green-100 text-green-700',
+                        'منتهية' => 'bg-green-100 text-green-700',
+                        'pending' => 'bg-gray-100 text-gray-600',
+                        'in_progress' => 'bg-blue-100 text-blue-700',
+                    ];
+                @endphp
+                <a href="{{ $stage['url'] }}"
+                    class="block px-4 py-3 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-900 dark:text-white truncate">{{ $stage['title'] }}</p>
+                            <p class="text-xs text-gray-500 mt-0.5 truncate">
+                                <i class="fas fa-folder-open ml-1"></i>{{ $stage['project_name'] }}
+                            </p>
+                            @if($stage['end_date'])
+                            <p class="text-xs text-gray-400 mt-0.5">موعد: {{ $stage['end_date'] }}</p>
+                            @endif
+                        </div>
+                        <span class="text-[10px] px-2 py-1 rounded-full font-bold whitespace-nowrap {{ $stageStatusClasses[$stage['status']] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ $stageLabel }}
+                        </span>
                     </div>
-                    @endif
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-semibold text-gray-800 truncate">{{ $pet->name }}</p>
-                        <p class="text-xs text-gray-400">{{ $pet->user?->name ?? '—' }} · {{ $pet->animalType?->name ?? '' }}</p>
-                    </div>
-                    <span class="text-xs text-gray-400 flex-shrink-0">{{ $pet->created_at->diffForHumans() }}</span>
-                </div>
+                </a>
                 @empty
-                <div class="py-8 text-center text-gray-400 text-sm">{{ $isAr ? 'لا توجد حيوانات بعد' : 'No pets yet' }}</div>
+                <p class="p-8 text-center text-gray-400 text-sm">لا توجد مراحل حالياً</p>
                 @endforelse
             </div>
         </div>
+    </div>
 
+    {{-- ====== الإشعارات ====== --}}
+    <div>
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-bold text-gray-700 dark:text-white flex items-center gap-2">
+                <i class="fas fa-bell text-yellow-500"></i> الإشعارات
+                @if($notifications->count() > 0)
+                <span class="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">{{ $notifications->count() }}</span>
+                @endif
+            </h2>
+            @if($notifications->count() > 0)
+            <button onclick="markAllRead()"
+                class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                <i class="fas fa-check-double"></i> تعليم الكل مقروءة
+            </button>
+            @endif
+        </div>
+
+        @if($notifications->isEmpty())
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+            <i class="fas fa-bell-slash text-4xl text-gray-300 mb-3"></i>
+            <p class="text-gray-400 dark:text-gray-500">لا توجد إشعارات جديدة</p>
+        </div>
+        @else
+        <div class="space-y-2" id="notifications-container">
+            @foreach($notifications as $notification)
+            <div id="notif-{{ $notification->id }}"
+                class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-start justify-between hover:shadow-md transition-shadow cursor-pointer group"
+                onclick="handleNotifClick({{ $notification->id }}, '{{ $notification->url ?? '' }}')">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                        {{ $notification->type === 'success' ? 'bg-green-100' : ($notification->type === 'warning' ? 'bg-yellow-100' : 'bg-blue-100') }}">
+                        <i class="fas {{ $notification->icon }}
+                            {{ $notification->type === 'success' ? 'text-green-600' : ($notification->type === 'warning' ? 'text-yellow-600' : 'text-blue-600') }}"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-gray-800 dark:text-white text-sm">{{ $notification->title }}</p>
+                        <p class="text-gray-600 dark:text-gray-400 text-xs mt-0.5">{{ $notification->message }}</p>
+                        <p class="text-gray-400 text-xs mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                    </div>
+                </div>
+                <button onclick="event.stopPropagation(); markRead({{ $notification->id }})"
+                    class="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity text-xs px-2 py-1 rounded hover:bg-gray-100">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            @endforeach
+        </div>
+        @endif
     </div>
 
 </section>
+
+<script>
+    function markRead(id) {
+        fetch(`/dashboard/notifications/${id}/read`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        }).then(() => {
+            const el = document.getElementById(`notif-${id}`);
+            if (el) {
+                el.style.transition = 'opacity 0.3s ease, max-height 0.3s ease';
+                el.style.opacity = '0';
+                setTimeout(() => el.remove(), 300);
+            }
+        }).catch(console.error);
+    }
+
+    function handleNotifClick(id, url) {
+        markRead(id);
+        if (url && url.trim() !== '') {
+            setTimeout(() => { window.location.href = url; }, 200);
+        }
+    }
+
+    function markAllRead() {
+        fetch('/dashboard/notifications/read-all', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            }
+        }).then(() => {
+            const container = document.getElementById('notifications-container');
+            if (container) {
+                container.innerHTML = '<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center"><i class="fas fa-bell-slash text-4xl text-gray-300 mb-3"></i><p class="text-gray-400">لا توجد إشعارات جديدة</p></div>';
+            }
+        }).catch(console.error);
+    }
+</script>
+
 @endsection
