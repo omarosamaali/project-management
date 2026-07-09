@@ -46,6 +46,10 @@ class ProjectApprovalController extends Controller
 
     public function update(Request $request, ProjectApproval $approval)
     {
+        if (!$this->userCanManageApproval($approval)) {
+            return back()->with('error', 'لا يمكن تعديل هذا المستند.');
+        }
+
         $request->validate([
             'title' => 'required|string|max:255',
             'approver_ids' => 'nullable|array|min:1',
@@ -107,11 +111,20 @@ class ProjectApprovalController extends Controller
 
     public function destroy(ProjectApproval $approval)
     {
+        if (!$this->userCanManageApproval($approval)) {
+            return back()->with('error', 'لا يمكن حذف هذا المستند.');
+        }
+
         Storage::disk('public')->delete($approval->file_path);
         $approval->approvers()->detach();
         $approval->delete();
 
         return back()->with('success', 'تم حذف مستند الاعتماد');
+    }
+
+    private function userCanManageApproval(ProjectApproval $approval): bool
+    {
+        return (int) $approval->user_id === (int) auth()->id() && !$approval->isApproved();
     }
 
 }

@@ -72,6 +72,7 @@
                         @php
                             $myPivot = $item->approvers->firstWhere('id', auth()->id());
                             $canApprove = $myPivot && !$myPivot->pivot->approved_at && !$item->isApproved();
+                            $canManage = (int) $item->user_id === (int) auth()->id() && !$item->isApproved();
                         @endphp
                         @if($canApprove)
                         <form action="{{ route('approvals.approve', $item->id) }}" method="POST" class="mt-2">
@@ -85,6 +86,7 @@
                     </div>
                 </div>
 
+                @if($canManage)
                 <div class="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                         onclick="openEditApprovalModal({{ $item->id }}, @json($item->title), @json($item->description ?? ''), @json($item->approvers->pluck('id')->values()))"
@@ -97,6 +99,7 @@
                         <button type="submit" class="text-black hover:text-red-700"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
+                @endif
             </div>
         </div>
         @empty
