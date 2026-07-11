@@ -20,7 +20,8 @@ use App\Models\RequestStage;
 use App\Models\RequestActivity;
 use App\Services\WhatsAppOTPService;
 use App\Services\ProjectActivityLogger;
-use Illuminate\Support\Facades\Schema;
+use App\Support\RequestPaymentSync;
+use Illuminate\Validation\Rule;
 
 class SpecialRequestController extends Controller
 {
@@ -753,6 +754,11 @@ class SpecialRequestController extends Controller
             'price' => 'required|numeric|min:0',
             'payment_type' => 'required|in:single,installments',
             'installments' => 'nullable|array',
+            'installments.*.id' => [
+                'nullable',
+                'integer',
+                Rule::exists('request_payments', 'id')->where('special_request_id', $specialRequest->id),
+            ],
             'installments.*.name' => 'required_with:installments|string',
             'installments.*.amount' => 'required_with:installments|numeric|min:0',
             'installments.*.due_date' => 'nullable|date',
@@ -765,28 +771,14 @@ class SpecialRequestController extends Controller
                 'payment_type' => $request->payment_type,
             ]);
 
-            RequestPayment::where('special_request_id', $specialRequest->id)->delete();
+            RequestPaymentSync::syncForSpecialRequest(
+                $specialRequest->id,
+                $request->payment_type,
+                (float) $request->price,
+                $request->installments
+            );
 
-            if ($request->payment_type == 'single') {
-                RequestPayment::create([
-                    'special_request_id' => $specialRequest->id,
-                    'payment_name' => 'الدفعة الكاملة',
-                    'amount' => $request->price,
-                    'status' => 'unpaid'
-                ]);
-            } else {
-                if ($request->has('installments') && is_array($request->installments)) {
-                    foreach ($request->installments as $installment) {
-                        RequestPayment::create([
-                            'special_request_id' => $specialRequest->id,
-                            'payment_name' => $installment['name'],
-                            'amount' => $installment['amount'],
-                            'due_date' => $installment['due_date'] ?? null,
-                            'status' => 'unpaid'
-                        ]);
-                    }
-                }
-            }
+            $specialRequest->refreshPaymentStatus();
         });
 
         return back()->with('success', 'تم تحديث ميزانية المشروع بنجاح');

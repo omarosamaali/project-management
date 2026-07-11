@@ -246,20 +246,28 @@
                 </div>
                 <div id="installments_wrapper" class="space-y-2">
                     @foreach($SpecialRequest->requestPayments as $index => $payment)
+                    @php $isLocked = in_array($payment->status, ['paid', 'pending'], true); @endphp
                     <div class="installment-row flex gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <input type="hidden" name="installments[{{ $index }}][id]" value="{{ $payment->id }}">
                         <input type="text" name="installments[{{ $index }}][name]" value="{{ $payment->payment_name }}"
-                            placeholder="اسم الدفعة" required
-                            class="flex-1 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm">
+                            placeholder="اسم الدفعة" required {{ $isLocked ? 'readonly' : '' }}
+                            class="flex-1 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm {{ $isLocked ? 'opacity-70' : '' }}">
                         <input type="number" name="installments[{{ $index }}][amount]" value="{{ $payment->amount }}"
-                            placeholder="المبلغ" step="0.01" min="0" required
-                            class="w-32 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm installment-amount"
+                            placeholder="المبلغ" step="0.01" min="0" required {{ $isLocked ? 'readonly' : '' }}
+                            class="w-32 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm installment-amount {{ $isLocked ? 'opacity-70' : '' }}"
                             oninput="calculateTotal()">
                         <input type="date" name="installments[{{ $index }}][due_date]"
-                            value="{{ $payment->due_date?->format('Y-m-d') }}"
-                            class="w-40 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm">
+                            value="{{ $payment->due_date?->format('Y-m-d') }}" {{ $isLocked ? 'readonly' : '' }}
+                            class="w-40 p-2 rounded border dark:bg-gray-800 dark:text-white text-sm {{ $isLocked ? 'opacity-70' : '' }}">
+                        @if($isLocked)
+                        <span class="px-3 py-2 text-xs font-bold text-green-700 dark:text-green-300 whitespace-nowrap">
+                            {{ $payment->status === 'paid' ? 'مدفوعة' : 'قيد التأكيد' }}
+                        </span>
+                        @else
                         <button type="button" onclick="removeInstallment(this)"
                             class="px-3 py-2 bg-red-500 text-white rounded hover:bg-black"><i
                                 class="fas fa-trash"></i></button>
+                        @endif
                     </div>
                     @endforeach
                 </div>
