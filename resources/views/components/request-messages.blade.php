@@ -46,7 +46,7 @@
                             ? 'bg-blue-600 text-white rounded-br-none' 
                             : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border dark:border-gray-700 rounded-bl-none' 
                         }}">
-                    {{ $message->message }}
+                    {!! \App\Support\ChatMessageFormatter::toHtml($message->message) !!}
                 </div>
             </div>
         </div>

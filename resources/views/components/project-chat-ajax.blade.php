@@ -96,7 +96,7 @@
             'bg-blue-600 text-white rounded-br-none' :
             'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border dark:border-gray-700 rounded-bl-none'
         );
-        bubble.textContent = m.message || '';
+        fillChatMessageBubble(bubble, m.message || '');
 
         body.appendChild(meta);
         body.appendChild(bubble);
@@ -104,6 +104,41 @@
         row.appendChild(body);
         container.appendChild(row);
         container.scrollTop = container.scrollHeight;
+    }
+
+    function fillChatMessageBubble(el, text) {
+        el.textContent = '';
+        const str = String(text || '');
+        const pattern = /https?:\/\/[^\s<>"']+/gi;
+        let last = 0;
+        let match;
+
+        while ((match = pattern.exec(str)) !== null) {
+            if (match.index > last) {
+                el.appendChild(document.createTextNode(str.slice(last, match.index)));
+            }
+
+            const raw = match[0];
+            const clean = raw.replace(/[.,);\]'"]+$/g, '');
+            const trailing = raw.slice(clean.length);
+            const a = document.createElement('a');
+            a.href = clean;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            a.className = 'underline break-all hover:opacity-80';
+            a.textContent = clean;
+            el.appendChild(a);
+
+            if (trailing) {
+                el.appendChild(document.createTextNode(trailing));
+            }
+
+            last = match.index + raw.length;
+        }
+
+        if (last < str.length) {
+            el.appendChild(document.createTextNode(str.slice(last)));
+        }
     }
 </script>
 @endonce
