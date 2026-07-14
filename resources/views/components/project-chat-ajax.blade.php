@@ -40,6 +40,16 @@
                 }
             });
 
+            const messageField = form.querySelector('[name="message"]');
+            if (messageField) {
+                messageField.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        form.requestSubmit();
+                    }
+                });
+            }
+
             container.scrollTop = container.scrollHeight;
         });
     });
@@ -82,7 +92,7 @@
         meta.appendChild(time);
 
         const bubble = document.createElement('div');
-        bubble.className = 'p-3 rounded-2xl text-sm shadow-sm ' + (isMine ?
+        bubble.className = 'p-3 rounded-2xl text-sm shadow-sm whitespace-pre-wrap break-words ' + (isMine ?
             'bg-blue-600 text-white rounded-br-none' :
             'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border dark:border-gray-700 rounded-bl-none'
         );

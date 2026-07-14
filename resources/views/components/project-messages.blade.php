@@ -41,7 +41,7 @@
                     </span>
                 </div>
 
-                <div class="p-3 rounded-2xl text-sm shadow-sm 
+                <div class="p-3 rounded-2xl text-sm shadow-sm whitespace-pre-wrap break-words
                         {{ $isMine 
                             ? 'bg-blue-600 text-white rounded-br-none' 
                             : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border dark:border-gray-700 rounded-bl-none' 
@@ -59,13 +59,13 @@
     </div>
 
     <div class="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-b-xl">
-        <form data-project-chat-form action="{{ route('dashboard.special-request-messages.store') }}" method="POST" class="flex gap-2">
+        <form data-project-chat-form action="{{ route('dashboard.special-request-messages.store') }}" method="POST" class="flex gap-2 items-end">
             @csrf
             <input type="hidden" name="special_request_id" value="{{ $SpecialRequest->id }}">
-            <input type="text" name="message" required placeholder="اكتب رسالتك هنا..."
-                class="flex-1 p-3 bg-gray-100 dark:bg-gray-700 border-none rounded-lg focus:ring-2 focus:ring-blue-500 text-sm dark:text-white">
+            <textarea name="message" required rows="2" placeholder="اكتب رسالتك هنا..."
+                class="flex-1 p-3 bg-gray-100 dark:bg-gray-700 border-none rounded-lg focus:ring-2 focus:ring-blue-500 text-sm dark:text-white resize-y min-h-[44px] max-h-40"></textarea>
             <button type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg transition-all flex items-center justify-center">
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg transition-all flex items-center justify-center shrink-0">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </form>
