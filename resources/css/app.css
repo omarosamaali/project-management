@@ -14,3 +14,52 @@ body {
 .iti.iti--allow-dropdown.iti--show-flags.iti--inline-dropdown {
     width: 100% !important;
 }
+
+/* ---------- Mobile-friendly tables (all dashboard tables) ---------- */
+@media (max-width: 767px) {
+    /* Turn clipping wrappers into horizontal scroll containers when they hold tables */
+    .overflow-hidden:has(table),
+    .overflow-x-auto,
+    .bg-white:has(> table),
+    .dark\:bg-gray-800:has(> table),
+    .shadow-md:has(> table),
+    .shadow:has(> table),
+    .rounded-xl:has(> table),
+    .rounded-lg:has(> table) {
+        overflow-x: auto !important;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        max-width: 100%;
+    }
+
+    /* Prevent tables from crushing/overlapping columns — scroll instead */
+    main table,
+    section table,
+    .overflow-x-auto table,
+    .bg-white > table,
+    .dark\:bg-gray-800 > table {
+        width: max-content !important;
+        min-width: 40rem; /* ~640px */
+        max-width: none !important;
+        table-layout: auto !important;
+    }
+
+    /* Keep headers/cells readable while scrolling */
+    main table th,
+    main table td,
+    section table th,
+    section table td {
+        white-space: nowrap;
+    }
+
+    /* Allow designated cells to wrap (long titles, descriptions) */
+    main table td.mobile-wrap,
+    main table th.mobile-wrap,
+    section table td.mobile-wrap,
+    section table th.mobile-wrap {
+        white-space: normal;
+        min-width: 10rem;
+        max-width: 14rem;
+    }
+}

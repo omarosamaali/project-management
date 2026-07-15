@@ -4,7 +4,7 @@
 
 @section('content')
 
-<section class="!pl-0 p-3 sm:p-5">
+<section class="p-3 sm:p-5">
     {{-- Breadcrumb --}}
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.my_courses.index') }}" second="دوراتي التدريبية" />
 
@@ -90,9 +90,8 @@
     @endif
 
     <div class="mx-auto w-full">
-        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 relative shadow-md rounded-lg overflow-hidden">
 
-            {{-- التنبيهات --}}
             @if(session('success'))
             <div
                 class="m-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200 flex items-center gap-2">
@@ -101,8 +100,82 @@
             </div>
             @endif
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
+            @forelse($myPayments as $payment)
+            @php
+                $course = $payment->course;
+                $now = \Carbon\Carbon::now();
+                $startDate = \Carbon\Carbon::parse($course->start_date);
+                $endDate = \Carbon\Carbon::parse($course->end_date);
+                $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) &&
+                    $now->lessThanOrEqualTo($endDate);
+                $isFinished = $now->greaterThan($endDate);
+                $canCertificate = $payment->is_attended && $course && (!$course->has_exam || $course->userPassedExam($payment->user_id));
+            @endphp
+
+            {{-- ===== Mobile cards ===== --}}
+            <div class="md:hidden border-b border-gray-100 dark:border-gray-700 p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                        <h3 class="font-bold text-gray-900 dark:text-white leading-snug">{{ $course->name_ar }}</h3>
+                        <p class="text-xs text-gray-500 mt-1 break-all">{{ $payment->payment_id ?? $payment->id }}</p>
+                    </div>
+                    <span class="shrink-0 px-2 py-1 rounded-full text-[11px] font-medium bg-green-100 text-green-800">مدفوع</span>
+                </div>
+
+                <div class="text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
+                    <span><i class="far fa-calendar-alt ml-1"></i>{{ $payment->created_at->format('Y-m-d') }}</span>
+                    <span><i class="far fa-clock ml-1"></i>{{ $startDate->format('Y-m-d h:i A') }}</span>
+                </div>
+
+                @if($course->location_type == 'online')
+                    @if($showLink)
+                    <a href="{{ $course->online_link }}" target="_blank"
+                        class="inline-flex items-center justify-center w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                        <i class="fas fa-video ml-2"></i> دخول المحاضرة
+                    </a>
+                    @elseif($isFinished)
+                    <p class="text-red-500 text-xs font-semibold">الدورة انتهت</p>
+                    @else
+                    <p class="text-gray-400 text-xs">الرابط سيظهر في: <strong>{{ $startDate->format('Y-m-d h:i A') }}</strong></p>
+                    @endif
+                @else
+                <p class="text-gray-500 text-xs">حضور شخصي (مقر)</p>
+                @endif
+
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <a href="{{ route('dashboard.my_courses.show', $payment->id) }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
+                        <i class="fas fa-eye"></i> التفاصيل
+                    </a>
+                    @if((float) ($course->price ?? 0) > 0)
+                    <a href="{{ route('dashboard.payment.invoice', $payment->id) }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-medium">
+                        <i class="fas fa-file-invoice"></i> الفاتورة
+                    </a>
+                    @endif
+                    @if($canCertificate)
+                    <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium">
+                        <i class="fas fa-certificate"></i> الشهادة
+                    </a>
+                    @elseif($payment->is_attended && $course && $course->has_exam && $course->exam_started_at && !$course->exam_ended_at)
+                    <a href="{{ route('dashboard.courses.exam.take', $course) }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium">
+                        <i class="fas fa-clipboard-list"></i> الاختبار
+                    </a>
+                    @endif
+                </div>
+            </div>
+
+            @empty
+            <div class="md:hidden px-4 py-10 text-center text-gray-400">
+                لم تشترك في أي دورة بعد.
+            </div>
+            @endforelse
+
+            {{-- ===== Desktop table ===== --}}
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full min-w-[720px] text-sm text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th scope="col" class="px-4 py-4 text-right">رقم الطلب</th>
@@ -116,61 +189,45 @@
                     <tbody>
                         @forelse($myPayments as $payment)
                         @php
-                        $course = $payment->course;
-                        $now = \Carbon\Carbon::now();
-                        $startDate = \Carbon\Carbon::parse($course->start_date);
-                        $endDate = \Carbon\Carbon::parse($course->end_date);
-
-                        // منطق ظهور الرابط قبل 30 دقيقة وحتى نهاية الموعد
-                        $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) &&
-                        $now->lessThanOrEqualTo($endDate);
-                        $isFinished = $now->greaterThan($endDate);
+                            $course = $payment->course;
+                            $now = \Carbon\Carbon::now();
+                            $startDate = \Carbon\Carbon::parse($course->start_date);
+                            $endDate = \Carbon\Carbon::parse($course->end_date);
+                            $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) &&
+                                $now->lessThanOrEqualTo($endDate);
+                            $isFinished = $now->greaterThan($endDate);
                         @endphp
                         <tr class="border-b dark:border-gray-700 hover:bg-gray-50 transition-colors">
-                            {{-- رقم الطلب --}}
                             <td class="px-4 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                 {{ $payment->payment_id ?? $payment->id }}
                             </td>
-
-                            {{-- العميل/الدورة والوصف --}}
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 mobile-wrap">
                                 <div class="font-bold text-black dark:text-white">{{ $course->name_ar }}</div>
-                                <div class="text-xs text-gray-400 mt-1">{{ Str::limit($course->description_ar, 40) }}
-                                </div>
+                                <div class="text-xs text-gray-400 mt-1">{{ Str::limit($course->description_ar, 40) }}</div>
                             </td>
-
-                            {{-- تاريخ الاشتراك --}}
                             <td class="px-4 py-4 whitespace-nowrap">
                                 {{ $payment->created_at->format('Y-m-d') }}
                             </td>
-
-                            {{-- حالة الدفع --}}
-                            <td class="px-4 py-4 text-sm">
-                                مدفوع
-                            </td>
-
-                            {{-- لينك المحاضرة --}}
+                            <td class="px-4 py-4 text-sm">مدفوع</td>
                             <td class="px-4 py-4 text-center">
                                 @if($course->location_type == 'online')
-                                @if($showLink)
-                                <a href="{{ $course->online_link }}" target="_blank"
-                                    class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 animate-pulse">
-                                    <i class="fas fa-video ml-2"></i> دخول المحاضرة
-                                </a>
-                                @elseif($isFinished)
-                                <span class="text-red-500 font-semibold italic text-xs">الدورة انتهت</span>
-                                @else
-                                <div class="text-gray-400 text-xs flex flex-col">
-                                    <span>الرابط سيظهر في:</span>
-                                    <span class="font-bold">{{ $startDate->format('Y-m-d H:i') }}</span>
-                                </div>
-                                @endif
+                                    @if($showLink)
+                                    <a href="{{ $course->online_link }}" target="_blank"
+                                        class="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 animate-pulse">
+                                        <i class="fas fa-video ml-2"></i> دخول المحاضرة
+                                    </a>
+                                    @elseif($isFinished)
+                                    <span class="text-red-500 font-semibold italic text-xs">الدورة انتهت</span>
+                                    @else
+                                    <div class="text-gray-400 text-xs flex flex-col">
+                                        <span>الرابط سيظهر في:</span>
+                                        <span class="font-bold">{{ $startDate->format('Y-m-d h:i A') }}</span>
+                                    </div>
+                                    @endif
                                 @else
                                 <span class="text-gray-500 text-xs italic">حضور شخصي (مقر)</span>
                                 @endif
                             </td>
-
-                            {{-- فاتورة --}}
                             <td class="px-4 py-4 text-left">
                                 <div class="flex items-center gap-3">
                                     <a href="{{ route('dashboard.my_courses.show', $payment->id) }}"
@@ -179,7 +236,7 @@
                                     </a>
                                     @if((float) ($payment->course->price ?? 0) > 0)
                                     <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style" title="الفاتورة">
-                                        <i class="fas fa-file-invoice"></i> 
+                                        <i class="fas fa-file-invoice"></i>
                                     </a>
                                     @endif
                                     @if($payment->is_attended)
