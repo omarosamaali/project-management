@@ -306,8 +306,8 @@
                                 // دالة لإنشاء checkboxes بناءً على الأيام الموجودة
                                 function generateRestDaysCheckboxes(startDate, endDate, recalculate = true) {
                                     const uniqueDays = new Set();
-                                    let currentDate = new Date(startDate);
-                                    const end = new Date(endDate);
+                                    let currentDate = resetTime(new Date(startDate));
+                                    const end = resetTime(new Date(endDate));
 
                                     while (currentDate <= end) {
                                         const dayName = getDayName(currentDate);
@@ -367,6 +367,10 @@
                                     }
                                 }
 
+                                function resetTime(date) {
+                                    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                                }
+
                                 // دالة منفصلة لإعادة حساب أيام الراحة فقط
                                 function recalculateRestDays() {
                                     const startDate = startDateInput.value;
@@ -376,11 +380,11 @@
                                         return;
                                     }
 
-                                    const start = new Date(startDate);
-                                    const end = new Date(endDate);
+                                    const start = resetTime(new Date(startDate));
+                                    const end = resetTime(new Date(endDate));
 
-                                    const diffTime = Math.abs(end - start);
-                                    const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                                    // Inclusive calendar days: same day => 1 (NOT ceil(hours)+1)
+                                    const totalDays = Math.max(0, Math.round((end - start) / (1000 * 60 * 60 * 24))) + 1;
 
                                     const restDayCheckboxes = restDaysContainer.querySelectorAll('.rest-day-checkbox');
                                     const selectedRestDays = Array.from(restDayCheckboxes)
@@ -398,7 +402,7 @@
                                         currentDate.setDate(currentDate.getDate() + 1);
                                     }
 
-                                    const actualCourseDays = totalDays - restDaysCount;
+                                    const actualCourseDays = Math.max(0, totalDays - restDaysCount);
 
                                     totalDaysDisplay.value = totalDays;
                                     restDaysCountDisplay.value = restDaysCount;

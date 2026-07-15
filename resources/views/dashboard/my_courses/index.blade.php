@@ -177,9 +177,11 @@
                                         class="text-gray-600 hover:text-blue-600" title="عرض التفاصيل">
                                         <i class="fas fa-eye text-lg"></i>
                                     </a>
-                                    <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style">
+                                    @if((float) ($payment->course->price ?? 0) > 0)
+                                    <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style" title="الفاتورة">
                                         <i class="fas fa-file-invoice"></i> 
                                     </a>
+                                    @endif
                                     @if($payment->is_attended)
                                         @php
                                             $course = $payment->course;

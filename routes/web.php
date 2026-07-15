@@ -35,6 +35,8 @@ Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(func
         ->name('courses.start-exam');
     Route::post('/courses/{course}/end-exam', [CourseController::class, 'endExam'])
         ->name('courses.end-exam');
+    Route::get('/courses/{course}/exam-statuses', [CourseController::class, 'examStatuses'])
+        ->name('courses.exam-statuses');
     Route::get('/exam/pending-check', [\App\Http\Controllers\CourseExamController::class, 'pendingCheck'])
         ->name('courses.exam.pending-check');
     Route::get('/courses/{course}/exam', [\App\Http\Controllers\CourseExamController::class, 'take'])

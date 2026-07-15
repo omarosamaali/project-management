@@ -85,6 +85,15 @@ class CourseController extends Controller
 
         // أيام الراحة - الجديد
         $data['rest_days'] = $request->input('rest_days', []);
+
+        // Always derive count_days from calendar dates (same day = 1)
+        if (!empty($data['start_date']) && !empty($data['end_date'])) {
+            $data['count_days'] = Course::computeCourseDays(
+                $data['start_date'],
+                $data['end_date'],
+                $data['rest_days'] ?? []
+            );
+        }
     }
 
     public function store(Request $request)
@@ -399,6 +408,45 @@ class CourseController extends Controller
         $course->update(['exam_ended_at' => now()]);
 
         return back()->with('success', 'تم إنهاء الاختبار.');
+    }
+
+    /**
+     * Live exam progress for admin subscribers table.
+     */
+    public function examStatuses(Course $course)
+    {
+        if (auth()->user()?->role !== 'admin') {
+            abort(403);
+        }
+
+        if (!$course->has_exam) {
+            return response()->json(['statuses' => []]);
+        }
+
+        $attempts = $course->examAttempts()->get()->keyBy('user_id');
+        $totalQuestions = $course->examQuestions()->count();
+
+        $userIds = $course->payments()
+            ->whereIn('status', ['completed', 'success', 'paid', 'active', 'pending'])
+            ->where('is_attended', true)
+            ->pluck('user_id')
+            ->unique();
+
+        $statuses = [];
+        foreach ($userIds as $userId) {
+            $attempt = $attempts->get($userId);
+            $status = $course->userExamStatus($userId, $attempt);
+            $statuses[(string) $userId] = [
+                'status' => $status,
+                'label' => $course->userExamStatusLabel($userId, $attempt),
+                'score' => $attempt && $attempt->isSubmitted() ? (int) $attempt->score : null,
+                'total' => $totalQuestions,
+                'passed' => $attempt && $attempt->isSubmitted() ? (bool) $attempt->passed : null,
+                'can_certificate' => $status === 'passed',
+            ];
+        }
+
+        return response()->json(['statuses' => $statuses]);
     }
 
     public function payments(Course $course)

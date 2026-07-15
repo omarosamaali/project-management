@@ -9,7 +9,7 @@
             <div class="bg-indigo-600 text-white p-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-xl font-bold">اختبار: {{ $course->name_ar }}</h1>
-                    <p class="text-indigo-100 text-sm mt-1">محاولة واحدة فقط — أجب على الأسئلة بالترتيب</p>
+                    <p class="text-indigo-100 text-sm mt-1">محاولة واحدة فقط — ترتيب الأسئلة والإجابات مختلف لكل طالب</p>
                 </div>
                 <div id="exam-timer"
                     class="px-4 py-2 bg-white/15 rounded-lg text-center min-w-[7rem] border border-white/20"

@@ -159,22 +159,22 @@
     <dl class="space-y-3 text-sm">
         <div class="flex justify-between">
             <dt class="text-gray-600 dark:text-gray-400">تاريخ البداية</dt>
-            <dd class="font-medium">{{ $course->start_date->format('Y-m-d h:i:A') }}</dd>
+            <dd class="font-medium">{{ $course->start_date->format('Y-m-d h:i A') }}</dd>
         </div>
         <div class="flex justify-between">
             <dt class="text-gray-600 dark:text-gray-400">تاريخ النهاية</dt>
-            <dd class="font-medium">{{ $course->end_date->format('Y-m-d h:i:A') }}</dd>
+            <dd class="font-medium">{{ $course->end_date->format('Y-m-d h:i A') }}</dd>
         </div>
         <div class="flex justify-between">
             <dt class="text-gray-600 dark:text-gray-400">آخر موعد للتسجيل</dt>
-            <dd class="font-medium">{{ $course->last_date->format('Y-m-d h:i:A') }}</dd>
+            <dd class="font-medium">{{ $course->last_date->format('Y-m-d h:i A') }}</dd>
         </div>
 
         <hr class="border-gray-300 dark:border-gray-600">
 
         <div class="flex justify-between">
             <dt class="text-gray-600 dark:text-gray-400">عدد أيام الدورة</dt>
-            <dd class="font-bold text-blue-600">{{ $course->count_days }} يوم</dd>
+            <dd class="font-bold text-blue-600">{{ $course->actual_course_days }} {{ $course->actual_course_days == 1 ? 'يوم' : 'أيام' }}</dd>
         </div>
 
         @if ($course->rest_days && count($course->rest_days) > 0)
@@ -467,7 +467,12 @@
                                         class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         المبلغ المدفوع
                                     </th>
-                                    {{-- @endif --}}
+                                    @if($course->has_exam)
+                                    <th
+                                        class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                        حالة الاختبار
+                                    </th>
+                                    @endif
                                     <th
                                         class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         إجراءات
@@ -516,6 +521,31 @@
                                         {{ number_format($payment->amount, 2) }}
                                         <x-drhm-icon width="12" height="14" />
                                     </td>
+                                    @if($course->has_exam)
+                                    @php
+                                        $examAttempt = $payment->is_attended
+                                            ? $course->examAttempts->firstWhere('user_id', $payment->user_id)
+                                            : null;
+                                        $examStatus = $payment->is_attended
+                                            ? $course->userExamStatus($payment->user_id, $examAttempt)
+                                            : 'none';
+                                        $examStatusUi = match ($examStatus) {
+                                            'not_entered' => ['لم يدخل بعد', 'bg-gray-100 text-gray-700'],
+                                            'in_progress' => ['قيد الاختبار', 'bg-amber-100 text-amber-800'],
+                                            'passed' => ['ناجح' . ($examAttempt ? ' (' . $examAttempt->score . '/' . $course->examQuestions->count() . ')' : ''), 'bg-green-100 text-green-800'],
+                                            'failed' => ['راسب' . ($examAttempt ? ' (' . $examAttempt->score . '/' . $course->examQuestions->count() . ')' : ''), 'bg-red-100 text-red-800'],
+                                            default => ['—', 'bg-gray-50 text-gray-400'],
+                                        };
+                                    @endphp
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="exam-status-badge px-3 py-1 rounded-full text-xs font-medium {{ $examStatusUi[1] }}"
+                                            data-user-id="{{ $payment->user_id }}"
+                                            data-status="{{ $examStatus }}">
+                                            {{ $examStatusUi[0] }}
+                                        </span>
+                                    </td>
+                                    @endif
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         @if((float) $course->price > 0)
                                         <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style" title="الفاتورة">
@@ -533,6 +563,7 @@
                                         </form>
                                     
                                         @if($payment->is_attended)
+                                            <span class="exam-cert-slot inline" data-user-id="{{ $payment->user_id }}" data-payment-id="{{ $payment->id }}">
                                             @php
                                                 $canCertificate = !$course->has_exam || $course->userPassedExam($payment->user_id);
                                             @endphp
@@ -541,11 +572,8 @@
                                                 class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                                 <i class="fas fa-certificate"></i> الشهادة
                                             </a>
-                                            @elseif($course->has_exam)
-                                            <span class="px-3 py-1 text-xs text-amber-700 bg-amber-50 rounded-lg" title="بانتظار اجتياز الاختبار">
-                                                <i class="fas fa-clipboard-list"></i> بانتظار الاختبار
-                                            </span>
                                             @endif
+                                            </span>
                                         @endif
                                     </td>
                                 </tr>
@@ -740,6 +768,85 @@
         });
 
         updateBulkState();
+    })();
+</script>
+@endif
+
+@if($course->has_exam)
+<script>
+    (function () {
+        const url = @json(route('dashboard.courses.exam-statuses', $course));
+        const certBase = @json(url('/dashboard/payments'));
+
+        const uiMap = {
+            not_entered: { label: 'لم يدخل بعد', classes: 'bg-gray-100 text-gray-700' },
+            in_progress: { label: 'قيد الاختبار', classes: 'bg-amber-100 text-amber-800' },
+            passed: { label: 'ناجح', classes: 'bg-green-100 text-green-800' },
+            failed: { label: 'راسب', classes: 'bg-red-100 text-red-800' },
+            none: { label: '—', classes: 'bg-gray-50 text-gray-400' },
+        };
+
+        function renderBadge(el, status, score, total) {
+            const ui = uiMap[status] || uiMap.none;
+            let label = ui.label;
+            if ((status === 'passed' || status === 'failed') && score !== null && score !== undefined) {
+                label += ' (' + score + (total ? '/' + total : '') + ')';
+            }
+            el.dataset.status = status;
+            el.className = 'exam-status-badge px-3 py-1 rounded-full text-xs font-medium ' + ui.classes;
+            el.textContent = label;
+        }
+
+        function renderCertificate(slot, canCertificate, paymentId) {
+            if (!slot) return;
+            const existing = slot.querySelector('a');
+            if (canCertificate) {
+                if (!existing) {
+                    slot.innerHTML = `<a href="${certBase}/${paymentId}/certificate"
+                        class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        <i class="fas fa-certificate"></i> الشهادة
+                    </a>`;
+                }
+            } else if (existing) {
+                slot.innerHTML = '';
+            }
+        }
+
+        const poll = () => {
+            if (document.hidden) return;
+            fetch(url, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+            })
+                .then((r) => r.json())
+                .then((data) => {
+                    const statuses = data.statuses || {};
+                    document.querySelectorAll('.exam-status-badge[data-user-id]').forEach((badge) => {
+                        const userId = String(badge.dataset.userId);
+                        const info = statuses[userId];
+                        if (!info) return;
+                        if (badge.dataset.status === info.status
+                            && badge.textContent.includes(String(info.score ?? ''))) {
+                            // still update label if score changed presentation
+                        }
+                        renderBadge(badge, info.status, info.score, info.total);
+                    });
+                    document.querySelectorAll('.exam-cert-slot[data-user-id]').forEach((slot) => {
+                        const userId = String(slot.dataset.userId);
+                        const paymentId = slot.dataset.paymentId;
+                        const info = statuses[userId];
+                        if (!info || !paymentId) return;
+                        renderCertificate(slot, !!info.can_certificate, paymentId);
+                    });
+                })
+                .catch(() => {});
+        };
+
+        poll();
+        setInterval(poll, 3000);
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) poll();
+        });
     })();
 </script>
 @endif

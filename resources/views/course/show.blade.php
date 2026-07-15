@@ -196,7 +196,7 @@
                                         مدة الدورة
                                     </h3>
                                     <p class="text-gray-600 text-lg font-bold">
-                                        {{ $course->count_days }} يوم
+                                        {{ $course->actual_course_days }} {{ $course->actual_course_days == 1 ? 'يوم' : 'أيام' }}
                                     </p>
                                 </div>
                             </div>

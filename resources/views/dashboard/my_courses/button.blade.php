@@ -3,7 +3,58 @@
 @section('title', $buttonTitle . ' - ' . ($course->name_ar ?? 'دوراتي'))
 
 @section('content')
-<section class="p-2 sm:p-4">
+<style>
+    /* Reduce parent/page stealing touches from the iframe on mobile */
+    .course-button-iframe-page {
+        overscroll-behavior: none;
+    }
+
+    .course-button-iframe-wrap {
+        position: relative;
+        width: 100%;
+        height: calc(100dvh - 11rem);
+        min-height: 320px;
+        /* overflow:auto + webkit scrolling helps iOS nested scroll */
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+        border-radius: 0.75rem;
+    }
+
+    .course-button-iframe-wrap iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+        border: 0;
+        /* Let the iframe own vertical/horizontal pan gestures */
+        touch-action: auto;
+        -webkit-overflow-scrolling: touch;
+        pointer-events: auto;
+    }
+
+    @media (max-width: 768px) {
+        .course-button-iframe-wrap {
+            height: calc(100dvh - 9.5rem);
+            min-height: 280px;
+            /* absolute iframe fill is more reliable on iOS Safari */
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .course-button-iframe-wrap iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            /* critical for intermittent mobile touch scroll */
+            touch-action: pan-x pan-y pinch-zoom;
+        }
+    }
+</style>
+
+<section class="p-2 sm:p-4 course-button-iframe-page">
     <x-breadcrumb
         first="دوراتي التدريبية"
         link="{{ route('dashboard.my_courses.show', $payment->id) }}"
@@ -25,14 +76,11 @@
         </div>
     </div>
 
-    {{-- Explicit height so the iframe never collapses (flex parents in layout use h-auto) --}}
-    <div class="w-full rounded-xl shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800"
-        style="height: calc(100vh - 11rem); min-height: 420px;">
+    <div class="course-button-iframe-wrap shadow-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <iframe
             src="{{ $button['link'] }}"
             title="{{ $buttonTitle }}"
-            class="block w-full h-full border-0"
-            style="width: 100%; height: 100%; border: 0;"
+            scrolling="yes"
             loading="eager"
             referrerpolicy="no-referrer-when-downgrade"
             allow="fullscreen; clipboard-read; clipboard-write; autoplay"
@@ -40,4 +88,22 @@
         ></iframe>
     </div>
 </section>
+
+<script>
+    (function () {
+        // Keep the outer dashboard from competing with iframe touch-scroll on mobile
+        const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+        if (!isTouch) return;
+
+        const prevOverflow = document.documentElement.style.overflow;
+        const prevBodyOverflow = document.body.style.overflow;
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+
+        window.addEventListener('pagehide', function () {
+            document.documentElement.style.overflow = prevOverflow;
+            document.body.style.overflow = prevBodyOverflow;
+        });
+    })();
+</script>
 @endsection

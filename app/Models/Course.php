@@ -134,6 +134,40 @@ class Course extends Model
             ->exists();
     }
 
+    /**
+     * Per-user exam progress: none | not_entered | in_progress | passed | failed
+     */
+    public function userExamStatus(?int $userId = null, $attempt = null): string
+    {
+        $userId = $userId ?? auth()->id();
+        if (!$userId || !$this->has_exam) {
+            return 'none';
+        }
+
+        $attempt = $attempt ?? $this->examAttempts->firstWhere('user_id', $userId);
+
+        if (!$attempt) {
+            return 'not_entered';
+        }
+
+        if (!$attempt->isSubmitted()) {
+            return 'in_progress';
+        }
+
+        return $attempt->passed ? 'passed' : 'failed';
+    }
+
+    public function userExamStatusLabel(?int $userId = null, $attempt = null): string
+    {
+        return match ($this->userExamStatus($userId, $attempt)) {
+            'not_entered' => 'لم يدخل بعد',
+            'in_progress' => 'قيد الاختبار',
+            'passed' => 'ناجح',
+            'failed' => 'راسب',
+            default => '—',
+        };
+    }
+
     public function isUserEnrolled()
     {
         if (!auth()->check()) return false;
@@ -156,21 +190,38 @@ class Course extends Model
 
     public function getActualCourseDaysAttribute()
     {
-        if (!$this->start_date || !$this->end_date) {
+        return $this->computeCourseDays($this->start_date, $this->end_date, $this->rest_days ?? []);
+    }
+
+    /**
+     * Inclusive calendar days between start and end, minus matching rest weekdays.
+     * Same calendar day => 1 day (not 2).
+     */
+    public static function computeCourseDays($start, $end, array $restDays = []): int
+    {
+        if (!$start || !$end) {
             return 0;
         }
-        $start = $this->start_date;
-        $end = $this->end_date;
-        $restDays = $this->rest_days ?? [];
-        $totalDays = 0;
+
+        $start = \Carbon\Carbon::parse($start)->startOfDay();
+        $end = \Carbon\Carbon::parse($end)->startOfDay();
+
+        if ($end->lt($start)) {
+            return 0;
+        }
+
+        $restDays = array_map('strtolower', $restDays);
+        $total = 0;
         $current = $start->copy();
+
         while ($current->lte($end)) {
-            $dayName = strtolower($current->format('l'));
-            if (!in_array($dayName, $restDays)) {
-                $totalDays++;
+            $dayName = strtolower($current->format('l')); // sunday, monday, ...
+            if (!in_array($dayName, $restDays, true)) {
+                $total++;
             }
             $current->addDay();
         }
-        return $totalDays;
+
+        return $total;
     }
 }

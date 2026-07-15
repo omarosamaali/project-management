@@ -78,7 +78,7 @@ class CourseExamController extends Controller
                 ->with('error', 'لا توجد أسئلة للاختبار حالياً.');
         }
 
-        // Start the clock on first open (one attempt session)
+        // Start the clock on first open (one attempt session) + unique shuffle map
         if (!$existing) {
             $existing = CourseExamAttempt::create([
                 'course_id' => $course->id,
@@ -87,9 +87,15 @@ class CourseExamController extends Controller
                 'score' => 0,
                 'passed' => false,
                 'answers' => null,
+                'shuffle_map' => $this->buildShuffleMap($questions),
                 'submitted_at' => null,
             ]);
+        } elseif (empty($existing->shuffle_map)) {
+            // Legacy attempts without a map — freeze a shuffle now so refresh stays stable
+            $existing->update(['shuffle_map' => $this->buildShuffleMap($questions)]);
         }
+
+        $questions = $this->applyShuffleMap($questions, $existing->shuffle_map);
 
         $durationMinutes = max(1, (int) ($course->exam_duration_minutes ?? 30));
         $endsAt = $existing->created_at->copy()->addMinutes($durationMinutes);
@@ -251,5 +257,87 @@ class CourseExamController extends Controller
         }
 
         return $payment;
+    }
+
+    /**
+     * Build a unique per-attempt shuffle for questions and each question's answers.
+     *
+     * @param  \Illuminate\Support\Collection  $questions
+     */
+    protected function buildShuffleMap($questions): array
+    {
+        $questionIds = $questions->pluck('id')->shuffle()->values()->all();
+        $answerOrders = [];
+
+        foreach ($questions as $question) {
+            $answerOrders[(string) $question->id] = $question->answers
+                ->pluck('id')
+                ->shuffle()
+                ->values()
+                ->all();
+        }
+
+        return [
+            'questions' => $questionIds,
+            'answers' => $answerOrders,
+        ];
+    }
+
+    /**
+     * Reorder questions / answers according to a saved shuffle map.
+     *
+     * @param  \Illuminate\Support\Collection  $questions
+     * @return \Illuminate\Support\Collection
+     */
+    protected function applyShuffleMap($questions, ?array $shuffleMap)
+    {
+        if (empty($shuffleMap['questions']) || !is_array($shuffleMap['questions'])) {
+            return $questions->values();
+        }
+
+        $byId = $questions->keyBy('id');
+        $ordered = collect();
+
+        foreach ($shuffleMap['questions'] as $questionId) {
+            $question = $byId->get($questionId);
+            if (!$question) {
+                continue;
+            }
+
+            $answerOrder = $shuffleMap['answers'][(string) $questionId]
+                ?? $shuffleMap['answers'][$questionId]
+                ?? null;
+
+            if (is_array($answerOrder) && !empty($answerOrder)) {
+                $answersById = $question->answers->keyBy('id');
+                $shuffledAnswers = collect();
+                foreach ($answerOrder as $answerId) {
+                    if ($answersById->has($answerId)) {
+                        $shuffledAnswers->push($answersById->get($answerId));
+                    }
+                }
+                // Append any new answers not in the saved map
+                foreach ($question->answers as $answer) {
+                    if (!$shuffledAnswers->contains('id', $answer->id)) {
+                        $shuffledAnswers->push($answer);
+                    }
+                }
+                $question->setRelation('answers', $shuffledAnswers->values());
+            } else {
+                $question->setRelation('answers', $question->answers->shuffle()->values());
+            }
+
+            $ordered->push($question);
+        }
+
+        // Append any questions missing from the map (edge case if admin added questions mid-exam)
+        foreach ($questions as $question) {
+            if (!$ordered->contains('id', $question->id)) {
+                $question->setRelation('answers', $question->answers->shuffle()->values());
+                $ordered->push($question);
+            }
+        }
+
+        return $ordered->values();
     }
 }

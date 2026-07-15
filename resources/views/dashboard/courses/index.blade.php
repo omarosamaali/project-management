@@ -108,8 +108,8 @@
                                 </div>
                             </td>
                            <td class="px-4 py-3 text-sm text-gray-600">
-                            @if($course->count_days > 0)
-                            {{ $course->count_days }}
+                            @if($course->actual_course_days > 0)
+                            {{ $course->actual_course_days }}
                             <span class="text-xs">يوم</span>
                             @else
                             @php

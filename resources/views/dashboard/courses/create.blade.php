@@ -326,28 +326,23 @@
         const start = resetTime(new Date(startDateInput.value));
         const end = resetTime(new Date(endDateInput.value));
 
-        // حساب الفرق (إذا كان نفس اليوم سيكون الناتج 0)
-        const diffTime = Math.abs(end - start);
-        const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); 
+        // Inclusive calendar days: same day => 1
+        const totalDays = Math.max(0, Math.round((end - start) / (1000 * 60 * 60 * 24))) + 1;
 
         const selectedRestDays = Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked'))
                                      .map(cb => cb.value);
 
         let restDaysCount = 0;
-        if (totalDays > 0) {
-            let currentDate = new Date(start);
-            // نبدأ من اليوم التالي لأن اليوم الأول هو يوم البداية
-            currentDate.setDate(currentDate.getDate() + 1); 
-            while (currentDate <= end) {
-                const dayName = getDayName(currentDate);
-                if (selectedRestDays.includes(dayName)) {
-                    restDaysCount++;
-                }
-                currentDate.setDate(currentDate.getDate() + 1);
+        let currentDate = new Date(start);
+        while (currentDate <= end) {
+            const dayName = getDayName(currentDate);
+            if (selectedRestDays.includes(dayName)) {
+                restDaysCount++;
             }
+            currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        const actualCourseDays = totalDays - restDaysCount;
+        const actualCourseDays = Math.max(0, totalDays - restDaysCount);
 
         totalDaysDisplay.value = totalDays;
         restDaysCountDisplay.value = restDaysCount;

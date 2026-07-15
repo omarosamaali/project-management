@@ -14,11 +14,13 @@ class CourseExamAttempt extends Model
         'score',
         'passed',
         'answers',
+        'shuffle_map',
         'submitted_at',
     ];
 
     protected $casts = [
         'answers' => 'array',
+        'shuffle_map' => 'array',
         'passed' => 'boolean',
         'score' => 'integer',
         'submitted_at' => 'datetime',

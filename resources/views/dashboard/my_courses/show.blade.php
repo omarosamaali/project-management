@@ -46,7 +46,7 @@ $isFinished = $now->greaterThan($endDate);
                         </div>
                         <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                             <i class="fas fa-clock text-blue-500 w-5"></i>
-                            <span>وقت المحاضرة: <strong>{{ $startDate->format('H:i A') }}</strong></span>
+                            <span>وقت المحاضرة: <strong>{{ $startDate->format('h:i A') }}</strong></span>
                         </div>
                         <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                             <i class="fas fa-map-marker-alt text-blue-500 w-5"></i>
@@ -55,7 +55,7 @@ $isFinished = $now->greaterThan($endDate);
                         </div>
                         <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                             <i class="fas fa-hourglass-half text-blue-500 w-5"></i>
-                            <span>المدة: <strong>{{ $course->count_days }} أيام</strong></span>
+                            <span>المدة: <strong>{{ $course->actual_course_days }} {{ $course->actual_course_days == 1 ? 'يوم' : 'أيام' }}</strong></span>
                         </div>
                     </div>
                 </div>
@@ -180,7 +180,7 @@ $isFinished = $now->greaterThan($endDate);
                 <div class="flex items-center gap-3 text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-100">
                     <i class="fas fa-info-circle"></i>
                     <p class="text-sm">سوف يتم تفعيل الرابط تلقائياً يوم <strong>{{ $startDate->format('Y-m-d')
-                            }}</strong> الساعة <strong>{{ $startDate->subMinutes(30)->format('H:i A') }}</strong>.</p>
+                            }}</strong> الساعة <strong>{{ $startDate->copy()->subMinutes(30)->format('h:i A') }}</strong>.</p>
                 </div>
                 @endif
                 @else
@@ -216,6 +216,7 @@ $isFinished = $now->greaterThan($endDate);
 
         {{-- الجانب الأيسر: ملخص الفاتورة والحالة --}}
         <div class="space-y-6">
+            @if((float) ($course->price ?? 0) > 0)
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 border-b pb-2">تفاصيل الاشتراك</h3>
 
@@ -246,6 +247,7 @@ $isFinished = $now->greaterThan($endDate);
                     <i class="fas fa-print"></i> طباعة الإيصال
                 </button> --}}
             </div>
+            @endif
 
             {{-- الدعم الفني --}}
             <div class="bg-gray-900 text-white rounded-lg p-6 shadow-md">
