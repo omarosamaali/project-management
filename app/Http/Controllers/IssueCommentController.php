@@ -18,7 +18,7 @@ class IssueCommentController extends Controller
     {
         $data = $request->validate([
             'comment' => 'required|string',
-            'image' => 'nullable|image|max:2048'
+            'image' => 'nullable|image|max:5120',
         ]);
 
         if ($request->hasFile('image')) {

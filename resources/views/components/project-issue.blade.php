@@ -207,7 +207,16 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
 
                             <div
                                 class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow-sm border {{ $comment->is_solution ? 'border-2 border-green-500 ring-2 ring-green-100' : 'dark:border-gray-700' }} inline-block max-w-full">
-                                <p class="text-sm text-gray-700 dark:text-gray-300">{{ $comment->comment }}</p>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">{{ $comment->comment }}</p>
+                                @if($comment->image)
+                                <div class="mt-3">
+                                    <a href="{{ asset('storage/'.$comment->image) }}" target="_blank" rel="noopener noreferrer">
+                                        <img src="{{ asset('storage/'.$comment->image) }}"
+                                            alt="مرفق التعليق"
+                                            class="rounded-xl max-h-56 max-w-full border border-gray-200 dark:border-gray-600 shadow-sm hover:opacity-95 transition">
+                                    </a>
+                                </div>
+                                @endif
                             </div>
 
                             <div
@@ -258,24 +267,37 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
                 {{-- نموذج إضافة تعليق --}}
                 <div class="p-4 border-t dark:border-gray-700 bg-white dark:bg-gray-800">
                     <form action="{{ route('issue-comments.store', $issue->id) }}" method="POST"
-                        enctype="multipart/form-data" class="space-y-3">
+                        enctype="multipart/form-data" class="space-y-3" data-issue-comment-form>
                         @csrf
                         <div class="flex gap-2">
                             <textarea name="comment" rows="2" required placeholder="اكتب تعليقك هنا..."
                                 class="flex-1 p-3 rounded-xl border dark:bg-gray-700 dark:text-white text-sm resize-none focus:ring-2 focus:ring-purple-500"></textarea>
                         </div>
+                        <div id="comment-image-preview-{{ $issue->id }}" class="hidden">
+                            <div class="relative inline-block">
+                                <img src="" alt="معاينة" class="rounded-xl max-h-40 border border-purple-200 shadow-sm">
+                                <button type="button" data-clear-comment-image
+                                    class="absolute -top-2 -left-2 w-7 h-7 rounded-full bg-red-500 text-white text-sm shadow hover:bg-red-600">
+                                    &times;
+                                </button>
+                            </div>
+                            <p class="text-xs text-purple-600 mt-1 font-medium" data-comment-image-name></p>
+                        </div>
                         <div class="flex justify-between items-center gap-2">
                             <label
                                 class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer hover:text-purple-600">
                                 <i class="fas fa-image"></i>
-                                <span>إرفاق صورة</span>
-                                <input type="file" name="image" accept="image/*" class="hidden">
+                                <span data-attach-label>إرفاق صورة</span>
+                                <input type="file" name="image" accept="image/*" class="hidden" data-comment-image-input>
                             </label>
                             <button type="submit"
                                 class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl font-bold text-sm flex items-center gap-2 transition-colors">
                                 <i class="fas fa-paper-plane"></i> إرسال
                             </button>
                         </div>
+                        @error('image')
+                        <p class="text-xs text-red-600">{{ $message }}</p>
+                        @enderror
                     </form>
                 </div>
             </div>
@@ -493,4 +515,49 @@ $resolvedIssues = $allIssues->where('status', 'resolved')->sortByDesc('created_a
             document.body.style.overflow = 'auto';
         }
     }
+
+    document.querySelectorAll('[data-issue-comment-form]').forEach(function(form) {
+        const input = form.querySelector('[data-comment-image-input]');
+        const previewWrap = form.querySelector('[id^="comment-image-preview-"]');
+        const previewImg = previewWrap?.querySelector('img');
+        const nameEl = form.querySelector('[data-comment-image-name]');
+        const attachLabel = form.querySelector('[data-attach-label]');
+        const clearBtn = form.querySelector('[data-clear-comment-image]');
+
+        if (!input || !previewWrap || !previewImg) return;
+
+        input.addEventListener('change', function() {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('الملف يجب أن يكون صورة');
+                input.value = '';
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert('حجم الصورة يجب ألا يتجاوز 5 ميجابايت');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewWrap.classList.remove('hidden');
+                if (nameEl) nameEl.textContent = 'تم إرفاق: ' + file.name;
+                if (attachLabel) attachLabel.textContent = 'تغيير الصورة';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        clearBtn?.addEventListener('click', function() {
+            input.value = '';
+            previewImg.src = '';
+            previewWrap.classList.add('hidden');
+            if (nameEl) nameEl.textContent = '';
+            if (attachLabel) attachLabel.textContent = 'إرفاق صورة';
+        });
+    });
 </script>
