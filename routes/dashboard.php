@@ -120,6 +120,9 @@ Route::delete('/comments/{comment}', [IssueCommentController::class, 'destroy'])
 Route::prefix('dashboard')->name('dashboard.')->group(function () {
     Route::resource('kb_categories', KbCategoryController::class);
     Route::resource('my_courses', MyCoursesController::class);
+    Route::get('my_courses/{payment}/button/{button}', [MyCoursesController::class, 'showButton'])
+        ->whereNumber(['payment', 'button'])
+        ->name('my_courses.button');
     Route::resource('kb', KnowledgeBaseController::class);
     Route::resource('sessions', SessionRequestController::class)->names('sessions');
 });

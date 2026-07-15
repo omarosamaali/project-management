@@ -181,11 +181,22 @@
                                         <i class="fas fa-file-invoice"></i> 
                                     </a>
                                     @if($payment->is_attended)
-                                                                            <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
-                                                                                class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                                                                                <i class="fas fa-certificate"></i> الشهادة
-                                                                            </a>
-                                                                            @endif
+                                        @php
+                                            $course = $payment->course;
+                                            $canCertificate = $course && (!$course->has_exam || $course->userPassedExam($payment->user_id));
+                                        @endphp
+                                        @if($canCertificate)
+                                        <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                                            class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                            <i class="fas fa-certificate"></i> الشهادة
+                                        </a>
+                                        @elseif($course && $course->has_exam && $course->exam_started_at)
+                                        <a href="{{ route('dashboard.courses.exam.take', $course) }}"
+                                            class="px-3 py-.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                                            <i class="fas fa-clipboard-list"></i> الاختبار
+                                        </a>
+                                        @endif
+                                    @endif
                                 </div>
                             </td>
                         </tr>

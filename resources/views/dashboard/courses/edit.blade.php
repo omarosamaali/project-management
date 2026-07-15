@@ -788,7 +788,19 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex justify-end mt-3">
+                                    @php
+                                        $needsLoginOld = (string) (old('buttons_needs_login')[$index] ?? '0') === '1';
+                                    @endphp
+                                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="hidden" name="buttons_needs_login[]" value="{{ $needsLoginOld ? '1' : '0' }}">
+                                            <input type="checkbox" class="sr-only peer" {{ $needsLoginOld ? 'checked' : '' }}
+                                                onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                                            <div
+                                                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                            <span class="ms-3 text-sm font-medium text-gray-700 select-none">يحتاج تسجيل دخول؟</span>
+                                        </label>
                                         <button type="button"
                                             class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                             <i class="fas fa-trash"></i>
@@ -798,6 +810,9 @@
                                 @endforeach
                                 @else
                                 @foreach($course->buttons ?? [] as $btn)
+                                @php
+                                    $needsLogin = !empty($btn['needs_login']);
+                                @endphp
                                 <div class="button-row border border-gray-200 rounded-lg p-4 bg-gray-50">
                                     <div class="grid md:grid-cols-2 gap-4 mb-3">
                                         <div>
@@ -836,7 +851,16 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex justify-end mt-3">
+                                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="hidden" name="buttons_needs_login[]" value="{{ $needsLogin ? '1' : '0' }}">
+                                            <input type="checkbox" class="sr-only peer" {{ $needsLogin ? 'checked' : '' }}
+                                                onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                                            <div
+                                                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                            <span class="ms-3 text-sm font-medium text-gray-700 select-none">يحتاج تسجيل دخول؟</span>
+                                        </label>
                                         <button type="button"
                                             class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                             <i class="fas fa-trash"></i>
@@ -879,7 +903,16 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="flex justify-end mt-3">
+                                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                                        <label class="inline-flex items-center cursor-pointer">
+                                            <input type="hidden" name="buttons_needs_login[]" value="0">
+                                            <input type="checkbox" class="sr-only peer"
+                                                onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                                            <div
+                                                class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                            <span class="ms-3 text-sm font-medium text-gray-700 select-none">يحتاج تسجيل دخول؟</span>
+                                        </label>
                                         <button type="button"
                                             class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                             <i class="fas fa-trash"></i>
@@ -1010,6 +1043,8 @@
                                 </div>
                                 @error('status') <span class="text-red-600 text-xs mt-1">{{ $message }}</span> @enderror
                             </div>
+
+                            @include('dashboard.courses.partials.exam-builder', ['course' => $course])
 
                             <div class="border-2 border-blue-200 rounded-lg p-6 bg-blue-50">
                                 <h3 class="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
@@ -1175,12 +1210,19 @@
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        document.addEventListener('click', (e) => {
-            if (e.target.closest(`.${addBtnClass}`)) {
+        // Skip if already initialized for this container
+        if (container.dataset.dynInit === '1') return;
+        container.dataset.dynInit = '1';
+
+        const addBtn = document.querySelector(`.${addBtnClass}`);
+        if (addBtn && addBtn.dataset.courseBound !== '1') {
+            addBtn.dataset.courseBound = '1';
+            addBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 container.insertAdjacentHTML('beforeend', createRowFn());
-            }
-        });
+            });
+        }
 
         container.addEventListener('click', (e) => {
             if (e.target.closest(`.${removeBtnClass}`)) {
@@ -1315,7 +1357,16 @@
                     </div>
                 </div>
             </div>
-            <div class="flex justify-end mt-3">
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="hidden" name="buttons_needs_login[]" value="0">
+                    <input type="checkbox" class="sr-only peer"
+                        onchange="this.previousElementSibling.value = this.checked ? '1' : '0'">
+                    <div
+                        class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                    </div>
+                    <span class="ms-3 text-sm font-medium text-gray-700 select-none">يحتاج تسجيل دخول؟</span>
+                </label>
                 <button type="button"
                     class="remove-button-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2 transition">
                     <i class="fas fa-trash"></i>
@@ -1326,7 +1377,7 @@
     `;
 
     // ========== Initialize ==========
-    document.addEventListener('DOMContentLoaded', () => {
+    function initCourseFormHelpers() {
         setupTranslation('name_ar', 'name_en', 'ar', 'en', 800);
         setupTranslation('name_en', 'name_ar', 'en', 'ar', 800);
         setupTranslation('description_ar', 'description_en', 'ar', 'en', 1500);
@@ -1342,7 +1393,28 @@
         
         setupImagePreviews();
         setupColorPickers();
-    });
+    }
+
+    // Script is at the end of content — DOM for this form already exists.
+    // Also handle the case where DOMContentLoaded already fired.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCourseFormHelpers);
+    } else {
+        initCourseFormHelpers();
+    }
+
+    // Direct bind as backup (form HTML is above this script)
+    (function bindAddButtonNow() {
+        const container = document.getElementById('buttons-container');
+        const addBtn = document.querySelector('.add-button-btn');
+        if (!container || !addBtn || addBtn.dataset.courseBound === '1') return;
+        addBtn.dataset.courseBound = '1';
+        addBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            container.insertAdjacentHTML('beforeend', createButtonRow());
+        });
+    })();
 
     // ========== Global Functions ==========
     window.removeMainImage = function() {

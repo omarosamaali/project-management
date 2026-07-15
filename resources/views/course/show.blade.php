@@ -400,10 +400,15 @@
                             @endauth
                         </div>
 
-                        <!-- Custom Buttons from JSON -->
-                        @if (!empty($course->buttons))
+                        <!-- Custom Buttons from JSON (public only — needs_login buttons show on my_courses after purchase) -->
+                        @php
+                            $visibleButtons = collect($course->buttons ?? [])->filter(function ($button) {
+                                return empty($button['needs_login']);
+                            });
+                        @endphp
+                        @if ($visibleButtons->isNotEmpty())
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
-                                @foreach ($course->buttons as $button)
+                                @foreach ($visibleButtons as $button)
                                     <a href="{{ $button['link'] ?? '#' }}" target="_blank"
                                         class="px-6 py-4 rounded-lg text-center text-white font-semibold hover:opacity-90 transition"
                                         style="background-color: {{ $button['color'] ?? '#3B82F6' }}">

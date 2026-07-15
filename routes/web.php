@@ -22,9 +22,27 @@ Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(func
     Route::post('/payments/{payment}/toggle-attendance', [CourseController::class, 'toggleAttendance'])
         ->name('courses.toggle-attendance');
 
+    // تحضير جماعي للمشتركين
+    Route::post('/courses/{course}/bulk-attendance', [CourseController::class, 'bulkAttendance'])
+        ->name('courses.bulk-attendance');
+
     // راوت عرض الشهادة
     Route::get('/payments/{payment}/certificate', [CourseController::class, 'showCertificate'])
         ->name('courses.certificate');
+
+    // اختبار الدورة
+    Route::post('/courses/{course}/start-exam', [CourseController::class, 'startExam'])
+        ->name('courses.start-exam');
+    Route::post('/courses/{course}/end-exam', [CourseController::class, 'endExam'])
+        ->name('courses.end-exam');
+    Route::get('/exam/pending-check', [\App\Http\Controllers\CourseExamController::class, 'pendingCheck'])
+        ->name('courses.exam.pending-check');
+    Route::get('/courses/{course}/exam', [\App\Http\Controllers\CourseExamController::class, 'take'])
+        ->name('courses.exam.take');
+    Route::post('/courses/{course}/exam', [\App\Http\Controllers\CourseExamController::class, 'submit'])
+        ->name('courses.exam.submit');
+    Route::get('/courses/{course}/exam/result', [\App\Http\Controllers\CourseExamController::class, 'result'])
+        ->name('courses.exam.result');
 });
 Route::post('/resend-otp/{type}', [App\Http\Controllers\Auth\OTPController::class, 'resend'])->name('otp.resend');    
 Route::middleware(['auth'])->group(function () {

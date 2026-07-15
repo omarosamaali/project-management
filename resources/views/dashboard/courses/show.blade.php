@@ -22,12 +22,57 @@
                         </p>
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                            {{ $course->status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' }}">
-                            {{ $course->status === 'active' ? 'نشط' : 'غير نشط' }}
+                    <div class="flex items-center gap-3 flex-wrap">
+                        {{-- Course status --}}
+                        <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
+                            {{ $course->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                            <i class="fas {{ $course->status === 'active' ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
+                            حالة الدورة: {{ $course->courseStatusLabel() }}
                         </span>
+
+                        {{-- Exam status --}}
+                        @if($course->has_exam)
+                            @php $examStatus = $course->examStatus(); @endphp
+                            @if($examStatus === 'not_started')
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+                                <i class="fas fa-clipboard-list"></i>
+                                حالة الاختبار: لم يبدأ
+                            </span>
+                            <button type="button" onclick="openStartExamModal()"
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-bold">
+                                <i class="fas fa-play"></i>
+                                بدء الاختبار
+                            </button>
+                            <form id="startExamForm" action="{{ route('dashboard.courses.start-exam', $course) }}" method="POST" class="hidden">
+                                @csrf
+                            </form>
+                            @elseif($examStatus === 'running')
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-100 text-amber-800">
+                                <i class="fas fa-play-circle"></i>
+                                حالة الاختبار: جارٍ
+                                <span class="text-amber-700/80 font-normal">منذ {{ $course->exam_started_at->format('Y-m-d H:i') }}</span>
+                            </span>
+                            <button type="button" onclick="openEndExamModal()"
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 font-bold">
+                                <i class="fas fa-stop"></i>
+                                إنهاء الاختبار
+                            </button>
+                            <form id="endExamForm" action="{{ route('dashboard.courses.end-exam', $course) }}" method="POST" class="hidden">
+                                @csrf
+                            </form>
+                            @elseif($examStatus === 'finished')
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-flag-checkered"></i>
+                                حالة الاختبار: منتهٍ
+                                <span class="text-red-700/80 font-normal">عند {{ $course->exam_ended_at->format('Y-m-d H:i') }}</span>
+                            </span>
+                            @endif
+                        @else
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-500">
+                                <i class="fas fa-minus-circle"></i>
+                                لا يوجد اختبار
+                            </span>
+                        @endif
 
                         <a href="{{ route('dashboard.courses.edit', $course->id) }}"
                             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
@@ -77,13 +122,28 @@
                             </div>
 
                             <div class="flex justify-between">
-                                <dt class="text-gray-600 dark:text-gray-400">الحالة</dt>
+                                <dt class="text-gray-600 dark:text-gray-400">حالة الدورة</dt>
                                 <dd>
                                     <span
                                         class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
                                         {{ $course->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $course->status === 'active' ? 'نشط' : 'غير نشط' }}
+                                        {{ $course->courseStatusLabel() }}
                                     </span>
+                                </dd>
+                            </div>
+                            <div class="flex justify-between">
+                                <dt class="text-gray-600 dark:text-gray-400">حالة الاختبار</dt>
+                                <dd>
+                                    @php $cardExamStatus = $course->examStatus(); @endphp
+                                    @if($cardExamStatus === 'none')
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">بدون اختبار</span>
+                                    @elseif($cardExamStatus === 'not_started')
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">لم يبدأ</span>
+                                    @elseif($cardExamStatus === 'running')
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">جارٍ</span>
+                                    @elseif($cardExamStatus === 'finished')
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">منتهٍ</span>
+                                    @endif
                                 </dd>
                             </div>
                         </dl>
@@ -276,11 +336,19 @@
                     </h3>
                     <div class="flex flex-wrap gap-4">
                         @foreach($course->buttons as $button)
-                        <a href="{{ $button['link'] ?? '#' }}" target="_blank"
-                            class="px-6 py-3 rounded-lg font-medium text-white transition"
-                            style="background-color: {{ $button['color'] ?? '#3B82F6' }};">
-                            {{ $button['text_ar'] ?? 'اضغط هنا' }}
-                        </a>
+                        <div class="flex flex-col items-start gap-1">
+                            <a href="{{ $button['link'] ?? '#' }}" target="_blank"
+                                class="px-6 py-3 rounded-lg font-medium text-white transition"
+                                style="background-color: {{ $button['color'] ?? '#3B82F6' }};">
+                                {{ $button['text_ar'] ?? 'اضغط هنا' }}
+                            </a>
+                            @if(!empty($button['needs_login']))
+                            <span class="text-xs text-amber-600 font-medium">
+                                <i class="fas fa-lock ml-1"></i>
+                                يظهر بعد الشراء فقط
+                            </span>
+                            @endif
+                        </div>
                         @endforeach
                     </div>
                 </div>
@@ -334,14 +402,34 @@
                 @endif
                 <!-- المشتركين -->
                 <div class="my-12">
-                    <div class="flex items-center justify-between mb-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                        <h2 class="pt-6 text-2xl font-bold flex items-center gap-3">
                         <i class="fas fa-users text-indigo-600 text-2xl"></i>
                         قائمة المشتركين في الدورة
                     </h2>
-                    <span class="text-lg font-medium text-gray-600 dark:text-gray-400">
-                        إجمالي: {{ $course->payments()->where('status', 'completed')->count() }} مشترك
-                    </span>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-lg font-medium text-gray-600 dark:text-gray-400">
+                            إجمالي: {{ $course->payments->count() }} مشترك
+                        </span>
+                        @if($course->payments?->count() > 0)
+                        <form id="bulkAttendanceForm" action="{{ route('dashboard.courses.bulk-attendance', $course) }}" method="POST" class="flex flex-wrap items-center gap-2">
+                            @csrf
+                            <input type="hidden" name="action" id="bulkAttendanceAction" value="attend">
+                            <button type="button" id="bulkAttendBtn" disabled onclick="openBulkAttendanceModal('attend')"
+                                class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700">
+                                <i class="fas fa-user-check ml-1"></i>
+                                تحضير المحددين
+                                <span id="bulkAttendCount" class="hidden">(0)</span>
+                            </button>
+                            <button type="button" id="bulkUnattendBtn" disabled onclick="openBulkAttendanceModal('unattend')"
+                                class="px-4 py-2 rounded-lg bg-gray-500 text-white text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600">
+                                <i class="fas fa-user-times ml-1"></i>
+                                إلغاء تحضير المحددين
+                                <span id="bulkUnattendCount" class="hidden">(0)</span>
+                            </button>
+                        </form>
+                        @endif
+                    </div>
                     </div>
 
                     @if($course->payments?->count() > 0)
@@ -349,6 +437,11 @@
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-100 dark:bg-gray-800">
                                 <tr>
+                                    <th class="px-4 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                                        <input type="checkbox" id="selectAllAttendance"
+                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            title="تحديد الكل">
+                                    </th>
                                     <th
                                         class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         #
@@ -385,6 +478,12 @@
                                 @if($course->payments->isNotEmpty())
                                 @foreach($course->payments as $index => $payment)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                                    <td class="px-4 py-4 whitespace-nowrap">
+                                        <input type="checkbox" name="payment_ids[]" value="{{ $payment->id }}"
+                                            form="bulkAttendanceForm"
+                                            data-attended="{{ $payment->is_attended ? '1' : '0' }}"
+                                            class="attendance-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $index + 1 }}
                                     </td>
@@ -399,8 +498,18 @@
                                         {{ $payment->created_at->format('Y-m-d') }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-3 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                                            مدفوع
+                                        @php
+                                            $statusLabels = [
+                                                'completed' => ['مكتمل', 'bg-green-100 text-green-800'],
+                                                'success' => ['ناجح', 'bg-green-100 text-green-800'],
+                                                'paid' => ['مدفوع', 'bg-green-100 text-green-800'],
+                                                'active' => ['نشط', 'bg-blue-100 text-blue-800'],
+                                                'pending' => ['قيد الانتظار', 'bg-amber-100 text-amber-800'],
+                                            ];
+                                            [$label, $classes] = $statusLabels[$payment->status] ?? [$payment->status, 'bg-gray-100 text-gray-800'];
+                                        @endphp
+                                        <span class="px-3 py-1 rounded-full text-xs {{ $classes }}">
+                                            {{ $label }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold flex items-center gap-1">
@@ -408,9 +517,11 @@
                                         <x-drhm-icon width="12" height="14" />
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                        @if((float) $course->price > 0)
                                         <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style" title="الفاتورة">
                                             <i class="fas fa-file-invoice"></i>
                                         </a>
+                                        @endif
                                     
                                         <form action="{{ route('dashboard.courses.toggle-attendance', $payment->id) }}" method="POST" class="inline">
                                             @csrf
@@ -422,10 +533,19 @@
                                         </form>
                                     
                                         @if($payment->is_attended)
-                                        <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
-                                            class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                                            <i class="fas fa-certificate"></i> الشهادة
-                                        </a>
+                                            @php
+                                                $canCertificate = !$course->has_exam || $course->userPassedExam($payment->user_id);
+                                            @endphp
+                                            @if($canCertificate)
+                                            <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                                                class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                                                <i class="fas fa-certificate"></i> الشهادة
+                                            </a>
+                                            @elseif($course->has_exam)
+                                            <span class="px-3 py-1 text-xs text-amber-700 bg-amber-50 rounded-lg" title="بانتظار اجتياز الاختبار">
+                                                <i class="fas fa-clipboard-list"></i> بانتظار الاختبار
+                                            </span>
+                                            @endif
                                         @endif
                                     </td>
                                 </tr>
@@ -452,4 +572,277 @@
         </div>
     </div>
 </section>
+
+@if($course->payments?->count() > 0)
+{{-- Bulk Attendance Modal --}}
+<div id="bulkAttendanceModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-6 text-center">
+            <div id="bulkAttendanceModalIcon" class="mx-auto mb-4 w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <i class="fas fa-user-check text-2xl"></i>
+            </div>
+            <h3 id="bulkAttendanceModalTitle" class="text-xl font-bold text-gray-900 dark:text-white mb-2">تحضير المحددين</h3>
+            <p id="bulkAttendanceModalText" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                هل تريد تسجيل حضور المشتركين المحددين؟
+            </p>
+        </div>
+        <div class="px-6 pb-6 flex gap-3">
+            <button type="button" onclick="closeBulkAttendanceModal()"
+                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg font-medium transition">
+                إلغاء
+            </button>
+            <button type="button" id="bulkAttendanceConfirmBtn" onclick="confirmBulkAttendance()"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold transition">
+                نعم، سجّل الحضور
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const selectAll = document.getElementById('selectAllAttendance');
+        const checkboxes = () => Array.from(document.querySelectorAll('.attendance-checkbox'));
+        const bulkAttendBtn = document.getElementById('bulkAttendBtn');
+        const bulkUnattendBtn = document.getElementById('bulkUnattendBtn');
+        const bulkAttendCount = document.getElementById('bulkAttendCount');
+        const bulkUnattendCount = document.getElementById('bulkUnattendCount');
+        const bulkForm = document.getElementById('bulkAttendanceForm');
+        const bulkActionInput = document.getElementById('bulkAttendanceAction');
+        const modal = document.getElementById('bulkAttendanceModal');
+        const modalText = document.getElementById('bulkAttendanceModalText');
+        const modalTitle = document.getElementById('bulkAttendanceModalTitle');
+        const modalIcon = document.getElementById('bulkAttendanceModalIcon');
+        const confirmBtn = document.getElementById('bulkAttendanceConfirmBtn');
+
+        let pendingAction = 'attend';
+
+        function selectedCheckboxes() {
+            return checkboxes().filter((cb) => cb.checked);
+        }
+
+        function selectedAttendableCount() {
+            return selectedCheckboxes().filter((cb) => cb.dataset.attended !== '1').length;
+        }
+
+        function selectedUnattendableCount() {
+            return selectedCheckboxes().filter((cb) => cb.dataset.attended === '1').length;
+        }
+
+        function updateCountBadge(el, count) {
+            if (!el) return;
+            el.textContent = `(${count})`;
+            el.classList.toggle('hidden', count === 0);
+        }
+
+        function updateBulkState() {
+            const selected = selectedCheckboxes();
+            const total = checkboxes().length;
+            const count = selected.length;
+            const attendable = selectedAttendableCount();
+            const unattendable = selectedUnattendableCount();
+
+            if (bulkAttendBtn) bulkAttendBtn.disabled = attendable === 0;
+            if (bulkUnattendBtn) bulkUnattendBtn.disabled = unattendable === 0;
+            updateCountBadge(bulkAttendCount, attendable);
+            updateCountBadge(bulkUnattendCount, unattendable);
+
+            if (selectAll) {
+                selectAll.checked = total > 0 && count === total;
+                selectAll.indeterminate = count > 0 && count < total;
+                selectAll.disabled = total === 0;
+            }
+        }
+
+        window.openBulkAttendanceModal = function (action) {
+            pendingAction = action === 'unattend' ? 'unattend' : 'attend';
+            const count = pendingAction === 'attend'
+                ? selectedAttendableCount()
+                : selectedUnattendableCount();
+
+            if (count === 0) return;
+
+            if (bulkActionInput) bulkActionInput.value = pendingAction;
+
+            if (pendingAction === 'attend') {
+                modalTitle.textContent = 'تحضير المحددين';
+                modalText.textContent = `هل تريد تسجيل حضور ${count} مشترك؟`;
+                confirmBtn.textContent = 'نعم، سجّل الحضور';
+                confirmBtn.className = 'flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold transition';
+                modalIcon.className = 'mx-auto mb-4 w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center';
+                modalIcon.innerHTML = '<i class="fas fa-user-check text-2xl"></i>';
+            } else {
+                modalTitle.textContent = 'إلغاء تحضير المحددين';
+                modalText.textContent = `هل تريد إلغاء حضور ${count} مشترك؟`;
+                confirmBtn.textContent = 'نعم، إلغِ الحضور';
+                confirmBtn.className = 'flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2.5 rounded-lg font-bold transition';
+                modalIcon.className = 'mx-auto mb-4 w-14 h-14 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center';
+                modalIcon.innerHTML = '<i class="fas fa-user-times text-2xl"></i>';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeBulkAttendanceModal = function () {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        };
+
+        window.confirmBulkAttendance = function () {
+            const count = pendingAction === 'attend'
+                ? selectedAttendableCount()
+                : selectedUnattendableCount();
+
+            if (count === 0) {
+                closeBulkAttendanceModal();
+                return;
+            }
+
+            // Only submit IDs matching the chosen action
+            checkboxes().forEach((cb) => {
+                const isAttended = cb.dataset.attended === '1';
+                if (!cb.checked) return;
+                if (pendingAction === 'attend' && isAttended) {
+                    cb.checked = false;
+                    cb.disabled = true;
+                } else if (pendingAction === 'unattend' && !isAttended) {
+                    cb.checked = false;
+                    cb.disabled = true;
+                }
+            });
+
+            if (bulkActionInput) bulkActionInput.value = pendingAction;
+            bulkForm.submit();
+        };
+
+        selectAll?.addEventListener('change', function () {
+            checkboxes().forEach((cb) => { cb.checked = selectAll.checked; });
+            updateBulkState();
+        });
+
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('attendance-checkbox')) {
+                updateBulkState();
+            }
+        });
+
+        modal?.addEventListener('click', function (e) {
+            if (e.target === this) closeBulkAttendanceModal();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                closeBulkAttendanceModal();
+            }
+        });
+
+        updateBulkState();
+    })();
+</script>
+@endif
+
+@if($course->has_exam && $course->examStatus() === 'not_started')
+{{-- Start Exam Modal --}}
+<div id="startExamModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <i class="fas fa-clipboard-list text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">بدء الاختبار</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                سيتم فتح الاختبار لجميع الحضور فوراً. هل أنت متأكد؟
+            </p>
+        </div>
+        <div class="px-6 pb-6 flex gap-3">
+            <button type="button" onclick="closeStartExamModal()"
+                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg font-medium transition">
+                إلغاء
+            </button>
+            <button type="button" onclick="confirmStartExam()"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold transition">
+                نعم، ابدأ الآن
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openStartExamModal() {
+        const modal = document.getElementById('startExamModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeStartExamModal() {
+        const modal = document.getElementById('startExamModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+    function confirmStartExam() {
+        document.getElementById('startExamForm').submit();
+    }
+    document.getElementById('startExamModal')?.addEventListener('click', function (e) {
+        if (e.target === this) closeStartExamModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeStartExamModal();
+    });
+</script>
+@endif
+
+@if($course->has_exam && $course->examStatus() === 'running')
+{{-- End Exam Modal --}}
+<div id="endExamModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+                <i class="fas fa-stop text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">إنهاء الاختبار</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                سيتم إغلاق الاختبار ولن يتمكن الطلاب من دخوله بعد الآن. هل أنت متأكد؟
+            </p>
+        </div>
+        <div class="px-6 pb-6 flex gap-3">
+            <button type="button" onclick="closeEndExamModal()"
+                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg font-medium transition">
+                إلغاء
+            </button>
+            <button type="button" onclick="confirmEndExam()"
+                class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-bold transition">
+                نعم، أنهِ الاختبار
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openEndExamModal() {
+        const modal = document.getElementById('endExamModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeEndExamModal() {
+        const modal = document.getElementById('endExamModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+    function confirmEndExam() {
+        document.getElementById('endExamForm').submit();
+    }
+    document.getElementById('endExamModal')?.addEventListener('click', function (e) {
+        if (e.target === this) closeEndExamModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeEndExamModal();
+    });
+</script>
+@endif
 @endsection

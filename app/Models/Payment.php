@@ -20,6 +20,11 @@ class Payment extends Model
         'store_id',
         'payment_method',
         'currency',
+        'is_attended',
+    ];
+
+    protected $casts = [
+        'is_attended' => 'boolean',
     ];
 
     public function user()

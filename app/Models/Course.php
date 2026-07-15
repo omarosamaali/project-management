@@ -34,6 +34,11 @@ class Course extends Model
         'last_date',
         'status',
         'rest_days',
+        'has_exam',
+        'exam_pass_score',
+        'exam_duration_minutes',
+        'exam_started_at',
+        'exam_ended_at',
     ];
 
     protected $casts = [
@@ -49,6 +54,11 @@ class Course extends Model
         'counter' => 'integer',
         'count_days' => 'integer',
         'rest_days' => 'array',
+        'has_exam' => 'boolean',
+        'exam_pass_score' => 'integer',
+        'exam_duration_minutes' => 'integer',
+        'exam_started_at' => 'datetime',
+        'exam_ended_at' => 'datetime',
     ];
 
     public function service()
@@ -59,6 +69,71 @@ class Course extends Model
     {
         return $this->hasMany(Payment::class, 'course_id');
     }
+
+    public function examQuestions()
+    {
+        return $this->hasMany(CourseExamQuestion::class)->orderBy('sort_order');
+    }
+
+    public function examAttempts()
+    {
+        return $this->hasMany(CourseExamAttempt::class);
+    }
+
+    public function isExamStarted(): bool
+    {
+        return $this->has_exam && $this->exam_started_at !== null && $this->exam_ended_at === null;
+    }
+
+    /**
+     * Exam lifecycle: none | not_started | running | finished
+     */
+    public function examStatus(): string
+    {
+        if (!$this->has_exam) {
+            return 'none';
+        }
+
+        if ($this->exam_ended_at) {
+            return 'finished';
+        }
+
+        if ($this->exam_started_at) {
+            return 'running';
+        }
+
+        return 'not_started';
+    }
+
+    public function examStatusLabel(): string
+    {
+        return match ($this->examStatus()) {
+            'not_started' => 'لم يبدأ',
+            'running' => 'جارٍ',
+            'finished' => 'منتهٍ',
+            default => 'بدون اختبار',
+        };
+    }
+
+    public function courseStatusLabel(): string
+    {
+        return $this->status === 'active' ? 'نشط' : 'غير نشط';
+    }
+
+    public function userPassedExam(?int $userId = null): bool
+    {
+        $userId = $userId ?? auth()->id();
+        if (!$userId || !$this->has_exam) {
+            return false;
+        }
+
+        return $this->examAttempts()
+            ->where('user_id', $userId)
+            ->where('passed', true)
+            ->whereNotNull('submitted_at')
+            ->exists();
+    }
+
     public function isUserEnrolled()
     {
         if (!auth()->check()) return false;

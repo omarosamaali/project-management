@@ -83,6 +83,81 @@ $isFinished = $now->greaterThan($endDate);
                 @endif
             </div>
             @endif
+            {{-- أزرار الإجراءات: بدون تسجيل → تاب جديد | يحتاج تسجيل → iframe --}}
+            @php
+                $actionButtons = collect($course->buttons ?? [])
+                    ->values()
+                    ->filter(fn ($button) => !empty($button['link']));
+            @endphp
+            @if($actionButtons->isNotEmpty())
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-link text-blue-600"></i>
+                    أزرار الإجراءات
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    @foreach($actionButtons as $buttonIndex => $button)
+                        @php
+                            $needsLogin = !empty($button['needs_login']);
+                            $buttonLabel = app()->getLocale() == 'ar'
+                                ? ($button['text_ar'] ?? $button['text_en'] ?? 'اضغط هنا')
+                                : ($button['text_en'] ?? $button['text_ar'] ?? 'اضغط هنا');
+                        @endphp
+                        @if($needsLogin)
+                        <a href="{{ route('dashboard.my_courses.button', ['payment' => $payment->id, 'button' => $buttonIndex]) }}"
+                            class="px-6 py-3 rounded-lg text-center text-white font-semibold hover:opacity-90 transition"
+                            style="background-color: {{ $button['color'] ?? '#3B82F6' }}">
+                            {{ $buttonLabel }}
+                        </a>
+                        @else
+                        <a href="{{ $button['link'] }}" target="_blank" rel="noopener noreferrer"
+                            class="px-6 py-3 rounded-lg text-center text-white font-semibold hover:opacity-90 transition"
+                            style="background-color: {{ $button['color'] ?? '#3B82F6' }}">
+                            {{ $buttonLabel }}
+                        </a>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- اختبار الدورة --}}
+            @php
+                $examAttempt = $course->has_exam
+                    ? \App\Models\CourseExamAttempt::where('course_id', $course->id)
+                        ->where('user_id', auth()->id())
+                        ->whereNotNull('submitted_at')
+                        ->first()
+                    : null;
+            @endphp
+            @if($course->has_exam && $payment->is_attended)
+            <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-6">
+                <h3 class="text-lg font-bold text-indigo-800 dark:text-indigo-300 mb-3">
+                    <i class="fas fa-clipboard-list ml-2"></i> اختبار الدورة
+                </h3>
+                @if($examAttempt)
+                    <p class="text-sm text-gray-600 mb-3">
+                        النتيجة: <strong>{{ $examAttempt->score }}</strong>
+                        — {{ $examAttempt->passed ? 'ناجح' : 'راسب' }}
+                    </p>
+                    <a href="{{ route('dashboard.courses.exam.result', $course) }}"
+                        class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700">
+                        عرض النتيجة
+                    </a>
+                @elseif($course->examStatus() === 'running')
+                    <p class="text-sm text-indigo-700 mb-3">الاختبار متاح الآن — محاولة واحدة فقط.</p>
+                    <a href="{{ route('dashboard.courses.exam.take', $course) }}"
+                        class="inline-flex items-center gap-2 px-5 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 animate-pulse">
+                        <i class="fas fa-play"></i> ابدأ الاختبار
+                    </a>
+                @elseif($course->examStatus() === 'finished')
+                    <p class="text-sm text-gray-600">انتهى الاختبار ولم تُسجَّل محاولة لك.</p>
+                @else
+                    <p class="text-sm text-gray-600">سيظهر الاختبار هنا فور قيام الإدارة ببدئه.</p>
+                @endif
+            </div>
+            @endif
+
             {{-- قسم المحتوى / اللينك --}}
             
             <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-6">

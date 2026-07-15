@@ -1,9 +1,17 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Course create/edit manage buttons in their Blade scripts.
+    // Don't let this global file steal .add-button-btn on those pages.
+    if (/\/courses(\/|$)/.test(window.location.pathname)) {
+        return;
+    }
+
     // إضافة زر جديد
     const addButtonBtn = document.querySelector('.add-button-btn');
     if (addButtonBtn) {
         addButtonBtn.addEventListener('click', function() {
             const container = document.getElementById('buttons-container');
+            if (!container) return;
+
             const newButton = document.createElement('div');
             const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
             
@@ -67,7 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-button-btn') || e.target.closest('.remove-button-btn')) {
             const buttonRow = e.target.closest('.button-row');
-            if (buttonRow) {
+            const container = document.getElementById('buttons-container');
+            if (buttonRow && container && container.querySelectorAll('.button-row').length > 1) {
                 buttonRow.remove();
             }
         }

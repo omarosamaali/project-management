@@ -13,7 +13,7 @@
 
     {{-- أزرار التحكم --}}
     <div class="control-bar no-print">
-        <button style="color:white;" onclick="window.print()">
+        <button type="button" style="color:white;" id="printCertificateBtn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2">
                 <path
@@ -141,10 +141,10 @@
                 </div> --}}
 
                 <div class="footer-org">
-                    {{-- <p class="footer-label" style="text-align: center;">المؤسسة المانحة</p> --}}
-                    <p class="footer-org-ar" style="text-align: center; font-size: 2rem;"><span style="font-weight: bold">إيفورك</span> للتكنولوجيا</p>
-                    <p class="footer-org-en" style="text-align: center;">EVORQ TECHNOLOGIES</p>
+                    <p class="footer-org-ar"><span>إيفورك</span> للتكنولوجيا</p>
+                    <p class="footer-org-en">EVORQ TECHNOLOGIES</p>
                 </div>
+                <div class="footer-spacer" aria-hidden="true"></div>
             </footer>
 
         </div>{{-- /cert-content --}}
@@ -222,7 +222,7 @@
         width: 100%;
         max-width: 900px;
         min-height: 640px;
-        padding: 60px 70px 50px;
+        padding: 60px 80px 70px;
         box-shadow:
             0 4px 6px rgba(0, 0, 0, .06),
             0 20px 60px rgba(13, 36, 68, .18),
@@ -252,7 +252,8 @@
         position: absolute;
         width: 80px;
         height: 80px;
-        z-index: 3;
+        z-index: 2;
+        pointer-events: none;
     }
 
     .corner-tl {
@@ -313,6 +314,8 @@
         position: relative;
         z-index: 5;
         text-align: center;
+        /* Keep content clear of corner ornaments */
+        padding: 8px 12px 4px;
     }
 
     /* ── Header ── */
@@ -474,23 +477,38 @@
     /* ── Footer ── */
     .cert-footer {
         display: grid;
-        grid-template-columns: 1fr auto 1fr;
-        align-items: center;
-        gap: 1.5rem;
-        margin-top: .9rem;
+        grid-template-columns: 1fr 1.4fr 1fr;
+        align-items: end;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding: 0 8px 4px;
+        position: relative;
+        z-index: 6;
     }
 
     .footer-date {
         text-align: right;
+        justify-self: start;
+        /* Clear bottom-start corner ornament (RTL: visual right) */
+        padding-inline-end: 28px;
+        padding-bottom: 6px;
+        max-width: 100%;
     }
 
     .footer-org {
-        text-align: left;
+        text-align: center;
+        justify-self: center;
+        padding-bottom: 4px;
+    }
+
+    .footer-spacer {
+        min-height: 1px;
+        padding-inline-start: 28px;
     }
 
     .footer-label {
         font-family: 'Amiri', serif;
-        font-size: .8rem;
+        font-size: .85rem;
         color: var(--gold-dark);
         letter-spacing: .1em;
         text-transform: uppercase;
@@ -499,7 +517,7 @@
 
     .footer-value {
         font-family: 'Cormorant Garamond', serif;
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         color: var(--ink);
         font-weight: 600;
         margin: 0;
@@ -508,18 +526,24 @@
 
     .footer-org-ar {
         font-family: 'Amiri', serif;
-        font-size: 1.05rem;
+        font-size: 1.35rem;
         font-weight: 700;
         color: var(--navy);
         margin: 0;
+        text-align: center;
+    }
+
+    .footer-org-ar span {
+        font-weight: 700;
     }
 
     .footer-org-en {
         font-family: 'Cormorant Garamond', serif;
-        font-size: .78rem;
+        font-size: .85rem;
         letter-spacing: .15em;
         color: var(--gold-dark);
-        margin: .15rem 0 0;
+        margin: .2rem 0 0;
+        text-align: center;
     }
 
     /* Seal */
@@ -547,35 +571,195 @@
         opacity: .82;
     }
 
-    /* ── Print ── */
+    /* ── Print: one landscape A4 page, same proportions as screen ── */
     @media print {
-        .no-print {
-            display: none !important;
+        @page {
+            size: A4 landscape;
+            margin: 6mm;
         }
 
-        body,
-        .cert-page {
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        html,
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
+            overflow: hidden !important;
+        }
+
+        nav,
+        aside,
+        #drawer-navigation,
+        .no-print,
+        [data-drawer-target],
+        button[data-drawer-toggle] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        .antialiased {
+            background: white !important;
+        }
+
+        main {
             padding: 0 !important;
             margin: 0 !important;
+            margin-right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+        }
+
+        .cert-page {
+            background: white !important;
+            background-image: none !important;
+            min-height: 0 !important;
+            height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            overflow: visible !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
         }
 
         .certificate {
-            max-width: 100% !important;
+            width: 100% !important;
+            max-width: none !important;
+            min-height: 0 !important;
+            height: auto !important;
+            max-height: none !important;
+            padding: 16mm 22mm 18mm !important;
+            margin: 0 auto !important;
             box-shadow: none !important;
-            page-break-inside: avoid;
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+            overflow: visible !important;
+            display: block !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .cert-content {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 2mm 3mm 0 !important;
+        }
+
+        .cert-header {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .logo-wrap img {
+            height: 64px !important;
+        }
+
+        .cert-title h2 {
+            font-size: 1.55rem !important;
+        }
+
+        .cert-title p {
+            font-size: 0.95rem !important;
+        }
+
+        .ornamental-rule {
+            margin: 0.7rem 0 !important;
+        }
+
+        .trainee-section {
+            margin: 0.75rem 0 0.5rem !important;
+        }
+
+        .certify-text {
+            font-size: 1.1rem !important;
+        }
+
+        .trainee-name {
+            font-size: 3rem !important;
+            margin: 0.15rem 0 0.35rem !important;
+        }
+
+        .course-section {
+            margin: 0.5rem 0 !important;
+        }
+
+        .completion-text {
+            font-size: 1.05rem !important;
+        }
+
+        .course-name-ar {
+            font-size: 1.75rem !important;
+        }
+
+        .course-name-en {
+            font-size: 1.05rem !important;
+        }
+
+        .cert-footer {
+            display: grid !important;
+            grid-template-columns: 1fr 1.4fr 1fr !important;
+            align-items: end !important;
+            visibility: visible !important;
+            margin-top: 1.1rem !important;
+            padding: 0 4mm 2mm !important;
+            position: relative !important;
+            z-index: 6 !important;
+        }
+
+        .footer-date,
+        .footer-org,
+        .footer-spacer {
+            visibility: visible !important;
+            display: block !important;
+        }
+
+        .footer-date {
+            padding-inline-end: 10mm !important;
+            padding-bottom: 2mm !important;
+        }
+
+        .footer-spacer {
+            padding-inline-start: 10mm !important;
+        }
+
+        .corner {
+            z-index: 1 !important;
+        }
+
+        .footer-label {
+            font-size: 0.85rem !important;
+        }
+
+        .footer-value {
+            font-size: 1.1rem !important;
+        }
+
+        .footer-org-ar {
+            font-size: 1.35rem !important;
+        }
+
+        .footer-org-en {
+            font-size: 0.85rem !important;
         }
 
         .outer-border,
         .inner-border,
         .bg-rays,
         .watermark,
-        .corner {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+        .corner,
+        .certificate {
+            print-color-adjust: exact !important;
+            -webkit-print-color-adjust: exact !important;
         }
     }
 </style>
+<script>
+    document.getElementById('printCertificateBtn')?.addEventListener('click', function () {
+        window.print();
+    });
+</script>
 @endsection

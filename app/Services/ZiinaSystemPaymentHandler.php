@@ -21,6 +21,28 @@ class ZiinaSystemPaymentHandler
         }
     }
 
+    /**
+     * Whether Ziina should create a test payment intent (accepts test cards like 4242…).
+     */
+    protected function isTestMode(bool $isTest = true): bool
+    {
+        if (!$isTest) {
+            return false;
+        }
+
+        return filter_var(config('services.ziina.test_mode', true), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Attach Ziina's `test` flag when test mode is enabled.
+     */
+    protected function applyTestFlag(array &$payload, bool $isTest = true): void
+    {
+        if ($this->isTestMode($isTest)) {
+            $payload['test'] = true;
+        }
+    }
+
     public function calculatePriceWithFees($basePrice)
     {
         $fees = ($basePrice * 0.079) + 2;
@@ -64,6 +86,8 @@ class ZiinaSystemPaymentHandler
                 'user_id' => auth()->id(),
             ],
         ];
+
+        $this->applyTestFlag($payload, $isTest);
 
         $response = $this->makeApiCall('/payment_intent', 'POST', $payload);
 
@@ -124,9 +148,7 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            // if ($isTest || app()->environment('local', 'testing')) {
-            //     $data['test'] = true;
-            // }
+            $this->applyTestFlag($data, $isTest);
 
             Log::info('Creating Ziina payment intent for system', [
                 'system_id' => $system->id,
@@ -135,7 +157,7 @@ class ZiinaSystemPaymentHandler
                 'fees' => $fees,
                 'total_price' => $totalPrice,
                 'message' => $message,
-                // 'test_mode' => $isTest
+                'test_mode' => $this->isTestMode($isTest),
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);
@@ -202,9 +224,7 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            // if ($isTest || app()->environment('local', 'testing')) {
-            //     $data['test'] = true;
-            // }
+            $this->applyTestFlag($data, $isTest);
 
             Log::info('Creating Ziina payment intent for course', [
                 'course_id' => $course->id,
@@ -214,7 +234,7 @@ class ZiinaSystemPaymentHandler
                 'total_price' => $totalPrice,
                 'message' => $message,
                 'success_url' => $successUrl,
-                // 'test_mode' => $isTest
+                'test_mode' => $this->isTestMode($isTest),
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);
@@ -287,9 +307,7 @@ class ZiinaSystemPaymentHandler
                 ]
             ];
 
-            // if ($isTest || app()->environment('local', 'testing')) {
-            //     $data['test'] = true;
-            // }
+            $this->applyTestFlag($data, $isTest);
 
             Log::info('Creating Ziina payment intent for special request', [
                 'special_request_id' => $specialRequest->id,
@@ -298,7 +316,7 @@ class ZiinaSystemPaymentHandler
                 'fees' => $fees,
                 'total_price' => $totalPrice,
                 'message' => $message,
-                // 'test_mode' => $isTest
+                'test_mode' => $this->isTestMode($isTest),
             ]);
 
             $response = $this->makeApiCall('/payment_intent', 'POST', $data);
