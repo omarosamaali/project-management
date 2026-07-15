@@ -23,6 +23,9 @@
         </button>
     </div>
 
+    {{-- Scale wrapper: keeps exact desktop layout on mobile --}}
+    <div class="cert-scale-outer">
+    <div class="cert-scale-inner" id="certScaleInner">
     {{-- تصميم الشهادة --}}
     <div class="certificate" id="certificate">
 
@@ -149,6 +152,8 @@
 
         </div>{{-- /cert-content --}}
     </div>{{-- /certificate --}}
+    </div>{{-- /cert-scale-inner --}}
+    </div>{{-- /cert-scale-outer --}}
 </div>{{-- /cert-page --}}
 
 <style>
@@ -177,6 +182,10 @@
         align-items: center;
         font-family: 'Amiri', serif;
         direction: rtl;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
     }
 
     /* ── Control bar ── */
@@ -212,15 +221,28 @@
         height: 18px;
     }
 
-    /* ── Certificate shell ── */
+    /* ── Scale wrappers (mobile shows identical desktop layout, scaled) ── */
+    .cert-scale-outer {
+        width: 100%;
+        max-width: 900px;
+        overflow: hidden;
+    }
+
+    .cert-scale-inner {
+        width: 900px;
+        transform-origin: top left;
+        will-change: transform;
+    }
+
+    /* ── Certificate shell — fixed desktop size (never reflow) ── */
     .certificate {
         position: relative;
         background: var(--parchment);
         background-image:
             url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='30' r='1' fill='%23000' fill-opacity='.07'/%3E%3C/svg%3E"),
             linear-gradient(160deg, rgba(255, 255, 255, 0.6) 0%, rgba(253, 250, 243, 1) 40%, rgba(248, 242, 225, 0.8) 100%);
-        width: 100%;
-        max-width: 900px;
+        width: 900px;
+        max-width: none;
         min-height: 640px;
         padding: 60px 80px 70px;
         box-shadow:
@@ -228,6 +250,7 @@
             0 20px 60px rgba(13, 36, 68, .18),
             inset 0 0 120px rgba(184, 150, 12, .04);
         overflow: hidden;
+        box-sizing: border-box;
     }
 
     /* ── Borders ── */
@@ -571,7 +594,7 @@
         opacity: .82;
     }
 
-    /* ── Print: one landscape A4 page, same proportions as screen ── */
+    /* ── Print: landscape A4 by default, full certificate layout ── */
     @media print {
         @page {
             size: A4 landscape;
@@ -589,6 +612,8 @@
             padding: 0 !important;
             background: white !important;
             overflow: hidden !important;
+            width: 100% !important;
+            height: auto !important;
         }
 
         nav,
@@ -626,6 +651,19 @@
             overflow: visible !important;
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
+        }
+
+        .cert-scale-outer {
+            width: 100% !important;
+            max-width: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+        }
+
+        .cert-scale-inner {
+            width: 100% !important;
+            transform: none !important;
         }
 
         .certificate {
@@ -758,8 +796,51 @@
     }
 </style>
 <script>
-    document.getElementById('printCertificateBtn')?.addEventListener('click', function () {
-        window.print();
-    });
+    (function () {
+        var CERT_WIDTH = 900;
+
+        function fitCertificate() {
+            var outer = document.querySelector('.cert-scale-outer');
+            var inner = document.getElementById('certScaleInner');
+            if (!outer || !inner) return;
+
+            var avail = outer.clientWidth;
+            var scale = avail < CERT_WIDTH ? (avail / CERT_WIDTH) : 1;
+            inner.style.transform = 'scale(' + scale + ')';
+            outer.style.height = (inner.offsetHeight * scale) + 'px';
+        }
+
+        function onReady(fn) {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', fn);
+            } else {
+                fn();
+            }
+        }
+
+        onReady(function () {
+            fitCertificate();
+            window.addEventListener('resize', fitCertificate);
+            window.addEventListener('orientationchange', fitCertificate);
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(fitCertificate);
+            }
+            // Re-fit after images (logo) load
+            document.querySelectorAll('.certificate img').forEach(function (img) {
+                if (!img.complete) img.addEventListener('load', fitCertificate);
+            });
+        });
+
+        document.getElementById('printCertificateBtn')?.addEventListener('click', function () {
+            // Ensure print CSS landscape applies without mobile scale
+            var outer = document.querySelector('.cert-scale-outer');
+            var inner = document.getElementById('certScaleInner');
+            if (inner) inner.style.transform = 'none';
+            if (outer) outer.style.height = 'auto';
+            window.print();
+        });
+
+        window.addEventListener('afterprint', fitCertificate);
+    })();
 </script>
 @endsection
