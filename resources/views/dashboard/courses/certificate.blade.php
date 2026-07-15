@@ -225,13 +225,17 @@
     .cert-scale-outer {
         width: 100%;
         max-width: 900px;
+        align-self: stretch;
         overflow: hidden;
+        /* LTR so scale origin/geometry stay predictable on RTL pages */
+        direction: ltr;
     }
 
     .cert-scale-inner {
         width: 900px;
+        max-width: none;
         transform-origin: top left;
-        will-change: transform;
+        direction: rtl;
     }
 
     /* ── Certificate shell — fixed desktop size (never reflow) ── */
@@ -251,6 +255,7 @@
             inset 0 0 120px rgba(184, 150, 12, .04);
         overflow: hidden;
         box-sizing: border-box;
+        direction: rtl;
     }
 
     /* ── Borders ── */
@@ -804,10 +809,27 @@
             var inner = document.getElementById('certScaleInner');
             if (!outer || !inner) return;
 
-            var avail = outer.clientWidth;
-            var scale = avail < CERT_WIDTH ? (avail / CERT_WIDTH) : 1;
+            // Reset so we measure natural size / correct parent width
+            inner.style.transform = 'none';
+            outer.style.height = 'auto';
+
+            var avail = outer.getBoundingClientRect().width
+                || outer.parentElement.getBoundingClientRect().width
+                || Math.min(window.innerWidth, document.documentElement.clientWidth);
+
+            // Fallback: never collapse to invisible
+            if (!avail || avail < 40) {
+                avail = Math.min(window.innerWidth - 32, CERT_WIDTH);
+            }
+
+            var scale = Math.min(1, avail / CERT_WIDTH);
+            if (scale < 0.05) scale = 0.05;
+
+            var naturalHeight = inner.scrollHeight || inner.offsetHeight || 640;
+
+            inner.style.transformOrigin = 'top left';
             inner.style.transform = 'scale(' + scale + ')';
-            outer.style.height = (inner.offsetHeight * scale) + 'px';
+            outer.style.height = Math.ceil(naturalHeight * scale) + 'px';
         }
 
         function onReady(fn) {
@@ -820,19 +842,26 @@
 
         onReady(function () {
             fitCertificate();
+            // Second pass after layout/fonts settle (critical on mobile Safari)
+            requestAnimationFrame(function () {
+                fitCertificate();
+                setTimeout(fitCertificate, 100);
+                setTimeout(fitCertificate, 400);
+            });
             window.addEventListener('resize', fitCertificate);
-            window.addEventListener('orientationchange', fitCertificate);
+            window.addEventListener('orientationchange', function () {
+                setTimeout(fitCertificate, 150);
+            });
             if (document.fonts && document.fonts.ready) {
                 document.fonts.ready.then(fitCertificate);
             }
-            // Re-fit after images (logo) load
             document.querySelectorAll('.certificate img').forEach(function (img) {
                 if (!img.complete) img.addEventListener('load', fitCertificate);
+                else fitCertificate();
             });
         });
 
         document.getElementById('printCertificateBtn')?.addEventListener('click', function () {
-            // Ensure print CSS landscape applies without mobile scale
             var outer = document.querySelector('.cert-scale-outer');
             var inner = document.getElementById('certScaleInner');
             if (inner) inner.style.transform = 'none';
