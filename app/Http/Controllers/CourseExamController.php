@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\CourseExamAttempt;
 use App\Models\Payment;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CourseExamController extends Controller
 {
@@ -232,6 +234,37 @@ class CourseExamController extends Controller
             'answers' => $storedAnswers,
             'submitted_at' => now(),
         ]);
+
+        if ($passed) {
+            $this->notifyExamSuccess($payment, $course, $score, $questions->count());
+        }
+    }
+
+    protected function notifyExamSuccess(Payment $payment, Course $course, int $score, int $totalQuestions): void
+    {
+        try {
+            $payment->loadMissing('user');
+            $user = $payment->user;
+
+            if (!$user || empty($user->phone)) {
+                return;
+            }
+
+            app(WhatsAppOTPService::class)->sendExamSuccessNotification(
+                $user->phone,
+                $user->name,
+                $course->name_ar,
+                $score,
+                $totalQuestions,
+            );
+        } catch (\Throwable $e) {
+            Log::error('[WHATSAPP] فشل إرسال إشعار نجاح الاختبار', [
+                'payment_id' => $payment->id,
+                'course_id' => $course->id,
+                'user_id' => $payment->user_id,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     protected function authorizeExamAccess(Course $course, bool $requireStarted = true): Payment

@@ -77,6 +77,19 @@ class WhatsAppOTPService
         return $this->executeRequest($phone, 'trabar', 'ar', $params);
     }
 
+    // ── نجاح الاختبار + إتاحة الشهادة ─────────────────
+    public function sendExamSuccessNotification(
+        string $phone,
+        string $userName,
+        string $courseName,
+        int $score,
+        int $totalQuestions,
+    ): bool {
+        $bodyText = "مبروك! لقد اجتزت اختبار دورة «{$courseName}» بنجاح. درجتك: {$score} من {$totalQuestions}. شهادة الحضور متاحة الآن من قمرة القيادة — دوراتي. شكراً لالتزامك ومشاركتك الفعّالة مع إيفورك للتكنولوجيا.";
+
+        return $this->sendTrabar($phone, $userName, $bodyText);
+    }
+
     // ── إشعار تذكرة دعم فني للـ Partner ─────────────
     /**
      * يُرسل إشعار واتساب للـ partner عند فتح تذكرة دعم فني مرتبطة بمشروعه
