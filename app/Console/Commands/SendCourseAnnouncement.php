@@ -15,8 +15,9 @@ class SendCourseAnnouncement extends Command
 {
     protected $signature = 'course:announce
         {course : معرف الدورة (ID)}
-        {--audience=clients : الجمهور المستهدف: clients | enrolled | all}
+        {--audience=clients : الجمهور المستهدف: clients | others | enrolled | all}
         {--channel=all : قناة الإرسال: all | whatsapp | email}
+        {--exclude-sent : تجاهل من استلم إعلان هذه الدورة مسبقاً (إرسال للمتبقّين فقط)}
         {--test= : إرسال رسالة تجريبية واحدة فقط لرقم هاتف أو بريد}';
 
     protected $description = 'إرسال إعلان دورة تدريبية (واتساب + بريد) لكل العملاء لدورة محددة';
@@ -115,12 +116,31 @@ class SendCourseAnnouncement extends Command
 
     private function resolveRecipients(Course $course)
     {
-        return match ($this->option('audience')) {
+        $recipients = match ($this->option('audience')) {
             'enrolled' => $course->students()->select('users.id', 'users.name', 'users.phone', 'users.email')->get(),
             'all' => User::notBlocked()->select('id', 'name', 'phone', 'email')->get(),
+            'others' => User::notBlocked()
+                ->where(fn ($q) => $q->where('role', '!=', 'client')->orWhereNull('role'))
+                ->select('id', 'name', 'phone', 'email')->get(),
             default => User::where('role', 'client')->notBlocked()
                 ->select('id', 'name', 'phone', 'email')->get(),
         };
+
+        if ($this->option('exclude-sent')) {
+            $alreadyNotified = AppNotification::where('url', $course->publicUrl())
+                ->pluck('user_id')
+                ->unique();
+
+            $before = $recipients->count();
+            $recipients = $recipients->reject(fn ($u) => $alreadyNotified->contains($u->id))->values();
+            $skipped = $before - $recipients->count();
+
+            if ($skipped > 0) {
+                $this->line("تم تجاهل {$skipped} مستلم استلموا الإعلان مسبقاً.");
+            }
+        }
+
+        return $recipients;
     }
 
     private function sendTest(
