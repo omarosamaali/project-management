@@ -6,9 +6,13 @@ use App\Models\Course;
 use App\Models\Service;
 use App\Models\Payment;
 use App\Models\MyStore;
+use App\Models\User;
+use App\Models\AppNotification;
 use App\Models\CourseExamQuestion;
+use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -119,7 +123,75 @@ class CourseController extends Controller
             return $course;
         });
 
+        $this->announceNewCourseToClients($course);
+
         return redirect()->route('dashboard.courses.index')->with('success', 'تم إضافة الدورة بنجاح.');
+    }
+
+    /**
+     * Notify all clients (WhatsApp + email + in-app) about a newly added course.
+     * Runs after the response is sent so it never blocks course creation.
+     */
+    protected function announceNewCourseToClients(Course $course): void
+    {
+        if ($course->status !== 'active') {
+            return;
+        }
+
+        $courseId = $course->id;
+        $courseName = $course->name_ar;
+
+        dispatch(function () use ($courseId, $courseName) {
+            $course = Course::find($courseId);
+            if (!$course) {
+                return;
+            }
+
+            $courseUrl = route('courses.show', $course->id);
+            $whatsapp = app(WhatsAppOTPService::class);
+
+            User::where('role', 'client')
+                ->notBlocked()
+                ->select('id', 'name', 'phone', 'email')
+                ->chunkById(200, function ($clients) use ($whatsapp, $course, $courseName, $courseUrl) {
+                    foreach ($clients as $client) {
+                        try {
+                            AppNotification::notify(
+                                $client->id,
+                                'دورة تدريبية جديدة',
+                                "أطلقنا دورة تدريبية جديدة: {$courseName}. سارِع بالتسجيل الآن.",
+                                $courseUrl,
+                                'fa-graduation-cap',
+                                'info'
+                            );
+
+                            if (!empty($client->phone)) {
+                                $whatsapp->sendNewCourseAnnouncement(
+                                    $client->phone,
+                                    $client->name,
+                                    $courseName,
+                                    $courseUrl,
+                                );
+                            }
+
+                            if (!empty($client->email)) {
+                                $whatsapp->sendEmailNotification(
+                                    $client->email,
+                                    $client->name,
+                                    'دورة تدريبية جديدة — ' . $courseName,
+                                    "يسعدنا إبلاغك بإطلاق دورة تدريبية جديدة: «{$courseName}».\n\nيمكنك الاطلاع على التفاصيل والتسجيل من خلال الرابط التالي:\n{$courseUrl}",
+                                );
+                            }
+                        } catch (\Throwable $e) {
+                            Log::error('[COURSE-ANNOUNCE] فشل إشعار عميل', [
+                                'course_id' => $course->id,
+                                'user_id' => $client->id,
+                                'message' => $e->getMessage(),
+                            ]);
+                        }
+                    }
+                });
+        })->afterResponse();
     }
     public function show(Course $course)
     {

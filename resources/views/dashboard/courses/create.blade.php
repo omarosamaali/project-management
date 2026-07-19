@@ -1000,6 +1000,9 @@
     </div>
 </section>
 <script>
+    window.__courseHasOldInput = {{ $errors->any() || old('name_ar') ? 'true' : 'false' }};
+</script>
+<script>
     (function() {
     'use strict';
 
@@ -1017,6 +1020,7 @@
         });
         currentTab = index;
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (window.__saveCourseDraft) window.__saveCourseDraft();
     }
 
     tabButtons.forEach((btn, index) => {
@@ -1033,6 +1037,33 @@
             if (currentTab > 0) showTab(currentTab - 1);
         }
     });
+
+    // ========== Reveal invalid required fields on hidden tabs ==========
+    // Without this, an invalid required field on a hidden tab silently blocks
+    // submission (the browser can't show its popup on a display:none element).
+    (function setupValidationTabJump() {
+        const courseForm = document.getElementById('courseForm');
+        if (!courseForm) return;
+
+        let handlingInvalid = false;
+        courseForm.addEventListener('invalid', function (e) {
+            if (handlingInvalid) return; // only act on the first invalid field
+            handlingInvalid = true;
+
+            const field = e.target;
+            const pane = field.closest('.tab-content');
+            if (pane) {
+                const idx = Array.from(tabs).indexOf(pane);
+                if (idx >= 0 && idx !== currentTab) showTab(idx);
+            }
+
+            setTimeout(() => {
+                try { field.focus(); } catch (_) {}
+                if (typeof field.reportValidity === 'function') field.reportValidity();
+                handlingInvalid = false;
+            }, 60);
+        }, true); // capture: the invalid event does not bubble
+    })();
 
     // ========== Translation Functions ==========
     async function translateText(text, sourceLang, targetLang) {
@@ -1222,6 +1253,21 @@
         });
     }
 
+    const createRequirementRow = () => `
+        <div class="flex gap-2 requirement-row">
+            <input type="text" name="requirements_ar[]"
+                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="متطلب بالعربي">
+            <input type="text" name="requirements_en[]" dir="ltr"
+                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Requirement in English">
+            <button type="button"
+                class="remove-requirement-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+
     const createFeatureRow = () => `
         <div class="flex gap-2 feature-row">
             <input type="text" name="features_ar[]"
@@ -1348,6 +1394,261 @@
         input.files = dt.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
     };
+
+    // ========== Draft Autosave (localStorage) ==========
+    (function setupDraftPersistence() {
+        const DRAFT_KEY = 'course_create_draft_v1';
+        const form = document.getElementById('courseForm');
+        if (!form) return;
+
+        const val = (name) => {
+            const el = form.querySelector(`[name="${name}"]`);
+            return el ? el.value : '';
+        };
+        const radioVal = (name) => {
+            const el = form.querySelector(`[name="${name}"]:checked`);
+            return el ? el.value : '';
+        };
+
+        function collectDraft() {
+            const data = {
+                scalars: {},
+                rest_days: [],
+                requirements: [],
+                features: [],
+                buttons: [],
+                exam: { has_exam: false, pass_score: '', duration: '', questions: [] },
+                activeTab: currentTab,
+            };
+
+            ['name_ar','name_en','price','service_id','counter',
+             'start_date','end_date','last_date','count_days',
+             'online_link','venue_name','venue_map_url','venue_details',
+             'description_ar','description_en'].forEach(n => { data.scalars[n] = val(n); });
+
+            data.scalars.location_type = radioVal('location_type');
+            data.scalars.status = radioVal('status');
+
+            data.rest_days = Array.from(form.querySelectorAll('input[name="rest_days[]"]:checked')).map(cb => cb.value);
+
+            form.querySelectorAll('.requirement-row').forEach(row => {
+                data.requirements.push({
+                    ar: row.querySelector('input[name="requirements_ar[]"]')?.value || '',
+                    en: row.querySelector('input[name="requirements_en[]"]')?.value || '',
+                });
+            });
+
+            form.querySelectorAll('.feature-row').forEach(row => {
+                data.features.push({
+                    ar: row.querySelector('input[name="features_ar[]"]')?.value || '',
+                    en: row.querySelector('input[name="features_en[]"]')?.value || '',
+                });
+            });
+
+            form.querySelectorAll('.button-row').forEach(row => {
+                data.buttons.push({
+                    text_ar: row.querySelector('input[name="buttons_text_ar[]"]')?.value || '',
+                    text_en: row.querySelector('input[name="buttons_text_en[]"]')?.value || '',
+                    link: row.querySelector('input[name="buttons_link[]"]')?.value || '',
+                    color: row.querySelector('input[name="buttons_color[]"]')?.value || '#3B82F6',
+                    needs_login: row.querySelector('input[name="buttons_needs_login[]"]')?.value || '0',
+                });
+            });
+
+            const examToggle = form.querySelector('#has_exam_toggle');
+            data.exam.has_exam = !!(examToggle && examToggle.checked);
+            data.exam.pass_score = val('exam_pass_score');
+            data.exam.duration = val('exam_duration_minutes');
+            form.querySelectorAll('.exam-question-row').forEach(row => {
+                const answers = Array.from(row.querySelectorAll('input[name*="[answers]"]')).map(i => i.value);
+                const radios = Array.from(row.querySelectorAll('input[type="radio"]'));
+                let correct = radios.findIndex(r => r.checked);
+                if (correct < 0) correct = 0;
+                data.exam.questions.push({
+                    question: row.querySelector('input[name*="[question]"]')?.value || '',
+                    answers,
+                    correct,
+                });
+            });
+
+            return data;
+        }
+
+        function saveDraft() {
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft()));
+            } catch (e) { /* storage full / disabled */ }
+        }
+
+        let saveTimer = null;
+        function debouncedSave() {
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveDraft, 400);
+        }
+        window.__saveCourseDraft = debouncedSave;
+
+        function ensureRows(container, currentSelector, createFn, targetCount) {
+            if (!container) return;
+            let existing = container.querySelectorAll(currentSelector).length;
+            while (existing < targetCount) {
+                container.insertAdjacentHTML('beforeend', createFn());
+                existing++;
+            }
+        }
+
+        function restoreDraft(draft) {
+            // Scalars
+            Object.entries(draft.scalars || {}).forEach(([name, value]) => {
+                if (value === '' || value == null) return;
+                if (name === 'location_type' || name === 'status') {
+                    const radio = form.querySelector(`[name="${name}"][value="${value}"]`);
+                    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); }
+                    return;
+                }
+                const el = form.querySelector(`[name="${name}"]`);
+                if (el) el.value = value;
+            });
+
+            // Dates -> rebuild rest-day checkboxes, then restore selections
+            const startEl = form.querySelector('[name="start_date"]');
+            const endEl = form.querySelector('[name="end_date"]');
+            if (startEl && startEl.value && endEl && endEl.value) {
+                startEl.dispatchEvent(new Event('change', { bubbles: true }));
+                endEl.dispatchEvent(new Event('change', { bubbles: true }));
+                (draft.rest_days || []).forEach(day => {
+                    const cb = form.querySelector(`input[name="rest_days[]"][value="${day}"]`);
+                    if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+                });
+            }
+
+            // Requirements
+            if ((draft.requirements || []).length) {
+                const c = document.getElementById('requirements-container');
+                ensureRows(c, '.requirement-row', createRequirementRow, draft.requirements.length);
+                const rows = c.querySelectorAll('.requirement-row');
+                draft.requirements.forEach((r, i) => {
+                    if (!rows[i]) return;
+                    const ar = rows[i].querySelector('input[name="requirements_ar[]"]');
+                    const en = rows[i].querySelector('input[name="requirements_en[]"]');
+                    if (ar) ar.value = r.ar;
+                    if (en) en.value = r.en;
+                });
+            }
+
+            // Features
+            if ((draft.features || []).length) {
+                const c = document.getElementById('features-container');
+                ensureRows(c, '.feature-row', createFeatureRow, draft.features.length);
+                const rows = c.querySelectorAll('.feature-row');
+                draft.features.forEach((f, i) => {
+                    if (!rows[i]) return;
+                    const ar = rows[i].querySelector('input[name="features_ar[]"]');
+                    const en = rows[i].querySelector('input[name="features_en[]"]');
+                    if (ar) ar.value = f.ar;
+                    if (en) en.value = f.en;
+                });
+            }
+
+            // Buttons
+            if ((draft.buttons || []).length) {
+                const c = document.getElementById('buttons-container');
+                ensureRows(c, '.button-row', createButtonRow, draft.buttons.length);
+                const rows = c.querySelectorAll('.button-row');
+                draft.buttons.forEach((b, i) => {
+                    if (!rows[i]) return;
+                    const set = (sel, v) => { const el = rows[i].querySelector(sel); if (el) el.value = v; };
+                    set('input[name="buttons_text_ar[]"]', b.text_ar);
+                    set('input[name="buttons_text_en[]"]', b.text_en);
+                    set('input[name="buttons_link[]"]', b.link);
+                    set('input[name="buttons_color[]"]', b.color);
+                    set('input[name="buttons_color_hex[]"]', b.color);
+                    const hidden = rows[i].querySelector('input[name="buttons_needs_login[]"]');
+                    const checkbox = rows[i].querySelector('input[type="checkbox"].peer');
+                    if (hidden) hidden.value = b.needs_login;
+                    if (checkbox) checkbox.checked = b.needs_login === '1';
+                });
+            }
+
+            // Exam
+            const examData = draft.exam || {};
+            if (examData.has_exam) {
+                const toggle = form.querySelector('#has_exam_toggle');
+                if (toggle && !toggle.checked) {
+                    toggle.checked = true;
+                    toggle.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (examData.duration) { const d = form.querySelector('[name="exam_duration_minutes"]'); if (d) d.value = examData.duration; }
+
+                const container = document.getElementById('exam-questions-container');
+                const addQBtn = document.getElementById('add-exam-question');
+                if (container && addQBtn && (examData.questions || []).length) {
+                    while (container.querySelectorAll('.exam-question-row').length < examData.questions.length) {
+                        addQBtn.click();
+                    }
+                    const qRows = container.querySelectorAll('.exam-question-row');
+                    examData.questions.forEach((q, qi) => {
+                        const row = qRows[qi];
+                        if (!row) return;
+                        const qInput = row.querySelector('input[name*="[question]"]');
+                        if (qInput) qInput.value = q.question || '';
+                        const answersWrap = row.querySelector('.exam-answers');
+                        const addABtn = row.querySelector('.add-exam-answer');
+                        const wanted = (q.answers && q.answers.length) ? q.answers.length : 1;
+                        while (addABtn && answersWrap.querySelectorAll('.exam-answer-row').length < wanted) {
+                            addABtn.click();
+                        }
+                        const aRows = answersWrap.querySelectorAll('.exam-answer-row');
+                        (q.answers || []).forEach((ans, ai) => {
+                            const t = aRows[ai] && aRows[ai].querySelector('input[type="text"]');
+                            if (t) t.value = ans;
+                        });
+                        const radios = row.querySelectorAll('input[type="radio"]');
+                        if (radios[q.correct]) radios[q.correct].checked = true;
+                    });
+                }
+                if (examData.pass_score) { const p = form.querySelector('[name="exam_pass_score"]'); if (p) p.value = examData.pass_score; }
+            }
+
+            if (typeof draft.activeTab === 'number') showTab(draft.activeTab);
+        }
+
+        function showRestoredBanner() {
+            const bar = document.createElement('div');
+            bar.className = 'flex items-center justify-between gap-3 m-4 p-3 text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg';
+            bar.innerHTML = `
+                <span class="flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> تم استرجاع مسودة غير محفوظة.</span>
+                <button type="button" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-xs">
+                    <i class="fas fa-trash ml-1"></i> مسح المسودة والبدء من جديد
+                </button>`;
+            bar.querySelector('button').addEventListener('click', () => {
+                try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+                window.location.reload();
+            });
+            form.parentNode.insertBefore(bar, form);
+        }
+
+        // Restore on load (skip when server returned old input, to avoid duplicates)
+        if (!window.__courseHasOldInput) {
+            let raw = null;
+            try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) {}
+            if (raw) {
+                try {
+                    const draft = JSON.parse(raw);
+                    restoreDraft(draft);
+                    showRestoredBanner();
+                } catch (e) { /* corrupt draft */ }
+            }
+        }
+
+        // Save on any change / typing
+        form.addEventListener('input', debouncedSave);
+        form.addEventListener('change', debouncedSave);
+
+        // Clear draft once the course is actually submitted
+        form.addEventListener('submit', () => {
+            try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        });
+    })();
 })();
 </script>
 

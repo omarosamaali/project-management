@@ -1114,6 +1114,31 @@
         }
     });
 
+    // ========== Reveal invalid required fields on hidden tabs ==========
+    (function setupValidationTabJump() {
+        const courseForm = document.getElementById('courseForm');
+        if (!courseForm) return;
+
+        let handlingInvalid = false;
+        courseForm.addEventListener('invalid', function (e) {
+            if (handlingInvalid) return;
+            handlingInvalid = true;
+
+            const field = e.target;
+            const pane = field.closest('.tab-content');
+            if (pane) {
+                const idx = Array.from(tabs).indexOf(pane);
+                if (idx >= 0 && idx !== currentTab) showTab(idx);
+            }
+
+            setTimeout(() => {
+                try { field.focus(); } catch (_) {}
+                if (typeof field.reportValidity === 'function') field.reportValidity();
+                handlingInvalid = false;
+            }, 60);
+        }, true);
+    })();
+
     // ========== Translation Functions ==========
     async function translateText(text, sourceLang, targetLang) {
         if (!text || !text.trim()) return "";

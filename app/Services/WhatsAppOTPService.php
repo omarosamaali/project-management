@@ -77,6 +77,22 @@ class WhatsAppOTPService
         return $this->executeRequest($phone, 'trabar', 'ar', $params);
     }
 
+    // ── إعلان دورة تدريبية جديدة لكل العملاء ─────────────
+    public function sendNewCourseAnnouncement(
+        string $phone,
+        string $userName,
+        string $courseName,
+        ?string $courseUrl = null,
+    ): bool {
+        $bodyText = "أطلقنا دورة تدريبية جديدة: «{$courseName}». سارِع بحجز مقعدك والاطلاع على التفاصيل والتسجيل الآن.";
+        if ($courseUrl) {
+            $bodyText .= " رابط الدورة: {$courseUrl}";
+        }
+        $bodyText .= " — إيفورك للتكنولوجيا.";
+
+        return $this->sendTrabar($phone, $userName, $bodyText);
+    }
+
     // ── نجاح الاختبار + إتاحة الشهادة ─────────────────
     public function sendExamSuccessNotification(
         string $phone,
