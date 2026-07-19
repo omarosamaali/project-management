@@ -139,21 +139,22 @@ class CourseController extends Controller
         }
 
         $courseId = $course->id;
-        $courseName = $course->name_ar;
 
-        dispatch(function () use ($courseId, $courseName) {
+        dispatch(function () use ($courseId) {
             $course = Course::find($courseId);
             if (!$course) {
                 return;
             }
 
-            $courseUrl = route('courses.show', $course->id);
+            $courseName = $course->name_ar;
+            $courseUrl = $course->publicUrl();
+            $imageUrl = $course->mainImageUrl();
             $whatsapp = app(WhatsAppOTPService::class);
 
             User::where('role', 'client')
                 ->notBlocked()
                 ->select('id', 'name', 'phone', 'email')
-                ->chunkById(200, function ($clients) use ($whatsapp, $course, $courseName, $courseUrl) {
+                ->chunkById(200, function ($clients) use ($whatsapp, $course, $courseName, $courseUrl, $imageUrl) {
                     foreach ($clients as $client) {
                         try {
                             AppNotification::notify(
@@ -171,16 +172,13 @@ class CourseController extends Controller
                                     $client->name,
                                     $courseName,
                                     $courseUrl,
+                                    $imageUrl,
                                 );
                             }
 
                             if (!empty($client->email)) {
-                                $whatsapp->sendEmailNotification(
-                                    $client->email,
-                                    $client->name,
-                                    'دورة تدريبية جديدة — ' . $courseName,
-                                    "يسعدنا إبلاغك بإطلاق دورة تدريبية جديدة: «{$courseName}».\n\nيمكنك الاطلاع على التفاصيل والتسجيل من خلال الرابط التالي:\n{$courseUrl}",
-                                );
+                                \Illuminate\Support\Facades\Mail::to($client->email, $client->name)
+                                    ->send(new \App\Mail\CourseAnnouncementMail($course, $client->name));
                             }
                         } catch (\Throwable $e) {
                             Log::error('[COURSE-ANNOUNCE] فشل إشعار عميل', [

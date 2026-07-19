@@ -194,6 +194,38 @@ class Course extends Model
     }
 
     /**
+     * Absolute public base URL, always the live domain (never localhost),
+     * so links in emails/WhatsApp work even when generated from CLI/queue.
+     */
+    public static function publicBaseUrl(): string
+    {
+        $base = rtrim((string) config('app.url'), '/');
+        if ($base === '' || str_contains($base, 'localhost') || str_contains($base, '127.0.0.1')) {
+            $base = 'https://evorq.online';
+        }
+        return $base;
+    }
+
+    /**
+     * Public (client-facing) URL for this course.
+     */
+    public function publicUrl(): string
+    {
+        return self::publicBaseUrl() . '/courses/' . $this->id;
+    }
+
+    /**
+     * Absolute URL to the course main image (falls back to the logo).
+     */
+    public function mainImageUrl(): string
+    {
+        if (empty($this->main_image)) {
+            return self::publicBaseUrl() . '/assets/images/logo.webp';
+        }
+        return self::publicBaseUrl() . '/storage/' . ltrim($this->main_image, '/');
+    }
+
+    /**
      * Inclusive calendar days between start and end, minus matching rest weekdays.
      * Same calendar day => 1 day (not 2).
      */

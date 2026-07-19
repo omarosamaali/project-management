@@ -83,6 +83,7 @@ class WhatsAppOTPService
         string $userName,
         string $courseName,
         ?string $courseUrl = null,
+        ?string $imageUrl = null,
     ): bool {
         $bodyText = "أطلقنا دورة تدريبية جديدة: «{$courseName}». سارِع بحجز مقعدك والاطلاع على التفاصيل والتسجيل الآن.";
         if ($courseUrl) {
@@ -90,7 +91,25 @@ class WhatsAppOTPService
         }
         $bodyText .= " — إيفورك للتكنولوجيا.";
 
-        return $this->sendTrabar($phone, $userName, $bodyText);
+        $bodyText = $this->sanitizeTrabarText($bodyText);
+        $recipientName = $this->sanitizeTrabarText($userName, 120);
+        $headerImage = $imageUrl ?: 'https://evorq.online/assets/images/salaray.jpeg';
+
+        return $this->executeRequest($phone, 'trabar', 'ar', [
+            [
+                'type' => 'header',
+                'parameters' => [
+                    ['type' => 'image', 'image' => ['link' => $headerImage]],
+                ],
+            ],
+            [
+                'type' => 'body',
+                'parameters' => [
+                    ['type' => 'text', 'text' => $recipientName],
+                    ['type' => 'text', 'text' => $bodyText],
+                ],
+            ],
+        ]);
     }
 
     // ── نجاح الاختبار + إتاحة الشهادة ─────────────────
