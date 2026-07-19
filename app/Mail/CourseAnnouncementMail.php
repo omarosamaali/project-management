@@ -36,7 +36,7 @@ class CourseAnnouncementMail extends Mailable
                 'courseDescription' => Str::limit(strip_tags((string) $this->course->description_ar), 220),
                 'courseUrl' => $this->course->publicUrl(),
                 'imageUrl' => $this->course->mainImageUrl(),
-                'logoUrl' => Course::publicBaseUrl() . '/assets/images/logo.webp',
+                'logoUrl' => Course::publicBaseUrl() . '/assets/images/white-logo.png',
             ],
         );
     }
