@@ -129,12 +129,12 @@
             return Math.max(0, total - viewport.clientWidth);
         };
 
+        // How many next-clicks are needed to fully reveal the last card.
+        // Use ceil so a leftover peek (< 1 step) is still a reachable end position.
         const maxIndex = (meta) => {
             const maxOff = maxScrollOffset(meta);
-            if (maxOff <= 1) return 0;
-            // Largest index whose offset does not exceed the last full view.
-            if (meta.step <= 0) return 0;
-            return Math.max(0, Math.floor((maxOff + 0.5) / meta.step));
+            if (maxOff <= 1 || meta.step <= 0) return 0;
+            return Math.max(1, Math.ceil(maxOff / meta.step));
         };
 
         const syncNav = (meta) => {
@@ -145,29 +145,38 @@
             return show;
         };
 
-        const targetOffset = (meta) => {
+        const offsetFor = (meta, i) => {
             const list = slides();
             const raw = meta.natural
-                ? offsetForIndex(list, index, meta.gap)
-                : index * meta.step;
+                ? offsetForIndex(list, i, meta.gap)
+                : i * meta.step;
             return Math.min(raw, maxScrollOffset(meta));
         };
+
+        const currentOffset = (meta) => offsetFor(meta, index);
 
         const scrollToIndex = (i, meta, animate = true) => {
             if (animating && animate) return;
             const max = maxIndex(meta);
-            if (max <= 0) {
+            const maxOff = maxScrollOffset(meta);
+
+            if (max <= 0 || maxOff <= 1) {
                 index = 0;
                 applyTransform(0, false);
                 return;
             }
 
-            // Loop: past the last full view → back to the start (and reverse).
-            if (i > max) index = 0;
-            else if (i < 0) index = max;
-            else index = i;
+            if (i > max) {
+                // Already showing the last card fully → loop to start.
+                // Otherwise clamp to the end so the leftover peek can finish scrolling in.
+                index = currentOffset(meta) >= maxOff - 1 ? 0 : max;
+            } else if (i < 0) {
+                index = currentOffset(meta) <= 1 ? max : 0;
+            } else {
+                index = i;
+            }
 
-            const offset = targetOffset(meta);
+            const offset = offsetFor(meta, index);
             if (animate) {
                 animating = true;
                 applyTransform(offset, true);
@@ -210,7 +219,7 @@
             scrollToIndex(index, meta, false);
         });
 
-        // Autoplay: advance until the last full view, then restart from the beginning.
+        // Autoplay: advance until the last card is fully visible, then restart.
         let timer = null;
         const enableAuto = wrap.getAttribute('data-autoplay') === '1';
         const start = () => {
@@ -225,7 +234,8 @@
                     return;
                 }
                 const max = maxIndex(meta);
-                if (index >= max) {
+                const maxOff = maxScrollOffset(meta);
+                if (index >= max || currentOffset(meta) >= maxOff - 1) {
                     scrollToIndex(0, meta, true);
                 } else {
                     scrollToIndex(index + 1, meta, true);

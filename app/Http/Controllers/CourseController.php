@@ -19,12 +19,14 @@ use App\Models\CourseWishlist;
 use App\Models\Setting;
 use App\Support\YouTubeLive;
 use App\Support\LessonVideoSource;
+use App\Support\VideoDownloadGuard;
 use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -212,7 +214,11 @@ class CourseController extends Controller
         }
 
         if ($request->hasFile('video')) {
-            $data['video'] = WatermarkedUpload::store($request->file('video'), 'courses/videos');
+            $data['video'] = WatermarkedUpload::store(
+                $request->file('video'),
+                'courses/videos',
+                \App\Support\VideoDownloadGuard::storageDisk()
+            );
         }
 
         $course = DB::transaction(function () use ($data, $request) {
@@ -333,14 +339,18 @@ class CourseController extends Controller
 
         if ($request->boolean('remove_video') && !$request->hasFile('video')) {
             if ($course->video) {
-                Storage::disk('public')->delete($course->video);
+                \App\Support\VideoDownloadGuard::deleteStored($course->video);
             }
             $data['video'] = null;
         } elseif ($request->hasFile('video')) {
             if ($course->video) {
-                Storage::disk('public')->delete($course->video);
+                \App\Support\VideoDownloadGuard::deleteStored($course->video);
             }
-            $data['video'] = WatermarkedUpload::store($request->file('video'), 'courses/videos');
+            $data['video'] = WatermarkedUpload::store(
+                $request->file('video'),
+                'courses/videos',
+                \App\Support\VideoDownloadGuard::storageDisk()
+            );
         }
 
         // Don't reset exam timestamps from form
@@ -377,7 +387,7 @@ class CourseController extends Controller
         }
 
         if ($course->video) {
-            Storage::disk('public')->delete($course->video);
+            VideoDownloadGuard::deleteStored($course->video);
         }
 
         $this->deleteEducationalPath($course);
@@ -385,6 +395,20 @@ class CourseController extends Controller
         $course->delete();
 
         return redirect()->route('dashboard.courses.index')->with('success', 'تم حذف الدورة وملفاتها بنجاح.');
+    }
+
+    /**
+     * Protected promo/course video stream (signed URL; blocks download managers).
+     */
+    public function streamPromo(Request $request, Course $course)
+    {
+        abort_unless($request->hasValidSignature(), 403, 'Invalid or expired video link.');
+        abort_unless(filled($course->video), 404);
+
+        $path = VideoDownloadGuard::absolutePath($course->video);
+        abort_unless($path, 404);
+
+        return VideoDownloadGuard::fileResponse($path);
     }
 
     protected function validateCourse(Request $request, $id = null)
@@ -1245,16 +1269,17 @@ class CourseController extends Controller
                             $payload['video_embed_url'] = $embedUrl !== '' ? $embedUrl : $item?->video_embed_url;
                         }
                         if ($item?->video_path) {
-                            Storage::disk('public')->delete($item->video_path);
+                            \App\Support\VideoDownloadGuard::deleteStored($item->video_path);
                         }
                         $payload['video_path'] = null;
                     } elseif ($request->hasFile($fileKey)) {
                         if ($item?->video_path) {
-                            Storage::disk('public')->delete($item->video_path);
+                            \App\Support\VideoDownloadGuard::deleteStored($item->video_path);
                         }
                         $payload['video_path'] = WatermarkedUpload::store(
                             $request->file($fileKey),
-                            'courses/path-videos'
+                            'courses/path-videos',
+                            \App\Support\VideoDownloadGuard::storageDisk()
                         );
                         $payload['video_embed_url'] = null;
                         $payload['video_duration_seconds'] = max(0, (int) ($itemData['video_duration_seconds'] ?? 0));
@@ -1262,14 +1287,14 @@ class CourseController extends Controller
                         // Stay on upload mode: keep existing file, drop embed
                         $payload['video_embed_url'] = null;
                         if (!empty($itemData['remove_video']) && $item?->video_path) {
-                            Storage::disk('public')->delete($item->video_path);
+                            \App\Support\VideoDownloadGuard::deleteStored($item->video_path);
                             $payload['video_path'] = null;
                             $payload['video_duration_seconds'] = 0;
                         }
                     }
                 } else {
                     if ($item?->video_path) {
-                        Storage::disk('public')->delete($item->video_path);
+                        \App\Support\VideoDownloadGuard::deleteStored($item->video_path);
                     }
                     if ($item?->video_thumbnail_path) {
                         Storage::disk('public')->delete($item->video_thumbnail_path);
@@ -1385,7 +1410,7 @@ class CourseController extends Controller
     protected function deletePathItemMedia(CoursePathItem $item): void
     {
         if ($item->video_path) {
-            Storage::disk('public')->delete($item->video_path);
+            \App\Support\VideoDownloadGuard::deleteStored($item->video_path);
         }
         if ($item->video_thumbnail_path) {
             Storage::disk('public')->delete($item->video_thumbnail_path);

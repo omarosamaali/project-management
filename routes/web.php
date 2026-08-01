@@ -14,6 +14,9 @@ use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseLectureController;
 
+Route::get('/courses/{course}/video/stream', [CourseController::class, 'streamPromo'])
+    ->name('courses.video.stream');
+
 Route::patch('special-request/payment/{payment}/mark-paid', [SpecialRequestController::class, 'markPaymentAsPaid'])
     ->name('special-request.payment.mark-paid');
 
@@ -93,9 +96,8 @@ Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(func
     Route::post('/courses/{course}/path/items/{item}/exam', [\App\Http\Controllers\CoursePathController::class, 'submitExam'])
         ->name('courses.path.exam');
 });
-Route::post('/resend-otp/{type}', [App\Http\Controllers\Auth\OTPController::class, 'resend'])->name('otp.resend');    
 Route::middleware(['auth'])->group(function () {
-    // صفحة الـ OTP
+    Route::post('/resend-otp/{type}', [OTPController::class, 'resend'])->name('otp.resend');
     Route::get('/verify-otp', [OTPController::class, 'showVerifyPage'])->name('otp.verify');
     Route::post('/verify-otp/whatsapp', [OTPController::class, 'verifyWhatsapp'])->name('otp.whatsapp.check');
     Route::post('/verify-otp/email', [OTPController::class, 'verifyEmail'])->name('otp.email.check');

@@ -6,8 +6,14 @@
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const isAllowedImage = (file) => {
+            if (!file) return false;
+            if (file.type && file.type.startsWith('image/')) return true;
+            return /\.(jpe?g|png|webp|gif|svg)$/i.test(file.name || '');
+        };
+
         const applyFile = (zone, file) => {
-            if (!file || !file.type.startsWith('image/')) return;
+            if (!isAllowedImage(file)) return;
 
             const field = zone.closest('.drag-image-field');
             const input = zone.querySelector('.drag-image-input');
@@ -26,6 +32,8 @@
                 if (preview) {
                     preview.src = event.target.result;
                     preview.classList.remove('hidden');
+                    preview.classList.toggle('object-contain', /\.svg$/i.test(file.name || ''));
+                    preview.classList.toggle('object-cover', !/\.svg$/i.test(file.name || ''));
                 }
             };
             reader.readAsDataURL(file);

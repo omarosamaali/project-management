@@ -56,6 +56,31 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        if ($user && method_exists($user, 'needsEmailOtpVerification') && $user->needsEmailOtpVerification()) {
+            try {
+                if (empty($user->otp)) {
+                    app(\App\Http\Controllers\Auth\OTPController::class)->issueAndSendEmailOtp($user);
+                }
+            } catch (\Exception $e) {
+                \Log::error('[LOGIN] فشل إرسال OTP للبريد: '.$e->getMessage());
+            }
+
+            AuthUi::resolve(AuthUi::ACADEMY);
+
+            $redirect = $request->input('redirect') ?: $request->query('redirect');
+            if (is_string($redirect) && $redirect !== '') {
+                $host = parse_url($redirect, PHP_URL_HOST);
+                $appHost = parse_url(url('/'), PHP_URL_HOST);
+                if ($host === null || $host === $appHost) {
+                    session(['url.intended' => $redirect]);
+                }
+            }
+
+            return redirect()
+                ->route('otp.verify')
+                ->with('success', 'أدخل رمز التحقق المرسل إلى بريدك الإلكتروني لتفعيل الحساب.');
+        }
+
         $redirect = $request->input('redirect') ?: $request->query('redirect');
         if (is_string($redirect) && $redirect !== '') {
             $host = parse_url($redirect, PHP_URL_HOST);

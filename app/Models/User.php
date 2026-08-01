@@ -241,6 +241,23 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\User> */
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Builder<\App\Models\User> */
+    public function scopePendingTrainers($query)
+    {
+        return $query->where('role', 'trainer')->where('status', 'pending');
+    }
+
+    public static function pendingTrainersCount(): int
+    {
+        return static::query()->pendingTrainers()->count();
+    }
+
     public function isTrainer(): bool
     {
         return $this->role === 'trainer';
@@ -249,6 +266,12 @@ class User extends Authenticatable
     public function isTrainee(): bool
     {
         return $this->role === 'trainee';
+    }
+
+    /** Trainee must confirm email OTP before using the academy. */
+    public function needsEmailOtpVerification(): bool
+    {
+        return $this->isTrainee() && is_null($this->email_verified_at);
     }
 
     /** Modern academy shell (top/bottom nav) instead of main admin dashboard chrome. */

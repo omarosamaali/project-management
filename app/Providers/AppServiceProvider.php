@@ -49,9 +49,20 @@ class AppServiceProvider extends ServiceProvider
         View::composer(['layouts.app', 'dashboard'], function ($view) {
             $attendanceWidget = null;
             $support = null;
+            $pendingTrainersCount = 0;
 
             if (Auth::check() && Auth::user()->role == 'client') {
                 $support = Support::where('user_id', Auth::user()->id)->first();
+            }
+
+            if (Auth::check() && Auth::user()->isAdmin()) {
+                try {
+                    $pendingTrainersCount = \App\Models\User::pendingTrainersCount();
+                } catch (\Throwable $e) {
+                    Log::warning('[PENDING_TRAINERS] count failed', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             if (Auth::check() && WorkAttendanceState::isEmployeePartner(Auth::user())) {
@@ -77,6 +88,7 @@ class AppServiceProvider extends ServiceProvider
 
             $view->with('support', $support);
             $view->with('attendanceWidget', $attendanceWidget);
+            $view->with('pendingTrainersCount', $pendingTrainersCount);
         });
     }
 }

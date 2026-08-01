@@ -10,7 +10,7 @@
     $courseName = $locale === 'en' ? ($course->name_en ?: $course->name_ar) : $course->name_ar;
     $description = $locale === 'en' ? ($course->description_en ?: $course->description_ar) : $course->description_ar;
     $hasVideo = !empty($course->video);
-    $heroMediaUrl = $hasVideo ? Storage::url($course->video) : Storage::url($course->main_image);
+    $heroMediaUrl = $hasVideo ? $course->videoUrl() : Storage::url($course->main_image);
     $isRecorded = $course->isRecorded();
     $featuredRatings = $course->featuredRatings;
     $typeLabel = match ($course->location_type) {
@@ -504,8 +504,11 @@
     {{-- Hero --}}
     <section class="course-hero" id="courseHero">
         @if($hasVideo)
+        <div data-ac-video-protect class="contents">
         <video id="courseHeroVideo" class="hero-media" src="{{ $heroMediaUrl }}" playsinline preload="metadata"
+            controlsList="nodownload noplaybackrate" disablePictureInPicture oncontextmenu="return false;"
             poster="{{ $course->main_image ? Storage::url($course->main_image) : '' }}"></video>
+        </div>
         <button type="button" id="courseHeroPlayBtn" class="course-hero-play" aria-label="تشغيل الفيديو">
             <svg class="course-hero-play-icon" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <circle cx="48" cy="48" r="44" stroke="currentColor" stroke-width="3.5"/>
@@ -1198,4 +1201,5 @@
     @endauth
 </script>
 @include('academy.partials.wishlist-script')
+<x-video-protect />
 @endsection

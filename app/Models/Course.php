@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\URL;
 
 class Course extends Model
 {
@@ -1081,6 +1082,7 @@ class Course extends Model
 
     /**
      * Absolute URL to the optional course promo video, or null if none.
+     * Uses a short-lived signed stream route — never a public /storage/ file URL.
      */
     public function videoUrl(): ?string
     {
@@ -1088,7 +1090,16 @@ class Course extends Model
             return null;
         }
 
-        return self::publicBaseUrl() . '/storage/' . ltrim($this->video, '/');
+        return self::signedPromoStreamUrl($this);
+    }
+
+    public static function signedPromoStreamUrl(self|int $course, int $minutes = 90): string
+    {
+        return URL::temporarySignedRoute(
+            'courses.video.stream',
+            now()->addMinutes($minutes),
+            ['course' => $course instanceof self ? $course->id : $course],
+        );
     }
 
     /**

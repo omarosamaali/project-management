@@ -113,10 +113,9 @@
     }
     @media (max-width: 639px) {
         .snap-slider-wrap { padding-inline: 2.35rem; }
+        /* Let JS equalize widths; only nudge a usable min size on small screens */
         .cat-slide {
-            width: max-content !important;
             min-width: 13rem !important;
-            max-width: none !important;
         }
     }
     .snap-slider-wrap.is-nav-hidden { padding-inline: 0; }
@@ -183,9 +182,9 @@
             0 22px 44px rgba(6, 21, 37, .12);
     }
     .cat-slide img {
-        width: 3.1rem; height: 3.1rem; border-radius: .9rem; object-fit: cover;
-        border: 2px solid rgba(255,255,255,.85); box-shadow: 0 6px 16px rgba(0,0,0,.18);
-        flex-shrink: 0; transition: transform .35s ease; background: #fff;
+        width: 3.1rem; height: 3.1rem; border-radius: 0; object-fit: contain;
+        border: 0; box-shadow: none; background: transparent;
+        flex-shrink: 0; transition: transform .35s ease;
     }
     .cat-slide:hover img { transform: scale(1.06) rotate(-3deg); }
     .cat-slide > span {
@@ -264,10 +263,12 @@
     .soni-grid {
         display: grid; grid-template-columns: 1fr; gap: 1.15rem;
         align-items: stretch;
+        width: 100%;
+        min-width: 0;
     }
     @media (min-width: 640px) { .soni-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
-    @media (min-width: 1024px) { .soni-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1.35rem; } }
-    @media (min-width: 1400px) {
+    @media (min-width: 1100px) { .soni-grid { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1.35rem; } }
+    @media (min-width: 1500px) {
         .soni-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
         .soni-grid.is-bento > .soni-card:first-child {
             grid-column: span 2; grid-row: span 1;
@@ -936,7 +937,17 @@
         margin-bottom: 1.25rem; transition: color .2s;
     }
     .academy-back:hover { color: var(--action); }
-    .academy-toolbar { display: flex; flex-direction: column; gap: .85rem; margin-bottom: 1.5rem; }
+    .academy-toolbar {
+        display: flex; flex-direction: column; gap: .85rem; margin-bottom: 1.5rem;
+        width: 100%; min-width: 0;
+    }
+    .academy-toolbar .academy-search,
+    .academy-toolbar .academy-filters {
+        width: 100%; min-width: 0;
+    }
+    @media (min-width: 900px) and (max-width: 1199px) {
+        .academy-chip { padding: .45rem .8rem; font-size: .8rem; }
+    }
     .academy-more-wrap { display: flex; justify-content: center; margin-top: 2rem; }
     .academy-more-btn {
         display: inline-flex; align-items: center; gap: .55rem;

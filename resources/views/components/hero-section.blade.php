@@ -365,14 +365,29 @@
         color: #f7e7b8;
     }
     .ach-stat span {
-        display: block;
         margin-top: .25rem;
         font-size: .68rem;
         font-weight: 700;
         color: rgba(255,255,255,.7);
-        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        white-space: normal;
+    }
+    @media (min-width: 768px) and (max-width: 1399px) {
+        .ach-title { font-size: clamp(1.75rem, 4.2vw, 2.75rem); }
+        .ach-inner {
+            padding-inline: clamp(1rem, 2.5vw, 1.75rem);
+        }
+        .ach-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .55rem;
+        }
+        .ach-stat { padding: .65rem .55rem; }
+        .ach-stat strong { font-size: clamp(1rem, 1.8vw, 1.25rem); }
+        .ach-stat span { font-size: .62rem; }
     }
 
     .ach-stage {

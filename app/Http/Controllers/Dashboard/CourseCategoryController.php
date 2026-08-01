@@ -115,7 +115,20 @@ class CourseCategoryController extends Controller
             'title_en' => 'required|string|max:255',
             'description_ar' => 'nullable|string|max:5000',
             'description_en' => 'nullable|string|max:5000',
-            'icon' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,svg|max:2048',
+            'icon' => [
+                'nullable',
+                'file',
+                'max:2048',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (! $value instanceof \Illuminate\Http\UploadedFile) {
+                        return;
+                    }
+                    $ext = strtolower($value->getClientOriginalExtension());
+                    if (! in_array($ext, ['jpeg', 'jpg', 'png', 'webp', 'gif', 'svg'], true)) {
+                        $fail('صيغة الأيقونة يجب أن تكون JPG أو PNG أو WEBP أو GIF أو SVG.');
+                    }
+                },
+            ],
             'is_active' => 'nullable|boolean',
             'remove_icon' => 'nullable|boolean',
         ]);

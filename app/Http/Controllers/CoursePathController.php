@@ -7,10 +7,12 @@ use App\Models\CoursePathItem;
 use App\Models\CoursePathProgress;
 use App\Models\Payment;
 use App\Support\ShufflesExamQuestions;
+use App\Support\VideoDownloadGuard;
 use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 
 class CoursePathController extends Controller
 {
@@ -279,27 +281,46 @@ class CoursePathController extends Controller
     }
 
     /**
-     * Stream an uploaded lesson video with HTTP Range support (required for seeking).
+     * Stream an uploaded lesson video (auth + anti-download guards; Range for seeking).
      */
-    public function stream(Course $course, CoursePathItem $item)
+    public function stream(Request $request, Course $course, CoursePathItem $item)
     {
-        $this->enrolledPayment($course);
+        abort_unless($request->hasValidSignature(), 403, 'Invalid or expired video link.');
+
+        $user = Auth::user();
+        abort_unless($user, 403);
+
         $item->loadMissing('unit');
         abort_unless($item->unit && (int) $item->unit->course_id === (int) $course->id, 404);
-        abort_unless($course->canUserAccessPathItem(Auth::user(), $item), 403);
         abort_unless($item->isLesson() && $item->video_path, 404);
 
-        $path = \Illuminate\Support\Facades\Storage::disk('public')->path($item->video_path);
-        abort_unless(is_file($path), 404);
+        $isStaff = $user->isAdmin()
+            || (int) ($course->trainer_id ?? 0) === (int) $user->id;
 
-        $mime = mime_content_type($path) ?: 'video/mp4';
+        if (! $isStaff) {
+            $this->enrolledPayment($course);
+            abort_unless($course->canUserAccessPathItem($user, $item), 403);
+        }
 
-        return response()->file($path, [
-            'Content-Type' => $mime,
-            'Accept-Ranges' => 'bytes',
-            'Cache-Control' => 'private, max-age=0, must-revalidate',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        $path = VideoDownloadGuard::absolutePath($item->video_path);
+        abort_unless($path, 404);
+
+        return VideoDownloadGuard::fileResponse($path);
+    }
+
+    /**
+     * Temporary signed playback URL for a lesson file (never expose /storage/…).
+     */
+    public static function signedStreamUrl(Course|int $course, CoursePathItem|int $item, int $minutes = 90): string
+    {
+        return URL::temporarySignedRoute(
+            'dashboard.courses.path.stream',
+            now()->addMinutes($minutes),
+            [
+                'course' => $course instanceof Course ? $course->id : $course,
+                'item' => $item instanceof CoursePathItem ? $item->id : $item,
+            ],
+        );
     }
 
     /**

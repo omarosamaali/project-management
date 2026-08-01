@@ -260,11 +260,12 @@
             @php
                 $playerSrc = $playback['src'];
                 if (($playback['provider'] ?? '') === 'html5' && $current->video_path) {
-                    $playerSrc = route('dashboard.courses.path.stream', [$course, $current]);
+                    $playerSrc = \App\Http\Controllers\CoursePathController::signedStreamUrl($course, $current);
                 }
             @endphp
             <div class="player-shell"
                 id="lessonPlayerMount"
+                data-ac-video-protect
                 data-item-id="{{ $current->id }}"
                 data-provider="{{ $playback['provider'] }}"
                 data-src="{{ $playerSrc }}"
@@ -276,7 +277,9 @@
                 @if($progress->get($current->id)?->is_completed) data-completed="1" @endif>
                 <div class="wm-media-wrap" style="position:relative;width:100%;height:100%;">
                 @if($playback['provider'] === 'html5')
-                <video id="lessonVideo" playsinline preload="metadata" controlsList="nodownload"
+                <video id="lessonVideo" playsinline preload="metadata"
+                    controlsList="nodownload noplaybackrate" disablePictureInPicture
+                    oncontextmenu="return false;"
                     src="{{ $playerSrc }}"
                     @if(!empty($playback['poster'])) poster="{{ $playback['poster'] }}" @endif></video>
                 @else
@@ -1196,4 +1199,5 @@
     'ratingAutoOpen' => ($pathCompletion['percent'] >= 100),
 ])
 @endif
+<x-video-protect />
 @endsection

@@ -258,7 +258,13 @@
                             class="{{ request()->routeIs('dashboard.trainers.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
                                 class="{{ request()->routeIs('dashboard.trainers.*') ? 'text-white' : '' }} fas fa-user-tie text-gray-500 pl-2"></i>
-                            <span class="ml-3">{{ __('messages.trainers_accounts') }}</span>
+                            <span class="ml-3 flex-1">{{ __('messages.trainers_accounts') }}</span>
+                            @if(($pendingTrainersCount ?? 0) > 0)
+                            <span class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold leading-none"
+                                title="{{ __('messages.trainer_pending_badge', ['count' => $pendingTrainersCount]) }}">
+                                {{ $pendingTrainersCount > 99 ? '99+' : $pendingTrainersCount }}
+                            </span>
+                            @endif
                         </a>
                     </li>
                     <li>

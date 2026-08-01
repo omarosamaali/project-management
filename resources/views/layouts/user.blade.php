@@ -63,61 +63,79 @@
             font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
             background: #f0f4f8;
         }
+        /* Desktop full nav from 1024px; below that: logo + lang + hamburger. */
+        html:has(body.is-academy-site),
+        body.is-academy-site {
+            overflow-x: clip;
+            max-width: 100%;
+        }
         .academy-public-nav {
             background: rgba(6, 21, 37, .94) !important;
             border-bottom: 1px solid rgba(255,255,255,.08);
             box-shadow: 0 12px 32px rgba(6,21,37,.28) !important;
             backdrop-filter: blur(14px);
+            width: 100%;
+            max-width: 100%;
+            overflow-x: clip;
         }
         .academy-public-nav .ac-pub-inner {
-            max-width: min(92rem, 100%);
-            margin: 0 auto;
-            padding: 0 clamp(1rem, 3vw, 2rem);
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 0 clamp(0.85rem, 2.2vw, 2.25rem);
+            box-sizing: border-box;
         }
         .academy-public-nav .ac-pub-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
             align-items: center;
             width: 100%;
+            max-width: 100%;
+            min-width: 0;
             min-height: 5.25rem;
-            gap: .75rem;
+            column-gap: 0.5rem;
         }
-        .academy-public-nav .ac-pub-grow {
-            flex: 1 1 0;
-            min-width: clamp(1rem, 3vw, 2.5rem);
-            height: 1px;
-            pointer-events: none;
+        .academy-public-nav .ac-pub-cluster {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+        .academy-public-nav .ac-pub-cluster--start {
+            justify-content: flex-end;
+        }
+        .academy-public-nav .ac-pub-cluster--end {
+            justify-content: flex-start;
+        }
+        .academy-public-nav .ac-pub-cluster--end .ac-pub-auth {
+            margin-inline-start: auto;
+            flex-shrink: 0;
         }
         .academy-public-nav .ac-pub-side {
             display: flex;
             align-items: center;
-            gap: .3rem;
-            flex: 0 0 auto;
+            gap: .45rem;
+            flex: 0 1 auto;
             min-width: 0;
+            max-width: 100%;
         }
         .academy-public-nav .ac-pub-logo {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             flex: 0 0 auto;
+            justify-self: center;
             padding-block: .35rem;
+            padding-inline: 0;
+            z-index: 1;
         }
-        .academy-public-nav .ac-pub-auth-balance,
         .academy-public-nav .ac-pub-auth {
             display: none;
             align-items: center;
             gap: .45rem;
             flex: 0 0 auto;
-            flex-shrink: 0;
-        }
-        .academy-public-nav .ac-pub-auth-balance {
-            visibility: hidden;
-            pointer-events: none;
-        }
-        @media (min-width: 768px) {
-            .academy-public-nav .ac-pub-row.has-auth .ac-pub-auth-balance,
-            .academy-public-nav .ac-pub-row.has-auth .ac-pub-auth {
-                display: inline-flex;
-            }
         }
         .academy-public-nav .ac-pub-logo img {
             height: clamp(3.4rem, 5.2vw, 4.6rem);
@@ -134,22 +152,114 @@
             border-radius: 999px;
             background: rgba(255,255,255,.06);
             border: 1px solid rgba(255,255,255,.08);
-            flex: 0 0 auto;
-            width: max-content;
+            flex: 0 1 auto;
+            width: auto;
             max-width: 100%;
             flex-wrap: nowrap;
+            min-width: 0;
         }
-        @media (min-width: 768px) {
+        /* < 1024: compact bar — logo | lang + hamburger */
+        @media (max-width: 1023px) {
+            .academy-public-nav .ac-pub-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: .5rem;
+                min-height: 4.25rem;
+            }
+            .academy-public-nav .ac-pub-cluster--start { display: none; }
+            .academy-public-nav .ac-pub-cluster--end {
+                width: auto;
+                flex: 0 0 auto;
+                justify-content: flex-end;
+            }
+            .academy-public-nav .ac-pub-cluster--end .ac-pub-auth {
+                margin-inline-start: 0;
+            }
+            .academy-public-nav .ac-pub-side-end {
+                gap: .15rem;
+            }
+            .academy-public-nav .ac-pub-links,
+            .academy-public-nav .ac-pub-auth {
+                display: none !important;
+            }
+            .academy-public-nav .ac-pub-mobile {
+                display: flex !important;
+                align-items: center;
+                gap: .1rem;
+                direction: ltr; /* keep hamburger then lang as in compact design */
+            }
+            .academy-public-nav .ac-pub-logo img {
+                height: clamp(2.85rem, 9vw, 3.6rem);
+                max-width: min(12rem, 52vw);
+            }
+        }
+        @media (min-width: 1024px) {
             .academy-public-nav .ac-pub-links { display: inline-flex; }
             .academy-public-nav .ac-pub-mobile { display: none !important; }
-        }
-        @media (max-width: 767px) {
-            .academy-public-nav .ac-pub-grow { display: none; }
-            .academy-public-nav .ac-pub-row {
-                justify-content: space-between;
+            .academy-public-nav .ac-pub-row.has-auth .ac-pub-auth {
+                display: inline-flex;
             }
-            .academy-public-nav .ac-pub-side-start { display: none; }
-            .academy-public-nav .ac-pub-side-end { margin-inline-start: auto; }
+            .ac-pub-drawer-host { display: none !important; }
+
+            /* Space between logo and side nav: large on wide screens, shrinks toward 1024. */
+            .academy-public-nav .ac-pub-row {
+                column-gap: clamp(0.5rem, -2.15rem + 5.2vw, 5.5rem);
+            }
+            .academy-public-nav .ac-pub-logo {
+                padding-inline: clamp(0rem, -1.1rem + 2.4vw, 2.75rem);
+            }
+        }
+        /* 1024–1279: tight chrome so Arabic labels fit without overflow */
+        @media (min-width: 1024px) and (max-width: 1279px) {
+            .academy-public-nav .ac-pub-inner { padding: 0 .75rem; }
+            .academy-public-nav .ac-pub-row {
+                min-height: 4.35rem;
+            }
+            .academy-public-nav .ac-pub-cluster { gap: .3rem; }
+            .academy-public-nav .ac-pub-side { gap: .3rem; }
+            .academy-public-nav .ac-pub-link {
+                padding: .4rem .55rem;
+                font-size: .72rem;
+                gap: .25rem;
+            }
+            .academy-public-nav .ac-pub-cta {
+                padding: .42rem .7rem;
+                font-size: .72rem;
+                gap: .3rem;
+                box-shadow: 0 6px 14px rgba(255,61,122,.28);
+            }
+            .academy-public-nav .ac-pub-links { gap: .12rem; padding: .16rem; }
+            .academy-public-nav .ac-pub-profile-name,
+            .academy-public-nav .ac-pub-logout span { display: none; }
+            .academy-public-nav .ac-pub-profile {
+                padding: .35rem;
+                max-width: none;
+            }
+            .academy-public-nav .ac-pub-logout { padding: .45rem .55rem; }
+            .academy-public-nav .ac-pub-logo img {
+                height: clamp(2.7rem, 3.4vw, 3.35rem);
+                max-width: 9.5rem;
+            }
+        }
+        /* 1280–1599: slightly roomier, still icon-only auth */
+        @media (min-width: 1280px) and (max-width: 1599px) {
+            .academy-public-nav .ac-pub-link {
+                padding: .48rem .72rem;
+                font-size: .8rem;
+            }
+            .academy-public-nav .ac-pub-cta {
+                padding: .52rem .9rem;
+                font-size: .8rem;
+            }
+            .academy-public-nav .ac-pub-profile-name,
+            .academy-public-nav .ac-pub-logout span { display: none; }
+            .academy-public-nav .ac-pub-profile { padding: .4rem; max-width: none; }
+            .academy-public-nav .ac-pub-logout { padding: .5rem .65rem; }
+            .academy-public-nav .ac-pub-logo img {
+                height: clamp(3rem, 3.8vw, 3.85rem);
+            }
+            .academy-public-nav .ac-pub-row { min-height: 4.6rem; }
         }
         .academy-public-nav .ac-pub-link {
             display: inline-flex; align-items: center; gap: .4rem;
@@ -222,127 +332,113 @@
         <div class="{{ $isAcademyPage ? 'ac-pub-inner' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' }}">
             <div class="{{ $isAcademyPage ? 'ac-pub-row'.(auth()->check() ? ' has-auth' : '') : 'flex justify-between h-16' }}">
                 @if($isAcademyPage)
-                {{-- RTL flex: first item sits on the right, last on the left.
-                     Order: balance | start-links | grow | logo | grow | end-links | auth --}}
-                @auth
-                <div class="ac-pub-auth-balance" aria-hidden="true">
-                    <span class="ac-pub-profile">
-                        <span class="ac-pub-profile-avatar">{{ mb_substr(Auth::user()->name, 0, 1) }}</span>
-                        <span class="ac-pub-profile-name">{{ Auth::user()->name }}</span>
-                    </span>
-                    <span class="ac-pub-logout">
-                        <i class="fas fa-sign-out-alt text-xs"></i>
-                        <span>{{ __('messages.logout') }}</span>
-                    </span>
-                </div>
-                @endauth
-
-                <div class="ac-pub-side ac-pub-side-start">
-                    <div class="ac-pub-links">
-                        <a href="{{ route('academy.index') }}" class="ac-pub-link {{ request()->routeIs('academy.index') ? 'is-active' : '' }}">
-                            {{ __('messages.academy') }}
-                        </a>
-                        <a href="{{ route('academy.courses') }}" class="ac-pub-link {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') || request()->routeIs('courses.show') ? 'is-active' : '' }}">
-                            {{ __('messages.academy_view_all_courses') }}
-                        </a>
-                        <a href="{{ route('academy.trainers.index') }}" class="ac-pub-link {{ request()->routeIs('academy.trainers.*') ? 'is-active' : '' }}">
-                            {{ __('messages.academy_trainers_kicker') }}
-                        </a>
-                        @auth
-                        <a href="{{ route('academy.wishlist.index') }}" class="ac-pub-link {{ request()->routeIs('academy.wishlist.*') ? 'is-active' : '' }}">
-                            <i class="fas fa-heart text-xs"></i>
-                            {{ __('messages.academy_wishlist') }}
-                        </a>
-                        @endauth
+                {{-- Desktop (≥1024): 1fr | logo | 1fr. Below: logo + lang/hamburger. --}}
+                <div class="ac-pub-cluster ac-pub-cluster--start">
+                    <div class="ac-pub-side ac-pub-side-start">
+                        <div class="ac-pub-links">
+                            <a href="{{ route('academy.index') }}" class="ac-pub-cta {{ request()->routeIs('academy.index') ? 'is-active' : '' }}">
+                                {{ __('messages.academy') }}
+                            </a>
+                            <a href="{{ route('academy.courses') }}" class="ac-pub-link {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') || request()->routeIs('courses.show') ? 'is-active' : '' }}">
+                                {{ __('messages.academy_view_all_courses') }}
+                            </a>
+                            <a href="{{ route('academy.trainers.index') }}" class="ac-pub-link {{ request()->routeIs('academy.trainers.*') ? 'is-active' : '' }}">
+                                {{ __('messages.academy_trainers_kicker') }}
+                            </a>
+                            @auth
+                            <a href="{{ route('academy.wishlist.index') }}" class="ac-pub-link {{ request()->routeIs('academy.wishlist.*') ? 'is-active' : '' }}">
+                                <i class="fas fa-heart text-xs"></i>
+                                {{ __('messages.academy_wishlist') }}
+                            </a>
+                            @endauth
+                        </div>
                     </div>
                 </div>
-
-                <div class="ac-pub-grow" aria-hidden="true"></div>
 
                 <a href="{{ $navHome }}" class="ac-pub-logo">
                     <img src="{{ $navLogo }}" alt="{{ __('messages.academy') }}">
                 </a>
 
-                <div class="ac-pub-grow" aria-hidden="true"></div>
+                <div class="ac-pub-cluster ac-pub-cluster--end">
+                    <div class="ac-pub-side ac-pub-side-end">
+                        <div class="ac-pub-links">
+                            @auth
+                            <a href="{{ route('dashboard') }}" class="ac-pub-link {{ request()->routeIs('dashboard') || request()->routeIs('dashboard.*') ? 'is-active' : '' }}">
+                                <i class="fas fa-gauge-high text-xs"></i>
+                                {{ __('messages.dashboard') }}
+                            </a>
+                            @else
+                            <a href="{{ $loginUrl }}" class="ac-pub-link {{ request()->routeIs('login') ? 'is-active' : '' }}">
+                                {{ __('messages.login') }}
+                            </a>
+                            @endauth
+                            @if (app()->getLocale() == 'ar')
+                            <a href="{{ route('lang.switch', 'en') }}" class="ac-pub-link">English</a>
+                            @else
+                            <a href="{{ route('lang.switch', 'ar') }}" class="ac-pub-link">العربية</a>
+                            @endif
+                            <a href="{{ route('academy.courses') }}" class="ac-pub-cta">
+                                <i class="fas fa-play text-xs"></i>
+                                {{ __('messages.academy_explore_courses') }}
+                            </a>
+                        </div>
 
-                <div class="ac-pub-side ac-pub-side-end">
-                    <div class="ac-pub-links">
-                        @auth
-                        <a href="{{ route('dashboard') }}" class="ac-pub-link {{ request()->routeIs('dashboard') || request()->routeIs('dashboard.*') ? 'is-active' : '' }}">
-                            <i class="fas fa-gauge-high text-xs"></i>
-                            {{ __('messages.dashboard') }}
-                        </a>
-                        @else
-                        <a href="{{ $loginUrl }}" class="ac-pub-link {{ request()->routeIs('login') ? 'is-active' : '' }}">
-                            {{ __('messages.login') }}
-                        </a>
-                        @endauth
-                        @if (app()->getLocale() == 'ar')
-                        <a href="{{ route('lang.switch', 'en') }}" class="ac-pub-link">English</a>
-                        @else
-                        <a href="{{ route('lang.switch', 'ar') }}" class="ac-pub-link">العربية</a>
-                        @endif
-                        <a href="{{ route('academy.courses') }}" class="ac-pub-cta">
-                            <i class="fas fa-play text-xs"></i>
-                            {{ __('messages.academy_explore_courses') }}
-                        </a>
+                        <div class="ac-pub-mobile flex items-center gap-1">
+                            <button type="button" onclick="toggleMobileMenu()" id="mobileMenuToggle"
+                                class="p-2 rounded-lg text-white hover:bg-white/10"
+                                aria-controls="mobileMenu" aria-expanded="false" aria-label="القائمة">
+                                <svg id="menuIcon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 6h16M4 12h16M4 18h16"></path>
+                                </svg>
+                                <svg id="closeIcon" class="h-6 w-6 hidden" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                            @if (app()->getLocale() == 'ar')
+                            <a href="{{ route('lang.switch', 'en') }}"
+                                class="px-3 py-2 rounded-lg transition text-white hover:bg-white/10 flex items-center"
+                                aria-label="English">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                            </a>
+                            @else
+                            <a href="{{ route('lang.switch', 'ar') }}"
+                                class="px-3 py-2 rounded-lg transition text-white hover:bg-white/10 flex items-center"
+                                aria-label="العربية">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                            </a>
+                            @endif
+                        </div>
                     </div>
 
-                    <div class="ac-pub-mobile flex items-center gap-1">
-                        @if (app()->getLocale() == 'ar')
-                        <a href="{{ route('lang.switch', 'en') }}"
-                            class="px-3 py-2 rounded-lg transition text-white hover:bg-white/10 flex items-center"
-                            aria-label="English">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                </path>
-                            </svg>
+                    @auth
+                    <div class="ac-pub-auth">
+                        <a href="{{ route('profile.edit') }}"
+                            class="ac-pub-profile {{ request()->routeIs('profile.*') ? 'is-active' : '' }}"
+                            title="{{ Auth::user()->name }}">
+                            <span class="ac-pub-profile-avatar">{{ mb_substr(Auth::user()->name, 0, 1) }}</span>
+                            <span class="ac-pub-profile-name">{{ Auth::user()->name }}</span>
                         </a>
-                        @else
-                        <a href="{{ route('lang.switch', 'ar') }}"
-                            class="px-3 py-2 rounded-lg transition text-white hover:bg-white/10 flex items-center"
-                            aria-label="العربية">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                </path>
-                            </svg>
-                        </a>
-                        @endif
-                        <button type="button" onclick="toggleMobileMenu()" id="mobileMenuToggle"
-                            class="p-2 rounded-lg text-white hover:bg-white/10"
-                            aria-controls="mobileMenu" aria-expanded="false" aria-label="القائمة">
-                            <svg id="menuIcon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 6h16M4 12h16M4 18h16"></path>
-                            </svg>
-                            <svg id="closeIcon" class="h-6 w-6 hidden" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="ac-pub-logout" title="{{ __('messages.logout') }}">
+                                <i class="fas fa-sign-out-alt text-xs"></i>
+                                <span>{{ __('messages.logout') }}</span>
+                            </button>
+                        </form>
                     </div>
+                    @endauth
                 </div>
-
-                @auth
-                <div class="ac-pub-auth">
-                    <a href="{{ route('profile.edit') }}"
-                        class="ac-pub-profile {{ request()->routeIs('profile.*') ? 'is-active' : '' }}"
-                        title="{{ Auth::user()->name }}">
-                        <span class="ac-pub-profile-avatar">{{ mb_substr(Auth::user()->name, 0, 1) }}</span>
-                        <span class="ac-pub-profile-name">{{ Auth::user()->name }}</span>
-                    </a>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="ac-pub-logout" title="{{ __('messages.logout') }}">
-                            <i class="fas fa-sign-out-alt text-xs"></i>
-                            <span>{{ __('messages.logout') }}</span>
-                        </button>
-                    </form>
-                </div>
-                @endauth
                 @else
                 <div class="flex items-center rtl:ml-auto">
                     <a href="{{ $navHome }}">
@@ -477,12 +573,12 @@
     </nav>
 
     <div id="mobileMenuBackdrop"
-        class="fixed inset-0 z-[55] bg-black/45 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"
+        class="fixed inset-0 z-[55] bg-black/45 opacity-0 pointer-events-none transition-opacity duration-300 {{ $isAcademyPage ? 'ac-pub-drawer-host' : 'md:hidden' }}"
         onclick="closeMobileMenu()" aria-hidden="true"></div>
 
     <aside id="mobileMenu"
         class="mobile-drawer fixed top-0 bottom-0 z-[60] w-[min(20rem,86vw)] max-w-full shadow-2xl
-            flex flex-col md:hidden {{ $isAcademyPage ? 'academy-drawer' : 'bg-white' }}"
+            flex flex-col {{ $isAcademyPage ? 'ac-pub-drawer-host academy-drawer' : 'md:hidden bg-white' }}"
         role="dialog" aria-modal="true" aria-label="القائمة" hidden>
 
         <div class="flex items-center justify-between gap-3 px-4 py-3 border-b {{ $isAcademyPage ? '' : 'border-gray-100' }}">

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Auth\OTPController;
+use App\Mail\TrainerPendingApprovalMail;
+use App\Models\AppNotification;
 use App\Models\CourseCategory;
 use App\Models\User;
 use App\Services\WhatsAppOTPService;
@@ -13,6 +16,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -133,6 +138,7 @@ class RegisteredUserController extends Controller
         }
 
         $accountType = $isAcademy ? 'personal' : $request->account_type;
+        $isTrainee = $role === 'trainee';
 
         $user = User::create([
             'name' => $request->name,
@@ -142,7 +148,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
-            'email_verified_at' => now(),
+            'email_verified_at' => $isTrainee ? null : now(),
             'country' => $request->country,
             'role' => $role,
             'status' => $isTrainer ? 'pending' : 'active',
@@ -167,13 +173,42 @@ class RegisteredUserController extends Controller
                 'تسجيل حسابات'
             );
         } catch (\Exception $e) {
-            \Log::error("[REGISTER] فشل إشعار المدير: " . $e->getMessage());
+            Log::error('[REGISTER] فشل إشعار المدير: '.$e->getMessage());
         }
 
         if ($isTrainer) {
+            $this->notifyAdminsOfPendingTrainer($user->fresh(['courseCategory']));
+
             return redirect()
                 ->route('login')
                 ->with('success', __('messages.trainer_register_pending'));
+        }
+
+        if ($isTrainee) {
+            try {
+                app(OTPController::class)->issueAndSendEmailOtp($user);
+            } catch (\Exception $e) {
+                \Log::error('[REGISTER] فشل إرسال OTP للبريد: '.$e->getMessage());
+            }
+
+            Auth::login($user);
+
+            $requestedRedirect = $request->input('redirect') ?: $request->query('redirect');
+            if (is_string($requestedRedirect) && $requestedRedirect !== '') {
+                $host = parse_url($requestedRedirect, PHP_URL_HOST);
+                $appHost = parse_url(url('/'), PHP_URL_HOST);
+                if ($host === null || $host === $appHost) {
+                    session(['url.intended' => $requestedRedirect]);
+                }
+            }
+
+            if ($isAcademy) {
+                AuthUi::resolve(AuthUi::ACADEMY);
+            }
+
+            return redirect()
+                ->route('otp.verify')
+                ->with('success', 'أرسلنا رمز تحقق إلى بريدك الإلكتروني. أدخله لتفعيل حسابك.');
         }
 
         Auth::login($user);
@@ -193,5 +228,52 @@ class RegisteredUserController extends Controller
         };
 
         return redirect($redirect)->with('success', 'تم إنشاء حسابك بنجاح!');
+    }
+
+    /**
+     * In-app notification + email for every admin when a trainer awaits approval.
+     */
+    protected function notifyAdminsOfPendingTrainer(User $trainer): void
+    {
+        $reviewUrl = route('dashboard.trainers.show', $trainer);
+        $title = __('messages.trainer_pending_notification_title');
+        $message = __('messages.trainer_pending_notification_body', [
+            'name' => $trainer->name,
+        ]);
+
+        User::admins()->get()->each(function (User $admin) use ($trainer, $reviewUrl, $title, $message) {
+            try {
+                AppNotification::notify(
+                    $admin->id,
+                    $title,
+                    $message,
+                    $reviewUrl,
+                    'fa-user-clock',
+                    'warning',
+                );
+            } catch (\Throwable $e) {
+                Log::warning('[REGISTER] فشل إشعار التطبيق للأدمن', [
+                    'admin_id' => $admin->id,
+                    'trainer_id' => $trainer->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            if (! filled($admin->email)) {
+                return;
+            }
+
+            try {
+                Mail::to($admin->email, $admin->name)->send(
+                    new TrainerPendingApprovalMail($trainer, $reviewUrl)
+                );
+            } catch (\Throwable $e) {
+                Log::warning('[REGISTER] فشل بريد الأدمن لطلب محاضر', [
+                    'admin_id' => $admin->id,
+                    'trainer_id' => $trainer->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        });
     }
 }

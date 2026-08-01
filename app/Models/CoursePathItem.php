@@ -61,12 +61,18 @@ class CoursePathItem extends Model
 
     public function videoUrl(): ?string
     {
-        if (!$this->video_path) {
+        if (! $this->video_path) {
             return null;
         }
 
-        // Relative URL so playback works regardless of APP_URL vs request host/port
-        return '/storage/' . ltrim(str_replace('\\', '/', $this->video_path), '/');
+        // Never expose /storage/… — only short-lived signed stream URLs.
+        $this->loadMissing('unit');
+        $courseId = $this->unit?->course_id;
+        if (! $courseId || ! auth()->check()) {
+            return null;
+        }
+
+        return \App\Http\Controllers\CoursePathController::signedStreamUrl($courseId, $this->id);
     }
 
     public function thumbnailUrl(): ?string

@@ -19,6 +19,10 @@
 
     RewriteEngine On
 
+    # Never serve protected course videos as static files (force Laravel stream).
+    RewriteRule ^storage/courses/path-videos/ - [F,L]
+    RewriteRule ^storage/courses/videos/ - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

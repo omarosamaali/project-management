@@ -389,8 +389,13 @@
                         الفيديو التعريفي
                     </h3>
                     <x-watermarked-media brand="academy">
-                        <video controls class="w-full max-h-[28rem] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-black"
-                            src="{{ Storage::url($course->video) }}"></video>
+                        <div data-ac-video-protect>
+                            <video controls playsinline
+                                controlsList="nodownload noplaybackrate" disablePictureInPicture
+                                oncontextmenu="return false;"
+                                class="w-full max-h-[28rem] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-black"
+                                src="{{ $course->videoUrl() }}"></video>
+                        </div>
                     </x-watermarked-media>
                 </div>
                 @endif
@@ -1097,4 +1102,5 @@
     });
 </script>
 @endif
+<x-video-protect />
 @endsection
