@@ -37,7 +37,7 @@
         ? __('messages.academy_float_courses_value')
         : '7 '.__('messages.days');
 
-    $waveFill = $isAcademy ? '#f0f4f8' : '#ffffff';
+    $waveFill = $isAcademy ? '#f4f7fb' : '#ffffff';
     $floatTopNum = (int) filter_var($floatTopValue, FILTER_SANITIZE_NUMBER_INT);
     $floatBottomNum = (int) filter_var($floatBottomValue, FILTER_SANITIZE_NUMBER_INT);
 @endphp
