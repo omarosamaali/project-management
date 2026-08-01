@@ -109,7 +109,7 @@
                         </td>
                         <td class="px-4 py-3">
                             <span class="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                                {{ $payment->payment_id ?? 'N/A' }}
+                                {{ $payment->invoiceNumber() }}
                             </span>
                         </td>
                         <td class="px-4 py-3 font-semibold text-gray-900 dark:text-white flex items-center gap-1">

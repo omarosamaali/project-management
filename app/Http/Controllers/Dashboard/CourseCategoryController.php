@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\CourseCategory;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -44,7 +45,7 @@ class CourseCategoryController extends Controller
         $data = $this->validateCategory($request);
 
         if ($request->hasFile('icon')) {
-            $data['icon'] = $request->file('icon')->store('course-categories', 'public');
+            $data['icon'] = WatermarkedUpload::store($request->file('icon'), 'course-categories');
         }
 
         CourseCategory::create($data);
@@ -78,7 +79,7 @@ class CourseCategoryController extends Controller
             if ($courseCategory->icon) {
                 Storage::disk('public')->delete($courseCategory->icon);
             }
-            $data['icon'] = $request->file('icon')->store('course-categories', 'public');
+            $data['icon'] = WatermarkedUpload::store($request->file('icon'), 'course-categories');
         }
 
         $courseCategory->update($data);

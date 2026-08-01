@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -45,6 +46,7 @@ class AcademySettingsController extends Controller
                 Storage::disk('public')->delete($old);
             }
 
+            // Brand asset — do not watermark the logo itself.
             Setting::set(
                 'academy_logo_path',
                 $request->file('academy_logo')->store('academy/settings', 'public')
@@ -59,7 +61,7 @@ class AcademySettingsController extends Controller
 
             Setting::set(
                 'academy_hero_image_path',
-                $request->file('academy_hero_image')->store('academy/settings', 'public')
+                WatermarkedUpload::store($request->file('academy_hero_image'), 'academy/settings')
             );
         }
 

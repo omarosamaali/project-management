@@ -31,6 +31,9 @@
     <form class="space-y-5" method="POST" action="{{ route('login') }}">
         @csrf
         <input type="hidden" name="ui" value="academy">
+        @if(request('redirect'))
+        <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+        @endif
 
         <div>
             <x-input-label for="email" :value="__('messages.email')" />
@@ -67,7 +70,7 @@
     <div class="academy-auth-foot">
         <p>
             {{ __('messages.no_account') }}
-            <a href="{{ \App\Support\AuthUi::registerUrl(['ui' => 'academy']) }}" class="academy-auth-link">
+            <a href="{{ \App\Support\AuthUi::registerUrl(array_filter(['ui' => 'academy', 'redirect' => request('redirect')])) }}" class="academy-auth-link">
                 {{ __('messages.register_now') }}
             </a>
         </p>

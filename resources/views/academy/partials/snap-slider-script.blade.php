@@ -1,22 +1,5 @@
 <script>
 (function () {
-    function animateScroll(track, toLeft, duration = 900) {
-        const from = track.scrollLeft;
-        const change = toLeft - from;
-        if (Math.abs(change) < 1) return Promise.resolve();
-        const start = performance.now();
-        return new Promise((resolve) => {
-            function frame(now) {
-                const t = Math.min(1, (now - start) / duration);
-                const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-                track.scrollLeft = from + change * eased;
-                if (t < 1) requestAnimationFrame(frame);
-                else resolve();
-            }
-            requestAnimationFrame(frame);
-        });
-    }
-
     function setupSnapSlider(wrap) {
         const track = wrap.querySelector('[data-snap-slider]');
         const viewport = wrap.querySelector('.snap-slider-viewport');
@@ -26,27 +9,91 @@
 
         const minSlide = Math.max(160, parseFloat(wrap.getAttribute('data-min-slide')) || 200);
         const fixedSlide = parseFloat(wrap.getAttribute('data-fixed-slide')) || 0;
+        const naturalSlides = wrap.getAttribute('data-natural-slides') === '1';
         const maxPerView = Math.max(1, parseInt(wrap.getAttribute('data-max-per-view') || '0', 10) || 0);
         const reserveSlots = Math.max(0, parseInt(wrap.getAttribute('data-reserve-slots') || '0', 10) || 0);
         let animating = false;
         let index = 0;
 
+        track.classList.add('is-transform-slider');
+        track.style.willChange = 'transform';
+
         const slides = () => Array.from(track.querySelectorAll('.snap-slide'));
         const isRtl = () =>
             getComputedStyle(document.documentElement).direction === 'rtl'
-            || getComputedStyle(track).direction === 'rtl';
+            || getComputedStyle(track).direction === 'rtl'
+            || getComputedStyle(wrap).direction === 'rtl';
+
+        const gapOf = () => {
+            const styles = getComputedStyle(track);
+            return parseFloat(styles.columnGap || styles.gap) || 14.4;
+        };
+
+        const contentWidth = (list, gapVal) => {
+            if (!list.length) return 0;
+            return list.reduce((sum, el, i) => {
+                return sum + el.getBoundingClientRect().width + (i < list.length - 1 ? gapVal : 0);
+            }, 0);
+        };
+
+        const offsetForIndex = (list, i, gapVal) => {
+            let left = 0;
+            for (let n = 0; n < i; n++) {
+                left += list[n].getBoundingClientRect().width + gapVal;
+            }
+            return left;
+        };
+
+        const applyTransform = (offsetPx, animate) => {
+            const rtl = isRtl();
+            const x = rtl ? offsetPx : -offsetPx;
+            track.style.transition = animate
+                ? 'transform 1.05s cubic-bezier(.22,.8,.24,1)'
+                : 'none';
+            track.style.transform = `translate3d(${x}px, 0, 0)`;
+        };
 
         const layout = () => {
             const list = slides();
-            if (!list.length) return { perView: 1, step: minSlide, count: 0 };
-            const styles = getComputedStyle(track);
-            const gapVal = parseFloat(styles.columnGap || styles.gap) || 14.4;
+            if (!list.length) return { perView: 1, step: minSlide, count: 0, natural: false, gap: 0 };
+            const gapVal = gapOf();
             const vw = viewport.clientWidth;
             const maxSlide = Math.max(140, vw);
 
+            if (naturalSlides) {
+                list.forEach((el) => {
+                    el.style.flex = '0 0 auto';
+                    el.style.width = 'max-content';
+                    el.style.minWidth = 'max-content';
+                    el.style.maxWidth = 'none';
+                });
+                void track.offsetWidth;
+                const naturalWidths = list.map((el) => el.getBoundingClientRect().width);
+                const equalW = Math.ceil(Math.max(...naturalWidths, minSlide));
+                list.forEach((el) => {
+                    el.style.width = `${equalW}px`;
+                    el.style.minWidth = `${equalW}px`;
+                    el.style.maxWidth = `${equalW}px`;
+                    el.style.flex = `0 0 ${equalW}px`;
+                });
+                let used = 0;
+                let perView = 0;
+                for (let i = 0; i < list.length; i++) {
+                    const nextW = used + equalW + (i > 0 ? gapVal : 0);
+                    if (nextW <= vw + 0.5) {
+                        used = nextW;
+                        perView++;
+                    } else {
+                        break;
+                    }
+                }
+                perView = Math.max(1, Math.min(perView || 1, list.length));
+                return { perView, step: equalW + gapVal, count: list.length, natural: true, gap: gapVal };
+            }
+
             if (reserveSlots > 0) {
                 const maxFit = Math.max(1, Math.floor((vw + gapVal) / (minSlide + gapVal)));
-                const slots = Math.min(reserveSlots, maxFit);
+                const slots = Math.min(reserveSlots, maxFit, Math.max(1, list.length));
                 const slideW = (vw - gapVal * Math.max(0, slots - 1)) / slots;
                 list.forEach((el) => {
                     el.style.flex = `0 0 ${slideW}px`;
@@ -54,69 +101,116 @@
                     el.style.minWidth = `${slideW}px`;
                     el.style.maxWidth = `${slideW}px`;
                 });
-                return { perView: slots, step: slideW + gapVal, count: list.length };
+                return { perView: slots, step: slideW + gapVal, count: list.length, natural: false, gap: gapVal };
             }
 
             const baseW = fixedSlide > 0 ? Math.min(fixedSlide, maxSlide) : Math.min(minSlide, maxSlide);
             let perView = Math.max(1, Math.floor((vw + gapVal) / (baseW + gapVal)));
             if (maxPerView > 0) perView = Math.min(perView, maxPerView);
-            if (list.length <= perView) perView = list.length;
-            const slideW = Math.min(
-                maxSlide,
-                fixedSlide > 0
-                    ? fixedSlide
-                    : (perView > 0 ? (vw - gapVal * Math.max(0, perView - 1)) / perView : vw)
-            );
+            perView = Math.min(perView, list.length);
+
+            // Fill the viewport when every item fits; otherwise keep the configured card size.
+            const slideW = (list.length <= perView || fixedSlide <= 0)
+                ? (vw - gapVal * Math.max(0, perView - 1)) / perView
+                : Math.min(maxSlide, fixedSlide);
+
             list.forEach((el) => {
                 el.style.flex = `0 0 ${slideW}px`;
                 el.style.width = `${slideW}px`;
                 el.style.minWidth = `${slideW}px`;
                 el.style.maxWidth = `${slideW}px`;
             });
-            return { perView, step: slideW + gapVal, count: list.length };
+            return { perView, step: slideW + gapVal, count: list.length, natural: false, gap: gapVal };
         };
 
-        const maxIndex = (meta) => Math.max(0, meta.count - meta.perView);
+        const maxScrollOffset = (meta) => {
+            const list = slides();
+            const total = contentWidth(list, meta.gap);
+            return Math.max(0, total - viewport.clientWidth);
+        };
+
+        const maxIndex = (meta) => {
+            const maxOff = maxScrollOffset(meta);
+            if (maxOff <= 1) return 0;
+            // Largest index whose offset does not exceed the last full view.
+            if (meta.step <= 0) return 0;
+            return Math.max(0, Math.floor((maxOff + 0.5) / meta.step));
+        };
 
         const syncNav = (meta) => {
-            const show = meta.count > meta.perView;
+            const show = maxScrollOffset(meta) > 1;
             if (prev) prev.hidden = !show;
             if (next) next.hidden = !show;
             wrap.classList.toggle('is-nav-hidden', !show);
             return show;
         };
 
-        const scrollToIndex = async (i, meta) => {
-            if (animating) return;
+        const targetOffset = (meta) => {
+            const list = slides();
+            const raw = meta.natural
+                ? offsetForIndex(list, index, meta.gap)
+                : index * meta.step;
+            return Math.min(raw, maxScrollOffset(meta));
+        };
+
+        const scrollToIndex = (i, meta, animate = true) => {
+            if (animating && animate) return;
             const max = maxIndex(meta);
-            index = ((i % (max + 1)) + (max + 1)) % (max + 1);
-            const rtl = isRtl();
-            const target = rtl ? -(index * meta.step) : index * meta.step;
-            animating = true;
-            await animateScroll(track, target, 1100);
-            animating = false;
+            if (max <= 0) {
+                index = 0;
+                applyTransform(0, false);
+                return;
+            }
+
+            // Loop: past the last full view → back to the start (and reverse).
+            if (i > max) index = 0;
+            else if (i < 0) index = max;
+            else index = i;
+
+            const offset = targetOffset(meta);
+            if (animate) {
+                animating = true;
+                applyTransform(offset, true);
+                window.setTimeout(() => { animating = false; }, 1100);
+            } else {
+                applyTransform(offset, false);
+            }
         };
 
         let meta = layout();
         syncNav(meta);
+        applyTransform(0, false);
 
         const go = (dir) => {
             meta = layout();
-            if (!syncNav(meta)) return;
-            scrollToIndex(index + dir, meta);
+            if (!syncNav(meta)) {
+                index = 0;
+                applyTransform(0, false);
+                return;
+            }
+            scrollToIndex(index + dir, meta, true);
         };
 
-        prev?.addEventListener('click', () => go(-1));
-        next?.addEventListener('click', () => go(1));
+        prev?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            go(-1);
+        });
+        next?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            go(1);
+        });
+
         window.addEventListener('resize', () => {
             meta = layout();
             syncNav(meta);
             const max = maxIndex(meta);
             if (index > max) index = max;
-            const rtl = isRtl();
-            track.scrollLeft = rtl ? -(index * meta.step) : index * meta.step;
+            scrollToIndex(index, meta, false);
         });
 
+        // Autoplay: advance until the last full view, then restart from the beginning.
         let timer = null;
         const enableAuto = wrap.getAttribute('data-autoplay') === '1';
         const start = () => {
@@ -124,15 +218,35 @@
             if (!enableAuto) return;
             meta = layout();
             if (!syncNav(meta)) return;
-            timer = setInterval(() => go(1), 2000);
+            timer = window.setInterval(() => {
+                meta = layout();
+                if (!syncNav(meta)) {
+                    stop();
+                    return;
+                }
+                const max = maxIndex(meta);
+                if (index >= max) {
+                    scrollToIndex(0, meta, true);
+                } else {
+                    scrollToIndex(index + 1, meta, true);
+                }
+            }, 2800);
         };
-        const stop = () => { if (timer) clearInterval(timer); timer = null; };
+        const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
         wrap.addEventListener('mouseenter', stop);
         wrap.addEventListener('mouseleave', start);
-        window.addEventListener('load', () => { meta = layout(); syncNav(meta); start(); });
-        setTimeout(() => { meta = layout(); syncNav(meta); start(); }, 120);
+        wrap.addEventListener('focusin', stop);
+        wrap.addEventListener('focusout', start);
+        window.addEventListener('load', () => { meta = layout(); syncNav(meta); scrollToIndex(index, meta, false); start(); });
+        window.setTimeout(() => { meta = layout(); syncNav(meta); scrollToIndex(index, meta, false); start(); }, 120);
         track.querySelectorAll('img').forEach((img) => {
-            if (!img.complete) img.addEventListener('load', () => { meta = layout(); syncNav(meta); }, { once: true });
+            if (!img.complete) {
+                img.addEventListener('load', () => {
+                    meta = layout();
+                    syncNav(meta);
+                    scrollToIndex(index, meta, false);
+                }, { once: true });
+            }
         });
     }
 

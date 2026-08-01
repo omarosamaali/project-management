@@ -75,42 +75,140 @@
             padding: 0 clamp(1rem, 3vw, 2rem);
         }
         .academy-public-nav .ac-pub-row {
-            display: flex; align-items: center; justify-content: space-between;
-            min-height: 4.35rem; gap: 1rem;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            min-height: 5.25rem;
+            gap: .75rem;
+        }
+        .academy-public-nav .ac-pub-grow {
+            flex: 1 1 0;
+            min-width: clamp(1rem, 3vw, 2.5rem);
+            height: 1px;
+            pointer-events: none;
+        }
+        .academy-public-nav .ac-pub-side {
+            display: flex;
+            align-items: center;
+            gap: .3rem;
+            flex: 0 0 auto;
+            min-width: 0;
+        }
+        .academy-public-nav .ac-pub-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            padding-block: .35rem;
+        }
+        .academy-public-nav .ac-pub-auth-balance,
+        .academy-public-nav .ac-pub-auth {
+            display: none;
+            align-items: center;
+            gap: .45rem;
+            flex: 0 0 auto;
+            flex-shrink: 0;
+        }
+        .academy-public-nav .ac-pub-auth-balance {
+            visibility: hidden;
+            pointer-events: none;
+        }
+        @media (min-width: 768px) {
+            .academy-public-nav .ac-pub-row.has-auth .ac-pub-auth-balance,
+            .academy-public-nav .ac-pub-row.has-auth .ac-pub-auth {
+                display: inline-flex;
+            }
+        }
+        .academy-public-nav .ac-pub-logo img {
+            height: clamp(3.4rem, 5.2vw, 4.6rem);
+            width: auto;
+            max-width: min(16rem, 42vw);
+            object-fit: contain;
+            display: block;
         }
         .academy-public-nav .ac-pub-links {
-            display: none; align-items: center; gap: .3rem;
-            padding: .28rem; border-radius: 999px;
+            display: none;
+            align-items: center;
+            gap: .3rem;
+            padding: .28rem;
+            border-radius: 999px;
             background: rgba(255,255,255,.06);
             border: 1px solid rgba(255,255,255,.08);
+            flex: 0 0 auto;
+            width: max-content;
+            max-width: 100%;
+            flex-wrap: nowrap;
         }
-        @media (min-width: 768px) { .academy-public-nav .ac-pub-links { display: flex; } }
+        @media (min-width: 768px) {
+            .academy-public-nav .ac-pub-links { display: inline-flex; }
+            .academy-public-nav .ac-pub-mobile { display: none !important; }
+        }
+        @media (max-width: 767px) {
+            .academy-public-nav .ac-pub-grow { display: none; }
+            .academy-public-nav .ac-pub-row {
+                justify-content: space-between;
+            }
+            .academy-public-nav .ac-pub-side-start { display: none; }
+            .academy-public-nav .ac-pub-side-end { margin-inline-start: auto; }
+        }
         .academy-public-nav .ac-pub-link {
             display: inline-flex; align-items: center; gap: .4rem;
-            padding: .55rem 1rem; border-radius: 999px;
+            padding: .55rem .95rem; border-radius: 999px;
             font-size: .875rem; font-weight: 700; color: rgba(255,255,255,.78);
             text-decoration: none; transition: background .18s, color .18s;
             white-space: nowrap;
         }
         .academy-public-nav .ac-pub-link:hover { background: rgba(255,255,255,.1); color: #fff; }
-        .academy-public-nav .ac-pub-link.is-active { background: #fff; color: #061525; }
+        .academy-public-nav .ac-pub-link.is-active { background: #ff3d7a; color: #fff; }
         .academy-public-nav .ac-pub-cta {
             display: inline-flex; align-items: center; gap: .4rem;
             padding: .6rem 1.15rem; border-radius: 999px;
-            background: linear-gradient(135deg, #0b8f7f, #0e6e63);
+            background: linear-gradient(135deg, #ff3d7a, #e11d62);
             color: #fff !important; font-weight: 800; font-size: .875rem;
-            text-decoration: none; box-shadow: 0 8px 20px rgba(11,143,127,.35);
-            margin-inline-start: .35rem;
+            text-decoration: none; box-shadow: 0 8px 20px rgba(255,61,122,.35);
+            white-space: nowrap;
         }
         .academy-public-nav .ac-pub-cta:hover { filter: brightness(1.06); }
-        .academy-public-nav .md\:hidden a,
+        .academy-public-nav .ac-pub-profile {
+            display: inline-flex; align-items: center; gap: .45rem;
+            padding: .45rem .85rem .45rem .45rem; border-radius: 999px;
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14);
+            color: #fff; text-decoration: none; font-weight: 700; font-size: .82rem;
+            max-width: 10.5rem; transition: background .18s, border-color .18s;
+        }
+        .academy-public-nav .ac-pub-profile:hover {
+            background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.28);
+        }
+        .academy-public-nav .ac-pub-profile.is-active {
+            background: rgba(255,61,122,.22); border-color: rgba(255,61,122,.55);
+        }
+        .academy-public-nav .ac-pub-profile-avatar {
+            width: 1.7rem; height: 1.7rem; border-radius: 999px;
+            display: inline-flex; align-items: center; justify-content: center;
+            background: #ff3d7a; color: #fff; font-size: .72rem; font-weight: 800;
+            flex-shrink: 0;
+        }
+        .academy-public-nav .ac-pub-profile-name {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .academy-public-nav .ac-pub-logout {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .55rem .9rem; border-radius: 999px; border: 1px solid rgba(248,113,113,.35);
+            background: rgba(248,113,113,.12); color: #fecaca;
+            font-weight: 700; font-size: .82rem; cursor: pointer;
+            transition: background .18s, border-color .18s, color .18s;
+        }
+        .academy-public-nav .ac-pub-logout:hover {
+            background: rgba(248,113,113,.22); border-color: rgba(248,113,113,.55); color: #fff;
+        }
+        .academy-public-nav .ac-pub-mobile a,
         .academy-public-nav #mobileMenuToggle { color: #fff !important; }
         .academy-public-nav #mobileMenuToggle:hover { background: rgba(255,255,255,.1) !important; }
         aside.academy-drawer { background: #061525 !important; color: #fff; }
         aside.academy-drawer .mobile-drawer-link { color: rgba(255,255,255,.88) !important; }
         aside.academy-drawer .mobile-drawer-link:hover { background: rgba(255,255,255,.08) !important; }
         aside.academy-drawer .is-drawer-active {
-            background: #0b8f7f !important; color: #fff !important;
+            background: #ff3d7a !important; color: #fff !important;
         }
         aside.academy-drawer .border-b,
         aside.academy-drawer .border-t { border-color: rgba(255,255,255,.1) !important; }
@@ -122,44 +220,135 @@
 <body class="min-h-screen overflow-x-clip {{ $isAcademyPage ? 'is-academy-site' : 'bg-gradient-to-br from-white to-gray-50 font-cairo' }}">
     <nav class="sticky top-0 z-50 {{ $isAcademyPage ? 'academy-public-nav' : 'bg-white shadow-lg' }}">
         <div class="{{ $isAcademyPage ? 'ac-pub-inner' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' }}">
-            <div class="{{ $isAcademyPage ? 'ac-pub-row' : 'flex justify-between h-16' }}">
-                <div class="flex items-center rtl:ml-auto">
-                    <a href="{{ $navHome }}">
-                        <img src="{{ $navLogo }}"
-                            class="{{ $isAcademyPage ? 'h-12 w-auto max-w-[11rem] object-contain' : 'h-18 w-12' }}"
-                            alt="{{ $isAcademyPage ? __('messages.academy') : 'Evorq' }}">
-                    </a>
+            <div class="{{ $isAcademyPage ? 'ac-pub-row'.(auth()->check() ? ' has-auth' : '') : 'flex justify-between h-16' }}">
+                @if($isAcademyPage)
+                {{-- RTL flex: first item sits on the right, last on the left.
+                     Order: balance | start-links | grow | logo | grow | end-links | auth --}}
+                @auth
+                <div class="ac-pub-auth-balance" aria-hidden="true">
+                    <span class="ac-pub-profile">
+                        <span class="ac-pub-profile-avatar">{{ mb_substr(Auth::user()->name, 0, 1) }}</span>
+                        <span class="ac-pub-profile-name">{{ Auth::user()->name }}</span>
+                    </span>
+                    <span class="ac-pub-logout">
+                        <i class="fas fa-sign-out-alt text-xs"></i>
+                        <span>{{ __('messages.logout') }}</span>
+                    </span>
+                </div>
+                @endauth
+
+                <div class="ac-pub-side ac-pub-side-start">
+                    <div class="ac-pub-links">
+                        <a href="{{ route('academy.index') }}" class="ac-pub-link {{ request()->routeIs('academy.index') ? 'is-active' : '' }}">
+                            {{ __('messages.academy') }}
+                        </a>
+                        <a href="{{ route('academy.courses') }}" class="ac-pub-link {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') || request()->routeIs('courses.show') ? 'is-active' : '' }}">
+                            {{ __('messages.academy_view_all_courses') }}
+                        </a>
+                        <a href="{{ route('academy.trainers.index') }}" class="ac-pub-link {{ request()->routeIs('academy.trainers.*') ? 'is-active' : '' }}">
+                            {{ __('messages.academy_trainers_kicker') }}
+                        </a>
+                        @auth
+                        <a href="{{ route('academy.wishlist.index') }}" class="ac-pub-link {{ request()->routeIs('academy.wishlist.*') ? 'is-active' : '' }}">
+                            <i class="fas fa-heart text-xs"></i>
+                            {{ __('messages.academy_wishlist') }}
+                        </a>
+                        @endauth
+                    </div>
                 </div>
 
-                @if($isAcademyPage)
-                <div class="ac-pub-links">
-                    <a href="{{ route('academy.index') }}" class="ac-pub-link {{ request()->routeIs('academy.index') ? 'is-active' : '' }}">
-                        {{ __('messages.academy') }}
+                <div class="ac-pub-grow" aria-hidden="true"></div>
+
+                <a href="{{ $navHome }}" class="ac-pub-logo">
+                    <img src="{{ $navLogo }}" alt="{{ __('messages.academy') }}">
+                </a>
+
+                <div class="ac-pub-grow" aria-hidden="true"></div>
+
+                <div class="ac-pub-side ac-pub-side-end">
+                    <div class="ac-pub-links">
+                        @auth
+                        <a href="{{ route('dashboard') }}" class="ac-pub-link {{ request()->routeIs('dashboard') || request()->routeIs('dashboard.*') ? 'is-active' : '' }}">
+                            <i class="fas fa-gauge-high text-xs"></i>
+                            {{ __('messages.dashboard') }}
+                        </a>
+                        @else
+                        <a href="{{ $loginUrl }}" class="ac-pub-link {{ request()->routeIs('login') ? 'is-active' : '' }}">
+                            {{ __('messages.login') }}
+                        </a>
+                        @endauth
+                        @if (app()->getLocale() == 'ar')
+                        <a href="{{ route('lang.switch', 'en') }}" class="ac-pub-link">English</a>
+                        @else
+                        <a href="{{ route('lang.switch', 'ar') }}" class="ac-pub-link">العربية</a>
+                        @endif
+                        <a href="{{ route('academy.courses') }}" class="ac-pub-cta">
+                            <i class="fas fa-play text-xs"></i>
+                            {{ __('messages.academy_explore_courses') }}
+                        </a>
+                    </div>
+
+                    <div class="ac-pub-mobile flex items-center gap-1">
+                        @if (app()->getLocale() == 'ar')
+                        <a href="{{ route('lang.switch', 'en') }}"
+                            class="px-3 py-2 rounded-lg transition text-white hover:bg-white/10 flex items-center"
+                            aria-label="English">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                        </a>
+                        @else
+                        <a href="{{ route('lang.switch', 'ar') }}"
+                            class="px-3 py-2 rounded-lg transition text-white hover:bg-white/10 flex items-center"
+                            aria-label="العربية">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                        </a>
+                        @endif
+                        <button type="button" onclick="toggleMobileMenu()" id="mobileMenuToggle"
+                            class="p-2 rounded-lg text-white hover:bg-white/10"
+                            aria-controls="mobileMenu" aria-expanded="false" aria-label="القائمة">
+                            <svg id="menuIcon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                            <svg id="closeIcon" class="h-6 w-6 hidden" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                @auth
+                <div class="ac-pub-auth">
+                    <a href="{{ route('profile.edit') }}"
+                        class="ac-pub-profile {{ request()->routeIs('profile.*') ? 'is-active' : '' }}"
+                        title="{{ Auth::user()->name }}">
+                        <span class="ac-pub-profile-avatar">{{ mb_substr(Auth::user()->name, 0, 1) }}</span>
+                        <span class="ac-pub-profile-name">{{ Auth::user()->name }}</span>
                     </a>
-                    <a href="{{ route('academy.courses') }}" class="ac-pub-link {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') || request()->routeIs('courses.show') ? 'is-active' : '' }}">
-                        {{ __('messages.academy_view_all_courses') }}
-                    </a>
-                    @auth
-                    <a href="{{ route('dashboard') }}" class="ac-pub-link {{ request()->routeIs('dashboard') || request()->routeIs('dashboard.*') ? 'is-active' : '' }}">
-                        <i class="fas fa-gauge-high text-xs"></i>
-                        {{ __('messages.dashboard') }}
-                    </a>
-                    @else
-                    <a href="{{ $loginUrl }}" class="ac-pub-link {{ request()->routeIs('login') ? 'is-active' : '' }}">
-                        {{ __('messages.login') }}
-                    </a>
-                    @endauth
-                    @if (app()->getLocale() == 'ar')
-                    <a href="{{ route('lang.switch', 'en') }}" class="ac-pub-link">English</a>
-                    @else
-                    <a href="{{ route('lang.switch', 'ar') }}" class="ac-pub-link">العربية</a>
-                    @endif
-                    <a href="{{ route('academy.courses') }}" class="ac-pub-cta">
-                        <i class="fas fa-play text-xs"></i>
-                        {{ __('messages.academy_explore_courses') }}
+                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                        @csrf
+                        <button type="submit" class="ac-pub-logout" title="{{ __('messages.logout') }}">
+                            <i class="fas fa-sign-out-alt text-xs"></i>
+                            <span>{{ __('messages.logout') }}</span>
+                        </button>
+                    </form>
+                </div>
+                @endauth
+                @else
+                <div class="flex items-center rtl:ml-auto">
+                    <a href="{{ $navHome }}">
+                        <img src="{{ $navLogo }}" class="h-18 w-12" alt="Evorq">
                     </a>
                 </div>
-                @else
                 <div class="hidden md:flex items-center gap-2">
                     <a href="https://evorq.com/" class="px-4 py-2 rounded-lg transition text-gray-700 hover:bg-gray-100">
                         {{ __('messages.web') }}
@@ -245,10 +434,11 @@
                 </div>
                 @endif
 
+                @unless($isAcademyPage)
                 <div class="md:hidden flex items-center gap-1">
                     @if (app()->getLocale() == 'ar')
                     <a href="{{ route('lang.switch', 'en') }}"
-                        class="px-3 py-2 rounded-lg transition {{ $isAcademyPage ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100' }} flex items-center"
+                        class="px-3 py-2 rounded-lg transition text-gray-700 hover:bg-gray-100 flex items-center"
                         aria-label="English">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -258,7 +448,7 @@
                     </a>
                     @else
                     <a href="{{ route('lang.switch', 'ar') }}"
-                        class="px-3 py-2 rounded-lg transition {{ $isAcademyPage ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100' }} flex items-center"
+                        class="px-3 py-2 rounded-lg transition text-gray-700 hover:bg-gray-100 flex items-center"
                         aria-label="العربية">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -268,7 +458,7 @@
                     </a>
                     @endif
                     <button type="button" onclick="toggleMobileMenu()" id="mobileMenuToggle"
-                        class="p-2 rounded-lg {{ $isAcademyPage ? 'text-white hover:bg-white/10' : 'text-gray-700 hover:bg-gray-100' }}"
+                        class="p-2 rounded-lg text-gray-700 hover:bg-gray-100"
                         aria-controls="mobileMenu" aria-expanded="false" aria-label="القائمة">
                         <svg id="menuIcon" class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -281,6 +471,7 @@
                         </svg>
                     </button>
                 </div>
+                @endunless
             </div>
         </div>
     </nav>
@@ -318,7 +509,17 @@
                 <i class="fas fa-layer-group w-5 text-center opacity-70"></i>
                 {{ __('messages.academy_view_all_courses') }}
             </a>
+            <a href="{{ route('academy.trainers.index') }}"
+                class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('academy.trainers.*') ? 'is-drawer-active' : '' }}">
+                <i class="fas fa-chalkboard-teacher w-5 text-center opacity-70"></i>
+                {{ __('messages.academy_trainers_kicker') }}
+            </a>
             @auth
+            <a href="{{ route('academy.wishlist.index') }}"
+                class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('academy.wishlist.*') ? 'is-drawer-active' : '' }}">
+                <i class="fas fa-heart w-5 text-center opacity-70"></i>
+                {{ __('messages.academy_wishlist') }}
+            </a>
             <a href="{{ route('dashboard') }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('dashboard') || request()->routeIs('dashboard.*') ? 'is-drawer-active' : '' }}">
                 <i class="fas fa-gauge-high w-5 text-center opacity-70"></i>

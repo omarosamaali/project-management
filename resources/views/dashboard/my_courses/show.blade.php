@@ -15,6 +15,64 @@ $pathCompletion = $isRecorded ? $course->pathCompletionForUser(auth()->id()) : n
 // منطق ظهور الرابط (قبل 30 دقيقة) — للدروس المباشرة فقط
 $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) && $now->lessThanOrEqualTo($endDate);
 $isFinished = $now->greaterThan($endDate);
+$isUpcoming = $now->lt($startDate->copy()->subMinutes(30));
+
+$needsRating = $course->userNeedsRating(auth()->id());
+$canCertificate = $course->userCanGetCertificate(auth()->id());
+
+if ($isRecorded) {
+    $pathPercent = (int) ($pathCompletion['percent'] ?? 0);
+    if ($canCertificate) {
+        $courseStatus = 'completed';
+        $courseStatusLabel = 'مكتملة';
+        $courseStatusClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    } elseif ($needsRating) {
+        $courseStatus = 'rating';
+        $courseStatusLabel = 'بانتظار التقييم';
+        $courseStatusClass = 'bg-amber-100 text-amber-800 border-amber-200';
+    } elseif ($pathPercent >= 100) {
+        $courseStatus = 'path_done';
+        $courseStatusLabel = 'المسار مكتمل';
+        $courseStatusClass = 'bg-sky-100 text-sky-800 border-sky-200';
+    } elseif ($pathPercent > 0) {
+        $courseStatus = 'active';
+        $courseStatusLabel = 'جارية';
+        $courseStatusClass = 'bg-green-100 text-green-800 border-green-200';
+    } else {
+        $courseStatus = 'ready';
+        $courseStatusLabel = 'جاهزة للبدء';
+        $courseStatusClass = 'bg-indigo-100 text-indigo-800 border-indigo-200';
+    }
+} elseif ($isFinished) {
+    if ($canCertificate) {
+        $courseStatus = 'completed';
+        $courseStatusLabel = 'منتهية — الشهادة جاهزة';
+        $courseStatusClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+    } elseif ($needsRating) {
+        $courseStatus = 'rating';
+        $courseStatusLabel = 'منتهية — أكمل التقييم';
+        $courseStatusClass = 'bg-amber-100 text-amber-800 border-amber-200';
+    } else {
+        $courseStatus = 'ended';
+        $courseStatusLabel = 'منتهية';
+        $courseStatusClass = 'bg-slate-200 text-slate-700 border-slate-300';
+    }
+} elseif ($showLink || $payment->isCourseActiveForLearner($now)) {
+    $courseStatus = 'active';
+    $courseStatusLabel = 'نشطة';
+    $courseStatusClass = 'bg-green-100 text-green-800 border-green-200';
+} else {
+    $courseStatus = 'upcoming';
+    $courseStatusLabel = 'قادمة';
+    $courseStatusClass = 'bg-blue-100 text-blue-800 border-blue-200';
+}
+
+$typeLabel = match ($course->location_type) {
+    'online' => 'أونلاين',
+    'recorded' => 'مسجّلة',
+    'on_site' => 'حضوري',
+    default => $course->location_type,
+};
 @endphp
 
 <section class="p-3 sm:p-5">
@@ -26,16 +84,28 @@ $isFinished = $now->greaterThan($endDate);
         {{-- الجانب الأيمن: تفاصيل الدورة --}}
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-                <div class="relative h-48 bg-gray-200">
+                <div class="relative h-48 bg-gray-200 overflow-hidden">
                     <img src="{{ asset('storage/' . $course->main_image) }}" class="w-full h-full object-cover"
                         alt="{{ $course->name_ar }}">
-                    <div class="absolute mt-2 top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-                        {{ $course->service?->name_ar }}
+                    <x-media-watermark brand="academy" size="md" />
+                    <div class="absolute top-4 right-4 flex flex-wrap gap-2 justify-end z-[4]">
+                        <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                            {{ $typeLabel }}
+                        </span>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border {{ $courseStatusClass }}">
+                            {{ $courseStatusLabel }}
+                        </span>
                     </div>
                 </div>
 
                 <div class="mt-3 p-6">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">{{ $course->name_ar }}</h2>
+                    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $course->name_ar }}</h2>
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border {{ $courseStatusClass }}">
+                            <i class="fas fa-circle text-[0.45rem]"></i>
+                            {{ $courseStatusLabel }}
+                        </span>
+                    </div>
                     <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
                         {{ $course->description_ar }}
                     </p>
@@ -83,6 +153,60 @@ $isFinished = $now->greaterThan($endDate);
                 </div>
             </div>
 
+            {{-- حالة الدورة + التقييم / الشهادة --}}
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5 sm:p-6 border border-slate-100 dark:border-gray-700">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-flag text-teal-600"></i>
+                        حالة الدورة
+                    </h3>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border {{ $courseStatusClass }}">
+                        {{ $courseStatusLabel }}
+                    </span>
+                </div>
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                    @if($canCertificate)
+                        تهانينا! يمكنك الآن استخراج شهادة إتمام الدورة.
+                    @elseif($needsRating)
+                        أكملت متطلبات الدورة. أكمل التقييم لاستخراج الشهادة.
+                    @elseif($isRecorded)
+                        تابع المسار التعليمي حتى الإكمال ثم التقييم للحصول على الشهادة.
+                    @elseif($courseStatus === 'active')
+                        الدورة نشطة حالياً — انضم للمحاضرة من القسم أدناه عند التفعيل.
+                    @elseif($courseStatus === 'upcoming')
+                        الدورة قادمة. سيظهر رابط المحاضرة قبل الموعد بـ 30 دقيقة.
+                    @else
+                        انتهت هذه الدورة.
+                    @endif
+                </p>
+
+                <div class="flex flex-wrap gap-2">
+                    @if($canCertificate)
+                    <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                        target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0D2444] text-white text-sm font-bold hover:bg-[#163a66] transition">
+                        <i class="fas fa-certificate"></i>
+                        عرض الشهادة
+                    </a>
+                    @elseif($needsRating)
+                    <a href="{{ route('dashboard.courses.rating', $course) }}"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition">
+                        <i class="fas fa-star"></i>
+                        أكمل التقييم
+                    </a>
+                    @endif
+
+                    @if($isRecorded)
+                    <a href="{{ route('dashboard.my_courses.path', $payment->id) }}"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold hover:bg-teal-700 transition">
+                        <i class="fas fa-play"></i>
+                        {{ ($pathCompletion['percent'] ?? 0) > 0 ? 'متابعة التعلم' : 'بدء المسار' }}
+                    </a>
+                    @endif
+                </div>
+            </div>
+
             @if($isRecorded && $pathCompletion)
             {{-- تقدم المتدرب في المسار المسجّل --}}
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5"
@@ -110,16 +234,17 @@ $isFinished = $now->greaterThan($endDate);
                 </p>
 
                 @php
-                    $recordedNeedsRating = $course->userNeedsRating(auth()->id());
-                    $recordedCanCert = $course->userCanGetCertificate(auth()->id());
+                    $recordedNeedsRating = $needsRating;
+                    $recordedCanCert = $canCertificate;
                 @endphp
                 @if($recordedCanCert)
                 <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                    target="_blank" rel="noopener"
                     class="inline-flex items-center gap-2 px-5 py-2 mt-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">
                     <i class="fas fa-certificate"></i> استخراج الشهادة
                 </a>
                 @elseif($recordedNeedsRating)
-                <a href="{{ route('courses.rating', $course) }}"
+                <a href="{{ route('dashboard.courses.rating', $course) }}"
                     class="inline-flex items-center gap-2 px-5 py-2 mt-3 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600">
                     <i class="fas fa-star"></i> أكمل التقييم للحصول على الشهادة
                 </a>
@@ -193,8 +318,6 @@ $isFinished = $now->greaterThan($endDate);
             @if($course->usesDayExams() && $payment->is_attended && !$course->isRecorded())
             @php
                 $runningDayExam = $course->runningDayExam();
-                $needsRating = $course->userNeedsRating(auth()->id());
-                $canCertificate = $course->userCanGetCertificate(auth()->id());
                 $passedCount = $course->userPassedDayExamCount(auth()->id());
                 $requiredPass = $course->effectiveRequiredExamPassCount();
             @endphp
@@ -213,13 +336,14 @@ $isFinished = $now->greaterThan($endDate);
                         <i class="fas fa-play"></i> ابدأ الاختبار
                     </a>
                 @elseif($needsRating)
-                    <a href="{{ route('courses.rating', $course) }}"
+                    <a href="{{ route('dashboard.courses.rating', $course) }}"
                         class="inline-flex items-center gap-2 px-5 py-2 bg-amber-500 text-white rounded-lg font-bold hover:bg-amber-600">
                         <i class="fas fa-star"></i> أكمل التقييم للحصول على الشهادة
                     </a>
                     <p class="text-xs text-amber-700 mt-1">يجب إكمال تقييم الدورة قبل استخراج الشهادة</p>
                 @elseif($canCertificate)
                     <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                        target="_blank" rel="noopener"
                         class="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">
                         <i class="fas fa-certificate"></i> استخراج الشهادة
                     </a>
@@ -342,7 +466,7 @@ $isFinished = $now->greaterThan($endDate);
                 <div class="space-y-4">
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500 text-sm">رقم الفاتورة:</span>
-                        <span class="font-mono font-bold">#{{ $payment->payment_id ?? $payment->id }}</span>
+                        <span class="font-mono font-bold">#{{ $payment->invoiceNumber() }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-500 text-sm">تاريخ الدفع:</span>

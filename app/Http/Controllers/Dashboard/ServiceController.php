@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Service;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 
 class ServiceController extends Controller
@@ -37,7 +38,7 @@ class ServiceController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('services', 'public');
+            $imagePath = WatermarkedUpload::store($request->file('image'), 'services');
         }
 
         Service::create([
@@ -77,7 +78,7 @@ class ServiceController extends Controller
         
         $imagePath = $service->image;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('services', 'public');
+            $imagePath = WatermarkedUpload::store($request->file('image'), 'services');
         }
 
         $service->update([

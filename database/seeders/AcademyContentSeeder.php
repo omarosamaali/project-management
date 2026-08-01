@@ -16,8 +16,10 @@ use Illuminate\Support\Str;
 class AcademyContentSeeder extends Seeder
 {
     /**
-     * Import categories + academy testimonials exported via:
+     * Import categories + reviews exported via:
      * php artisan academy:export-seed --copy-icons
+     *
+     * Also ensures every course gets reviews (imported matches + generated fillers).
      */
     public function run(): void
     {
@@ -36,11 +38,18 @@ class AcademyContentSeeder extends Seeder
 
         $categories = $payload['categories'] ?? [];
         $testimonials = $payload['testimonials'] ?? [];
+        $perCourse = max(1, (int) ($payload['per_course_reviews'] ?? 3));
 
         $categoryCount = $this->seedCategories(is_array($categories) ? $categories : []);
-        $reviewCount = $this->seedTestimonials(is_array($testimonials) ? $testimonials : []);
+        $imported = $this->seedTestimonials(is_array($testimonials) ? $testimonials : []);
+        $filled = $this->ensureReviewsForEveryCourse(
+            is_array($testimonials) ? $testimonials : [],
+            $perCourse
+        );
 
-        $this->command?->info("Academy content seeded: {$categoryCount} categories, {$reviewCount} testimonials.");
+        $this->command?->info(
+            "Academy content seeded: {$categoryCount} categories, {$imported} imported reviews, {$filled} filler reviews for courses."
+        );
     }
 
     protected function seedCategories(array $rows): int
@@ -95,6 +104,7 @@ class AcademyContentSeeder extends Seeder
                 $safe = Str::slug(($row['title_en'] ?? '') ?: ($row['title_ar'] ?? 'category')) ?: 'category';
                 $dest = 'course-categories/' . $safe . '-' . substr(sha1($source), 0, 8) . '.' . $ext;
                 Storage::disk('public')->put($dest, File::get($source));
+
                 return $dest;
             }
         }
@@ -118,12 +128,6 @@ class AcademyContentSeeder extends Seeder
 
             $course = $this->findCourse($row);
             if (!$course) {
-                $this->command?->warn(sprintf(
-                    'Skip testimonial #%d — course not found: %s / %s',
-                    $index + 1,
-                    $row['course_name_ar'] ?? '?',
-                    $row['course_name_en'] ?? '?'
-                ));
                 continue;
             }
 
@@ -138,7 +142,7 @@ class AcademyContentSeeder extends Seeder
                 [
                     'payment_id' => $payment?->id,
                     'answers' => is_array($row['answers'] ?? null) ? $row['answers'] : [],
-                    'is_featured' => (bool) ($row['is_featured'] ?? true),
+                    'is_featured' => (bool) ($row['is_featured'] ?? false),
                     'completed_at' => !empty($row['completed_at'])
                         ? $row['completed_at']
                         : now()->subDays($index + 1),
@@ -149,6 +153,145 @@ class AcademyContentSeeder extends Seeder
         }
 
         return $count;
+    }
+
+    /**
+     * Guarantee every course has at least $perCourse completed reviews.
+     * Reuses exported answer templates / feedback when available.
+     */
+    protected function ensureReviewsForEveryCourse(array $exported, int $perCourse): int
+    {
+        $templates = collect($exported)
+            ->filter(fn ($row) => is_array($row) && !empty($row['answers']))
+            ->values();
+
+        $feedbackPool = $templates
+            ->map(function ($row) {
+                $answers = $row['answers'] ?? [];
+                foreach (['best_part', 'feedback', 'suggestions'] as $key) {
+                    $text = trim((string) ($answers[$key] ?? ''));
+                    if ($text !== '') {
+                        return $text;
+                    }
+                }
+
+                return null;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($feedbackPool)) {
+            $feedbackPool = [
+                'دورة ممتازة ومحتوى عملي واضح.',
+                'استفدت كثيراً من الشرح والتطبيقات.',
+                'التنظيم رائع والمحاضر متمكن.',
+                'أنصح بها بشدة للمبتدئين والمحترفين.',
+                'تجربة تعلم سلسة ومفيدة جداً.',
+            ];
+        }
+
+        $reviewerNames = collect($exported)
+            ->pluck('user_name')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($reviewerNames)) {
+            $reviewerNames = ['سارة أحمد', 'محمد علي', 'نورة حسن', 'خالد يوسف', 'لمى فهد'];
+        }
+
+        $created = 0;
+        $courses = Course::query()->orderBy('id')->get();
+
+        foreach ($courses as $courseIndex => $course) {
+            $existing = CourseRating::query()
+                ->where('course_id', $course->id)
+                ->whereNotNull('completed_at')
+                ->count();
+
+            $needed = max(0, $perCourse - $existing);
+            for ($i = 0; $i < $needed; $i++) {
+                $seed = ($courseIndex * 10) + $i + $existing;
+                $user = $this->ensureReviewer([
+                    'user_email' => 'seed.course.' . $course->id . '.review.' . ($existing + $i + 1) . '@academy.import',
+                    'user_name' => $reviewerNames[$seed % count($reviewerNames)],
+                ], $seed);
+
+                $payment = $this->ensurePayment($course, $user);
+                $template = $templates->isNotEmpty()
+                    ? $templates[$seed % $templates->count()]
+                    : null;
+
+                $answers = is_array($template['answers'] ?? null)
+                    ? $this->adaptAnswersForCourse($course, $template['answers'], $feedbackPool[$seed % count($feedbackPool)], $seed)
+                    : $this->buildAnswersForCourse($course, $feedbackPool[$seed % count($feedbackPool)], $seed);
+
+                CourseRating::updateOrCreate(
+                    [
+                        'course_id' => $course->id,
+                        'user_id' => $user->id,
+                    ],
+                    [
+                        'payment_id' => $payment?->id,
+                        'answers' => $answers,
+                        'is_featured' => $i < 2,
+                        'completed_at' => now()->subDays(($seed % 20) + 1),
+                    ]
+                );
+
+                $created++;
+            }
+        }
+
+        return $created;
+    }
+
+    protected function adaptAnswersForCourse(Course $course, array $sourceAnswers, string $feedback, int $seed): array
+    {
+        $built = $this->buildAnswersForCourse($course, $feedback, $seed);
+
+        // Prefer numeric/boolean values from export when the question ids overlap
+        foreach ($built as $key => $value) {
+            if (array_key_exists($key, $sourceAnswers) && $sourceAnswers[$key] !== '' && $sourceAnswers[$key] !== null) {
+                $built[$key] = $sourceAnswers[$key];
+            }
+        }
+
+        if (isset($built['best_part']) && trim((string) ($built['best_part'] ?? '')) === '') {
+            $built['best_part'] = $feedback;
+        }
+
+        return $built;
+    }
+
+    protected function buildAnswersForCourse(Course $course, string $feedback, int $seed): array
+    {
+        $type = $course->location_type ?: 'online';
+        $questions = config("course_rating.{$type}", config('course_rating.online', []));
+        $answers = [];
+        $base = 3 + ($seed % 3);
+
+        foreach ($questions as $q) {
+            $id = $q['id'] ?? null;
+            if (!$id) {
+                continue;
+            }
+            $qType = $q['type'] ?? 'text';
+            if ($qType === 'scale') {
+                $answers[$id] = min(5, max(1, $base + (($seed + strlen($id)) % 2)));
+            } elseif ($qType === 'boolean') {
+                $answers[$id] = ($seed % 7 === 0) ? '0' : '1';
+            } else {
+                $answers[$id] = $id === 'suggestions'
+                    ? 'مقترح: إضافة المزيد من التطبيقات العملية.'
+                    : $feedback;
+            }
+        }
+
+        return $answers;
     }
 
     protected function findCourse(array $row): ?Course
@@ -206,7 +349,6 @@ class AcademyContentSeeder extends Seeder
             return $existing;
         }
 
-        // Minimal enrollment row so ratings stay consistent with app rules
         return Payment::create([
             'course_id' => $course->id,
             'user_id' => $user->id,
@@ -217,6 +359,7 @@ class AcademyContentSeeder extends Seeder
             'status' => 'completed',
             'payment_method' => 'seed',
             'is_attended' => true,
+            'payment_id' => 'SEED-IMPORT-' . $course->id . '-' . $user->id,
         ]);
     }
 }

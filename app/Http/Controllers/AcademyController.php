@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\CourseCategory;
 use App\Models\CourseRating;
+use App\Models\CourseWishlist;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -30,12 +31,13 @@ class AcademyController extends Controller
             ->withCount([
                 'payments as payments_count' => fn ($query) => $query->whereIn('status', $paidStatuses),
             ])
-            ->latest()
-            ->limit(6)
+            ->latest('id')
+            ->limit(7)
             ->get();
 
         $this->attachRatingStats($latestCourses);
         $this->attachOwnership($latestCourses);
+        $this->attachWishlist($latestCourses);
 
         $reviews = CourseRating::query()
             ->whereNotNull('completed_at')
@@ -51,47 +53,10 @@ class AcademyController extends Controller
             ->take(24)
             ->values();
 
-        $trainers = User::query()
-            ->where('role', 'trainer')
-            ->where('status', 'active')
-            ->notBlocked()
-            ->with([
-                'courseCategory',
-                'trainedCourses' => fn ($query) => $query->where('status', 'active')->with('category'),
-            ])
-            ->orderBy('name')
+        $trainers = $this->publicTrainersQuery()
             ->limit(20)
-            ->get()
-            ->map(function (User $trainer) {
-                $courseIds = $trainer->trainedCourses->pluck('id');
-                $trainerScores = $courseIds->isEmpty()
-                    ? collect()
-                    : CourseRating::query()
-                        ->whereIn('course_id', $courseIds)
-                        ->whereNotNull('completed_at')
-                        ->get()
-                        ->map(fn (CourseRating $r) => $r->trainerScore())
-                        ->filter(fn ($s) => $s !== null);
-
-                $categoryTitle = $trainer->courseCategory
-                    ? $trainer->courseCategory->title(app()->getLocale())
-                    : optional(
-                        $trainer->trainedCourses
-                            ->pluck('category')
-                            ->filter()
-                            ->groupBy('id')
-                            ->sortByDesc(fn ($group) => $group->count())
-                            ->map(fn ($group) => $group->first())
-                            ->first()
-                    )->title(app()->getLocale());
-
-                $trainer->academy_rating = $trainerScores->isNotEmpty()
-                    ? round($trainerScores->avg(), 1)
-                    : 0;
-                $trainer->academy_category_label = $categoryTitle ?: null;
-
-                return $trainer;
-            });
+            ->get();
+        $this->enrichPublicTrainers($trainers);
 
         $myCoursesUrl = Auth::check() && Auth::user()->canLearnCourses()
             ? route('dashboard.my_courses.index')
@@ -105,6 +70,138 @@ class AcademyController extends Controller
             'locale',
             'myCoursesUrl'
         ));
+    }
+
+    public function trainers(Request $request)
+    {
+        $locale = app()->getLocale();
+        $q = trim((string) $request->query('q', ''));
+
+        $trainersQuery = $this->publicTrainersQuery();
+
+        if ($q !== '') {
+            $trainersQuery->where(function ($query) use ($q) {
+                $query->where('name', 'like', '%'.$q.'%')
+                    ->orWhere('email', 'like', '%'.$q.'%');
+            });
+        }
+
+        $trainers = $trainersQuery->paginate(12)->withQueryString();
+        $this->enrichPublicTrainers($trainers->getCollection());
+
+        return view('academy.trainers.index', compact('trainers', 'locale', 'q'));
+    }
+
+    public function trainer(User $trainer)
+    {
+        abort_unless(
+            $trainer->isTrainer()
+                && $trainer->status === 'active'
+                && ! $trainer->isBlocked(),
+            404
+        );
+
+        $locale = app()->getLocale();
+        $paidStatuses = ['completed', 'success', 'paid', 'active'];
+
+        $trainer->load([
+            'courseCategory',
+            'trainedCourses' => fn ($query) => $query
+                ->where('status', 'active')
+                ->with(['category', 'trainer', 'units.items'])
+                ->withCount([
+                    'payments as payments_count' => fn ($q) => $q->whereIn('status', $paidStatuses),
+                ])
+                ->latest(),
+        ]);
+
+        $this->enrichPublicTrainers(collect([$trainer]));
+
+        $courses = $trainer->trainedCourses;
+        $this->attachRatingStats($courses);
+        $this->attachOwnership($courses);
+        $this->attachWishlist($courses);
+
+        return view('academy.trainers.show', compact('trainer', 'courses', 'locale'));
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Builder<\App\Models\User>
+     */
+    protected function publicTrainersQuery()
+    {
+        return User::query()
+            ->where('role', 'trainer')
+            ->where('status', 'active')
+            ->notBlocked()
+            ->with([
+                'courseCategory',
+                'trainedCourses' => fn ($query) => $query->where('status', 'active')->with('category'),
+            ])
+            ->withCount([
+                'trainedCourses as active_courses_count' => fn ($query) => $query->where('status', 'active'),
+            ])
+            ->orderBy('name');
+    }
+
+    /**
+     * @param  Collection<int, User>  $trainers
+     */
+    protected function enrichPublicTrainers(Collection $trainers): void
+    {
+        if ($trainers->isEmpty()) {
+            return;
+        }
+
+        $allCourseIds = $trainers->flatMap(
+            fn (User $trainer) => $trainer->trainedCourses->pluck('id')
+        )->unique()->filter()->values();
+
+        $ratingsByCourse = $allCourseIds->isEmpty()
+            ? collect()
+            : CourseRating::query()
+                ->whereIn('course_id', $allCourseIds)
+                ->whereNotNull('completed_at')
+                ->get()
+                ->groupBy('course_id');
+
+        $learnerCounts = $allCourseIds->isEmpty()
+            ? collect()
+            : Payment::query()
+                ->whereIn('course_id', $allCourseIds)
+                ->whereIn('status', ['completed', 'success', 'paid', 'active'])
+                ->selectRaw('course_id, COUNT(DISTINCT user_id) as learners')
+                ->groupBy('course_id')
+                ->pluck('learners', 'course_id');
+
+        foreach ($trainers as $trainer) {
+            $courseIds = $trainer->trainedCourses->pluck('id');
+            $trainerScores = $courseIds
+                ->flatMap(fn ($id) => $ratingsByCourse->get($id, collect()))
+                ->map(fn (CourseRating $r) => $r->trainerScore())
+                ->filter(fn ($s) => $s !== null);
+
+            $categoryTitle = $trainer->courseCategory
+                ? $trainer->courseCategory->title(app()->getLocale())
+                : optional(
+                    $trainer->trainedCourses
+                        ->pluck('category')
+                        ->filter()
+                        ->groupBy('id')
+                        ->sortByDesc(fn ($group) => $group->count())
+                        ->map(fn ($group) => $group->first())
+                        ->first()
+                )->title(app()->getLocale());
+
+            $trainer->academy_rating = $trainerScores->isNotEmpty()
+                ? round($trainerScores->avg(), 1)
+                : 0;
+            $trainer->academy_category_label = $categoryTitle ?: null;
+            $trainer->academy_courses_count = (int) ($trainer->active_courses_count
+                ?? $trainer->trainedCourses->count());
+            $trainer->academy_learners_count = (int) $courseIds
+                ->sum(fn ($id) => (int) ($learnerCounts[$id] ?? 0));
+        }
     }
 
     public function courses(Request $request)
@@ -143,6 +240,7 @@ class AcademyController extends Controller
 
         $this->attachRatingStats($courses->getCollection());
         $this->attachOwnership($courses->getCollection());
+        $this->attachWishlist($courses->getCollection());
 
         $myCoursesUrl = Auth::check() && Auth::user()->canLearnCourses()
             ? route('dashboard.my_courses.index')
@@ -184,6 +282,7 @@ class AcademyController extends Controller
 
         $this->attachRatingStats($courses->getCollection());
         $this->attachOwnership($courses->getCollection());
+        $this->attachWishlist($courses->getCollection());
 
         $myCoursesUrl = Auth::check() && Auth::user()->canLearnCourses()
             ? route('dashboard.my_courses.index')
@@ -288,6 +387,32 @@ class AcademyController extends Controller
             if ($course->isRecorded()) {
                 $course->academy_path_percent = (int) ($course->pathCompletionForUser($userId)['percent'] ?? 0);
             }
+        }
+    }
+
+    /**
+     * @param  Collection<int, Course>  $courses
+     */
+    protected function attachWishlist(Collection $courses): void
+    {
+        foreach ($courses as $course) {
+            $course->academy_wishlisted = false;
+        }
+
+        $userId = Auth::id();
+        if (! $userId || $courses->isEmpty()) {
+            return;
+        }
+
+        $ids = $courses->pluck('id')->unique()->filter()->values();
+        $wishlisted = CourseWishlist::query()
+            ->where('user_id', $userId)
+            ->whereIn('course_id', $ids)
+            ->pluck('course_id')
+            ->flip();
+
+        foreach ($courses as $course) {
+            $course->academy_wishlisted = $wishlisted->has($course->id);
         }
     }
 }

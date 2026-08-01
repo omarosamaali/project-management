@@ -62,6 +62,14 @@ class Payment extends Model
     }
 
     /**
+     * Internal invoice number shown to users (never the payment-gateway intent id).
+     */
+    public function invoiceNumber(): string
+    {
+        return 'INV-' . str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Whether this enrollment's course is ended for the learner.
      * Recorded courses end at 100% path completion; live/on-site use end_date.
      */
@@ -79,7 +87,15 @@ class Payment extends Model
                 return true;
             }
 
-            return $course->isPathFullyCompletedBy((int) $this->user_id);
+            try {
+                return $course->isPathFullyCompletedBy((int) $this->user_id);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        if (empty($course->end_date)) {
+            return false;
         }
 
         return $now->gt(\Carbon\Carbon::parse($course->end_date));
@@ -101,6 +117,10 @@ class Payment extends Model
             return !$this->isCourseEndedForLearner($now);
         }
 
+        if (empty($course->start_date) || empty($course->end_date)) {
+            return false;
+        }
+
         return $now->between(
             \Carbon\Carbon::parse($course->start_date),
             \Carbon\Carbon::parse($course->end_date)
@@ -113,7 +133,7 @@ class Payment extends Model
     public function isCourseUpcomingForLearner(?\Carbon\Carbon $now = null): bool
     {
         $course = $this->course;
-        if (!$course || $course->isRecorded()) {
+        if (!$course || $course->isRecorded() || empty($course->start_date)) {
             return false;
         }
 

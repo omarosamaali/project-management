@@ -4,27 +4,11 @@
 
 @section('content')
 @include('academy.partials.styles')
+@include('dashboard.courses.partials.certificate-document-styles')
 
 <x-hero-section variant="academy" />
 
 <div class="academy-page">
-    <nav class="academy-section-rail" aria-label="أقسام الصفحة">
-        <div class="academy-section-rail-inner">
-            @if($categories->isNotEmpty())
-            <a href="#categories" class="academy-rail-link">{{ __('messages.academy_categories_title') }}</a>
-            @endif
-            <a href="#latest" class="academy-rail-link">{{ __('messages.academy_latest_title') }}</a>
-            @if($reviews->isNotEmpty())
-            <a href="#reviews" class="academy-rail-link">{{ __('messages.academy_reviews_title') }}</a>
-            @endif
-            @if($trainers->isNotEmpty())
-            <a href="#trainers" class="academy-rail-link">{{ __('messages.academy_trainers_title') }}</a>
-            @endif
-            <a href="#trust" class="academy-rail-link">{{ __('messages.academy_trust_title') }}</a>
-            <a href="#how" class="academy-rail-link">{{ __('messages.academy_how_title') }}</a>
-        </div>
-    </nav>
-
     @if($categories->isNotEmpty())
     <section class="academy-section reveal" id="categories">
         <div class="academy-sec-head">
@@ -34,14 +18,14 @@
             </div>
             <p class="academy-sub">{{ __('messages.academy_categories_sub') }}</p>
         </div>
-        <div class="snap-slider-wrap" data-snap-slider-wrap data-autoplay="{{ $categories->count() > 1 ? '1' : '0' }}" data-fixed-slide="168">
+        <div class="snap-slider-wrap" data-snap-slider-wrap data-autoplay="{{ $categories->count() > 1 ? '1' : '0' }}" data-natural-slides="1">
             <button type="button" class="snap-nav prev" data-snap-prev aria-label="{{ __('messages.academy_prev') }}"><i class="fas fa-chevron-{{ $locale === 'ar' ? 'right' : 'left' }}"></i></button>
             <button type="button" class="snap-nav next" data-snap-next aria-label="{{ __('messages.academy_next') }}"><i class="fas fa-chevron-{{ $locale === 'ar' ? 'left' : 'right' }}"></i></button>
             <div class="snap-slider-viewport">
                 <div class="snap-slider" data-snap-slider>
                     @foreach($categories as $cat)
                     <a href="{{ route('academy.courses', ['category' => $cat->id]) }}"
-                        class="snap-slide cat-slide">
+                        class="snap-slide cat-slide cat-tone-{{ $loop->index % 6 }}">
                         <img src="{{ $cat->iconUrl() }}" alt="">
                         <span>
                             <span class="cat-slide-title">{{ $cat->title($locale) }}</span>
@@ -164,67 +148,89 @@
             <div class="snap-slider-viewport">
                 <div class="snap-slider" data-snap-slider>
                 @foreach($trainers as $trainer)
-                @php $trScore = (float) ($trainer->academy_rating ?? 0); @endphp
-                <article class="snap-slide trainer-card">
-                    <div class="trainer-frame">
-                        <div class="trainer-photo-wrap">
-                            <img src="{{ $trainer->avatarUrl() }}" alt="{{ $trainer->name }}" class="trainer-photo"
-                                onerror="this.src='{{ asset('assets/images/logo.webp') }}'">
-                            <div class="trainer-photo-veil" aria-hidden="true"></div>
-                            @if($trainer->countryFlagUrl())
-                            <img src="{{ $trainer->countryFlagUrl() }}" alt="{{ $trainer->country_name }}" class="trainer-flag" loading="lazy">
-                            @endif
-                            <div class="trainer-score" title="{{ number_format($trScore, 1) }}">
-                                <i class="fas fa-star"></i>
-                                <span>{{ number_format($trScore, 1) }}</span>
-                            </div>
-                        </div>
-                        <div class="trainer-meta">
-                            <h3 class="trainer-name">{{ $trainer->name }}</h3>
-                            <p class="trainer-cat">{{ $trainer->academy_category_label ?: __('messages.academy_trainer_fallback') }}</p>
-                            <div class="trainer-stars" aria-hidden="true">
-                                @for($i = 1; $i <= 5; $i++)
-                                <i class="fas fa-star" style="{{ $i <= round($trScore) ? '' : 'opacity:.28' }}"></i>
-                                @endfor
-                            </div>
-                        </div>
-                    </div>
-                </article>
+                <div class="snap-slide">
+                    @include('academy.partials.trainer-card', ['trainer' => $trainer, 'locale' => $locale])
+                </div>
                 @endforeach
                 </div>
             </div>
         </div>
+        <div class="academy-more-wrap">
+            <a href="{{ route('academy.trainers.index') }}" class="academy-more-btn">
+                {{ __('messages.academy_all_trainers') }}
+                <i class="fas fa-{{ $locale === 'ar' ? 'arrow-left' : 'arrow-right' }}"></i>
+            </a>
+        </div>
     </section>
     @endif
 
-    <section class="academy-section reveal" id="trust">
-        <div class="academy-sec-head">
-            <div>
-                <p class="academy-kicker">{{ __('messages.academy_trust_kicker') }}</p>
-                <h2 class="academy-h2 display">{{ __('messages.academy_trust_title') }}</h2>
+    <section class="trust-showcase reveal" id="trust">
+        <div class="trust-showcase-inner">
+            <div class="trust-showcase-main">
+                <div class="trust-cert-preview" aria-hidden="true">
+                    <div class="trust-cert-live" data-trust-cert-live>
+                        <div class="trust-cert-live-scale" data-trust-cert-scale>
+                            @include('dashboard.courses.partials.certificate-document', [
+                                'traineeName' => __('messages.academy_trust_cert_preview_name'),
+                                'courseNameAr' => __('messages.academy_trust_cert_preview_course_ar'),
+                                'courseNameEn' => __('messages.academy_trust_cert_preview_course_en'),
+                                'courseDate' => __('messages.academy_trust_cert_preview_date'),
+                                'certificateId' => 'trust-certificate-preview',
+                            ])
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trust-showcase-copy">
+                    <p class="trust-showcase-kicker">{{ __('messages.academy_trust_kicker') }}</p>
+                    <h2 class="trust-showcase-title display">{{ __('messages.academy_trust_title') }}</h2>
+                    <p class="trust-showcase-sub">{{ __('messages.academy_trust_sub') }}</p>
+
+                    <div class="trust-highlights">
+                        <div class="trust-highlight">
+                            <div class="trust-highlight-icon is-cert" aria-hidden="true">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <div>
+                                <h3>{{ __('messages.academy_trust_cert_title') }}</h3>
+                                <p>{{ __('messages.academy_trust_cert_body') }}</p>
+                            </div>
+                        </div>
+                        <div class="trust-highlight">
+                            <div class="trust-highlight-icon is-guarantee" aria-hidden="true">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <h3>{{ __('messages.academy_trust_guarantee_title') }}</h3>
+                                <p>{{ __('messages.academy_trust_guarantee_body') }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('academy.courses') }}" class="trust-showcase-cta">
+                        {{ __('messages.academy_subscribe_now') }}
+                        <i class="fas fa-arrow-{{ $locale === 'ar' ? 'left' : 'right' }}"></i>
+                    </a>
+                </div>
             </div>
-            <p class="academy-sub">{{ __('messages.academy_trust_sub') }}</p>
-        </div>
-        <div class="trust-grid reveal-stagger">
-            <div class="trust-item reveal">
-                <div class="trust-icon"><i class="fas fa-certificate"></i></div>
-                <h3>{{ __('messages.academy_trust_1_title') }}</h3>
-                <p>{{ __('messages.academy_trust_1_body') }}</p>
-            </div>
-            <div class="trust-item reveal">
-                <div class="trust-icon"><i class="fas fa-infinity"></i></div>
-                <h3>{{ __('messages.academy_trust_2_title') }}</h3>
-                <p>{{ __('messages.academy_trust_2_body') }}</p>
-            </div>
-            <div class="trust-item reveal">
-                <div class="trust-icon"><i class="fas fa-laptop-code"></i></div>
-                <h3>{{ __('messages.academy_trust_3_title') }}</h3>
-                <p>{{ __('messages.academy_trust_3_body') }}</p>
-            </div>
-            <div class="trust-item reveal">
-                <div class="trust-icon"><i class="fas fa-clock"></i></div>
-                <h3>{{ __('messages.academy_trust_4_title') }}</h3>
-                <p>{{ __('messages.academy_trust_4_body') }}</p>
+
+            <div class="trust-feature-bar">
+                <div class="trust-feature">
+                    <i class="fas fa-infinity"></i>
+                    <span>{{ __('messages.academy_trust_2_title') }}<small>{{ __('messages.academy_trust_2_body') }}</small></span>
+                </div>
+                <div class="trust-feature">
+                    <i class="fas fa-laptop-code"></i>
+                    <span>{{ __('messages.academy_trust_3_title') }}<small>{{ __('messages.academy_trust_3_body') }}</small></span>
+                </div>
+                <div class="trust-feature">
+                    <i class="fas fa-gift"></i>
+                    <span>{{ __('messages.academy_trust_free_title') }}<small>{{ __('messages.academy_trust_free_body') }}</small></span>
+                </div>
+                <div class="trust-feature">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ __('messages.academy_trust_4_title') }}<small>{{ __('messages.academy_trust_4_body') }}</small></span>
+                </div>
             </div>
         </div>
     </section>
@@ -270,4 +276,29 @@
 
 @include('academy.partials.snap-slider-script')
 @include('academy.partials.interactions-script')
+@include('academy.partials.wishlist-script')
+<script>
+(function () {
+    var CERT_W = 900;
+    function fitTrustCert() {
+        document.querySelectorAll('[data-trust-cert-live]').forEach(function (frame) {
+            var scaleEl = frame.querySelector('[data-trust-cert-scale]');
+            if (!scaleEl) return;
+            var avail = frame.getBoundingClientRect().width || 420;
+            var scale = Math.max(0.05, Math.min(1, avail / CERT_W));
+            scaleEl.style.transformOrigin = 'top left';
+            scaleEl.style.transform = 'scale(' + scale + ')';
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fitTrustCert);
+    } else {
+        fitTrustCert();
+    }
+    window.addEventListener('resize', fitTrustCert);
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fitTrustCert);
+    }
+})();
+</script>
 @endsection

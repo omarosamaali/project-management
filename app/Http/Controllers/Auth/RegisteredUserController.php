@@ -7,6 +7,7 @@ use App\Models\CourseCategory;
 use App\Models\User;
 use App\Services\WhatsAppOTPService;
 use App\Support\AuthUi;
+use App\Support\WatermarkedUpload;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,12 +34,22 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         AuthUi::resolve($request->input('ui', $request->query('ui')));
+        $isAcademy = AuthUi::isAcademy();
+
+        // Academy registrations are always personal accounts (no client / business flow).
+        if ($isAcademy) {
+            $request->merge(['account_type' => 'personal']);
+        }
 
         $isTrainer = $request->input('role') === 'trainer';
 
         $rules = [
-            'account_type' => ['required', 'in:personal,business'],
-            'role' => ['required', 'in:client,trainer,trainee'],
+            'account_type' => $isAcademy
+                ? ['required', 'in:personal']
+                : ['required', 'in:personal,business'],
+            'role' => $isAcademy
+                ? ['required', 'in:trainer,trainee']
+                : ['required', 'in:client,trainer,trainee'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
@@ -106,7 +117,7 @@ class RegisteredUserController extends Controller
         }
 
         $companyLogoPath = null;
-        if ($request->account_type === 'business' && $request->hasFile('company_logo')) {
+        if (! $isAcademy && $request->account_type === 'business' && $request->hasFile('company_logo')) {
             $companyLogoPath = $request->file('company_logo')->store('clients/company-logos', 'public');
         }
 
@@ -116,15 +127,17 @@ class RegisteredUserController extends Controller
         $idBackPath = null;
 
         if ($isTrainer) {
-            $avatarPath = $request->file('avatar')->store('trainers/avatars', 'public');
+            $avatarPath = WatermarkedUpload::store($request->file('avatar'), 'trainers/avatars');
             $idFrontPath = $request->file('id_card_front')->store('trainers/id-cards', 'public');
             $idBackPath = $request->file('id_card_back')->store('trainers/id-cards', 'public');
         }
 
+        $accountType = $isAcademy ? 'personal' : $request->account_type;
+
         $user = User::create([
             'name' => $request->name,
-            'account_type' => $request->account_type,
-            'company_name' => $request->account_type === 'business' ? $request->company_name : null,
+            'account_type' => $accountType,
+            'company_name' => $accountType === 'business' ? $request->company_name : null,
             'company_logo' => $companyLogoPath,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -165,8 +178,17 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
+        $requestedRedirect = $request->input('redirect') ?: $request->query('redirect');
+        if (is_string($requestedRedirect) && $requestedRedirect !== '') {
+            $host = parse_url($requestedRedirect, PHP_URL_HOST);
+            $appHost = parse_url(url('/'), PHP_URL_HOST);
+            if ($host === null || $host === $appHost) {
+                return redirect()->to($requestedRedirect)->with('success', 'تم إنشاء حسابك بنجاح!');
+            }
+        }
+
         $redirect = match ($role) {
-            'trainee' => route('academy.index'),
+            'trainee', 'trainer' => route('academy.index'),
             default => route('dashboard.requests.index'),
         };
 

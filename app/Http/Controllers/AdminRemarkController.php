@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\AdminRemark;
 use App\Models\User;
+use App\Support\WatermarkedUpload;
 
 class AdminRemarkController extends Controller
 {
@@ -34,7 +35,7 @@ class AdminRemarkController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('remarks', 'public');
+            $data['image'] = WatermarkedUpload::store($request->file('image'), 'remarks');
         }
 
         $adminRemark->update($data);
@@ -62,7 +63,7 @@ class AdminRemarkController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('remarks', 'public');
+            $data['image'] = WatermarkedUpload::store($request->file('image'), 'remarks');
         }
 
         AdminRemark::create($data);

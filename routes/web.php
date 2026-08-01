@@ -192,6 +192,13 @@ Route::get('/', [SystemController::class, 'index'])->name('system.index');
 Route::get('/academy', [\App\Http\Controllers\AcademyController::class, 'index'])->name('academy.index');
 Route::get('/academy/courses', [\App\Http\Controllers\AcademyController::class, 'courses'])->name('academy.courses');
 Route::get('/academy/categories/{category}', [\App\Http\Controllers\AcademyController::class, 'category'])->name('academy.category');
+Route::get('/academy/trainers', [\App\Http\Controllers\AcademyController::class, 'trainers'])->name('academy.trainers.index');
+Route::get('/academy/trainers/{trainer}', [\App\Http\Controllers\AcademyController::class, 'trainer'])->name('academy.trainers.show');
+Route::get('/academy/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'index'])
+    ->middleware('auth')
+    ->name('academy.wishlist.index');
+Route::post('/academy/courses/{course}/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'toggle'])
+    ->name('academy.wishlist.toggle');
 Route::get('/system/{system}', [SystemController::class, 'show'])->name('system.show');
 Route::post('/system/request', [RequestsController::class, 'clientStore'])->name('dashboard.requests.clientStore');
 

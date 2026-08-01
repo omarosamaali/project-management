@@ -111,25 +111,5 @@
             btn.style.translate = '';
         });
     });
-
-    // Sticky section rail active state
-    const railLinks = Array.from(document.querySelectorAll('.academy-rail-link'));
-    if (railLinks.length && 'IntersectionObserver' in window) {
-        const map = new Map();
-        railLinks.forEach((a) => {
-            const id = (a.getAttribute('href') || '').replace('#', '');
-            const sec = id ? document.getElementById(id) : null;
-            if (sec) map.set(sec, a);
-        });
-        const rio = new IntersectionObserver((entries) => {
-            entries.forEach((e) => {
-                if (!e.isIntersecting) return;
-                railLinks.forEach((l) => l.classList.remove('is-active'));
-                const link = map.get(e.target);
-                if (link) link.classList.add('is-active');
-            });
-        }, { rootMargin: '-35% 0px -50% 0px', threshold: 0.01 });
-        map.forEach((_, sec) => rio.observe(sec));
-    }
 })();
 </script>

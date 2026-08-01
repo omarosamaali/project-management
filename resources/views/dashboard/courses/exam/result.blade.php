@@ -33,6 +33,7 @@
 
                 @if($canCertificate)
                 <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                    target="_blank" rel="noopener"
                     class="block w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">
                     <i class="fas fa-certificate ml-2"></i>
                     استخراج الشهادة

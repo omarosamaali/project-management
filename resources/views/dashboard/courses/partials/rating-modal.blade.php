@@ -85,7 +85,7 @@
     </div>
 </div>
 
-<form id="ratingHiddenForm" method="POST" action="{{ route('courses.rating.store', $ratingCourse) }}" class="hidden">
+<form id="ratingHiddenForm" method="POST" action="{{ route('dashboard.courses.rating.store', $ratingCourse) }}" class="hidden">
     @csrf
 </form>
 

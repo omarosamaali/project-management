@@ -1,5 +1,5 @@
 {
-    "exported_at": "2026-08-01T12:11:46+03:00",
+    "exported_at": "2026-08-01T12:17:43+03:00",
     "app_url": "http://localhost",
     "categories": [
         {
@@ -88,6 +88,7 @@
         {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "هند الزعابي",
             "user_email": "seed.trainee.1@academy.test",
             "user_avatar": null,
@@ -111,6 +112,7 @@
         {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
             "user_name": "رانية حسين",
             "user_email": "seed.trainee.3@academy.test",
             "user_avatar": null,
@@ -132,8 +134,32 @@
             "completed_at": "2026-07-26T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "سلمى جابر",
+            "user_email": "seed.trainee.5@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "أحسن دورة حضرتها هذا العام، التطبيقات العملية قوية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-26T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "هند الزعابي",
             "user_email": "seed.trainee.1@academy.test",
             "user_avatar": null,
@@ -157,6 +183,7 @@
         {
             "course_name_ar": "دورة الموشن جرافيك — حضوري",
             "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
             "user_name": "رانية حسين",
             "user_email": "seed.trainee.3@academy.test",
             "user_avatar": null,
@@ -177,8 +204,79 @@
             "completed_at": "2026-07-26T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "سلمى جابر",
+            "user_email": "seed.trainee.5@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 5,
+                "attachments_benefit": 5,
+                "production_quality": 5,
+                "navigation_ease": 5,
+                "platform_flexibility": 5,
+                "recommend": "1",
+                "best_part": "أحسن دورة حضرتها هذا العام، التطبيقات العملية قوية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-26T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة التصميم — حضوري",
+            "course_name_en": "SEED-DESIGN-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "سلمى جابر",
+            "user_email": "seed.trainee.5@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "أحسن دورة حضرتها هذا العام، التطبيقات العملية قوية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-26T10:50:48+03:00"
+        },
+        {
+            "course_name_ar": "دورة مونتاج الفيديو — حضوري",
+            "course_name_en": "SEED-VIDEO-EDITING-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "رانية حسين",
+            "user_email": "seed.trainee.3@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 4,
+                "content_quality": 5,
+                "presentation_clarity": 4,
+                "practical_benefit": 5,
+                "duration_fit": 4,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "تجربة تعليمية غنية والمنصة سهلة الاستخدام.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-26T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "ماجد العلي",
             "user_email": "seed.trainee.2@academy.test",
             "user_avatar": null,
@@ -202,6 +300,7 @@
         {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
             "user_name": "فهد المطيري",
             "user_email": "seed.trainee.4@academy.test",
             "user_avatar": null,
@@ -223,8 +322,32 @@
             "completed_at": "2026-07-25T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "باسل خوري",
+            "user_email": "seed.trainee.6@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 3,
+                "trainer_clarity": 3,
+                "trainer_engagement": 4,
+                "content_quality": 3,
+                "presentation_clarity": 4,
+                "practical_benefit": 3,
+                "duration_fit": 4,
+                "venue_quality": 3,
+                "recommend": "0",
+                "best_part": "شرح مرتب وأمثلة واقعية ساعدتني في العمل مباشرة.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-25T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "ماجد العلي",
             "user_email": "seed.trainee.2@academy.test",
             "user_avatar": null,
@@ -248,6 +371,7 @@
         {
             "course_name_ar": "دورة الموشن جرافيك — حضوري",
             "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
             "user_name": "فهد المطيري",
             "user_email": "seed.trainee.4@academy.test",
             "user_avatar": null,
@@ -268,8 +392,81 @@
             "completed_at": "2026-07-25T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "باسل خوري",
+            "user_email": "seed.trainee.6@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 3,
+                "trainer_clarity": 3,
+                "trainer_voice": 3,
+                "content_quality": 3,
+                "video_segmentation": 4,
+                "attachments_benefit": 3,
+                "production_quality": 4,
+                "navigation_ease": 3,
+                "platform_flexibility": 4,
+                "recommend": "0",
+                "best_part": "شرح مرتب وأمثلة واقعية ساعدتني في العمل مباشرة.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-25T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة التصميم — مسجّلة",
+            "course_name_en": "SEED-DESIGN-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "باسل خوري",
+            "user_email": "seed.trainee.6@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 3,
+                "trainer_clarity": 3,
+                "trainer_voice": 3,
+                "content_quality": 3,
+                "video_segmentation": 4,
+                "attachments_benefit": 3,
+                "production_quality": 4,
+                "navigation_ease": 3,
+                "platform_flexibility": 4,
+                "recommend": "0",
+                "best_part": "شرح مرتب وأمثلة واقعية ساعدتني في العمل مباشرة.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-25T10:50:48+03:00"
+        },
+        {
+            "course_name_ar": "دورة مونتاج الفيديو — مسجّلة",
+            "course_name_en": "SEED-VIDEO-EDITING-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "فهد المطيري",
+            "user_email": "seed.trainee.4@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 5,
+                "attachments_benefit": 5,
+                "production_quality": 5,
+                "navigation_ease": 5,
+                "platform_flexibility": 5,
+                "recommend": "1",
+                "best_part": "المحتوى حديث ويغطي احتياجات السوق الحالية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-25T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "رانية حسين",
             "user_email": "seed.trainee.3@academy.test",
             "user_avatar": null,
@@ -291,8 +488,56 @@
             "completed_at": "2026-07-24T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
+            "user_name": "سلمى جابر",
+            "user_email": "seed.trainee.5@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 3,
+                "content_quality": 4,
+                "presentation_clarity": 3,
+                "practical_benefit": 4,
+                "duration_fit": 3,
+                "stream_quality": 3,
+                "platform_ease": 4,
+                "recommend": "1",
+                "best_part": "أحسن دورة حضرتها هذا العام، التطبيقات العملية قوية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-24T11:00:15+03:00"
+        },
+        {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "دانة الشمري",
+            "user_email": "seed.trainee.7@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 4,
+                "content_quality": 5,
+                "presentation_clarity": 4,
+                "practical_benefit": 5,
+                "duration_fit": 4,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "التنظيم ممتاز والدعم سريع عند أي استفسار.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-24T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "رانية حسين",
             "user_email": "seed.trainee.3@academy.test",
             "user_avatar": null,
@@ -314,8 +559,104 @@
             "completed_at": "2026-07-24T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "سلمى جابر",
+            "user_email": "seed.trainee.5@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 3,
+                "content_quality": 4,
+                "presentation_clarity": 3,
+                "practical_benefit": 4,
+                "duration_fit": 3,
+                "venue_quality": 4,
+                "recommend": "1",
+                "best_part": "أحسن دورة حضرتها هذا العام، التطبيقات العملية قوية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-24T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "دانة الشمري",
+            "user_email": "seed.trainee.7@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 4,
+                "attachments_benefit": 5,
+                "production_quality": 4,
+                "navigation_ease": 5,
+                "platform_flexibility": 4,
+                "recommend": "1",
+                "best_part": "التنظيم ممتاز والدعم سريع عند أي استفسار.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-24T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة صناعة المحتوي — أونلاين",
+            "course_name_en": "SEED-CONTENT-CREATION-ONLINE",
+            "course_location_type": "online",
+            "user_name": "دانة الشمري",
+            "user_email": "seed.trainee.7@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 4,
+                "content_quality": 5,
+                "presentation_clarity": 4,
+                "practical_benefit": 5,
+                "duration_fit": 4,
+                "stream_quality": 4,
+                "platform_ease": 5,
+                "recommend": "1",
+                "best_part": "التنظيم ممتاز والدعم سريع عند أي استفسار.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-24T10:50:48+03:00"
+        },
+        {
+            "course_name_ar": "دورة الثري دي — أونلاين",
+            "course_name_en": "SEED-3D-ONLINE",
+            "course_location_type": "online",
+            "user_name": "سلمى جابر",
+            "user_email": "seed.trainee.5@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 3,
+                "content_quality": 4,
+                "presentation_clarity": 3,
+                "practical_benefit": 4,
+                "duration_fit": 3,
+                "stream_quality": 3,
+                "platform_ease": 4,
+                "recommend": "1",
+                "best_part": "أحسن دورة حضرتها هذا العام، التطبيقات العملية قوية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-24T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "فهد المطيري",
             "user_email": "seed.trainee.4@academy.test",
             "user_avatar": null,
@@ -337,8 +678,56 @@
             "completed_at": "2026-07-23T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
+            "user_name": "باسل خوري",
+            "user_email": "seed.trainee.6@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 5,
+                "content_quality": 4,
+                "presentation_clarity": 5,
+                "practical_benefit": 4,
+                "duration_fit": 5,
+                "stream_quality": 5,
+                "platform_ease": 4,
+                "recommend": "1",
+                "best_part": "شرح مرتب وأمثلة واقعية ساعدتني في العمل مباشرة.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-23T11:00:15+03:00"
+        },
+        {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "إياد منصور",
+            "user_email": "seed.trainee.8@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "أنصح بها بقوة لكل من يريد تطوير مهاراته.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-23T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "فهد المطيري",
             "user_email": "seed.trainee.4@academy.test",
             "user_avatar": null,
@@ -360,8 +749,102 @@
             "completed_at": "2026-07-23T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "باسل خوري",
+            "user_email": "seed.trainee.6@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 5,
+                "content_quality": 4,
+                "presentation_clarity": 5,
+                "practical_benefit": 4,
+                "duration_fit": 5,
+                "venue_quality": 4,
+                "recommend": "1",
+                "best_part": "شرح مرتب وأمثلة واقعية ساعدتني في العمل مباشرة.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-23T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "إياد منصور",
+            "user_email": "seed.trainee.8@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 5,
+                "attachments_benefit": 5,
+                "production_quality": 5,
+                "navigation_ease": 5,
+                "platform_flexibility": 5,
+                "recommend": "1",
+                "best_part": "أنصح بها بقوة لكل من يريد تطوير مهاراته.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-23T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة صناعة المحتوي — حضوري",
+            "course_name_en": "SEED-CONTENT-CREATION-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "إياد منصور",
+            "user_email": "seed.trainee.8@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "أنصح بها بقوة لكل من يريد تطوير مهاراته.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-23T10:50:48+03:00"
+        },
+        {
+            "course_name_ar": "دورة الثري دي — حضوري",
+            "course_name_en": "SEED-3D-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "باسل خوري",
+            "user_email": "seed.trainee.6@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 5,
+                "content_quality": 4,
+                "presentation_clarity": 5,
+                "practical_benefit": 4,
+                "duration_fit": 5,
+                "venue_quality": 4,
+                "recommend": "1",
+                "best_part": "شرح مرتب وأمثلة واقعية ساعدتني في العمل مباشرة.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-23T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "سلمى جابر",
             "user_email": "seed.trainee.5@academy.test",
             "user_avatar": null,
@@ -383,8 +866,33 @@
             "completed_at": "2026-07-22T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
+            "user_name": "دانة الشمري",
+            "user_email": "seed.trainee.7@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "stream_quality": 5,
+                "platform_ease": 5,
+                "recommend": "0",
+                "best_part": "التنظيم ممتاز والدعم سريع عند أي استفسار.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-22T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "سلمى جابر",
             "user_email": "seed.trainee.5@academy.test",
             "user_avatar": null,
@@ -406,8 +914,56 @@
             "completed_at": "2026-07-22T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "دانة الشمري",
+            "user_email": "seed.trainee.7@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "venue_quality": 5,
+                "recommend": "0",
+                "best_part": "التنظيم ممتاز والدعم سريع عند أي استفسار.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-22T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة الثري دي — مسجّلة",
+            "course_name_en": "SEED-3D-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "دانة الشمري",
+            "user_email": "seed.trainee.7@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 5,
+                "attachments_benefit": 5,
+                "production_quality": 5,
+                "navigation_ease": 5,
+                "platform_flexibility": 5,
+                "recommend": "0",
+                "best_part": "التنظيم ممتاز والدعم سريع عند أي استفسار.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-22T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "باسل خوري",
             "user_email": "seed.trainee.6@academy.test",
             "user_avatar": null,
@@ -429,8 +985,33 @@
             "completed_at": "2026-07-21T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
+            "user_name": "إياد منصور",
+            "user_email": "seed.trainee.8@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 3,
+                "trainer_clarity": 3,
+                "trainer_engagement": 4,
+                "content_quality": 3,
+                "presentation_clarity": 4,
+                "practical_benefit": 3,
+                "duration_fit": 4,
+                "stream_quality": 4,
+                "platform_ease": 3,
+                "recommend": "1",
+                "best_part": "أنصح بها بقوة لكل من يريد تطوير مهاراته.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-21T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "باسل خوري",
             "user_email": "seed.trainee.6@academy.test",
             "user_avatar": null,
@@ -452,8 +1033,56 @@
             "completed_at": "2026-07-21T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
+            "user_name": "إياد منصور",
+            "user_email": "seed.trainee.8@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 3,
+                "trainer_clarity": 3,
+                "trainer_engagement": 4,
+                "content_quality": 3,
+                "presentation_clarity": 4,
+                "practical_benefit": 3,
+                "duration_fit": 4,
+                "venue_quality": 3,
+                "recommend": "1",
+                "best_part": "أنصح بها بقوة لكل من يريد تطوير مهاراته.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-21T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة تطوير المواقع و التطبيقات — أونلاين",
+            "course_name_en": "SEED-WEBSITE-AND-APPLICATION-DEVELOPMENT-ONLINE",
+            "course_location_type": "online",
+            "user_name": "إياد منصور",
+            "user_email": "seed.trainee.8@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 3,
+                "trainer_clarity": 3,
+                "trainer_engagement": 4,
+                "content_quality": 3,
+                "presentation_clarity": 4,
+                "practical_benefit": 3,
+                "duration_fit": 4,
+                "stream_quality": 4,
+                "platform_ease": 3,
+                "recommend": "1",
+                "best_part": "أنصح بها بقوة لكل من يريد تطوير مهاراته.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-21T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "دانة الشمري",
             "user_email": "seed.trainee.7@academy.test",
             "user_avatar": null,
@@ -475,8 +1104,32 @@
             "completed_at": "2026-07-20T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "هند الزعابي",
+            "user_email": "seed.trainee.1@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 4,
+                "content_quality": 5,
+                "presentation_clarity": 4,
+                "practical_benefit": 5,
+                "duration_fit": 4,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "دورة ممتازة وتنظيم رائع، استفدت كثيراً من المحتوى العملي.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-20T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "دانة الشمري",
             "user_email": "seed.trainee.7@academy.test",
             "user_avatar": null,
@@ -498,8 +1151,33 @@
             "completed_at": "2026-07-20T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "هند الزعابي",
+            "user_email": "seed.trainee.1@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 4,
+                "attachments_benefit": 5,
+                "production_quality": 4,
+                "navigation_ease": 5,
+                "platform_flexibility": 4,
+                "recommend": "1",
+                "best_part": "دورة ممتازة وتنظيم رائع، استفدت كثيراً من المحتوى العملي.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-20T10:52:03+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — يوم واحد",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-1D",
+            "course_location_type": "online",
             "user_name": "إياد منصور",
             "user_email": "seed.trainee.8@academy.test",
             "user_avatar": null,
@@ -521,8 +1199,32 @@
             "completed_at": "2026-07-19T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "ماجد العلي",
+            "user_email": "seed.trainee.2@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_engagement": 5,
+                "content_quality": 5,
+                "presentation_clarity": 5,
+                "practical_benefit": 5,
+                "duration_fit": 5,
+                "venue_quality": 5,
+                "recommend": "1",
+                "best_part": "المحاضر واضح والأسلوب سلس، أنصح الجميع بالالتحاق.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-19T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE",
+            "course_location_type": "online",
             "user_name": "إياد منصور",
             "user_email": "seed.trainee.8@academy.test",
             "user_avatar": null,
@@ -544,8 +1246,33 @@
             "completed_at": "2026-07-19T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "ماجد العلي",
+            "user_email": "seed.trainee.2@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 5,
+                "trainer_clarity": 5,
+                "trainer_voice": 5,
+                "content_quality": 5,
+                "video_segmentation": 5,
+                "attachments_benefit": 5,
+                "production_quality": 5,
+                "navigation_ease": 5,
+                "platform_flexibility": 5,
+                "recommend": "1",
+                "best_part": "المحاضر واضح والأسلوب سلس، أنصح الجميع بالالتحاق.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-19T10:52:03+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
             "user_name": "هند الزعابي",
             "user_email": "seed.trainee.1@academy.test",
             "user_avatar": null,
@@ -567,8 +1294,56 @@
             "completed_at": "2026-07-18T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "رانية حسين",
+            "user_email": "seed.trainee.3@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 3,
+                "content_quality": 4,
+                "presentation_clarity": 3,
+                "practical_benefit": 4,
+                "duration_fit": 3,
+                "venue_quality": 4,
+                "recommend": "1",
+                "best_part": "تجربة تعليمية غنية والمنصة سهلة الاستخدام.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-18T11:00:15+03:00"
+        },
+        {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "رانية حسين",
+            "user_email": "seed.trainee.3@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_voice": 4,
+                "content_quality": 4,
+                "video_segmentation": 3,
+                "attachments_benefit": 4,
+                "production_quality": 3,
+                "navigation_ease": 4,
+                "platform_flexibility": 3,
+                "recommend": "1",
+                "best_part": "تجربة تعليمية غنية والمنصة سهلة الاستخدام.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-18T10:52:03+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — حضوري",
             "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
             "user_name": "هند الزعابي",
             "user_email": "seed.trainee.1@academy.test",
             "user_avatar": null,
@@ -591,6 +1366,7 @@
         {
             "course_name_ar": "دورة صناعة المحتوي — مسجّلة",
             "course_name_en": "SEED-CONTENT-CREATION-RECORDED",
+            "course_location_type": "recorded",
             "user_name": "هند الزعابي",
             "user_email": "seed.trainee.1@academy.test",
             "user_avatar": null,
@@ -614,6 +1390,7 @@
         {
             "course_name_ar": "دورة الموشن جرافيك — أونلاين — 3 أيام",
             "course_name_en": "SEED-MOTION-GRAPHIC-ONLINE-3D",
+            "course_location_type": "online",
             "user_name": "ماجد العلي",
             "user_email": "seed.trainee.2@academy.test",
             "user_avatar": null,
@@ -635,8 +1412,32 @@
             "completed_at": "2026-07-17T11:00:15+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — حضوري — يوم واحد",
+            "course_name_en": "SEED-MOTION-GRAPHIC-ONSITE-1D",
+            "course_location_type": "on_site",
+            "user_name": "فهد المطيري",
+            "user_email": "seed.trainee.4@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 5,
+                "content_quality": 4,
+                "presentation_clarity": 5,
+                "practical_benefit": 4,
+                "duration_fit": 5,
+                "venue_quality": 4,
+                "recommend": "1",
+                "best_part": "المحتوى حديث ويغطي احتياجات السوق الحالية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-17T11:00:15+03:00"
+        },
+        {
             "course_name_ar": "دورة الموشن جرافيك — حضوري",
             "course_name_en": "SEED-MOTION-GRAPHIC-ON_SITE",
+            "course_location_type": "on_site",
             "user_name": "ماجد العلي",
             "user_email": "seed.trainee.2@academy.test",
             "user_avatar": null,
@@ -657,8 +1458,57 @@
             "completed_at": "2026-07-17T10:52:03+03:00"
         },
         {
+            "course_name_ar": "دورة الموشن جرافيك — مسجّلة",
+            "course_name_en": "SEED-MOTION-GRAPHIC-RECORDED",
+            "course_location_type": "recorded",
+            "user_name": "فهد المطيري",
+            "user_email": "seed.trainee.4@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_voice": 4,
+                "content_quality": 4,
+                "video_segmentation": 5,
+                "attachments_benefit": 4,
+                "production_quality": 5,
+                "navigation_ease": 4,
+                "platform_flexibility": 5,
+                "recommend": "1",
+                "best_part": "المحتوى حديث ويغطي احتياجات السوق الحالية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-17T10:52:03+03:00"
+        },
+        {
+            "course_name_ar": "دورة التصميم — أونلاين",
+            "course_name_en": "SEED-DESIGN-ONLINE",
+            "course_location_type": "online",
+            "user_name": "فهد المطيري",
+            "user_email": "seed.trainee.4@academy.test",
+            "user_avatar": null,
+            "answers": {
+                "trainer_knowledge": 4,
+                "trainer_clarity": 4,
+                "trainer_engagement": 5,
+                "content_quality": 4,
+                "presentation_clarity": 5,
+                "practical_benefit": 4,
+                "duration_fit": 5,
+                "stream_quality": 5,
+                "platform_ease": 4,
+                "recommend": "1",
+                "best_part": "المحتوى حديث ويغطي احتياجات السوق الحالية.",
+                "suggestions": "مقترح: إضافة المزيد من التطبيقات العملية."
+            },
+            "is_featured": false,
+            "completed_at": "2026-07-17T10:50:48+03:00"
+        },
+        {
             "course_name_ar": "دورة مونتاج الفيديو — أونلاين",
             "course_name_en": "SEED-VIDEO-EDITING-ONLINE",
+            "course_location_type": "online",
             "user_name": "ماجد العلي",
             "user_email": "seed.trainee.2@academy.test",
             "user_avatar": null,
@@ -679,5 +1529,6 @@
             "is_featured": true,
             "completed_at": "2026-07-17T10:50:48+03:00"
         }
-    ]
+    ],
+    "per_course_reviews": 3
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Dashboard\AcademyAccountController;
 use App\Http\Controllers\Dashboard\AcademyProfitController;
 use App\Http\Controllers\Dashboard\AcademyRatingController;
 use App\Http\Controllers\Dashboard\AcademySettingsController;
+use App\Http\Controllers\Dashboard\CurrencyRateController;
 use App\Http\Controllers\Dashboard\RequestsController;
 use App\Http\Controllers\Dashboard\SupportController;
 use App\Http\Controllers\Dashboard\TechnicalSupportController;
@@ -215,6 +216,8 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.academy.profits.index');
     Route::get('academy/my-profits', [AcademyProfitController::class, 'myProfits'])
         ->name('dashboard.academy.my-profits');
+    Route::get('academy/currency/aed-egp', [CurrencyRateController::class, 'aedToEgp'])
+        ->name('dashboard.academy.currency.aed-egp');
 
     Route::resource('requests', RequestsController::class)->names('dashboard.requests');
     Route::resource('tasks', RequestsController::class)->names('dashboard.tasks');

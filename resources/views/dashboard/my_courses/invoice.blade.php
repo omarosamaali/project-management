@@ -55,9 +55,9 @@
                         <tbody class="divide-y divide-gray-200">
                            {{--  --}}
                             <tr class="hover:bg-gray-50">
-                                <td class="py-3 px-4 font-medium text-gray-700">رقم العملية</td>
-                                <td class="text-center py-3 px-4 text-gray-900">#{{ $payment->payment_id }}</td>
-                                <td class="py-3 px-4 text-gray-900 text-left">Transaction ID</td>
+                                <td class="py-3 px-4 font-medium text-gray-700">رقم الفاتورة</td>
+                                <td class="text-center py-3 px-4 text-gray-900">#{{ $payment->invoiceNumber() }}</td>
+                                <td class="py-3 px-4 text-gray-900 text-left">Invoice Number</td>
                             </tr>
                             {{-- اسم الكورس --}}
                             <tr class="hover:bg-gray-50">

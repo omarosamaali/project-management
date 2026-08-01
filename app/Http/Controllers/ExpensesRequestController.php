@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RequestsExpense;
 use App\Services\ProjectActivityLogger;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,7 @@ class ExpensesRequestController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('expenses', 'public');
+            $path = WatermarkedUpload::store($request->file('image'), 'expenses');
             $validated['image'] = $path;
         }
 
@@ -53,7 +54,7 @@ class ExpensesRequestController extends Controller
             if ($expense->image) {
                 Storage::disk('public')->delete($expense->image);
             }
-            $path = $request->file('image')->store('expenses', 'public');
+            $path = WatermarkedUpload::store($request->file('image'), 'expenses');
             $validated['image'] = $path;
         }
 

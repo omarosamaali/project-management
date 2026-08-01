@@ -159,11 +159,16 @@
                                 </div>
 
                                 <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }}">
+                                    @php
+                                        $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
+                                        $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
+                                    @endphp
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
                                         السعر الكلي <span class="text-red-600">*</span>
                                     </label>
                                     <div class="relative">
                                         <input type="number" name="price" id="price" min="0" step="0.01"
+                                            @if($trainerPriceCapped) max="{{ $trainerMaxPrice }}" @endif
                                             value="{{ $editPrice }}"
                                             {{ $isFreeOld ? '' : 'required' }}
                                             class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20">
@@ -172,7 +177,19 @@
                                             <x-drhm-icon width="12" height="14" />
                                         </span>
                                     </div>
+                                    @if($trainerPriceCapped)
+                                    <p class="text-xs text-slate-500 mt-1.5">
+                                        الحد الأقصى للسعر هو
+                                        <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
+                                            {{ number_format($trainerMaxPrice, 0) }}
+                                            <x-drhm-icon width="11" height="12" />
+                                        </span>
+                                    </p>
+                                    @endif
                                     @error('price') <span class="text-red-600 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @include('dashboard.courses.partials.trainer-profit-preview', [
+                                        'trainerProfitPercentage' => $trainerProfitPercentage ?? null,
+                                    ])
                                 </div>
                             </div>
 
@@ -1811,6 +1828,9 @@
         
         setupLocationTypeToggle();
         setupFreePriceToggle();
+        if (typeof setupTrainerProfitPreview === 'function') {
+            setupTrainerProfitPreview();
+        }
         
         setupDynamicRows('requirements-container', 'add-requirement-btn', 'remove-requirement-btn', 'requirement-row', createRequirementRow);
         setupDynamicRows('features-container', 'add-feature-btn', 'remove-feature-btn', 'feature-row', createFeatureRow);
@@ -1883,4 +1903,5 @@
     };
 })();
 </script>
+@include('dashboard.courses.partials.trainer-profit-preview-script')
 @endsection

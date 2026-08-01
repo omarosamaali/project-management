@@ -374,8 +374,11 @@
                         <i class="fas fa-image text-purple-600"></i>
                         الصورة الرئيسية
                     </h3>
-                    <img src="{{ Storage::url($course->main_image) }}" alt="{{ $course->name_ar }}"
-                        class="w-full max-h-96 object-cover rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                    <div class="relative overflow-hidden rounded-xl">
+                        <img src="{{ Storage::url($course->main_image) }}" alt="{{ $course->name_ar }}"
+                            class="w-full max-h-96 object-cover rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                        <x-media-watermark brand="academy" size="md" />
+                    </div>
                 </div>
                 @endif
 
@@ -385,8 +388,10 @@
                         <i class="fas fa-video text-purple-600"></i>
                         الفيديو التعريفي
                     </h3>
-                    <video controls class="w-full max-h-[28rem] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-black"
-                        src="{{ Storage::url($course->video) }}"></video>
+                    <x-watermarked-media brand="academy">
+                        <video controls class="w-full max-h-[28rem] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-black"
+                            src="{{ Storage::url($course->video) }}"></video>
+                    </x-watermarked-media>
                 </div>
                 @endif
                 <!-- الصور الإضافية -->
@@ -404,6 +409,7 @@
                             <img src="{{ Storage::url($image) }}" alt="صورة إضافية لـ {{ $course->name_ar }}"
                                 class="w-full h-48 object-cover transition-transform group-hover:scale-105"
                                 loading="lazy">
+                            <x-media-watermark brand="academy" size="sm" />
                             <!-- overlay خفيف عند الـ hover (اختياري) -->
                             <div
                                 class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -720,6 +726,7 @@
                                             <span class="exam-cert-slot inline" data-user-id="{{ $payment->user_id }}" data-payment-id="{{ $payment->id }}">
                                             @if($course->userCanGetCertificate($payment->user_id))
                                             <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                                                target="_blank" rel="noopener"
                                                 class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                                 <i class="fas fa-certificate"></i> الشهادة
                                             </a>
@@ -957,6 +964,7 @@
             if (canCertificate) {
                 if (!existing) {
                     slot.innerHTML = `<a href="${certBase}/${paymentId}/certificate"
+                        target="_blank" rel="noopener"
                         class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                         <i class="fas fa-certificate"></i> الشهادة
                     </a>`;

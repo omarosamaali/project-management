@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\System;
 use App\Models\Service;
+use App\Support\WatermarkedUpload;
 
 class SystemController extends Controller
 {
@@ -120,7 +121,7 @@ class SystemController extends Controller
         if ($request->hasFile('main_image')) {
             $mainImage = $request->file('main_image');
             $mainImageName = time() . '_main.' . $mainImage->getClientOriginalExtension();
-            $mainImage->move(public_path('uploads/systems'), $mainImageName);
+            WatermarkedUpload::movePublic($mainImage, 'uploads/systems', $mainImageName);
             $data['main_image'] = 'uploads/systems/' . $mainImageName;
         }
 
@@ -128,7 +129,7 @@ class SystemController extends Controller
             $images = [];
             foreach ($request->file('images') as $key => $image) {
                 $imageName = time() . '_' . $key . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/systems'), $imageName);
+                WatermarkedUpload::movePublic($image, 'uploads/systems', $imageName);
                 $images[] = 'uploads/systems/' . $imageName;
             }
             $data['images'] = $images;
@@ -248,7 +249,7 @@ class SystemController extends Controller
 
             $mainImage = $request->file('main_image');
             $mainImageName = time() . '_main.' . $mainImage->getClientOriginalExtension();
-            $mainImage->move(public_path('uploads/systems'), $mainImageName);
+            WatermarkedUpload::movePublic($mainImage, 'uploads/systems', $mainImageName);
             $data['main_image'] = 'uploads/systems/' . $mainImageName;
         }
 
@@ -274,7 +275,7 @@ class SystemController extends Controller
             $newImages = [];
             foreach ($request->file('images') as $image) {
                 $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('uploads/systems'), $imageName);
+                WatermarkedUpload::movePublic($image, 'uploads/systems', $imageName);
                 $newImages[] = 'uploads/systems/' . $imageName;
             }
             $existingImages = array_merge($existingImages, $newImages);

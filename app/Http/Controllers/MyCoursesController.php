@@ -24,24 +24,55 @@ class MyCoursesController extends Controller
         $filter = $request->query('filter'); // null | active | upcoming | ended
         $now    = Carbon::now();
 
+        $with = ['course'];
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('course_units')) {
+                $with[] = 'course.units.items';
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('course_day_exams')) {
+                $with[] = 'course.dayExams';
+            }
+            if (\Illuminate\Support\Facades\Schema::hasTable('course_ratings')) {
+                $with[] = 'course.ratings';
+            }
+        } catch (\Throwable) {
+            // Fall back to course only if schema checks fail.
+        }
+
         $allPayments = Payment::where('user_id', Auth::id())
             ->whereNotNull('course_id')
-            ->with(['course.units.items', 'course.dayExams', 'course.ratings'])
+            ->with($with)
             ->latest()
             ->get()
             ->filter(fn ($p) => $p->course !== null)
             ->values();
 
         // Persist 100% recorded-path completion so ended filter stays in sync
-        foreach ($allPayments as $payment) {
-            $course = $payment->course;
-            if (
-                $course
-                && $course->isRecorded()
-                && !$payment->path_completed_at
-                && $course->isPathFullyCompletedBy((int) $payment->user_id)
-            ) {
-                $payment->forceFill(['path_completed_at' => now()])->save();
+        $canPersistPathCompleted = false;
+        try {
+            $canPersistPathCompleted = \Illuminate\Support\Facades\Schema::hasColumn('payments', 'path_completed_at');
+        } catch (\Throwable) {
+            $canPersistPathCompleted = false;
+        }
+
+        if ($canPersistPathCompleted) {
+            foreach ($allPayments as $payment) {
+                $course = $payment->course;
+                try {
+                    if (
+                        $course
+                        && $course->isRecorded()
+                        && !$payment->path_completed_at
+                        && $course->isPathFullyCompletedBy((int) $payment->user_id)
+                    ) {
+                        $payment->forceFill(['path_completed_at' => now()])->save();
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning('[MY_COURSES] path completion persist failed', [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         }
 
@@ -101,7 +132,13 @@ class MyCoursesController extends Controller
      */
     protected function redirectToPendingExam()
     {
-        $pending = CourseExamController::findPendingExamPayment(Auth::id());
+        try {
+            $pending = CourseExamController::findPendingExamPayment(Auth::id());
+        } catch (\Throwable $e) {
+            \Log::warning('[MY_COURSES] pending exam check failed', ['error' => $e->getMessage()]);
+
+            return null;
+        }
 
         if (!$pending) {
             return null;

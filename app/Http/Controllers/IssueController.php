@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Issue;
 use App\Models\Requests as ProjectRequest;
 use App\Services\ProjectActivityLogger;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,7 +21,7 @@ class IssueController extends Controller
             'image' => 'nullable|image',
         ]);
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('issues', 'public');
+            $data['image'] = WatermarkedUpload::store($request->file('image'), 'issues');
         }
         $data['user_id'] = auth()->id();
         $data['status'] = 'new';
@@ -46,7 +47,7 @@ class IssueController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('issues', 'public');
+            $data['image'] = WatermarkedUpload::store($request->file('image'), 'issues');
         }
 
         $data['user_id'] = auth()->id();

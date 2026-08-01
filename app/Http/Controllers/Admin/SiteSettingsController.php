@@ -233,7 +233,7 @@ class SiteSettingsController extends Controller
             if ($request->hasFile('logo')) {
                 $old = Setting::get('logo_path');
                 if ($old) Storage::disk('public')->delete($old);
-                $path = PublicStoragePublisher::storeAndPublish($request->file('logo'), 'site');
+                $path = PublicStoragePublisher::storeAndPublish($request->file('logo'), 'site', false);
                 Setting::set('logo_path', $path);
 
                 $companyId = app()->bound('company_id')
@@ -247,7 +247,7 @@ class SiteSettingsController extends Controller
             if ($request->hasFile('favicon')) {
                 $old = Setting::get('favicon_path');
                 if ($old) Storage::disk('public')->delete($old);
-                $path = PublicStoragePublisher::storeAndPublish($request->file('favicon'), 'site');
+                $path = PublicStoragePublisher::storeAndPublish($request->file('favicon'), 'site', false);
                 Setting::set('favicon_path', $path);
             }
 
@@ -255,7 +255,7 @@ class SiteSettingsController extends Controller
                 if ($request->hasFile($field)) {
                     $old = Setting::get($key);
                     if ($old) Storage::disk('public')->delete($old);
-                    $path = PublicStoragePublisher::storeAndPublish($request->file($field), 'landing');
+                    $path = PublicStoragePublisher::storeAndPublish($request->file($field), 'landing', false);
                     Setting::set($key, $path);
                 }
             }
@@ -308,7 +308,7 @@ class SiteSettingsController extends Controller
             if ($request->hasFile('invoice_logo')) {
                 $old = Setting::get('invoice_logo_path');
                 if ($old) Storage::disk('public')->delete($old);
-                $path = PublicStoragePublisher::storeAndPublish($request->file('invoice_logo'), 'site');
+                $path = PublicStoragePublisher::storeAndPublish($request->file('invoice_logo'), 'site', false);
                 Setting::set('invoice_logo_path', $path);
             }
 
@@ -492,7 +492,7 @@ class SiteSettingsController extends Controller
                     if ($request->hasFile("brand_logo_{$n}")) {
                         $old = Setting::get("landing_brand_logo_{$n}");
                         if ($old) Storage::disk('public')->delete($old);
-                        Setting::set("landing_brand_logo_{$n}", PublicStoragePublisher::storeAndPublish($request->file("brand_logo_{$n}"), 'landing/brands'));
+                        Setting::set("landing_brand_logo_{$n}", PublicStoragePublisher::storeAndPublish($request->file("brand_logo_{$n}"), 'landing/brands', false));
                     }
                 }
             }

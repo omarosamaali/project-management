@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Issue;
 use App\Models\IssueComment;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,7 +23,7 @@ class IssueCommentController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('issue_comments', 'public');
+            $data['image'] = WatermarkedUpload::store($request->file('image'), 'issue_comments');
         }
 
         $data['user_id'] = auth()->id();

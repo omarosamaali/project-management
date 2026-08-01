@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\WatermarkedUpload;
 // use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -90,9 +91,11 @@ class PartnerRegistrationController extends Controller
             return DB::transaction(function () use ($request) {
 
                 // 2. رفع الملفات
-                $avatarPath = $request->file('avatar')->store('partners/avatars', 'public');
+                $avatarPath = WatermarkedUpload::store($request->file('avatar'), 'partners/avatars');
                 $idCardPath = $request->file('id_card_path')->store('partners/documents', 'public');
-                $videoPath  = $request->hasFile('verification_video') ? $request->file('verification_video')->store('partners/videos', 'public') : null;
+                $videoPath  = $request->hasFile('verification_video')
+                    ? WatermarkedUpload::store($request->file('verification_video'), 'partners/videos')
+                    : null;
 
                 // 3. توليد الكود
                 $otpCode = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);

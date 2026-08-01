@@ -45,19 +45,62 @@
         </form>
 
         @if(auth()->user()->usesAcademyShell())
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <style>
+            .course-manage-card {
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+                min-height: 100%;
+            }
+            .course-manage-media {
+                aspect-ratio: 16 / 9;
+                width: 100%;
+                overflow: hidden;
+                background: #f1f5f9;
+                flex-shrink: 0;
+            }
+            .course-manage-media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                object-position: center;
+                display: block;
+            }
+            .course-manage-body {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+                gap: .5rem;
+                padding: 1rem;
+                min-height: 0;
+            }
+            .course-manage-title {
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+                min-height: 2.6em;
+                line-height: 1.3;
+            }
+            .course-manage-meta {
+                min-height: 1.25rem;
+            }
+        </style>
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
             @forelse ($courses as $course)
-            <article class="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-md transition">
-                <img src="{{ $course->main_image ? asset('storage/'.$course->main_image) : asset('assets/images/logo.webp') }}"
-                    alt="" class="w-full aspect-video object-cover bg-slate-100">
-                <div class="p-4 flex flex-col gap-2 flex-1">
+            <article class="course-manage-card bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
+                <div class="course-manage-media">
+                    <img src="{{ $course->main_image ? asset('storage/'.$course->main_image) : asset('assets/images/logo.webp') }}"
+                        alt="{{ $course->name_ar }}">
+                </div>
+                <div class="course-manage-body">
                     <div class="flex items-start justify-between gap-2">
-                        <h3 class="font-extrabold text-slate-900 leading-snug">{{ $course->name_ar }}</h3>
+                        <h3 class="course-manage-title font-extrabold text-slate-900">{{ $course->name_ar }}</h3>
                         <span class="shrink-0 text-[11px] font-bold px-2 py-1 rounded-lg {{ $course->status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500' }}">
                             {{ $course->status === 'active' ? 'نشطة' : 'غير نشطة' }}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500">
+                    <p class="course-manage-meta text-xs text-slate-500">
                         {{ match($course->location_type) { 'online' => 'أونلاين', 'recorded' => 'مسجّلة', default => 'حضوري' } }}
                         · <span class="inline-flex items-center gap-1">{{ number_format((float)$course->price, 0) }} <x-drhm-icon width="12" height="14" /></span>
                         · {{ $course->students?->count() ?? 0 }} مشترك

@@ -13,6 +13,21 @@
     $heroMediaUrl = $hasVideo ? Storage::url($course->video) : Storage::url($course->main_image);
     $isRecorded = $course->isRecorded();
     $featuredRatings = $course->featuredRatings;
+    $typeLabel = match ($course->location_type) {
+        'online' => __('messages.academy_type_online'),
+        'recorded' => __('messages.academy_type_recorded'),
+        'on_site' => __('messages.academy_type_onsite'),
+        default => $course->location_type,
+    };
+    $typeTone = match ($course->location_type) {
+        'online' => 'online',
+        'recorded' => 'recorded',
+        'on_site' => 'onsite',
+        default => 'recorded',
+    };
+    $levelKeys = $course->levelKeys();
+    $levelMap = collect(\App\Models\Course::levelOptions())->keyBy('key');
+    $categoryName = $course->category?->title($locale);
 
     $current_enrolled = \App\Models\Payment::where('course_id', $course->id)
         ->where('status', '!=', 'failed')
@@ -62,6 +77,46 @@
         z-index: 0;
         position: absolute;
     }
+    .course-hero .ac-media-wm {
+        position: absolute;
+        top: 1rem;
+        inset-inline-end: 1rem;
+        inset-inline-start: auto;
+        width: min(16%, 9rem);
+        height: auto;
+        max-height: 18%;
+        opacity: {{ config('watermark.opacity', 0.38) }};
+        pointer-events: none;
+        z-index: 4;
+        user-select: none;
+    }
+    .course-side-card .ac-media-wm-host,
+    .course-side-card { position: relative; }
+    .course-side-card .ac-media-wm {
+        position: absolute;
+        top: .65rem;
+        inset-inline-end: .65rem;
+        inset-inline-start: auto;
+        width: min(32%, 5.5rem);
+        height: auto;
+        opacity: {{ config('watermark.opacity', 0.38) }};
+        pointer-events: none;
+        z-index: 2;
+        user-select: none;
+    }
+    .proof-grid .ac-media-wm-host { position: relative; display: block; overflow: hidden; border-radius: .75rem; }
+    .proof-grid .ac-media-wm {
+        position: absolute;
+        top: .5rem;
+        inset-inline-end: .5rem;
+        inset-inline-start: auto;
+        width: min(36%, 4.5rem);
+        height: auto;
+        opacity: {{ config('watermark.opacity', 0.38) }};
+        pointer-events: none;
+        z-index: 2;
+        user-select: none;
+    }
     .course-hero-play {
         position: absolute;
         inset: 0;
@@ -103,6 +158,91 @@
         line-height: 1.25;
         max-width: 52rem;
         text-shadow: 0 2px 16px rgba(0,0,0,.45);
+    }
+    .course-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .55rem;
+        margin-bottom: 1.35rem;
+    }
+    .course-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .45rem .95rem;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: .01em;
+    }
+    .course-type-badge.is-online {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        box-shadow: 0 8px 18px rgba(37, 99, 235, .28);
+    }
+    .course-type-badge.is-recorded {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        box-shadow: 0 8px 18px rgba(109, 40, 217, .28);
+    }
+    .course-type-badge.is-onsite {
+        background: linear-gradient(135deg, #ff6b3d, #e85d04);
+        box-shadow: 0 8px 18px rgba(232, 93, 4, .28);
+    }
+    .course-level-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: .4rem .8rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+        color: #fff;
+        border: 0;
+        background: #061525;
+    }
+    .course-level-chip.is-beginner {
+        background: linear-gradient(135deg, #12c8a0, #0b8f7f);
+        box-shadow: 0 6px 14px rgba(11, 143, 127, .22);
+    }
+    .course-level-chip.is-intermediate {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        box-shadow: 0 6px 14px rgba(37, 99, 235, .22);
+    }
+    .course-level-chip.is-advanced {
+        background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+        box-shadow: 0 6px 14px rgba(109, 40, 217, .22);
+    }
+    .course-level-chip.is-all {
+        background: linear-gradient(135deg, #f0a202, #d97706);
+        box-shadow: 0 6px 14px rgba(217, 119, 6, .22);
+    }
+    .course-category-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .4rem .85rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+        color: #0e3a5c;
+        background: #eef5fb;
+        border: 1px solid #d4e0ec;
+    }
+    .course-category-chip img {
+        width: 1rem;
+        height: 1rem;
+        border-radius: 999px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .course-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        margin-top: .85rem;
+    }
+    .course-hero-meta .course-type-badge {
+        box-shadow: 0 8px 20px rgba(0,0,0,.25);
     }
     .course-layout {
         display: grid;
@@ -235,10 +375,99 @@
     }
     .path-lesson:last-child { border-bottom: 0; }
     .review-card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: .9rem;
-        padding: 1.15rem;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: .85rem;
+        background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e8eef4;
+        border-inline-start: 3px solid #0b8f7f;
+        border-radius: 1.1rem;
+        padding: 1.35rem 1.4rem 1.4rem;
+        box-shadow: 0 10px 28px rgba(6, 21, 37, .05);
+        min-height: 100%;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .review-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 34px rgba(6, 21, 37, .08);
+        border-color: #d7e3ee;
+    }
+    .review-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .85rem;
+    }
+    .review-card-person {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        min-width: 0;
+    }
+    .review-card-avatar {
+        width: 2.55rem;
+        height: 2.55rem;
+        border-radius: 999px;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(145deg, #12c8a0, #0b8f7f);
+        color: #fff;
+        font-size: .85rem;
+        font-weight: 800;
+        box-shadow: 0 6px 14px rgba(11, 143, 127, .25);
+    }
+    .review-card-name {
+        margin: 0;
+        font-size: .95rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .review-card-role {
+        margin: .15rem 0 0;
+        font-size: .72rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+    .review-card-score {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        flex-shrink: 0;
+        padding: .35rem .65rem;
+        border-radius: 999px;
+        background: #fff7ed;
+        border: 1px solid #ffedd5;
+        color: #b45309;
+        font-size: .78rem;
+        font-weight: 800;
+    }
+    .review-card-score .stars {
+        font-size: .72rem;
+        letter-spacing: .5px;
+    }
+    .review-card-body {
+        margin: 0;
+        padding-top: .15rem;
+        color: #475569;
+        font-size: .9rem;
+        line-height: 1.75;
+        position: relative;
+    }
+    .review-card-quote {
+        position: absolute;
+        inset-block-start: -.15rem;
+        inset-inline-end: 0;
+        color: rgba(11, 143, 127, .12);
+        font-size: 1.6rem;
+        line-height: 1;
+        pointer-events: none;
     }
     .stars { color: #f59e0b; letter-spacing: 1px; }
     .cta-primary {
@@ -286,9 +515,18 @@
         @else
         <img class="hero-media" src="{{ $heroMediaUrl }}" alt="{{ $courseName }}">
         @endif
+        <x-media-watermark brand="academy" size="lg" />
         <div class="course-hero-overlay">
             <div class="hero-copy max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8 pt-24">
                 <h1 class="course-hero-title">{{ $courseName }}</h1>
+                @if($typeLabel)
+                <div class="course-hero-meta">
+                    <span class="course-type-badge is-{{ $typeTone }}">
+                        <i class="fas fa-{{ $typeTone === 'online' ? 'video' : ($typeTone === 'onsite' ? 'map-marker-alt' : 'play-circle') }}"></i>
+                        {{ $typeLabel }}
+                    </span>
+                </div>
+                @endif
             </div>
         </div>
     </section>
@@ -308,6 +546,36 @@
 
         <div class="course-layout">
             <div class="course-main min-w-0">
+                @if($typeLabel || count($levelKeys) || $categoryName)
+                <div class="course-meta-row">
+                    @if($typeLabel)
+                    <span class="course-type-badge is-{{ $typeTone }}">
+                        <i class="fas fa-{{ $typeTone === 'online' ? 'video' : ($typeTone === 'onsite' ? 'map-marker-alt' : 'play-circle') }}"></i>
+                        {{ $typeLabel }}
+                    </span>
+                    @endif
+                    @foreach($levelKeys as $levelKey)
+                    @php
+                        $levelOpt = $levelMap->get($levelKey);
+                        $levelLabel = $levelOpt
+                            ? ($locale === 'en' ? $levelOpt['label_en'] : $levelOpt['label_ar'])
+                            : $levelKey;
+                    @endphp
+                    <span class="course-level-chip is-{{ $levelKey }}">{{ $levelLabel }}</span>
+                    @endforeach
+                    @if($categoryName)
+                    <span class="course-category-chip" title="{{ $categoryName }}">
+                        @if($course->category?->iconUrl())
+                        <img src="{{ $course->category->iconUrl() }}" alt="">
+                        @else
+                        <i class="fas fa-folder-open" aria-hidden="true"></i>
+                        @endif
+                        {{ $categoryName }}
+                    </span>
+                    @endif
+                </div>
+                @endif
+
                 {{-- Description --}}
                 <div class="section-block">
                     <h2 class="section-title">وصف الدورة</h2>
@@ -475,23 +743,36 @@
                     </div>
                     <div class="grid sm:grid-cols-2 gap-4">
                         @foreach ($featuredRatings as $rating)
-                        <div class="review-card">
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <div class="font-bold text-gray-900">{{ $rating->user->name ?? 'متدرب' }}</div>
-                                @if($rating->overallScore() !== null)
-                                <div class="stars text-sm">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="fas fa-star{{ $i <= round($rating->overallScore()) ? '' : ' text-gray-300' }}"></i>
-                                    @endfor
+                        @php
+                            $reviewerName = $rating->user->name ?? 'متدرب';
+                            $reviewerInitial = mb_substr(trim($reviewerName), 0, 1) ?: 'م';
+                            $reviewScore = $rating->overallScore();
+                        @endphp
+                        <article class="review-card">
+                            <div class="review-card-head">
+                                <div class="review-card-person">
+                                    <span class="review-card-avatar" aria-hidden="true">{{ $reviewerInitial }}</span>
+                                    <div class="min-w-0">
+                                        <h3 class="review-card-name">{{ $reviewerName }}</h3>
+                                        <p class="review-card-role">مشترك في الدورة</p>
+                                    </div>
+                                </div>
+                                @if($reviewScore !== null)
+                                <div class="review-card-score" title="{{ number_format($reviewScore, 1) }}/5">
+                                    <span class="stars">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star{{ $i <= round($reviewScore) ? '' : ' text-orange-200' }}"></i>
+                                        @endfor
+                                    </span>
+                                    <span>{{ number_format($reviewScore, 1) }}</span>
                                 </div>
                                 @endif
                             </div>
-                            @if($rating->feedbackText())
-                            <p class="text-sm text-gray-600 leading-relaxed">{{ $rating->feedbackText() }}</p>
-                            @else
-                            <p class="text-sm text-gray-400 italic">تقييم إيجابي للدورة</p>
-                            @endif
-                        </div>
+                            <p class="review-card-body">
+                                <i class="fas fa-quote-left review-card-quote" aria-hidden="true"></i>
+                                {{ $rating->feedbackText() ?: 'تقييم إيجابي للدورة' }}
+                            </p>
+                        </article>
                         @endforeach
                     </div>
                 </div>
@@ -503,9 +784,12 @@
                     <h2 class="section-title">صور من الدورة</h2>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                         @foreach ($course->images as $image)
-                        <img onclick="openModal('{{ Storage::url($image) }}')"
-                            src="{{ Storage::url($image) }}" alt="صورة إضافية"
-                            class="w-full h-36 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition">
+                        <div class="ac-media-wm-host proof-grid" style="position:relative;overflow:hidden;border-radius:.5rem;">
+                            <img onclick="openModal('{{ Storage::url($image) }}')"
+                                src="{{ Storage::url($image) }}" alt="صورة إضافية"
+                                class="w-full h-36 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition">
+                            <x-media-watermark brand="academy" size="sm" />
+                        </div>
                         @endforeach
                     </div>
                 </div>
@@ -516,7 +800,10 @@
             <aside class="course-side">
                 <div class="course-side-card">
                     @if($course->main_image)
-                    <img class="side-cover" src="{{ Storage::url($course->main_image) }}" alt="{{ $courseName }}">
+                    <div class="ac-media-wm-host" style="position:relative;">
+                        <img class="side-cover" src="{{ Storage::url($course->main_image) }}" alt="{{ $courseName }}">
+                        <x-media-watermark brand="academy" size="sm" />
+                    </div>
                     @endif
                     <div class="p-5">
                         <div class="mb-4 pb-4 border-b border-gray-100">
@@ -566,6 +853,22 @@
                         </div>
 
                         <div class="space-y-2">
+                            @php
+                                $wishlisted = (bool) ($course->academy_wishlisted ?? false);
+                            @endphp
+                            <button type="button"
+                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition
+                                    {{ $wishlisted ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-gray-200 bg-white text-gray-700 hover:border-rose-300 hover:text-rose-600' }}"
+                                data-wishlist-toggle
+                                data-url="{{ route('academy.wishlist.toggle', $course) }}"
+                                data-login-url="{{ \App\Support\AuthUi::loginUrl(['redirect' => url()->current()]) }}"
+                                data-wishlisted="{{ $wishlisted ? '1' : '0' }}"
+                                aria-pressed="{{ $wishlisted ? 'true' : 'false' }}">
+                                <i class="{{ $wishlisted ? 'fas' : 'far' }} fa-heart"></i>
+                                <span data-wishlist-label>
+                                    {{ $wishlisted ? __('messages.academy_wishlist_remove') : __('messages.academy_wishlist_add') }}
+                                </span>
+                            </button>
                             @auth
                                 @if (!$canEnroll)
                                 <div class="cta-disabled bg-amber-50 border-amber-300 text-amber-800 text-sm">
@@ -590,7 +893,11 @@
                                 <p class="text-[11px] text-center text-gray-400">المقاعد المتاحة: {{ $actual_remaining }}</p>
                                 @endif
                             @else
-                                <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'academy']) }}" class="cta-primary">سجل دخول للاشتراك</a>
+                                @php
+                                    $enrollReturnUrl = route('courses.show', [$course, 'enroll' => 1]);
+                                @endphp
+                                <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'academy', 'redirect' => $enrollReturnUrl]) }}"
+                                    class="cta-primary">سجل دخول للاشتراك</a>
                             @endauth
                         </div>
 
@@ -874,5 +1181,21 @@
             padding: '1rem',
         });
     }
+
+    @auth
+    @if($canEnroll && !$is_already_in && $actual_remaining > 0 && request()->boolean('enroll'))
+    document.addEventListener('DOMContentLoaded', function () {
+        // Drop ?enroll=1 so refresh doesn't re-open the flow.
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('enroll');
+            window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+        } catch (e) {}
+
+        handlePayment({{ (int) $course->id }}, {{ (float) $course->price }}, 'course', 'تأكيد الاشتراك');
+    });
+    @endif
+    @endauth
 </script>
+@include('academy.partials.wishlist-script')
 @endsection

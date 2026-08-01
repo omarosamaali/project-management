@@ -15,8 +15,11 @@ use App\Models\CoursePathExamQuestion;
 use App\Models\CoursePathItem;
 use App\Models\CourseRating;
 use App\Models\CourseUnit;
+use App\Models\CourseWishlist;
+use App\Models\Setting;
 use App\Support\YouTubeLive;
 use App\Support\LessonVideoSource;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +27,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CourseController extends Controller
 {
@@ -89,7 +93,9 @@ class CourseController extends Controller
             ? User::where('role', 'trainer')->notBlocked()->orderBy('name')->get(['id', 'name', 'email'])
             : collect();
 
-        return view('dashboard.courses.create', compact('categories', 'trainers'));
+        $trainerProfitPercentage = Setting::academyTrainerProfitPercentage();
+
+        return view('dashboard.courses.create', compact('categories', 'trainers', 'trainerProfitPercentage'));
     }
 
     protected function prepareJsonFields(Request $request, array &$data)
@@ -194,19 +200,19 @@ class CourseController extends Controller
         $this->applyMeetingProvider($request, $data);
 
         if ($request->hasFile('main_image')) {
-            $data['main_image'] = $request->file('main_image')->store('courses/main', 'public');
+            $data['main_image'] = WatermarkedUpload::store($request->file('main_image'), 'courses/main');
         }
 
         if ($request->hasFile('images')) {
             $imagesPaths = [];
             foreach ($request->file('images') as $image) {
-                $imagesPaths[] = $image->store('courses/gallery', 'public');
+                $imagesPaths[] = WatermarkedUpload::store($image, 'courses/gallery');
             }
             $data['images'] = $imagesPaths;
         }
 
         if ($request->hasFile('video')) {
-            $data['video'] = $request->file('video')->store('courses/videos', 'public');
+            $data['video'] = WatermarkedUpload::store($request->file('video'), 'courses/videos');
         }
 
         $course = DB::transaction(function () use ($data, $request) {
@@ -278,7 +284,9 @@ class CourseController extends Controller
             ? User::where('role', 'trainer')->notBlocked()->orderBy('name')->get(['id', 'name', 'email'])
             : collect();
 
-        return view('dashboard.courses.edit', compact('course', 'categories', 'trainers'));
+        $trainerProfitPercentage = Setting::academyTrainerProfitPercentage();
+
+        return view('dashboard.courses.edit', compact('course', 'categories', 'trainers', 'trainerProfitPercentage'));
     }
 
     public function update(Request $request, Course $course)
@@ -307,7 +315,7 @@ class CourseController extends Controller
             if ($course->main_image) {
                 Storage::disk('public')->delete($course->main_image);
             }
-            $data['main_image'] = $request->file('main_image')->store('courses/main', 'public');
+            $data['main_image'] = WatermarkedUpload::store($request->file('main_image'), 'courses/main');
         }
 
         if ($request->hasFile('images')) {
@@ -318,7 +326,7 @@ class CourseController extends Controller
             }
             $imagesPaths = [];
             foreach ($request->file('images') as $image) {
-                $imagesPaths[] = $image->store('courses/gallery', 'public');
+                $imagesPaths[] = WatermarkedUpload::store($image, 'courses/gallery');
             }
             $data['images'] = $imagesPaths;
         }
@@ -332,7 +340,7 @@ class CourseController extends Controller
             if ($course->video) {
                 Storage::disk('public')->delete($course->video);
             }
-            $data['video'] = $request->file('video')->store('courses/videos', 'public');
+            $data['video'] = WatermarkedUpload::store($request->file('video'), 'courses/videos');
         }
 
         // Don't reset exam timestamps from form
@@ -381,10 +389,16 @@ class CourseController extends Controller
 
     protected function validateCourse(Request $request, $id = null)
     {
+        $priceRules = ['required', 'numeric', 'min:0'];
+        $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
+        if (auth()->user()?->isTrainer() && ! auth()->user()?->isAdmin()) {
+            $priceRules[] = 'max:'.$trainerMaxPrice;
+        }
+
         $data = $request->validate([
             'name_ar' => 'required|string|max:255',
             'name_en' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0',
+            'price' => $priceRules,
             'counter' => 'required|integer|min:0',
             'count_days' => 'exclude_if:location_type,recorded|required|integer|min:0',
             'start_date' => 'exclude_if:location_type,recorded|required|date',
@@ -469,6 +483,7 @@ class CourseController extends Controller
             'units.*.items.*.video_embed_url' => 'nullable|string|max:1000',
             'units.*.items.*.video_duration_seconds' => 'nullable|integer|min:0',
         ], [
+            'price.max' => 'الحد الأقصى لسعر الدورة للمحاضر هو :max درهم.',
             'online_link.required' => 'رابط البث أو الاجتماع مطلوب للدورة الأونلاين',
             'online_link.url' => 'رابط الاجتماع غير صالح',
             'course_category_id.required' => 'اختر تصنيف الدورة',
@@ -903,6 +918,11 @@ class CourseController extends Controller
         $this->decorateAcademyCourseCards($related_courses);
 
         $is_enrolled = $course->isUserEnrolled();
+        $course->academy_wishlisted = Auth::check()
+            && CourseWishlist::query()
+                ->where('user_id', Auth::id())
+                ->where('course_id', $course->id)
+                ->exists();
         // Average from all completed trainee ratings (not only featured)
         $featuredAverage = $course->averageRatingScore();
         $featuredCount = $course->completedRatingsCount();
@@ -1018,29 +1038,51 @@ class CourseController extends Controller
     public function showCertificate($paymentId)
     {
         $payment = Payment::with(['user', 'course.dayExams', 'course.ratings'])->findOrFail($paymentId);
+        $course = $payment->course;
 
-        if (!$payment->is_attended) {
-            return back()->with('error', 'لا يمكن استخراج شهادة لمن لم يحضر');
+        $isEnrolled = in_array((string) $payment->status, ['completed', 'success', 'paid', 'active', 'pending'], true);
+        if (!$isEnrolled) {
+            return redirect()->route('dashboard.my_courses.index')
+                ->with('error', 'لا يمكن استخراج شهادة لهذا الاشتراك');
         }
 
-        $course = $payment->course;
+        // Avoid redirect loops: never use back() between rating ↔ certificate.
         if ($course && !$course->userCanGetCertificate($payment->user_id)) {
+            if ($course->userNeedsRating($payment->user_id)) {
+                return redirect()->route('dashboard.courses.rating', $course)
+                    ->with('error', 'يجب إكمال تقييم الدورة قبل استخراج الشهادة');
+            }
+
             if ($course->usesDayExams()) {
                 if (!$course->areAllDayExamsFinished()) {
-                    return back()->with('error', 'الشهادة متاحة بعد انتهاء جميع اختبارات الدورة');
+                    return redirect()->route('dashboard.my_courses.index')
+                        ->with('error', 'الشهادة متاحة بعد انتهاء جميع اختبارات الدورة');
                 }
                 if (!$course->userMetExamPassRequirement($payment->user_id)) {
-                    return back()->with('error', 'الشهادة متاحة فقط بعد اجتياز العدد المطلوب من الاختبارات');
-                }
-                if (!$course->userCompletedRating($payment->user_id)) {
-                    return back()->with('error', 'يجب إكمال تقييم الدورة قبل استخراج الشهادة');
+                    return redirect()->route('dashboard.my_courses.index')
+                        ->with('error', 'الشهادة متاحة فقط بعد اجتياز العدد المطلوب من الاختبارات');
                 }
             }
 
-            return back()->with('error', 'الشهادة متاحة فقط بعد اجتياز الاختبار');
+            return redirect()->route('dashboard.my_courses.index')
+                ->with('error', 'الشهادة غير متاحة حالياً');
         }
 
-        return view('dashboard.courses.certificate', compact('payment'));
+        // Rich HTML preview (same design as academy trust certificate).
+        if (request()->boolean('html')) {
+            return response()
+                ->view('dashboard.courses.certificate', compact('payment'))
+                ->header('Content-Disposition', 'inline; filename="certificate.html"');
+        }
+
+        $safeName = preg_replace('/[^\p{L}\p{N}\-_]+/u', '-', (string) $payment->user->name) ?: 'certificate';
+        $filename = 'certificate-'.$safeName.'.pdf';
+
+        $pdf = Pdf::loadView('dashboard.courses.certificate-pdf', compact('payment'))
+            ->setPaper('a4', 'portrait');
+
+        // Opens in the browser PDF viewer; user can print from there.
+        return $pdf->stream($filename);
     }
 
     /**
@@ -1186,8 +1228,10 @@ class CourseController extends Controller
                         if ($item?->video_thumbnail_path) {
                             Storage::disk('public')->delete($item->video_thumbnail_path);
                         }
-                        $payload['video_thumbnail_path'] = $request->file($thumbKey)
-                            ->store('courses/path-thumbnails', 'public');
+                        $payload['video_thumbnail_path'] = WatermarkedUpload::store(
+                            $request->file($thumbKey),
+                            'courses/path-thumbnails'
+                        );
                     } elseif (!empty($itemData['remove_thumbnail']) && $item?->video_thumbnail_path) {
                         Storage::disk('public')->delete($item->video_thumbnail_path);
                         $payload['video_thumbnail_path'] = null;
@@ -1208,7 +1252,10 @@ class CourseController extends Controller
                         if ($item?->video_path) {
                             Storage::disk('public')->delete($item->video_path);
                         }
-                        $payload['video_path'] = $request->file($fileKey)->store('courses/path-videos', 'public');
+                        $payload['video_path'] = WatermarkedUpload::store(
+                            $request->file($fileKey),
+                            'courses/path-videos'
+                        );
                         $payload['video_embed_url'] = null;
                         $payload['video_duration_seconds'] = max(0, (int) ($itemData['video_duration_seconds'] ?? 0));
                     } else {
@@ -1373,11 +1420,22 @@ class CourseController extends Controller
             $course->academy_owned = false;
             $course->academy_payment = null;
             $course->academy_path_percent = 0;
+            $course->academy_wishlisted = false;
         }
 
         $userId = Auth::id();
         if (! $userId) {
             return;
+        }
+
+        $wishlisted = CourseWishlist::query()
+            ->where('user_id', $userId)
+            ->whereIn('course_id', $ids)
+            ->pluck('course_id')
+            ->flip();
+
+        foreach ($courses as $course) {
+            $course->academy_wishlisted = $wishlisted->has($course->id);
         }
 
         $payments = Payment::query()

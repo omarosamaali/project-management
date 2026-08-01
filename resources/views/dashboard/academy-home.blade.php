@@ -110,6 +110,7 @@
         background: #fff; border-radius: 1.2rem; padding: .75rem;
         box-shadow: 0 8px 24px rgba(6,21,37,.06);
         transition: transform .2s, box-shadow .2s;
+        position: relative;
     }
     @media (min-width: 640px) {
         .ac-learn-row { grid-template-columns: 7.5rem minmax(0, 1fr) auto; }
@@ -145,6 +146,7 @@
         display: flex; flex-direction: column; min-height: 100%;
         box-shadow: 0 8px 24px rgba(6,21,37,.06);
         transition: transform .25s, box-shadow .25s;
+        position: relative;
     }
     .ac-course-card:hover {
         transform: translateY(-4px);
@@ -156,6 +158,32 @@
         transition: transform .45s ease;
     }
     .ac-course-card:hover img { transform: scale(1.04); }
+    .ac-course-card::after {
+        content: "";
+        position: absolute;
+        top: .65rem;
+        inset-inline-end: .65rem;
+        inset-inline-start: auto;
+        width: min(30%, 5.25rem);
+        aspect-ratio: 644 / 451;
+        background: url("{{ asset('assets/images/academy_watermark.png') }}") center / contain no-repeat;
+        opacity: {{ config('watermark.opacity', 0.38) }};
+        pointer-events: none;
+        z-index: 3;
+    }
+    .ac-learn-row::after {
+        content: "";
+        position: absolute;
+        top: .55rem;
+        inset-inline-end: .55rem;
+        inset-inline-start: auto;
+        width: 3.25rem;
+        aspect-ratio: 644 / 451;
+        background: url("{{ asset('assets/images/academy_watermark.png') }}") center / contain no-repeat;
+        opacity: {{ config('watermark.opacity', 0.38) }};
+        pointer-events: none;
+        z-index: 2;
+    }
     .ac-course-body { padding: .95rem 1.05rem 1.05rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
     .ac-course-title {
         font-weight: 800; font-size: .95rem; color: #061525; line-height: 1.35; margin: 0;
@@ -226,7 +254,7 @@
                     <h3 class="ac-course-title">{{ $course->name_ar }}</h3>
                     <p class="ac-course-meta">يجب إكمال التقييم قبل استخراج الشهادة</p>
                     <div class="ac-course-actions">
-                        <a href="{{ route('courses.rating', $course) }}" class="ac-btn ac-btn-amber">
+                        <a href="{{ route('dashboard.courses.rating', $course) }}" class="ac-btn ac-btn-amber">
                             <i class="fas fa-star"></i> أكمل التقييم
                         </a>
                     </div>

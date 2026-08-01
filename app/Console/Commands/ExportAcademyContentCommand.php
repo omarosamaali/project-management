@@ -13,10 +13,10 @@ class ExportAcademyContentCommand extends Command
 {
     protected $signature = 'academy:export-seed
         {--path=database/seeders/data/academy_content.json : Output JSON path relative to base_path}
-        {--all-reviews : Include all completed ratings, not only featured}
+        {--featured-only : Export featured ratings only (default: all completed reviews)}
         {--copy-icons : Copy category icon files into database/seeders/data/category-icons}';
 
-    protected $description = 'Export current course categories and academy testimonials (ratings) to a JSON file for live seeding';
+    protected $description = 'Export current course categories and academy reviews to JSON for live seeding';
 
     public function handle(): int
     {
@@ -71,10 +71,10 @@ class ExportAcademyContentCommand extends Command
 
         $ratingsQuery = CourseRating::query()
             ->whereNotNull('completed_at')
-            ->with(['user:id,name,email,avatar', 'course:id,name_ar,name_en'])
+            ->with(['user:id,name,email,avatar', 'course:id,name_ar,name_en,location_type'])
             ->latest('completed_at');
 
-        if (!$this->option('all-reviews')) {
+        if ($this->option('featured-only')) {
             $ratingsQuery->where('is_featured', true);
         }
 
@@ -84,6 +84,7 @@ class ExportAcademyContentCommand extends Command
                 return [
                     'course_name_ar' => $rating->course->name_ar,
                     'course_name_en' => $rating->course->name_en,
+                    'course_location_type' => $rating->course->location_type,
                     'user_name' => $rating->user->name,
                     'user_email' => $rating->user->email,
                     'user_avatar' => $rating->user->avatar ? ltrim((string) $rating->user->avatar, '/') : null,
@@ -100,6 +101,7 @@ class ExportAcademyContentCommand extends Command
             'app_url' => config('app.url'),
             'categories' => $categories,
             'testimonials' => $testimonials,
+            'per_course_reviews' => 3,
         ];
 
         File::put(
@@ -107,10 +109,12 @@ class ExportAcademyContentCommand extends Command
             json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
 
+        $featured = collect($testimonials)->where('is_featured', true)->count();
+
         $this->info('Exported academy content:');
-        $this->line('  Categories:    ' . count($categories));
-        $this->line('  Testimonials:  ' . count($testimonials));
-        $this->line('  File:          ' . $outputPath);
+        $this->line('  Categories:     ' . count($categories));
+        $this->line('  Reviews:        ' . count($testimonials) . " ({$featured} featured)");
+        $this->line('  File:           ' . $outputPath);
         $this->newLine();
         $this->comment('On live, deploy this JSON (and category-icons if copied), then run:');
         $this->line('  php artisan db:seed --class=AcademyContentSeeder');

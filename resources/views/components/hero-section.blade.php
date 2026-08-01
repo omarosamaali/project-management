@@ -78,10 +78,6 @@
                     {{ __('messages.academy_explore_courses') }}
                     <i class="fas fa-arrow-{{ $isRtl ? 'left' : 'right' }}"></i>
                 </a>
-                <a href="https://wa.me/971501774477" target="_blank" rel="noopener" class="ach-btn-ghost">
-                    <i class="fab fa-whatsapp"></i>
-                    {{ __('messages.talk_to_expert') }}
-                </a>
             </div>
 
             <div class="ach-stats" role="list">

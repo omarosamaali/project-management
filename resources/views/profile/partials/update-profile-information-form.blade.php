@@ -47,7 +47,10 @@
 
         {{-- Name --}}
         <div>
-            <x-input-label for="name" value="الاسم" />
+            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <x-input-label for="name" value="الاسم" />
+                <span class="text-xs text-slate-500 font-medium">(يفضل باللغة العربية، سيتم إضافته للشهادة)</span>
+            </div>
             <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)"
                 required autofocus autocomplete="name" />
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
@@ -98,13 +101,6 @@
                 @endif
             </div>
             @endif
-        </div>
-
-        {{-- role --}}
-        <div>
-            <x-input-label for="role" value="الصلاحية" />
-            <div id="role" name="role" type="text" class="rounded border-gray-300 mt-1 block w-full">{{ $user->role }}</div>
-            <x-input-error class="mt-2" :messages="$errors->get('role')" />
         </div>
 
         @if(Auth::user()->role == 'partner')

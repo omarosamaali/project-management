@@ -274,6 +274,7 @@
                 data-watched="{{ (int) ($progress->get($current->id)?->video_watched_seconds ?? 0) }}"
                 data-played="{{ (int) ($progress->get($current->id)?->video_played_seconds ?? 0) }}"
                 @if($progress->get($current->id)?->is_completed) data-completed="1" @endif>
+                <div class="wm-media-wrap" style="position:relative;width:100%;height:100%;">
                 @if($playback['provider'] === 'html5')
                 <video id="lessonVideo" playsinline preload="metadata" controlsList="nodownload"
                     src="{{ $playerSrc }}"
@@ -283,6 +284,10 @@
                     data-plyr-embed-id="{{ $playback['embed_id'] }}"
                     @if(!empty($playback['poster'])) data-poster="{{ $playback['poster'] }}" @endif></div>
                 @endif
+                <img src="{{ asset('assets/images/academy_watermark.png') }}" alt="" aria-hidden="true"
+                    class="ac-media-wm"
+                    style="position:absolute;top:12px;inset-inline-end:12px;inset-inline-start:auto;width:min(18%,120px);height:auto;opacity:{{ config('watermark.opacity', 0.38) }};pointer-events:none;z-index:5;user-select:none;">
+                </div>
             </div>
             @else
             <div class="p-8 text-center text-red-600">لا يوجد فيديو لهذا الدرس.</div>

@@ -7,6 +7,7 @@ use App\Models\CoursePathItem;
 use App\Models\CoursePathProgress;
 use App\Models\Payment;
 use App\Support\ShufflesExamQuestions;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -324,7 +325,7 @@ class CoursePathController extends Controller
             'thumbnail' => 'required|image|mimes:jpeg,jpg,png,webp|max:4096',
         ]);
 
-        $path = $request->file('thumbnail')->store('courses/path-thumbnails', 'public');
+        $path = WatermarkedUpload::store($request->file('thumbnail'), 'courses/path-thumbnails');
         $item->update(['video_thumbnail_path' => $path]);
 
         return response()->json([

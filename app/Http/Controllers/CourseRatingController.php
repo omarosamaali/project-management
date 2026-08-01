@@ -33,7 +33,12 @@ class CourseRatingController extends Controller
         $payment = $this->resolvePayment($course);
 
         if ($course->userCompletedRating(Auth::id())) {
-            return redirect()->route('dashboard.courses.certificate', $payment);
+            if ($course->userCanGetCertificate(Auth::id())) {
+                return redirect()->route('dashboard.courses.certificate', $payment);
+            }
+
+            return redirect()->route('dashboard.my_courses.index')
+                ->with('success', 'تم حفظ التقييم مسبقاً.');
         }
 
         $questions = config("course_rating.{$course->location_type}", []);
@@ -90,16 +95,13 @@ class CourseRatingController extends Controller
 
     protected function resolvePayment(Course $course): Payment
     {
-        $query = Payment::where('user_id', Auth::id())
-            ->where('course_id', $course->id);
-
-        if (!$course->isRecorded()) {
-            $query->where('is_attended', true);
-        } else {
-            $query->where('status', 'success');
-        }
-
-        $payment = $query->first();
+        // Match enrollment lookup used across academy home / my-courses.
+        // Rating eligibility is enforced separately via userNeedsRating().
+        $payment = Payment::where('user_id', Auth::id())
+            ->where('course_id', $course->id)
+            ->whereIn('status', ['completed', 'success', 'paid', 'active', 'pending'])
+            ->latest('id')
+            ->first();
 
         if (!$payment) {
             abort(403, 'التقييم متاح فقط للمشتركين.');

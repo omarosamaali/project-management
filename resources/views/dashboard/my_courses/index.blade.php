@@ -21,18 +21,58 @@
         @media (min-width: 768px) { .ac-filter-strip { grid-template-columns: repeat(4, minmax(0,1fr)); } }
         .ac-filter-chip {
             display: flex; flex-direction: column; gap: .35rem;
+            position: relative;
             background: #fff; border-radius: 1.15rem; padding: 1rem 1.05rem;
             text-decoration: none; color: inherit;
             box-shadow: 0 8px 22px rgba(6,21,37,.06);
+            border: 1px solid transparent;
             border-inline-start: 4px solid #0b8f7f;
-            transition: transform .2s, box-shadow .2s;
+            transition: transform .2s, box-shadow .2s, background .2s, border-color .2s;
         }
         .ac-filter-chip:nth-child(2) { border-inline-start-color: #d4a017; }
         .ac-filter-chip:nth-child(3) { border-inline-start-color: #0e3a5c; }
         .ac-filter-chip:nth-child(4) { border-inline-start-color: #e85d4c; }
         .ac-filter-chip:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(6,21,37,.1); }
-        .ac-filter-chip.is-on { outline: 2px solid #061525; outline-offset: 2px; }
+        .ac-filter-chip.is-on {
+            background: linear-gradient(145deg, #f3fbf9 0%, #ffffff 55%);
+            border-color: rgba(11, 143, 127, .22);
+            border-inline-start-width: 5px;
+            box-shadow:
+                0 12px 28px rgba(11, 143, 127, .14),
+                0 2px 8px rgba(6, 21, 37, .04);
+            transform: translateY(-1px);
+        }
+        .ac-filter-chip:nth-child(2).is-on {
+            background: linear-gradient(145deg, #fff9eb 0%, #ffffff 55%);
+            border-color: rgba(212, 160, 23, .28);
+            box-shadow: 0 12px 28px rgba(212, 160, 23, .16), 0 2px 8px rgba(6, 21, 37, .04);
+        }
+        .ac-filter-chip:nth-child(3).is-on {
+            background: linear-gradient(145deg, #f0f6fb 0%, #ffffff 55%);
+            border-color: rgba(14, 58, 92, .22);
+            box-shadow: 0 12px 28px rgba(14, 58, 92, .14), 0 2px 8px rgba(6, 21, 37, .04);
+        }
+        .ac-filter-chip:nth-child(4).is-on {
+            background: linear-gradient(145deg, #fff4f2 0%, #ffffff 55%);
+            border-color: rgba(232, 93, 76, .24);
+            box-shadow: 0 12px 28px rgba(232, 93, 76, .14), 0 2px 8px rgba(6, 21, 37, .04);
+        }
+        .ac-filter-chip.is-on::after {
+            content: '';
+            position: absolute;
+            inset-block-start: .7rem;
+            inset-inline-end: .75rem;
+            width: .55rem; height: .55rem;
+            border-radius: 999px;
+            background: currentColor;
+            color: #0b8f7f;
+            box-shadow: 0 0 0 4px rgba(11, 143, 127, .15);
+        }
+        .ac-filter-chip:nth-child(2).is-on::after { color: #d4a017; box-shadow: 0 0 0 4px rgba(212, 160, 23, .18); }
+        .ac-filter-chip:nth-child(3).is-on::after { color: #0e3a5c; box-shadow: 0 0 0 4px rgba(14, 58, 92, .15); }
+        .ac-filter-chip:nth-child(4).is-on::after { color: #e85d4c; box-shadow: 0 0 0 4px rgba(232, 93, 76, .16); }
         .ac-filter-chip .lbl { font-size: .75rem; font-weight: 700; color: #5a6d82; }
+        .ac-filter-chip.is-on .lbl { color: #061525; }
         .ac-filter-chip .val { font-size: 1.45rem; font-weight: 800; color: #061525; font-family: 'Noto Kufi Arabic', sans-serif; }
     </style>
     <div class="ac-filter-strip">
@@ -143,25 +183,30 @@
             @php
                 $course = $payment->course;
                 $now = \Carbon\Carbon::now();
-                $startDate = \Carbon\Carbon::parse($course->start_date);
-                $endDate = \Carbon\Carbon::parse($course->end_date);
-                $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) && $now->lessThanOrEqualTo($endDate);
+                $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
+                $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
+                $showLink = $startDate && $endDate
+                    && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
+                    && $now->lessThanOrEqualTo($endDate);
                 $isFinished = $payment->isCourseEndedForLearner($now);
                 $pathCompletion = $course->isRecorded() ? $course->pathCompletionForUser($payment->user_id) : null;
                 $canCertificate = $course && $course->userCanGetCertificate($payment->user_id);
                 $runningDayExam = $course && $course->usesDayExams() ? $course->runningDayExam() : null;
                 $needsRating = $course && $course->userNeedsRating($payment->user_id);
                 $typeLabel = match($course->location_type) {
-                    'online' => 'أونلاين',
-                    'recorded' => 'مسجّلة',
-                    default => 'حضوري',
+                    'online' => __('messages.academy_type_online'),
+                    'recorded' => __('messages.academy_type_recorded'),
+                    'on_site' => __('messages.academy_type_onsite'),
+                    default => $course->location_type ?: '—',
                 };
             @endphp
             <article class="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-md transition">
-                <div class="relative">
+                <div class="relative ac-media-wm-host">
                     <img src="{{ $course->main_image ? asset('storage/'.$course->main_image) : asset('assets/images/logo.webp') }}"
                         alt="" class="w-full aspect-video object-cover bg-slate-100">
-                    <span class="absolute top-3 right-3 text-[11px] font-bold px-2 py-1 rounded-lg bg-white/95 text-slate-700">{{ $typeLabel }}</span>
+                    <x-media-watermark brand="academy" size="sm" />
+                    <span class="absolute top-3 right-3 text-[11px] font-bold px-2.5 py-1 rounded-full text-white z-[4]
+                        {{ $course->location_type === 'online' ? 'bg-blue-600' : ($course->location_type === 'recorded' ? 'bg-violet-600' : 'bg-orange-500') }}">{{ $typeLabel }}</span>
                 </div>
                 <div class="p-4 flex flex-col gap-2 flex-1">
                     <h3 class="font-extrabold text-slate-900 leading-snug">{{ $course->name_ar }}</h3>
@@ -199,12 +244,13 @@
 
                         @if($canCertificate)
                         <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                            target="_blank" rel="noopener"
                             class="ac-btn ac-btn-primary ac-btn-sm"
                             style="background-color:#0D2444;color:#fff;">
                             <i class="fas fa-certificate"></i> الشهادة
                         </a>
                         @elseif($needsRating)
-                        <a href="{{ route('courses.rating', $course) }}"
+                        <a href="{{ route('dashboard.courses.rating', $course) }}"
                             class="ac-btn ac-btn-amber ac-btn-sm"
                             style="background-color:#b8893d;color:#fff;">
                             <i class="fas fa-star"></i> أكمل التقييم
@@ -223,9 +269,10 @@
                 </div>
             </article>
             @empty
-            <div class="col-span-full text-center py-14 bg-white border border-dashed border-slate-200 rounded-2xl text-slate-400">
-                لم تشترك في أي دورة بعد.
-                <div class="mt-3">
+            <div class="col-span-full text-center bg-white border border-dashed border-slate-200 rounded-2xl text-slate-400"
+                style="padding: 3.5rem 2rem;">
+                <p class="text-sm sm:text-base" style="margin:0;">لم تشترك في أي دورة بعد.</p>
+                <div style="margin-top: 1.25rem;">
                     <a href="{{ route('academy.index') }}" class="ac-btn ac-btn-primary" style="background-color:#0D2444;color:#fff;">تصفح الأكاديمية</a>
                 </div>
             </div>
@@ -241,15 +288,22 @@
             @php
                 $course = $payment->course;
                 $now = \Carbon\Carbon::now();
-                $startDate = \Carbon\Carbon::parse($course->start_date);
-                $endDate = \Carbon\Carbon::parse($course->end_date);
-                $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) &&
-                    $now->lessThanOrEqualTo($endDate);
+                $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
+                $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
+                $showLink = $startDate && $endDate
+                    && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
+                    && $now->lessThanOrEqualTo($endDate);
                 $isFinished = $payment->isCourseEndedForLearner($now);
                 $pathCompletion = $course->isRecorded() ? $course->pathCompletionForUser($payment->user_id) : null;
                 $canCertificate = $payment->is_attended && $course && $course->userCanGetCertificate($payment->user_id);
                 $runningDayExam = $course && $course->usesDayExams() ? $course->runningDayExam() : null;
                 $needsRating = $payment->is_attended && $course && $course->userNeedsRating($payment->user_id);
+                $typeLabel = match($course->location_type) {
+                    'online' => __('messages.academy_type_online'),
+                    'recorded' => __('messages.academy_type_recorded'),
+                    'on_site' => __('messages.academy_type_onsite'),
+                    default => $course->location_type ?: '—',
+                };
             @endphp
 
             {{-- ===== Mobile cards ===== --}}
@@ -257,14 +311,18 @@
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0 flex-1">
                         <h3 class="font-bold text-gray-900 dark:text-white leading-snug">{{ $course->name_ar }}</h3>
-                        <p class="text-xs text-gray-500 mt-1 break-all">{{ $payment->payment_id ?? $payment->id }}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ $payment->invoiceNumber() }}</p>
+                        <span class="inline-flex mt-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full text-white
+                            {{ $course->location_type === 'online' ? 'bg-blue-600' : ($course->location_type === 'recorded' ? 'bg-violet-600' : 'bg-orange-500') }}">{{ $typeLabel }}</span>
                     </div>
                     <span class="shrink-0 px-2 py-1 rounded-full text-[11px] font-medium bg-green-100 text-green-800">مدفوع</span>
                 </div>
 
                 <div class="text-xs text-gray-500 flex flex-wrap gap-x-3 gap-y-1">
                     <span><i class="far fa-calendar-alt ml-1"></i>{{ $payment->created_at->format('Y-m-d') }}</span>
+                    @if($startDate)
                     <span><i class="far fa-clock ml-1"></i>{{ $startDate->format('Y-m-d h:i A') }}</span>
+                    @endif
                 </div>
 
                 @if($course->location_type == 'online')
@@ -283,7 +341,10 @@
                     </a>
                     @endif
                     @else
-                    <p class="text-gray-400 text-xs">الرابط سيظهر في: <strong>{{ $startDate->format('Y-m-d h:i A') }}</strong></p>
+                    <p class="text-gray-400 text-xs">
+                        الرابط سيظهر في:
+                        <strong>{{ $startDate?->format('Y-m-d h:i A') ?? '—' }}</strong>
+                    </p>
                     @endif
                 @elseif($course->location_type == 'recorded')
                     @if($isFinished)
@@ -313,11 +374,12 @@
                     @endif
                     @if($canCertificate)
                     <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                        target="_blank" rel="noopener"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium">
                         <i class="fas fa-certificate"></i> الشهادة
                     </a>
                     @elseif($needsRating)
-                    <a href="{{ route('courses.rating', $course) }}"
+                    <a href="{{ route('dashboard.courses.rating', $course) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-medium">
                         <i class="fas fa-star"></i> أكمل التقييم
                     </a>
@@ -355,19 +417,28 @@
                         @php
                             $course = $payment->course;
                             $now = \Carbon\Carbon::now();
-                            $startDate = \Carbon\Carbon::parse($course->start_date);
-                            $endDate = \Carbon\Carbon::parse($course->end_date);
-                            $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) &&
-                                $now->lessThanOrEqualTo($endDate);
+                            $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
+                            $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
+                            $showLink = $startDate && $endDate
+                                && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
+                                && $now->lessThanOrEqualTo($endDate);
                             $isFinished = $payment->isCourseEndedForLearner($now);
                             $pathCompletion = $course->isRecorded() ? $course->pathCompletionForUser($payment->user_id) : null;
+                            $typeLabel = match($course->location_type) {
+                                'online' => __('messages.academy_type_online'),
+                                'recorded' => __('messages.academy_type_recorded'),
+                                'on_site' => __('messages.academy_type_onsite'),
+                                default => $course->location_type ?: '—',
+                            };
                         @endphp
                         <tr class="border-b dark:border-gray-700 hover:bg-gray-50 transition-colors">
                             <td class="px-4 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $payment->payment_id ?? $payment->id }}
+                                {{ $payment->invoiceNumber() }}
                             </td>
                             <td class="px-4 py-4 mobile-wrap">
                                 <div class="font-bold text-black dark:text-white">{{ $course->name_ar }}</div>
+                                <span class="inline-flex mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full text-white
+                                    {{ $course->location_type === 'online' ? 'bg-blue-600' : ($course->location_type === 'recorded' ? 'bg-violet-600' : 'bg-orange-500') }}">{{ $typeLabel }}</span>
                                 <div class="text-xs text-gray-400 mt-1">{{ Str::limit($course->description_ar, 40) }}</div>
                             </td>
                             <td class="px-4 py-4 whitespace-nowrap">
@@ -401,7 +472,7 @@
                                     @else
                                     <div class="text-gray-400 text-xs flex flex-col">
                                         <span>الرابط سيظهر في:</span>
-                                        <span class="font-bold">{{ $startDate->format('Y-m-d h:i A') }}</span>
+                                        <span class="font-bold">{{ $startDate?->format('Y-m-d h:i A') ?? '—' }}</span>
                                     </div>
                                     @endif
                                 @elseif($course->location_type == 'recorded')
@@ -442,11 +513,12 @@
                                         @endphp
                                         @if($canCertificate)
                                         <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                                            target="_blank" rel="noopener"
                                             class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                             <i class="fas fa-certificate"></i> الشهادة
                                         </a>
                                         @elseif($needsRating)
-                                        <a href="{{ route('courses.rating', $course) }}"
+                                        <a href="{{ route('dashboard.courses.rating', $course) }}"
                                             class="px-3 py-.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
                                             title="يجب إكمال التقييم للحصول على الشهادة">
                                             <i class="fas fa-star"></i> أكمل التقييم

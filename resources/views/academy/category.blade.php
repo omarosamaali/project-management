@@ -98,4 +98,6 @@
         @endif
     </section>
 </div>
+
+@include('academy.partials.wishlist-script')
 @endsection

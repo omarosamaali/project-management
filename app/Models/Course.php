@@ -114,9 +114,13 @@ class Course extends Model
      */
     public function orderedPathItems()
     {
-        $this->loadMissing('units.items');
+        try {
+            $this->loadMissing('units.items');
 
-        return $this->units->flatMap(fn (CourseUnit $unit) => $unit->items);
+            return $this->units->flatMap(fn (CourseUnit $unit) => $unit->items);
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 
     public function formattedTotalVideoDuration(): string
@@ -210,10 +214,14 @@ class Course extends Model
             return collect();
         }
 
-        return CoursePathProgress::where('course_id', $this->id)
-            ->where('user_id', $userId)
-            ->get()
-            ->keyBy('path_item_id');
+        try {
+            return CoursePathProgress::where('course_id', $this->id)
+                ->where('user_id', $userId)
+                ->get()
+                ->keyBy('path_item_id');
+        } catch (\Throwable) {
+            return collect();
+        }
     }
 
     /**
@@ -363,6 +371,17 @@ class Course extends Model
     public function ratings()
     {
         return $this->hasMany(CourseRating::class);
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(CourseWishlist::class);
+    }
+
+    public function wishlistedBy()
+    {
+        return $this->belongsToMany(User::class, 'course_wishlists')
+            ->withTimestamps();
     }
 
     public function featuredRatings()
@@ -612,7 +631,15 @@ class Course extends Model
 
     public function usesDayExams(): bool
     {
-        return !$this->isRecorded() && $this->dayExams()->exists();
+        if ($this->isRecorded()) {
+            return false;
+        }
+
+        try {
+            return $this->dayExams()->exists();
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     public function hasLiveExams(): bool
@@ -629,14 +656,18 @@ class Course extends Model
 
     public function runningDayExam(): ?CourseDayExam
     {
-        return $this->dayExams()
-            ->whereNotNull('started_at')
-            ->whereNull('ended_at')
-            ->whereNull('skipped_at')
-            ->orderBy('day_index')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->first();
+        try {
+            return $this->dayExams()
+                ->whereNotNull('started_at')
+                ->whereNull('ended_at')
+                ->whereNull('skipped_at')
+                ->orderBy('day_index')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->first();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function lastDayExam(): ?CourseDayExam
@@ -717,10 +748,14 @@ class Course extends Model
             return true;
         }
 
-        return $this->ratings()
-            ->where('user_id', $userId)
-            ->whereNotNull('completed_at')
-            ->exists();
+        try {
+            return $this->ratings()
+                ->where('user_id', $userId)
+                ->whereNotNull('completed_at')
+                ->exists();
+        } catch (\Throwable) {
+            return true;
+        }
     }
 
     public function userCanGetCertificate(?int $userId = null): bool
@@ -730,19 +765,23 @@ class Course extends Model
             return false;
         }
 
-        if ($this->isRecorded()) {
-            return $this->isPathFullyCompletedBy($userId)
+        try {
+            if ($this->isRecorded()) {
+                return $this->isPathFullyCompletedBy($userId)
+                    && $this->userCompletedRating($userId);
+            }
+
+            if (!$this->usesDayExams()) {
+                $examOk = !$this->has_exam || $this->userPassedLegacyExam($userId);
+                return $examOk && $this->userCompletedRating($userId);
+            }
+
+            return $this->areAllDayExamsFinished()
+                && $this->userMetExamPassRequirement($userId)
                 && $this->userCompletedRating($userId);
+        } catch (\Throwable) {
+            return false;
         }
-
-        if (!$this->usesDayExams()) {
-            $examOk = !$this->has_exam || $this->userPassedLegacyExam($userId);
-            return $examOk && $this->userCompletedRating($userId);
-        }
-
-        return $this->areAllDayExamsFinished()
-            && $this->userMetExamPassRequirement($userId)
-            && $this->userCompletedRating($userId);
     }
 
     /**
@@ -755,20 +794,24 @@ class Course extends Model
             return false;
         }
 
-        if ($this->userCompletedRating($userId)) {
+        try {
+            if ($this->userCompletedRating($userId)) {
+                return false;
+            }
+
+            if ($this->isRecorded()) {
+                return $this->isPathFullyCompletedBy($userId);
+            }
+
+            if ($this->usesDayExams()) {
+                return $this->areAllDayExamsFinished();
+            }
+
+            // Online / on_site without day exams: after end_date
+            return $this->end_date && now()->greaterThan($this->end_date);
+        } catch (\Throwable) {
             return false;
         }
-
-        if ($this->isRecorded()) {
-            return $this->isPathFullyCompletedBy($userId);
-        }
-
-        if ($this->usesDayExams()) {
-            return $this->areAllDayExamsFinished();
-        }
-
-        // Online / on_site without day exams: after end_date
-        return $this->end_date && now()->greaterThan($this->end_date);
     }
 
     public function previousDayExam(CourseDayExam $exam): ?CourseDayExam

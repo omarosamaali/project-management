@@ -45,6 +45,9 @@
         <form class="space-y-6" method="POST" action="{{ route('login') }}">
             @csrf
             <input type="hidden" name="ui" value="classic">
+            @if(request('redirect'))
+            <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+            @endif
 
             <div>
                 <x-input-label for="email" :value="__('messages.email')" />

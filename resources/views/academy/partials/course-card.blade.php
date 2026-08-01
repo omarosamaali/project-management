@@ -2,10 +2,14 @@
     $name = $locale === 'en' ? ($course->name_en ?: $course->name_ar) : $course->name_ar;
     $img = $course->main_image ? asset('storage/'.$course->main_image) : asset('assets/images/logo.webp');
     $avg = $course->academy_avg_rating ?? null;
-    $levels = $course->levelLabels($locale);
+    $levelMap = collect(\App\Models\Course::levelOptions())->keyBy('key');
+    $levelKeys = $course->levelKeys();
     $owned = (bool) ($course->academy_owned ?? false);
     $payment = $course->academy_payment ?? null;
     $pathPercent = (int) ($course->academy_path_percent ?? 0);
+    $wishlisted = (bool) ($course->academy_wishlisted ?? false);
+    $wishlistToggleUrl = route('academy.wishlist.toggle', $course);
+    $wishlistLoginUrl = \App\Support\AuthUi::loginUrl(['redirect' => url()->current()]);
 
     $typeLabel = match ($course->location_type) {
         'online' => __('messages.academy_type_online'),
@@ -37,19 +41,38 @@
     }
 @endphp
 <article class="soni-card">
-    <a href="{{ $detailsUrl }}" class="soni-card-media">
-        <img src="{{ $img }}" alt="{{ $name }}">
-        @if(count($levels) || $showFreeBadge)
+    <div class="soni-card-media">
+        <a href="{{ $detailsUrl }}" class="soni-card-media-link">
+            <img src="{{ $img }}" alt="{{ $name }}">
+        </a>
+        @if(count($levelKeys) || $showFreeBadge)
         <div class="soni-card-badges">
-            @foreach($levels as $level)
-            <span class="soni-badge">{{ $level }}</span>
+            @foreach($levelKeys as $levelKey)
+            @php
+                $levelOpt = $levelMap->get($levelKey);
+                $levelLabel = $levelOpt
+                    ? ($locale === 'en' ? $levelOpt['label_en'] : $levelOpt['label_ar'])
+                    : $levelKey;
+            @endphp
+            <span class="soni-badge is-{{ $levelKey }}">{{ $levelLabel }}</span>
             @endforeach
             @if($showFreeBadge)
             <span class="soni-badge soni-badge-free">{{ __('messages.academy_free') }}</span>
             @endif
         </div>
         @endif
-    </a>
+        <button type="button"
+            class="soni-wish-btn {{ $wishlisted ? 'is-on' : '' }}"
+            data-wishlist-toggle
+            data-url="{{ $wishlistToggleUrl }}"
+            data-login-url="{{ $wishlistLoginUrl }}"
+            data-wishlisted="{{ $wishlisted ? '1' : '0' }}"
+            aria-pressed="{{ $wishlisted ? 'true' : 'false' }}"
+            aria-label="{{ $wishlisted ? __('messages.academy_wishlist_remove') : __('messages.academy_wishlist_add') }}"
+            title="{{ $wishlisted ? __('messages.academy_wishlist_remove') : __('messages.academy_wishlist_add') }}">
+            <i class="{{ $wishlisted ? 'fas' : 'far' }} fa-heart" aria-hidden="true"></i>
+        </button>
+    </div>
     <div class="soni-card-body">
         <h3 class="soni-card-title">
             <a href="{{ $detailsUrl }}">{{ $name }}</a>

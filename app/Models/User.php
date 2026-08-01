@@ -303,6 +303,17 @@ class User extends Authenticatable
         return $this->hasMany(Course::class, 'trainer_id');
     }
 
+    public function wishlistCourses()
+    {
+        return $this->belongsToMany(Course::class, 'course_wishlists')
+            ->withTimestamps();
+    }
+
+    public function courseWishlists()
+    {
+        return $this->hasMany(CourseWishlist::class);
+    }
+
     public function performances()
     {
         return $this->hasMany(Performance::class);

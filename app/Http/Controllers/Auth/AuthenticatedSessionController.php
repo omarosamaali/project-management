@@ -56,15 +56,24 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $redirect = $request->input('redirect') ?: $request->query('redirect');
+        if (is_string($redirect) && $redirect !== '') {
+            $host = parse_url($redirect, PHP_URL_HOST);
+            $appHost = parse_url(url('/'), PHP_URL_HOST);
+            if ($host === null || $host === $appHost) {
+                return redirect()->to($redirect);
+            }
+        }
+
         if ($user && method_exists($user, 'isTrainee') && $user->isTrainee()) {
-            return redirect()->route('academy.index');
+            return redirect()->intended(route('academy.index'));
         }
 
         if ($user && method_exists($user, 'isTrainer') && $user->isTrainer()) {
-            return redirect()->route('academy.index');
+            return redirect()->intended(route('academy.index'));
         }
 
-        return redirect()->route('system.index');
+        return redirect()->intended(route('system.index'));
     }
 
     /**
@@ -72,11 +81,22 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = $request->user();
+        $toAcademyHome = $user
+            && method_exists($user, 'usesAcademyShell')
+            && $user->usesAcademyShell();
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        if ($toAcademyHome) {
+            session([AuthUi::SESSION_KEY => AuthUi::ACADEMY]);
+
+            return redirect()->route('academy.index');
+        }
 
         return redirect('/');
     }

@@ -59,7 +59,7 @@
         </p>
 
         @if($categories->isNotEmpty())
-        <div class="snap-slider-wrap mt-6" data-snap-slider-wrap data-autoplay="0" data-fixed-slide="200">
+        <div class="snap-slider-wrap mt-6" data-snap-slider-wrap data-autoplay="0" data-natural-slides="1">
             <button type="button" class="snap-nav prev" data-snap-prev aria-label="{{ __('messages.academy_prev') }}"><i class="fas fa-chevron-{{ $locale === 'ar' ? 'right' : 'left' }}"></i></button>
             <button type="button" class="snap-nav next" data-snap-next aria-label="{{ __('messages.academy_next') }}"><i class="fas fa-chevron-{{ $locale === 'ar' ? 'left' : 'right' }}"></i></button>
             <div class="snap-slider-viewport">
@@ -72,7 +72,7 @@
                     </a>
                     @foreach($categories as $cat)
                     <a href="{{ route('academy.courses', $filterParams(['category' => $cat->id])) }}"
-                        class="snap-slide cat-slide {{ $activeCategory && $activeCategory->id === $cat->id ? 'is-active' : '' }}">
+                        class="snap-slide cat-slide cat-tone-{{ $loop->index % 6 }} {{ $activeCategory && $activeCategory->id === $cat->id ? 'is-active' : '' }}">
                         <img src="{{ $cat->iconUrl() }}" alt="">
                         <span>
                             <span class="cat-slide-title">{{ $cat->title($locale) }}</span>
@@ -153,4 +153,5 @@
 
 @include('academy.partials.snap-slider-script')
 @include('academy.partials.interactions-script')
+@include('academy.partials.wishlist-script')
 @endsection

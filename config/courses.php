@@ -49,4 +49,14 @@ return [
         ),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Trainer course price ceiling (AED)
+    |--------------------------------------------------------------------------
+    |
+    | Trainers cannot set a course price above this amount. Admins are unlimited.
+    |
+    */
+    'trainer_max_price' => (float) env('COURSE_TRAINER_MAX_PRICE', 400),
+
 ];
