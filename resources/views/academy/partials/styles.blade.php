@@ -119,13 +119,17 @@
        instead of being cut into a hard horizontal line. Negative margin preserves layout. */
     .snap-slider-viewport {
         overflow: hidden; width: 100%; max-width: 100%; min-width: 0;
+        box-sizing: border-box;
+        /* Block padding = shadow room; inline padding = scale-up room for first/last cards */
         padding-block: 1.15rem 2.35rem;
+        padding-inline: 0.7rem;
         margin-block: -1.15rem -2.35rem;
     }
     .snap-slider {
         display: flex; gap: 1rem; width: max-content; max-width: none; min-width: 100%;
         overflow: visible; scroll-snap-type: none;
         padding: .15rem 0 .35rem; scrollbar-width: none; scroll-behavior: auto;
+        box-sizing: border-box;
     }
     .snap-slider.is-transform-slider { transform: translate3d(0,0,0); }
     .snap-slider::-webkit-scrollbar { display: none; }

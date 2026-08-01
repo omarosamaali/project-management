@@ -29,6 +29,14 @@
             return parseFloat(styles.columnGap || styles.gap) || 14.4;
         };
 
+        const viewportInnerWidth = () => {
+            const styles = getComputedStyle(viewport);
+            const pad =
+                (parseFloat(styles.paddingInlineStart) || 0)
+                + (parseFloat(styles.paddingInlineEnd) || 0);
+            return Math.max(1, viewport.clientWidth - pad);
+        };
+
         const contentWidth = (list, gapVal) => {
             if (!list.length) return 0;
             return list.reduce((sum, el, i) => {
@@ -57,7 +65,7 @@
             const list = slides();
             if (!list.length) return { perView: 1, step: minSlide, count: 0, natural: false, gap: 0 };
             const gapVal = gapOf();
-            const vw = Math.max(1, viewport.clientWidth);
+            const vw = viewportInnerWidth();
             const maxSlide = Math.max(140, vw);
 
             // Exact fill: N whole cards, no peek of the next one.
@@ -119,7 +127,7 @@
         const maxScrollOffset = (meta) => {
             const list = slides();
             const total = contentWidth(list, meta.gap);
-            return Math.max(0, total - viewport.clientWidth);
+            return Math.max(0, total - viewportInnerWidth());
         };
 
         // How many next-clicks are needed to fully reveal the last card.
