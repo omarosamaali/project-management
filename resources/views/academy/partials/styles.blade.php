@@ -159,7 +159,7 @@
     /* Categories — colorful chips; JS equalizes width to the widest card.
        Shadows use soft ink + a light color tint so they dissolve into --sand / page bg. */
     .cat-slide {
-        display: inline-flex; flex-direction: row; align-items: center; justify-content: flex-start;
+        display: inline-flex; flex-direction: row; align-items: center; justify-content: space-between;
         gap: 1.15rem; text-align: start;
         width: max-content; min-width: 14rem; max-width: none;
         height: 4.6rem; box-sizing: border-box;
@@ -190,7 +190,7 @@
     }
     .cat-slide:hover img { transform: scale(1.08); }
     .cat-slide > span {
-        min-width: 0; flex: 1 1 auto;
+        min-width: 0; flex: 0 1 auto;
         text-align: start; display: block;
     }
     .cat-slide .cat-slide-title {
