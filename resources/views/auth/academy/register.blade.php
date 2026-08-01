@@ -18,35 +18,23 @@
     }
 </style>
 
-<div class="my-10 mx-auto max-w-7xl w-[96%] bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
-    <div class="hidden md:block relative">
-        <img src="{{ asset('assets/images/login.png') }}"
-            alt="{{ __('messages.register_title') }}" class="w-full h-full object-cover">
-        <div class="absolute inset-0 flex items-center justify-center p-8">
-            <div class="text-white text-center">
-                <i class="fas fa-user-plus text-8xl mb-6"></i>
-                <h2 class="text-4xl font-bold mb-4">{{ __('messages.create_account') }}</h2>
-                <p class="text-xl">{{ __('messages.register_subtitle') }}</p>
-            </div>
-        </div>
+<x-auth.academy-shell
+    :wide="true"
+    :visual-title="__('messages.create_account')"
+    :visual-subtitle="__('messages.register_subtitle')">
+
+    <div class="academy-auth-form__head">
+        <span class="academy-auth-kicker" style="color:#0b8f7f;">{{ __('messages.academy') }}</span>
+        <h1>{{ __('messages.register_title') }}</h1>
+        <p>{{ __('messages.register_description') }}</p>
     </div>
 
-    <div class="p-8 md:p-12">
-        <div class="mb-10">
-            <h1 class="text-4xl font-bold text-gray-800 mb-3 ltr:text-left rtl:text-right">
-                {{ __('messages.register_title') }}
-            </h1>
-            <p class="text-gray-600 ltr:text-left rtl:text-right">
-                {{ __('messages.register_description') }}
-            </p>
-        </div>
-
-    <form class="space-y-6" method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
+    <form class="space-y-5" method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
         @csrf
-        <input type="hidden" name="ui" value="classic">
+        <input type="hidden" name="ui" value="academy">
 
         @if($errors->any())
-        <div class="p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200" role="alert">
+        <div class="academy-auth-alert academy-auth-alert--err" role="alert">
             <div class="flex items-center gap-2 mb-2 font-bold">
                 <i class="fas fa-exclamation-circle"></i>
                 <span>تعذر إنشاء الحساب — يرجى تصحيح الأخطاء التالية:</span>
@@ -63,24 +51,24 @@
             <x-input-label value="نوع العضوية" />
             <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 @php $selectedRole = old('role', 'client'); @endphp
-                <label class="flex items-start gap-2 p-3 border-2 rounded-lg cursor-pointer transition role-option {{ $selectedRole === 'client' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="role" value="client" class="mt-1 text-black focus:ring-black shrink-0"
+                <label class="academy-auth-choice role-option {{ $selectedRole === 'client' ? 'is-selected' : '' }}">
+                    <input type="radio" name="role" value="client" class="shrink-0"
                         {{ $selectedRole === 'client' ? 'checked' : '' }} required>
                     <span class="min-w-0">
                         <span class="block font-bold text-gray-800">عميل</span>
                         <span class="text-xs text-gray-500 leading-snug">للمشاريع والخدمات — بدون الدورات التدريبية</span>
                     </span>
                 </label>
-                <label class="flex items-start gap-2 p-3 border-2 rounded-lg cursor-pointer transition role-option {{ $selectedRole === 'trainer' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="role" value="trainer" class="mt-1 text-black focus:ring-black shrink-0"
+                <label class="academy-auth-choice role-option {{ $selectedRole === 'trainer' ? 'is-selected' : '' }}">
+                    <input type="radio" name="role" value="trainer" class="shrink-0"
                         {{ $selectedRole === 'trainer' ? 'checked' : '' }}>
                     <span class="min-w-0">
                         <span class="block font-bold text-gray-800">محاضر</span>
                         <span class="text-xs text-gray-500 leading-snug">إنشاء وإدارة الدورات، والتحضير، والاختبارات</span>
                     </span>
                 </label>
-                <label class="flex items-start gap-2 p-3 border-2 rounded-lg cursor-pointer transition role-option {{ $selectedRole === 'trainee' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="role" value="trainee" class="mt-1 text-black focus:ring-black shrink-0"
+                <label class="academy-auth-choice role-option {{ $selectedRole === 'trainee' ? 'is-selected' : '' }}">
+                    <input type="radio" name="role" value="trainee" class="shrink-0"
                         {{ $selectedRole === 'trainee' ? 'checked' : '' }}>
                     <span class="min-w-0">
                         <span class="block font-bold text-gray-800">متدرب</span>
@@ -94,16 +82,16 @@
         <div>
             <x-input-label :value="__('messages.account_type')" />
             <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition account-type-option {{ old('account_type', 'personal') === 'personal' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="account_type" value="personal" class="text-black focus:ring-black"
+                <label class="academy-auth-choice account-type-option {{ old('account_type', 'personal') === 'personal' ? 'is-selected' : '' }}">
+                    <input type="radio" name="account_type" value="personal"
                         {{ old('account_type', 'personal') === 'personal' ? 'checked' : '' }} required>
                     <span>
                         <span class="block font-bold text-gray-800">{{ __('messages.account_personal') }}</span>
                         <span class="text-xs text-gray-500">{{ __('messages.account_personal_hint') }}</span>
                     </span>
                 </label>
-                <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition account-type-option {{ old('account_type') === 'business' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="account_type" value="business" class="text-black focus:ring-black"
+                <label class="academy-auth-choice account-type-option {{ old('account_type') === 'business' ? 'is-selected' : '' }}">
+                    <input type="radio" name="account_type" value="business"
                         {{ old('account_type') === 'business' ? 'checked' : '' }}>
                     <span>
                         <span class="block font-bold text-gray-800">{{ __('messages.account_business') }}</span>
@@ -173,7 +161,7 @@
         </div>
 
         <div id="trainer-fields" class="space-y-5 {{ old('role') === 'trainer' ? '' : 'hidden' }}">
-            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div class="academy-auth-alert academy-auth-alert--warn">
                 <i class="fas fa-info-circle ml-1"></i>
                 {{ __('messages.trainer_register_notice') }}
             </div>
@@ -222,7 +210,7 @@
                         {{ old('accept_terms') ? 'checked' : '' }}>
                     <span class="text-sm text-gray-700 leading-relaxed">
                         {{ __('messages.trainer_terms_agree') }}
-                        <button type="button" id="open-trainer-terms" class="text-black font-bold underline underline-offset-2 hover:text-gray-700">
+                        <button type="button" id="open-trainer-terms" class="academy-auth-link underline underline-offset-2">
                             {{ __('messages.trainer_terms_link') }}
                         </button>
                     </span>
@@ -231,22 +219,21 @@
             </div>
         </div>
 
-        <button type="submit" class="w-full bg-black text-white py-4 rounded-lg font-bold text-lg
-            hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl">
+        <button type="submit" class="academy-auth-submit">
+            <i class="fas fa-user-plus"></i>
             {{ __('messages.register_button') }}
         </button>
     </form>
 
-    <div class="mt-10 text-center">
-        <p class="text-gray-600">
+    <div class="academy-auth-foot">
+        <p>
             {{ __('messages.already_registered') }}
-            <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'classic']) }}" class="text-black hover:text-gray-800 font-bold">
+            <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'academy']) }}" class="academy-auth-link">
                 {{ __('messages.login_here') }}
             </a>
         </p>
     </div>
-    </div>
-</div>
+</x-auth.academy-shell>
 
 {{-- Terms modal --}}
 <div id="trainer-terms-modal" class="fixed inset-0 z-[80] hidden" aria-hidden="true">
@@ -260,7 +247,8 @@
             {!! __('messages.trainer_terms_body') !!}
         </div>
         <div class="border-t px-5 py-3 flex justify-end">
-            <button type="button" class="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800" data-close-terms>
+            <button type="button" class="px-5 py-2.5 rounded-full text-sm font-bold text-white"
+                style="background:linear-gradient(135deg,#0b8f7f,#0e6e63);" data-close-terms>
                 {{ __('messages.close') }}
             </button>
         </div>
@@ -322,10 +310,7 @@
                 }
                 accountOptions.forEach((label) => {
                     const radio = label.querySelector('input[type="radio"]');
-                    const selected = radio?.checked;
-                    label.classList.toggle('border-black', selected);
-                    label.classList.toggle('bg-gray-50', selected);
-                    label.classList.toggle('border-gray-200', !selected);
+                    label.classList.toggle('is-selected', !!radio?.checked);
                 });
             }
 
@@ -366,10 +351,7 @@
             function syncRoleOption() {
                 roleOptions.forEach((label) => {
                     const radio = label.querySelector('input[type="radio"]');
-                    const selected = radio?.checked;
-                    label.classList.toggle('border-black', selected);
-                    label.classList.toggle('bg-gray-50', selected);
-                    label.classList.toggle('border-gray-200', !selected);
+                    label.classList.toggle('is-selected', !!radio?.checked);
                 });
                 syncTrainerFields();
             }

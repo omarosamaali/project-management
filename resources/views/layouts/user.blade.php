@@ -16,7 +16,13 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/images/fav-icon.webp') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @php
-        $isAcademyPage = request()->routeIs('academy.*') || request()->routeIs('courses.show');
+        $authUi = \App\Support\AuthUi::resolve();
+        $isAcademyPage = request()->routeIs('academy.*')
+            || request()->routeIs('courses.show')
+            || (
+                request()->routeIs('login', 'register', 'password.*', 'verification.*')
+                && $authUi === \App\Support\AuthUi::ACADEMY
+            );
         $navLogo = $isAcademyPage
             ? \App\Models\Setting::academyChromeLogoUrl()
             : asset('assets/images/logo.webp');
@@ -25,6 +31,12 @@
             : (auth()->check() && auth()->user()->isTrainee() ? route('academy.index') : route('system.index'));
         $hideSystemsNav = (auth()->check() && (auth()->user()->isTrainee() || auth()->user()->isTrainer()))
             || (! auth()->check() && $isAcademyPage);
+        $loginUrl = $isAcademyPage
+            ? \App\Support\AuthUi::loginUrl(['ui' => 'academy'])
+            : \App\Support\AuthUi::loginUrl(['ui' => 'classic']);
+        $registerUrl = $isAcademyPage
+            ? \App\Support\AuthUi::registerUrl(['ui' => 'academy'])
+            : \App\Support\AuthUi::registerUrl(['ui' => 'classic']);
     @endphp
     <style>
         .mobile-drawer {
@@ -133,7 +145,7 @@
                         {{ __('messages.dashboard') }}
                     </a>
                     @else
-                    <a href="{{ route('login') }}" class="ac-pub-link {{ request()->routeIs('login') ? 'is-active' : '' }}">
+                    <a href="{{ $loginUrl }}" class="ac-pub-link {{ request()->routeIs('login') ? 'is-active' : '' }}">
                         {{ __('messages.login') }}
                     </a>
                     @endauth
@@ -179,7 +191,7 @@
                         {{ __('messages.dashboard') }}
                     </a>
                     @else
-                    <a href="{{ route('login') }}" class="{{ request()->routeIs('login') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }}
+                    <a href="{{ $loginUrl }}" class="{{ request()->routeIs('login') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }}
                         px-4 py-2 rounded-lg transition flex items-center gap-2">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -318,7 +330,7 @@
                 {{ Auth::user()->name }}
             </a>
             @else
-            <a href="{{ route('login') }}"
+            <a href="{{ $loginUrl }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('login') ? 'is-drawer-active' : '' }}">
                 <i class="fas fa-right-to-bracket w-5 text-center opacity-70"></i>
                 {{ __('messages.login') }}
@@ -368,7 +380,7 @@
                 <span class="truncate">{{ Auth::user()->name }}</span>
             </a>
             @else
-            <a href="{{ route('login') }}"
+            <a href="{{ $loginUrl }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium
                     {{ request()->routeIs('login') ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-right-to-bracket w-5 text-center text-gray-400"></i>
@@ -402,7 +414,7 @@
     <script src="https://cdn.jsdelivr.net/gh/cferdinandi/smooth-scroll@16/dist/smooth-scroll.polyfills.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/js/intlTelInput.min.js"></script>
     <script>
-        window.EVORQ_LOGIN_URL = @json(route('login'));
+        window.EVORQ_LOGIN_URL = @json($loginUrl);
 
         @if(session('session_expired'))
         document.addEventListener('DOMContentLoaded', function () {

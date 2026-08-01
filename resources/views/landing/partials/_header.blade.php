@@ -233,7 +233,7 @@
             </div>
             @else
             <div style="margin-top:24px;border-top:1px solid #eee;padding-top:20px;display:flex;flex-direction:column;gap:10px;">
-                <a href="{{ route('register') }}"
+                <a href="{{ route('register', ['ui' => 'classic']) }}"
                    style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:#f0fff4;color:#1a7f4b;font-weight:600;text-decoration:none;font-size:14px;">
                     <i class="fas fa-user-plus"></i>
                     {{ $lsData['lang']==='ar' ? 'إنشاء حساب' : 'Register' }}

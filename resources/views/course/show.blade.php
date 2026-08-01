@@ -590,7 +590,7 @@
                                 <p class="text-[11px] text-center text-gray-400">المقاعد المتاحة: {{ $actual_remaining }}</p>
                                 @endif
                             @else
-                                <a href="{{ route('login') }}" class="cta-primary">سجل دخول للاشتراك</a>
+                                <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'academy']) }}" class="cta-primary">سجل دخول للاشتراك</a>
                             @endauth
                         </div>
 

@@ -23,6 +23,8 @@ class SetLocale
         }
         App::setLocale($lang);
 
+        \App\Support\AuthUi::rememberFromCurrentPage();
+
         return $next($request);
     }
 }

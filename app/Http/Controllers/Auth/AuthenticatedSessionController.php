@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Support\AuthUi;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
@@ -14,9 +15,11 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('auth.login');
+        AuthUi::resolve($request->query('ui'));
+
+        return view(AuthUi::view('login'));
     }
 
     /**
@@ -24,6 +27,8 @@ class AuthenticatedSessionController extends Controller
      */ 
     public function store(LoginRequest $request): RedirectResponse
     {
+        AuthUi::resolve($request->input('ui', $request->query('ui')));
+
         $request->authenticate();
 
         $user = $request->user();
@@ -34,7 +39,7 @@ class AuthenticatedSessionController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors([
+            return redirect()->to(AuthUi::loginUrl())->withErrors([
                 'email' => 'هذا الحساب محظور حالياً. يرجى التواصل مع الإدارة للمزيد من التفاصيل.',
             ]);
         }
@@ -44,7 +49,7 @@ class AuthenticatedSessionController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors([
+            return redirect()->to(AuthUi::loginUrl())->withErrors([
                 'email' => __('messages.trainer_login_pending'),
             ]);
         }

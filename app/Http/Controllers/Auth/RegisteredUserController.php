@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CourseCategory;
 use App\Models\User;
 use App\Services\WhatsAppOTPService;
+use App\Support\AuthUi;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,19 +17,23 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        AuthUi::resolve($request->query('ui'));
+
         $categories = CourseCategory::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();
 
-        return view('auth.register', compact('categories'));
+        return view(AuthUi::view('register'), compact('categories'));
     }
 
     public function store(Request $request): RedirectResponse
     {
+        AuthUi::resolve($request->input('ui', $request->query('ui')));
+
         $isTrainer = $request->input('role') === 'trainer';
 
         $rules = [
