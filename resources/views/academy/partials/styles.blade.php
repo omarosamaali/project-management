@@ -113,10 +113,6 @@
     }
     @media (max-width: 639px) {
         .snap-slider-wrap { padding-inline: 2.35rem; }
-        /* Let JS equalize widths; only nudge a usable min size on small screens */
-        .cat-slide {
-            min-width: 13rem !important;
-        }
     }
     .snap-slider-wrap.is-nav-hidden { padding-inline: 0; }
     /* Padding keeps card shadows inside the clip box so they fade into the page bg
@@ -161,7 +157,7 @@
     .cat-slide {
         display: inline-flex; flex-direction: row; align-items: center; justify-content: space-between;
         gap: 1.15rem; text-align: start;
-        width: max-content; min-width: 14rem; max-width: none;
+        width: auto; min-width: 0; max-width: none;
         height: 4.6rem; box-sizing: border-box;
         padding: .85rem 1.15rem .85rem 1rem;
         border: 0; text-decoration: none; color: #fff;
@@ -172,10 +168,12 @@
             0 16px 36px rgba(109, 40, 217, .14);
         position: relative; overflow: hidden;
         transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s, filter .2s;
+        transform-origin: center center;
+        will-change: transform;
     }
     .cat-slide::before { display: none; }
-    .cat-slide:hover, .cat-slide.is-active {
-        transform: translateY(-4px) scale(1.02);
+    .cat-slide:hover {
+        transform: translateY(-3px) scale(1.03);
         filter: brightness(1.05);
         box-shadow:
             0 12px 24px rgba(6, 21, 37, .1),
@@ -199,7 +197,18 @@
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         text-align: start; line-height: 1.35; color: #fff;
     }
-    .cat-slide.is-active { outline: 3px solid rgba(255,255,255,.55); outline-offset: 3px; }
+    .cat-slide.is-active {
+        outline: none;
+        transform: scale(1.07);
+        filter: brightness(1.06);
+        box-shadow:
+            0 14px 28px rgba(6, 21, 37, .14),
+            0 24px 48px rgba(6, 21, 37, .12);
+        z-index: 2;
+    }
+    .cat-slide.is-active:hover {
+        transform: scale(1.08);
+    }
     .cat-tone-0 {
         background: linear-gradient(145deg, #ff6b3d, #e85d04);
         box-shadow: 0 8px 18px rgba(6, 21, 37, .08), 0 16px 36px rgba(232, 93, 4, .14);

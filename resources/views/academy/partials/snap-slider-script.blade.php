@@ -57,44 +57,41 @@
             const list = slides();
             if (!list.length) return { perView: 1, step: minSlide, count: 0, natural: false, gap: 0 };
             const gapVal = gapOf();
-            const vw = viewport.clientWidth;
+            const vw = Math.max(1, viewport.clientWidth);
             const maxSlide = Math.max(140, vw);
+
+            // Exact fill: N whole cards, no peek of the next one.
+            const fillWidth = (slots) => {
+                const n = Math.max(1, slots);
+                return (vw - gapVal * Math.max(0, n - 1)) / n;
+            };
 
             if (naturalSlides) {
                 list.forEach((el) => {
                     el.style.flex = '0 0 auto';
                     el.style.width = 'max-content';
-                    el.style.minWidth = 'max-content';
+                    el.style.minWidth = '0';
                     el.style.maxWidth = 'none';
                 });
                 void track.offsetWidth;
                 const naturalWidths = list.map((el) => el.getBoundingClientRect().width);
                 const equalW = Math.ceil(Math.max(...naturalWidths, minSlide));
+                let perView = Math.max(1, Math.floor((vw + gapVal) / (equalW + gapVal)));
+                perView = Math.min(perView, list.length);
+                const slideW = fillWidth(perView);
                 list.forEach((el) => {
-                    el.style.width = `${equalW}px`;
-                    el.style.minWidth = `${equalW}px`;
-                    el.style.maxWidth = `${equalW}px`;
-                    el.style.flex = `0 0 ${equalW}px`;
+                    el.style.width = `${slideW}px`;
+                    el.style.minWidth = `${slideW}px`;
+                    el.style.maxWidth = `${slideW}px`;
+                    el.style.flex = `0 0 ${slideW}px`;
                 });
-                let used = 0;
-                let perView = 0;
-                for (let i = 0; i < list.length; i++) {
-                    const nextW = used + equalW + (i > 0 ? gapVal : 0);
-                    if (nextW <= vw + 0.5) {
-                        used = nextW;
-                        perView++;
-                    } else {
-                        break;
-                    }
-                }
-                perView = Math.max(1, Math.min(perView || 1, list.length));
-                return { perView, step: equalW + gapVal, count: list.length, natural: true, gap: gapVal };
+                return { perView, step: slideW + gapVal, count: list.length, natural: true, gap: gapVal };
             }
 
             if (reserveSlots > 0) {
                 const maxFit = Math.max(1, Math.floor((vw + gapVal) / (minSlide + gapVal)));
                 const slots = Math.min(reserveSlots, maxFit, Math.max(1, list.length));
-                const slideW = (vw - gapVal * Math.max(0, slots - 1)) / slots;
+                const slideW = fillWidth(slots);
                 list.forEach((el) => {
                     el.style.flex = `0 0 ${slideW}px`;
                     el.style.width = `${slideW}px`;
@@ -109,11 +106,7 @@
             if (maxPerView > 0) perView = Math.min(perView, maxPerView);
             perView = Math.min(perView, list.length);
 
-            // Fill the viewport when every item fits; otherwise keep the configured card size.
-            const slideW = (list.length <= perView || fixedSlide <= 0)
-                ? (vw - gapVal * Math.max(0, perView - 1)) / perView
-                : Math.min(maxSlide, fixedSlide);
-
+            const slideW = fillWidth(perView);
             list.forEach((el) => {
                 el.style.flex = `0 0 ${slideW}px`;
                 el.style.width = `${slideW}px`;
