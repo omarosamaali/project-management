@@ -3,6 +3,7 @@
 @section('title', 'تعديل الدورة: ' . $course->name_ar)
 
 @section('content')
+@include('dashboard.courses.partials.course-switch-styles')
 <style>
     /* نفس الـ styles اللي كانت في صفحة الإضافة */
     input[type="number"]::-webkit-inner-spin-button,
@@ -27,14 +28,14 @@
     }
 
     .tab-button:hover {
-        color: #3B82F6;
-        background-color: #EFF6FF;
+        color: #0b8f7f;
+        background-color: rgba(11, 143, 127, .1);
     }
 
     .tab-button.active {
-        color: #3B82F6;
-        border-bottom-color: #3B82F6;
-        background-color: #EFF6FF;
+        color: #061525;
+        border-bottom-color: #0b8f7f;
+        background-color: rgba(11, 143, 127, .12);
     }
 
     .tab-content {
@@ -68,9 +69,11 @@
             @endif
 
             <form action="{{ route('dashboard.courses.update', $course->id) }}" method="POST"
-                enctype="multipart/form-data" id="courseForm">
+                enctype="multipart/form-data" id="courseForm"
+                data-settings-locked="{{ $course->hasBegun() ? '1' : '0' }}">
                 @csrf
                 @method('PUT')
+                @php $settingsLocked = $course->hasBegun(); @endphp
 
                 <!-- Tabs Navigation -->
                 <div class="border-b border-gray-200 bg-gray-50 overflow-x-auto">
@@ -83,6 +86,10 @@
                             <i class="fas fa-align-right ml-2"></i>
                             المحتوى والوصف
                         </button>
+                        <button type="button" class="tab-button {{ old('location_type', $course->location_type) === 'recorded' ? '' : 'hidden' }}" data-tab="educational-path" id="path-tab-btn">
+                            <i class="fas fa-route ml-2"></i>
+                            المسار التعليمي
+                        </button>
                         <button type="button" class="tab-button" data-tab="features">
                             <i class="fas fa-star ml-2"></i>
                             المميزات والمتطلبات
@@ -92,8 +99,11 @@
                             الأزرار والصور
                         </button>
                         <button type="button" class="tab-button" data-tab="settings">
-                            <i class="fas fa-cog ml-2"></i>
+                            <i class="fas {{ $settingsLocked ? 'fa-lock' : 'fa-cog' }} ml-2"></i>
                             الإعدادات النهائية
+                            @if($settingsLocked)
+                            <span class="text-[10px] text-amber-600 font-normal">(مقفل)</span>
+                            @endif
                         </button>
                     </nav>
                 </div>
@@ -129,39 +139,81 @@
                                 @enderror
                             </div>
 
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    السعر الكلي <span class="text-red-600">*</span>
-                                </label>
-                                <div class="relative">
-                                    <input type="number" name="price" required min="0" step="0.01"
-                                        value="{{ old('price', $course->price) }}"
-                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20">
-                                    <span
-                                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
-                                        <x-drhm-icon width="12" height="14" />
-                                </span>
+                            @php
+                                $editPrice = old('price', $course->price);
+                                $isFreeOld = $editPrice !== null && (float) $editPrice <= 0;
+                            @endphp
+                            <div class="space-y-3">
+                                <div>
+                                    <label for="is_free_toggle" class="block text-sm font-medium text-gray-700 mb-2">
+                                        دورة مجانية
+                                    </label>
+                                    <label class="course-switch-field cursor-pointer">
+                                        <span class="text-sm text-gray-600 truncate">تفعيل = سعر 0 بدون إدخال سعر</span>
+                                        <span class="course-switch">
+                                            <input type="checkbox" id="is_free_toggle"
+                                                {{ $isFreeOld ? 'checked' : '' }}>
+                                            <span class="course-switch-track" aria-hidden="true"></span>
+                                        </span>
+                                    </label>
                                 </div>
-                                @error('price') <span class="text-red-600 text-xs mt-1">{{ $message }}</span> @enderror
+
+                                <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }}">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        السعر الكلي <span class="text-red-600">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" name="price" id="price" min="0" step="0.01"
+                                            value="{{ $editPrice }}"
+                                            {{ $isFreeOld ? '' : 'required' }}
+                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20">
+                                        <span
+                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                            <x-drhm-icon width="12" height="14" />
+                                        </span>
+                                    </div>
+                                    @error('price') <span class="text-red-600 text-xs mt-1">{{ $message }}</span> @enderror
+                                </div>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    نوع الخدمة
+                                    التصنيف <span class="text-red-600">*</span>
                                 </label>
-                                <select name="service_id"
+                                <select id="course_category_id" name="course_category_id" required
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">-- اختر نوع الخدمة --</option>
-                                    @foreach ($services as $service)
-                                    <option value="{{ $service->id }}" {{ old('service_id', $course->service_id) ==
-                                        $service->id ? 'selected' : '' }}>
-                                        {{ app()->getLocale() == 'ar' ? $service->name_ar : $service->name_en }}
+                                    <option value="">-- اختر التصنيف --</option>
+                                    @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}" {{ (string) old('course_category_id', $course->course_category_id) === (string) $category->id ? 'selected' : '' }}>
+                                        {{ $category->title(app()->getLocale()) }}
                                     </option>
                                     @endforeach
                                 </select>
-                                @error('service_id') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                @error('course_category_id') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
+
+                            @if(auth()->user()->isAdmin())
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    المحاضر المسؤول
+                                </label>
+                                <select id="trainer_id" name="trainer_id"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">-- بدون محاضر / تعيين لاحقاً --</option>
+                                    @foreach(($trainers ?? []) as $trainer)
+                                    <option value="{{ $trainer->id }}" {{ (string) old('trainer_id', $course->trainer_id) === (string) $trainer->id ? 'selected' : '' }}>
+                                        {{ $trainer->name }} ({{ $trainer->email }})
+                                    </option>
+                                    @endforeach
+                                </select>
+                                @error('trainer_id')
+                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            @elseif(auth()->user()->isTrainer())
+                            <input type="hidden" name="trainer_id" value="{{ auth()->id() }}">
+                            @endif
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -181,8 +233,169 @@
 
                         </div>
 
-<!-- Dates -->
-<div class="mt-8 pt-6 border-t">
+                        <!-- Course type (above dates) -->
+                        <div class="mt-8 pt-6 border-t" id="course_type_section">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-layer-group text-blue-600"></i>
+                                نوع الدورة
+                            </h3>
+
+                            <div class="mb-4">
+                                <div class="grid md:grid-cols-3 gap-4">
+                                    <label
+                                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition">
+                                        <input type="radio" name="location_type" value="online" {{ old('location_type',
+                                            $course->location_type) == 'online' ? 'checked' : '' }} class="w-5 h-5
+                                        text-blue-600">
+                                        <div>
+                                            <div class="font-medium text-gray-800"><i
+                                                    class="fas fa-wifi text-blue-600 ml-2"></i>أونلاين</div>
+                                            <div class="text-xs text-gray-500">محاضرة مباشرة</div>
+                                        </div>
+                                    </label>
+
+                                    <label
+                                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-green-50 transition">
+                                        <input type="radio" name="location_type" value="on_site" {{ old('location_type',
+                                            $course->location_type) == 'on_site' ? 'checked' : '' }} class="w-5 h-5
+                                        text-green-600">
+                                        <div>
+                                            <div class="font-medium text-gray-800"><i
+                                                    class="fas fa-building text-green-600 ml-2"></i>حضوري</div>
+                                            <div class="text-xs text-gray-500">في موقع محدد</div>
+                                        </div>
+                                    </label>
+
+                                    <label
+                                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-amber-50 transition">
+                                        <input type="radio" name="location_type" value="recorded" {{ old('location_type',
+                                            $course->location_type) == 'recorded' ? 'checked' : '' }} class="w-5 h-5
+                                        text-amber-600">
+                                        <div>
+                                            <div class="font-medium text-gray-800"><i
+                                                    class="fas fa-play-circle text-amber-600 ml-2"></i>مسجّلة</div>
+                                            <div class="text-xs text-gray-500">مسار تعليمي بالفيديو</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                @error('location_type') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-3">
+                                    مستوى الدورة
+                                </label>
+                                <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                    @php
+                                        $selectedLevels = old('levels', $course->levels ?? []);
+                                        if (!is_array($selectedLevels)) $selectedLevels = [];
+                                    @endphp
+                                    @foreach(\App\Models\Course::levelOptions() as $level)
+                                    <label class="flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                                        <input type="checkbox" name="levels[]" value="{{ $level['key'] }}"
+                                            {{ in_array($level['key'], $selectedLevels, true) ? 'checked' : '' }}
+                                            class="w-4 h-4 rounded border-gray-300" style="accent-color:#0b8f7f;">
+                                        <span class="text-sm font-medium text-gray-800">{{ $level['label_ar'] }}</span>
+                                    </label>
+                                    @endforeach
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">يمكن اختيار أكثر من مستوى. شارة «مجاني» تظهر تلقائياً عند تفعيل دورة مجانية.</p>
+                                @error('levels')
+                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div id="online_link_container"
+                                class="{{ $course->location_type == 'online' ? '' : 'hidden' }} space-y-4">
+                                @php
+                                    $isYouTubeLink = \App\Support\YouTubeLive::isYouTubeUrl(old('online_link', $course->online_link));
+                                    $defaultProvider = old('meeting_provider', $isYouTubeLink || blank($course->online_link) ? 'youtube' : 'external');
+                                @endphp
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">منصة البث / الاجتماع</label>
+                                    <div class="grid sm:grid-cols-2 gap-3">
+                                        <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                                            <input type="radio" name="meeting_provider" value="youtube"
+                                                {{ $defaultProvider === 'youtube' ? 'checked' : '' }}
+                                                class="mt-1 meeting-provider-radio" style="accent-color:#0b8f7f;">
+                                            <span>
+                                                <span class="block font-medium text-gray-800">يوتيوب لايف داخل المنصة</span>
+                                                <span class="block text-xs text-gray-500">يُعرض البث المباشر داخل غرفة المحاضرة مع النقاش</span>
+                                            </span>
+                                        </label>
+                                        <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                                            <input type="radio" name="meeting_provider" value="external"
+                                                {{ $defaultProvider === 'external' ? 'checked' : '' }}
+                                                class="mt-1 meeting-provider-radio" style="accent-color:#0b8f7f;">
+                                            <span>
+                                                <span class="block font-medium text-gray-800">رابط خارجي</span>
+                                                <span class="block text-xs text-gray-500">Google Meet / Zoom / غيرها — يُفتح في تبويب جديد مع صفحة النقاش</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="youtube_provider_hint" class="{{ $defaultProvider === 'youtube' ? '' : 'hidden' }} p-3 text-sm text-teal-900 bg-teal-50 border border-teal-200 rounded-lg">
+                                    <i class="fas fa-info-circle ml-1"></i>
+                                    الصق رابط بث يوتيوب المباشر. سيُضمَّن داخل غرفة المحاضرة قبل موعد البداية.
+                                </div>
+
+                                <div id="external_provider_hint" class="{{ $defaultProvider === 'external' ? '' : 'hidden' }} p-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <i class="fas fa-info-circle ml-1"></i>
+                                    عند دخول المحاضرة تُفتح صفحة النقاش هنا، ويُفتح رابط الاجتماع في تبويب جديد تلقائياً (بدون إطار مضمّن).
+                                </div>
+
+                                <div id="meeting_link_fields">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        رابط البث / الاجتماع <span class="text-red-600">*</span>
+                                    </label>
+                                    <input type="url" name="online_link" id="online_link" dir="ltr"
+                                        value="{{ old('online_link', $course->online_link) }}"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="{{ $defaultProvider === 'external' ? 'https://meet.google.com/...' : 'https://www.youtube.com/live/...' }}">
+                                    @error('online_link') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+
+                            <div id="venue_container"
+                                class="{{ $course->location_type == 'on_site' ? '' : 'hidden' }} space-y-4">
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            اسم المكان <span class="text-red-600">*</span>
+                                        </label>
+                                        <input type="text" name="venue_name" id="venue_name"
+                                            value="{{ old('venue_name', $course->venue_name) }}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        @error('venue_name') <span class="text-red-600 text-xs mt-1">{{ $message
+                                            }}</span> @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">رابط الخريطة</label>
+                                        <input type="url" name="venue_map_url" dir="ltr"
+                                            value="{{ old('venue_map_url', $course->venue_map_url) }}"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        @error('venue_map_url') <span class="text-red-600 text-xs mt-1">{{ $message
+                                            }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">تفاصيل المكان</label>
+                                    <textarea name="venue_details" rows="3"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('venue_details', $course->venue_details) }}</textarea>
+                                    @error('venue_details') <span class="text-red-600 text-xs mt-1">{{ $message
+                                        }}</span> @enderror
+                                </div>
+                            </div>
+                        </div>
+
+
+<!-- Dates (hidden for recorded) -->
+<div class="mt-8 pt-6 border-t {{ old('location_type', $course->location_type) === 'recorded' ? 'hidden' : '' }}" id="course_dates_section">
     <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <i class="fas fa-calendar text-blue-600"></i>
         التواريخ وأيام الدورة
@@ -457,91 +670,6 @@
                             });
 </script>
 
-                        <!-- Location -->
-                        <div class="mt-8 pt-6 border-t">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-map-marker-alt text-blue-600"></i>
-                                مكان الحضور
-                            </h3>
-
-                            <div class="mb-4">
-                                <div class="grid md:grid-cols-2 gap-4">
-                                    <label
-                                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-blue-50 transition">
-                                        <input type="radio" name="location_type" value="online" {{ old('location_type',
-                                            $course->location_type) == 'online' ? 'checked' : '' }} class="w-5 h-5
-                                        text-blue-600">
-                                        <div>
-                                            <div class="font-medium text-gray-800"><i
-                                                    class="fas fa-wifi text-blue-600 ml-2"></i>أونلاين</div>
-                                            <div class="text-xs text-gray-500">عبر الإنترنت</div>
-                                        </div>
-                                    </label>
-
-                                    <label
-                                        class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-green-50 transition">
-                                        <input type="radio" name="location_type" value="on_site" {{ old('location_type',
-                                            $course->location_type) == 'on_site' ? 'checked' : '' }} class="w-5 h-5
-                                        text-green-600">
-                                        <div>
-                                            <div class="font-medium text-gray-800"><i
-                                                    class="fas fa-building text-green-600 ml-2"></i>حضوري</div>
-                                            <div class="text-xs text-gray-500">في موقع محدد</div>
-                                        </div>
-                                    </label>
-                                </div>
-                                @error('location_type') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div id="online_link_container"
-                                class="{{ $course->location_type == 'online' ? '' : 'hidden' }}">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    رابط الدورة الأونلاين <span class="text-red-600">*</span>
-                                </label>
-                                <input type="url" name="online_link" dir="ltr"
-                                    value="{{ old('online_link', $course->online_link) }}"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                @error('online_link') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div id="venue_container"
-                                class="{{ $course->location_type == 'on_site' ? '' : 'hidden' }} space-y-4">
-                                <div class="grid md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                                            اسم المكان <span class="text-red-600">*</span>
-                                        </label>
-                                        <input type="text" name="venue_name"
-                                            value="{{ old('venue_name', $course->venue_name) }}"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        @error('venue_name') <span class="text-red-600 text-xs mt-1">{{ $message
-                                            }}</span> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">رابط الخريطة</label>
-                                        <input type="url" name="venue_map_url" dir="ltr"
-                                            value="{{ old('venue_map_url', $course->venue_map_url) }}"
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        @error('venue_map_url') <span class="text-red-600 text-xs mt-1">{{ $message
-                                            }}</span> @enderror
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">تفاصيل المكان</label>
-                                    <textarea name="venue_details" rows="3"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        {{ old('venue_details', $course->venue_details) }}
-                                    </textarea>
-                                    @error('venue_details') <span class="text-red-600 text-xs mt-1">{{ $message
-                                        }}</span> @enderror
-                                </div>
-                            </div>
-                        </div>
-
                         <div class="flex justify-end gap-3 mt-8">
                             <button type="button"
                                 class="next-tab px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
@@ -563,9 +691,7 @@
                                     الوصف بالعربي <span class="text-red-600">*</span>
                                 </label>
                                 <textarea name="description_ar" required rows="6"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    {{ old('description_ar', $course->description_ar) }}
-                                </textarea>
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('description_ar', $course->description_ar) }}</textarea>
                                 @error('description_ar') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -575,9 +701,7 @@
                                     Description (English) <span class="text-red-600">*</span>
                                 </label>
                                 <textarea name="description_en" dir="ltr" required rows="6"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    {{ old('description_en', $course->description_en) }}
-                                </textarea>
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ old('description_en', $course->description_en) }}</textarea>
                                 @error('description_en') <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
@@ -590,6 +714,25 @@
                             </button>
                             <button type="button"
                                 class="next-tab px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                التالي <i class="fas fa-arrow-left mr-2"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Educational Path (recorded only) -->
+                    <div class="tab-content" id="educational-path">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                            <i class="fas fa-route text-amber-500"></i>
+                            المسار التعليمي
+                        </h2>
+                        @include('dashboard.courses.partials.educational-path-builder', ['course' => $course])
+                        <div class="flex justify-between gap-3 mt-8">
+                            <button type="button"
+                                class="prev-tab px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                <i class="fas fa-arrow-right ml-2"></i> السابق
+                            </button>
+                            <button type="button"
+                                class="next-tab px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                 التالي <i class="fas fa-arrow-left mr-2"></i>
                             </button>
                         </div>
@@ -729,6 +872,71 @@
                             </button>
                         </div>
 
+                        <!-- Suitable for (optional) -->
+                        <div class="mt-8 pt-6 border-t">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                <i class="fas fa-user-check text-indigo-600"></i>
+                                مناسبة لمن
+                                <span class="text-gray-400 text-sm font-normal">(اختياري)</span>
+                            </h3>
+                            <p class="text-xs text-gray-500 mb-4">حدد الفئات أو الأشخاص الذين تناسبهم هذه الدورة</p>
+
+                            <div id="suitable-for-container" class="space-y-3 mb-4">
+                                @if(old('suitable_for_ar'))
+                                @foreach(old('suitable_for_ar') as $index => $item_ar)
+                                <div class="flex gap-2 suitable-for-row">
+                                    <input type="text" name="suitable_for_ar[]" value="{{ $item_ar }}"
+                                        class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="مثال: المبتدئين في البرمجة">
+                                    <input type="text" name="suitable_for_en[]" dir="ltr"
+                                        value="{{ old('suitable_for_en')[$index] ?? '' }}"
+                                        class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g. Beginners in programming">
+                                    <button type="button"
+                                        class="remove-suitable-for-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                @endforeach
+                                @else
+                                @foreach($course->suitable_for ?? [] as $item)
+                                <div class="flex gap-2 suitable-for-row">
+                                    <input type="text" name="suitable_for_ar[]" value="{{ $item['ar'] ?? '' }}"
+                                        class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="مثال: المبتدئين في البرمجة">
+                                    <input type="text" name="suitable_for_en[]" dir="ltr" value="{{ $item['en'] ?? '' }}"
+                                        class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g. Beginners in programming">
+                                    <button type="button"
+                                        class="remove-suitable-for-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                @endforeach
+                                @if(empty($course->suitable_for))
+                                <div class="flex gap-2 suitable-for-row">
+                                    <input type="text" name="suitable_for_ar[]"
+                                        class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="مثال: المبتدئين في البرمجة">
+                                    <input type="text" name="suitable_for_en[]" dir="ltr"
+                                        class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        placeholder="e.g. Beginners in programming">
+                                    <button type="button"
+                                        class="remove-suitable-for-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                @endif
+                                @endif
+                            </div>
+
+                            <button type="button"
+                                class="add-suitable-for-btn flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                                <i class="fas fa-plus"></i>
+                                إضافة فئة جديدة
+                            </button>
+                        </div>
+
                         <div class="flex justify-between gap-3 mt-8">
                             <button type="button"
                                 class="prev-tab px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
@@ -783,10 +991,10 @@
                                             <label class="block text-sm font-medium text-gray-700 mb-2">لون الزر</label>
                                             <div class="flex gap-2">
                                                 <input type="color" name="buttons_color[]"
-                                                    value="{{ old('buttons_color')[$index] ?? '#3B82F6' }}"
+                                                    value="{{ old('buttons_color')[$index] ?? '#0b8f7f' }}"
                                                     class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
                                                 <input type="text" name="buttons_color_hex[]"
-                                                    value="{{ old('buttons_color')[$index] ?? '#3B82F6' }}" dir="ltr"
+                                                    value="{{ old('buttons_color')[$index] ?? '#0b8f7f' }}" dir="ltr"
                                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                                     readonly>
                                             </div>
@@ -846,10 +1054,10 @@
                                             <label class="block text-sm font-medium text-gray-700 mb-2">لون الزر</label>
                                             <div class="flex gap-2">
                                                 <input type="color" name="buttons_color[]"
-                                                    value="{{ $btn['color'] ?? '#3B82F6' }}"
+                                                    value="{{ $btn['color'] ?? '#0b8f7f' }}"
                                                     class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
                                                 <input type="text" name="buttons_color_hex[]"
-                                                    value="{{ $btn['color'] ?? '#3B82F6' }}" dir="ltr"
+                                                    value="{{ $btn['color'] ?? '#0b8f7f' }}" dir="ltr"
                                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                                     readonly>
                                             </div>
@@ -899,9 +1107,9 @@
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700 mb-2">لون الزر</label>
                                             <div class="flex gap-2">
-                                                <input type="color" name="buttons_color[]" value="#3B82F6"
+                                                <input type="color" name="buttons_color[]" value="#0b8f7f"
                                                     class="w-16 h-10 border border-gray-300 rounded cursor-pointer">
-                                                <input type="text" name="buttons_color_hex[]" value="#3B82F6" dir="ltr"
+                                                <input type="text" name="buttons_color_hex[]" value="#0b8f7f" dir="ltr"
                                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                                     readonly>
                                             </div>
@@ -996,6 +1204,44 @@
                                     @endif
                                 </div>
                             </div>
+
+                            <!-- Optional Video -->
+                            <div class="mt-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    فيديو تعريفي <span class="text-gray-400 font-normal">(اختياري)</span>
+                                </label>
+                                <div
+                                    class="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition cursor-pointer">
+                                    <input id="video_input" type="file" name="video"
+                                        accept="video/mp4,video/webm,video/quicktime,video/ogg,.mp4,.webm,.mov,.ogg"
+                                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <i class="fas fa-video text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-600">اضغط أو اسحب فيديو جديد هنا (اختياري)</p>
+                                    <p class="text-xs text-gray-400 mt-1">MP4, WEBM, MOV (حد أقصى 50MB)</p>
+                                </div>
+                                @error('video')
+                                <span class="text-red-600 text-xs mt-1 block">{{ $message }}</span>
+                                @enderror
+
+                                <div id="video_preview_container" class="mt-3 {{ $course->video ? '' : 'hidden' }} relative">
+                                    <video id="video_preview" controls class="w-full max-h-72 rounded-lg border bg-black"
+                                        @if($course->video) src="{{ Storage::url($course->video) }}" @endif></video>
+                                    <p id="video_file_name" class="text-xs text-gray-500 mt-1">
+                                        @if($course->video) الفيديو الحالي @endif
+                                    </p>
+                                    <button type="button" onclick="removeCourseVideo()"
+                                        class="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow hover:bg-red-700 transition">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                @if($course->video)
+                                <label class="mt-3 inline-flex items-center gap-2 text-sm text-red-700 cursor-pointer">
+                                    <input type="checkbox" name="remove_video" value="1" id="remove_video_checkbox"
+                                        class="rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                    حذف الفيديو الحالي دون رفع بديل
+                                </label>
+                                @endif
+                            </div>
                         </div>
 
                         <div class="flex justify-between gap-3 mt-8">
@@ -1017,7 +1263,24 @@
                             الإعدادات النهائية
                         </h2>
 
-                        <div class="space-y-6">
+                        @if($settingsLocked)
+                        <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-sm flex gap-3 items-start">
+                            <i class="fas fa-lock mt-0.5 text-amber-600"></i>
+                            <div>
+                                <p class="font-bold mb-1">هذا التبويب مقفل بعد بدء الدورة</p>
+                                <p class="text-amber-800">
+                                    بدأت الدورة في
+                                    <strong>{{ optional($course->start_date)->format('Y-m-d h:i A') }}</strong>.
+                                    لا يمكن تغيير حالة الدورة أو إعدادات الاختبار بعد البدء. باقي التبويبات تبقى قابلة للتعديل.
+                                </p>
+                            </div>
+                        </div>
+                        <input type="hidden" name="status" value="{{ $course->status }}">
+                        <input type="hidden" name="required_exam_pass_count" value="{{ $course->required_exam_pass_count ?? 1 }}">
+                        @endif
+
+                        <div class="space-y-6 {{ $settingsLocked ? 'opacity-70 pointer-events-none select-none' : '' }}"
+                            @if($settingsLocked) aria-disabled="true" @endif>
                             <div class="border rounded-lg p-5 bg-gray-50">
                                 <label class="block text-sm font-medium text-gray-700 mb-3">
                                     حالة الدورة <span class="text-red-600">*</span>
@@ -1026,8 +1289,9 @@
                                     <label
                                         class="flex items-center gap-3 p-4 border-2 border-green-300 bg-white rounded-lg cursor-pointer hover:bg-green-50 transition flex-1">
                                         <input type="radio" name="status" value="active" {{ old('status',
-                                            $course->status) == 'active' ? 'checked' : '' }} class="w-5 h-5
-                                        text-green-600">
+                                            $course->status) == 'active' ? 'checked' : '' }}
+                                            class="w-5 h-5 text-green-600"
+                                            @if($settingsLocked) disabled @endif>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-check-circle text-green-600"></i>
                                             <span class="font-medium text-green-700">نشط</span>
@@ -1037,8 +1301,9 @@
                                     <label
                                         class="flex items-center gap-3 p-4 border-2 border-gray-300 bg-white rounded-lg cursor-pointer hover:bg-gray-50 transition flex-1">
                                         <input type="radio" name="status" value="inactive" {{ old('status',
-                                            $course->status) == 'inactive' ? 'checked' : '' }} class="w-5 h-5
-                                        text-gray-600">
+                                            $course->status) == 'inactive' ? 'checked' : '' }}
+                                            class="w-5 h-5 text-gray-600"
+                                            @if($settingsLocked) disabled @endif>
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-times-circle text-gray-600"></i>
                                             <span class="font-medium text-gray-700">غير نشط</span>
@@ -1048,7 +1313,9 @@
                                 @error('status') <span class="text-red-600 text-xs mt-1">{{ $message }}</span> @enderror
                             </div>
 
-                            @include('dashboard.courses.partials.exam-builder', ['course' => $course])
+                            @unless($course->isRecorded())
+                            @include('dashboard.courses.partials.day-exams-builder', ['course' => $course])
+                            @endunless
 
                             <div class="border-2 border-blue-200 rounded-lg p-6 bg-blue-50">
                                 <h3 class="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
@@ -1106,11 +1373,15 @@
     document.addEventListener('click', (e) => {
         if (e.target.closest('.next-tab')) {
             e.preventDefault();
-            if (currentTab < tabs.length - 1) showTab(currentTab + 1);
+            let next = currentTab + 1;
+            while (next < tabs.length && tabButtons[next]?.classList.contains('hidden')) next++;
+            if (next < tabs.length) showTab(next);
         }
         if (e.target.closest('.prev-tab')) {
             e.preventDefault();
-            if (currentTab > 0) showTab(currentTab - 1);
+            let prev = currentTab - 1;
+            while (prev >= 0 && tabButtons[prev]?.classList.contains('hidden')) prev--;
+            if (prev >= 0) showTab(prev);
         }
     });
 
@@ -1160,6 +1431,7 @@
             return text;
         }
     }
+    window.translateText = translateText;
 
     function setupTranslation(sourceId, targetId, fromLang, toLang, delay = 1000) {
         const source = document.getElementById(sourceId);
@@ -1201,6 +1473,41 @@
         });
     }
 
+    // ========== Free / Price Toggle ==========
+    function setupFreePriceToggle() {
+        const toggle = document.getElementById('is_free_toggle');
+        const wrap = document.getElementById('price_field_wrap');
+        const priceInput = document.getElementById('price');
+        if (!toggle || !wrap || !priceInput) return;
+
+        let lastPaidPrice = '';
+        const current = String(priceInput.value || '').trim();
+        if (current !== '' && parseFloat(current) > 0) {
+            lastPaidPrice = current;
+        }
+
+        function applyFreeState() {
+            const isFree = toggle.checked;
+            wrap.classList.toggle('hidden', isFree);
+            if (isFree) {
+                const cur = String(priceInput.value || '').trim();
+                if (cur !== '' && parseFloat(cur) > 0) {
+                    lastPaidPrice = cur;
+                }
+                priceInput.value = '0';
+                priceInput.removeAttribute('required');
+            } else {
+                priceInput.setAttribute('required', 'required');
+                if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+                    priceInput.value = lastPaidPrice || '';
+                }
+            }
+        }
+
+        toggle.addEventListener('change', applyFreeState);
+        applyFreeState();
+    }
+
     // ========== Location Type Toggle ==========
     function setupLocationTypeToggle() {
         const locationInputs = document.querySelectorAll('input[name="location_type"]');
@@ -1208,29 +1515,78 @@
         const venueContainer = document.getElementById('venue_container');
         const onlineLink = document.getElementById('online_link');
         const venueName = document.getElementById('venue_name');
+        const pathTabBtn = document.getElementById('path-tab-btn');
+        const pathPane = document.getElementById('educational-path');
+        const datesSection = document.getElementById('course_dates_section');
+        const dateFields = ['start_date', 'end_date', 'last_date', 'count_days']
+            .map((id) => document.getElementById(id))
+            .filter(Boolean);
+
+        function updateMeetingProviderFields() {
+            const provider = document.querySelector('input[name="meeting_provider"]:checked')?.value || 'youtube';
+            const youtubeHint = document.getElementById('youtube_provider_hint');
+            const externalHint = document.getElementById('external_provider_hint');
+            const isExternal = provider === 'external';
+            youtubeHint?.classList.toggle('hidden', isExternal);
+            externalHint?.classList.toggle('hidden', !isExternal);
+            if (onlineLink) {
+                onlineLink.setAttribute('required', 'required');
+                onlineLink.placeholder = isExternal
+                    ? 'https://meet.google.com/... أو https://zoom.us/j/...'
+                    : 'https://www.youtube.com/live/... أو https://youtu.be/...';
+            }
+        }
 
         function updateLocationFields(type) {
             if (type === 'online') {
-                onlineContainer.classList.remove('hidden');
-                venueContainer.classList.add('hidden');
-                onlineLink.setAttribute('required', 'required');
-                venueName.removeAttribute('required');
+                onlineContainer?.classList.remove('hidden');
+                venueContainer?.classList.add('hidden');
+                venueName?.removeAttribute('required');
+                updateMeetingProviderFields();
             } else if (type === 'on_site') {
-                onlineContainer.classList.add('hidden');
-                venueContainer.classList.remove('hidden');
-                onlineLink.removeAttribute('required');
-                venueName.setAttribute('required', 'required');
+                onlineContainer?.classList.add('hidden');
+                venueContainer?.classList.remove('hidden');
+                onlineLink?.removeAttribute('required');
+                venueName?.setAttribute('required', 'required');
             } else {
-                onlineContainer.classList.add('hidden');
-                venueContainer.classList.add('hidden');
-                onlineLink.removeAttribute('required');
-                venueName.removeAttribute('required');
+                onlineContainer?.classList.add('hidden');
+                venueContainer?.classList.add('hidden');
+                onlineLink?.removeAttribute('required');
+                venueName?.removeAttribute('required');
+            }
+
+            const isRecorded = type === 'recorded';
+            if (datesSection) datesSection.classList.toggle('hidden', isRecorded);
+            dateFields.forEach((el) => {
+                if (isRecorded) {
+                    el.removeAttribute('required');
+                    el.disabled = true;
+                } else {
+                    el.setAttribute('required', 'required');
+                    el.disabled = false;
+                }
+            });
+
+            if (typeof window.setDayExamsSectionVisible === 'function') {
+                window.setDayExamsSectionVisible(!isRecorded);
+            } else {
+                document.getElementById('day-exams-section')?.classList.toggle('hidden', isRecorded);
+            }
+
+            const showPath = isRecorded;
+            if (pathTabBtn) pathTabBtn.classList.toggle('hidden', !showPath);
+            if (pathPane && !showPath && pathPane.classList.contains('active')) {
+                const contentBtn = document.querySelector('.tab-button[data-tab="content"]');
+                if (contentBtn) contentBtn.click();
             }
         }
 
         locationInputs.forEach(input => {
             input.addEventListener('change', (e) => updateLocationFields(e.target.value));
             if (input.checked) updateLocationFields(input.value);
+        });
+        document.querySelectorAll('input[name="meeting_provider"]').forEach((input) => {
+            input.addEventListener('change', updateMeetingProviderFields);
         });
     }
 
@@ -1308,6 +1664,28 @@
                 });
             });
         }
+
+        const videoInput = document.getElementById('video_input');
+        const videoPreviewContainer = document.getElementById('video_preview_container');
+        const videoPreview = document.getElementById('video_preview');
+        const videoFileName = document.getElementById('video_file_name');
+        const removeVideoCheckbox = document.getElementById('remove_video_checkbox');
+
+        if (videoInput && videoPreviewContainer && videoPreview) {
+            videoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (removeVideoCheckbox) removeVideoCheckbox.checked = false;
+                if (videoPreview.dataset.objectUrl) {
+                    URL.revokeObjectURL(videoPreview.dataset.objectUrl);
+                }
+                const url = URL.createObjectURL(file);
+                videoPreview.dataset.objectUrl = url;
+                videoPreview.src = url;
+                if (videoFileName) videoFileName.textContent = file.name + ' (' + Math.round(file.size / 1024 / 1024 * 10) / 10 + ' MB)';
+                videoPreviewContainer.classList.remove('hidden');
+            });
+        }
     }
 
     // ========== Color Picker Sync ==========
@@ -1352,6 +1730,21 @@
         </div>
     `;
 
+    const createSuitableForRow = () => `
+        <div class="flex gap-2 suitable-for-row">
+            <input type="text" name="suitable_for_ar[]"
+                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="مثال: المبتدئين في البرمجة">
+            <input type="text" name="suitable_for_en[]" dir="ltr"
+                class="placeholder-gray-400 flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g. Beginners in programming">
+            <button type="button"
+                class="remove-suitable-for-btn px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+
     const createButtonRow = () => `
         <div class="button-row border border-gray-200 rounded-lg p-4 bg-gray-50">
             <div class="grid md:grid-cols-2 gap-4 mb-3">
@@ -1378,11 +1771,11 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">لون الزر</label>
                     <div class="flex gap-2">
-                        <input type="color" name="buttons_color[]" value="#3B82F6"
+                        <input type="color" name="buttons_color[]" value="#0b8f7f"
                             class="w-16 h-10 border border-gray-300 rounded cursor-pointer button-color-picker">
-                        <input type="text" name="buttons_color_hex[]" value="#3B82F6" dir="ltr"
+                        <input type="text" name="buttons_color_hex[]" value="#0b8f7f" dir="ltr"
                             class="button-color-hex flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                            placeholder="#3B82F6" readonly>
+                            placeholder="#0b8f7f" readonly>
                     </div>
                 </div>
             </div>
@@ -1413,11 +1806,15 @@
         setupTranslation('description_en', 'description_ar', 'en', 'ar', 1500);
         setupDynamicTranslation('features-container', '.feature-row', 'features_ar[]', 'features_en[]');
         setupDynamicTranslation('requirements-container', '.requirement-row', 'requirements_ar[]', 'requirements_en[]');
+        setupDynamicTranslation('suitable-for-container', '.suitable-for-row', 'suitable_for_ar[]', 'suitable_for_en[]');
+        setupDynamicTranslation('buttons-container', '.button-row', 'buttons_text_ar[]', 'buttons_text_en[]');
         
         setupLocationTypeToggle();
+        setupFreePriceToggle();
         
         setupDynamicRows('requirements-container', 'add-requirement-btn', 'remove-requirement-btn', 'requirement-row', createRequirementRow);
         setupDynamicRows('features-container', 'add-feature-btn', 'remove-feature-btn', 'feature-row', createFeatureRow);
+        setupDynamicRows('suitable-for-container', 'add-suitable-for-btn', 'remove-suitable-for-btn', 'suitable-for-row', createSuitableForRow);
         setupDynamicRows('buttons-container', 'add-button-btn', 'remove-button-btn', 'button-row', createButtonRow);
         
         setupImagePreviews();
@@ -1463,6 +1860,26 @@
         }
         input.files = dt.files;
         input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    window.removeCourseVideo = function() {
+        const input = document.getElementById('video_input');
+        const container = document.getElementById('video_preview_container');
+        const preview = document.getElementById('video_preview');
+        const fileName = document.getElementById('video_file_name');
+        const removeCheckbox = document.getElementById('remove_video_checkbox');
+        if (input) input.value = '';
+        if (preview) {
+            if (preview.dataset.objectUrl) {
+                URL.revokeObjectURL(preview.dataset.objectUrl);
+                delete preview.dataset.objectUrl;
+            }
+            preview.removeAttribute('src');
+            preview.load();
+        }
+        if (fileName) fileName.textContent = '';
+        if (container) container.classList.add('hidden');
+        if (removeCheckbox) removeCheckbox.checked = true;
     };
 })();
 </script>

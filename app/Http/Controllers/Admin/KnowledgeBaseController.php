@@ -17,18 +17,18 @@ class KnowledgeBaseController extends Controller
             ->withCount('knowledges')
             ->where('status', 1)
             ->get();
+
         $query = KnowledgeBase::with(['category', 'user'])->latest();
+
         if ($request->has('category_id') && $request->category_id != '') {
             $query->where('category_id', $request->category_id);
         }
-        if (Auth::user()->role == 'admin') {
-            $knowledges = $query->paginate(10)->withQueryString();
-        } elseif (Auth::user()->role == 'independent_partner') {
-            $knowledges = $query->where('added_by', Auth::user()->id)->paginate(10)->withQueryString();
-        } elseif (Auth::user()->role == 'partner') {
-            $knowledges = $query->paginate(10)->withQueryString();
+
+        $knowledges = $query->paginate(10)->withQueryString();
+
+        if (Auth::user()->role == 'independent_partner') {
+            $knowledges = $query->where('added_by', Auth::id())->paginate(10)->withQueryString();
         }
-        // $knowledges = $query->paginate(10)->withQueryString();
 
         return view('dashboard.knowledge_base.index', compact('knowledges', 'categories'));
     }
@@ -53,7 +53,7 @@ class KnowledgeBaseController extends Controller
             $data['attachments'] = $request->file('attachments')->store('uploads/kb', 'public');
         }
 
-        $data['added_by'] = auth()->id();
+        $data['added_by'] = Auth::id();
 
         KnowledgeBase::create($data);
 

@@ -23,6 +23,11 @@ class CockpitController extends Controller
     public function index(Request $request): View
     {
         $user = auth()->user();
+
+        if ($user && $user->usesAcademyShell()) {
+            return $this->academyHome($user);
+        }
+
         [$requestIds, $specialIds] = $this->accessibleProjectIds($user);
 
         $taskStats = CockpitMetrics::taskStatsFor($user, $requestIds, $specialIds);
@@ -53,6 +58,57 @@ class CockpitController extends Controller
             'allTasks',
             'allStages',
             'taskStatusFilter',
+        ));
+    }
+
+    protected function academyHome($user): View
+    {
+        $now = Carbon::now();
+        $courseStats = CockpitMetrics::courseStatsFor($user);
+
+        $myPayments = \App\Models\Payment::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('course_id')
+            ->whereIn('status', ['completed', 'success', 'paid', 'active'])
+            ->with(['course.trainer', 'course.category'])
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        $needsRating = $myPayments->filter(function ($payment) {
+            $course = $payment->course;
+            return $course && $course->userNeedsRating($payment->user_id);
+        })->take(4)->values();
+
+        $continueLearning = $myPayments->filter(function ($payment) use ($now) {
+            $course = $payment->course;
+            if (!$course) {
+                return false;
+            }
+            if ($course->isRecorded()) {
+                $pct = $course->pathCompletionForUser($payment->user_id)['percent'] ?? 0;
+                return $pct < 100;
+            }
+            return $payment->isCourseActiveForLearner($now);
+        })->take(6)->values();
+
+        $managedCourses = collect();
+        if ($user->isTrainer()) {
+            $managedCourses = \App\Models\Course::query()
+                ->where('trainer_id', $user->id)
+                ->withCount(['payments as students_count' => fn ($q) => $q->whereIn('status', ['completed', 'success', 'paid', 'active'])])
+                ->latest()
+                ->limit(6)
+                ->get();
+        }
+
+        return view('dashboard.academy-home', compact(
+            'courseStats',
+            'myPayments',
+            'needsRating',
+            'continueLearning',
+            'managedCourses',
+            'user'
         ));
     }
 

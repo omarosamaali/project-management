@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Auth;
 
 class WhatsAppOTPService
 {
@@ -121,6 +122,20 @@ class WhatsAppOTPService
         int $totalQuestions,
     ): bool {
         $bodyText = "مبروك! لقد اجتزت اختبار دورة «{$courseName}» بنجاح. درجتك: {$score} من {$totalQuestions}. شهادة الحضور متاحة الآن من قمرة القيادة — دوراتي. شكراً لالتزامك ومشاركتك الفعّالة مع إيفورك للتكنولوجيا.";
+
+        return $this->sendTrabar($phone, $userName, $bodyText);
+    }
+
+    // ── موافقة حساب محاضر ─────────────────────────────
+    public function sendTrainerApprovedNotification(string $phone, string $userName, ?string $loginUrl = null): bool
+    {
+        $bodyText = 'مبروك! تمت الموافقة على حسابك كمحاضر في أكاديمية إيفورك. يمكنك الآن تسجيل الدخول والبدء في إنشاء وإدارة دوراتك التدريبية.';
+        $host = $loginUrl ? parse_url($loginUrl, PHP_URL_HOST) : null;
+        $isPublicUrl = $host && !in_array($host, ['127.0.0.1', 'localhost'], true);
+        if ($loginUrl && $isPublicUrl) {
+            $bodyText .= " رابط الدخول: {$loginUrl}";
+        }
+        $bodyText .= ' — إيفورك للتكنولوجيا.';
 
         return $this->sendTrabar($phone, $userName, $bodyText);
     }
@@ -471,7 +486,7 @@ class WhatsAppOTPService
         Log::info("[WHATSAPP] إرسال", [
             'phone'    => $cleanPhone,
             'template' => $template,
-            'user_id'  => auth()->id() ?? 'غير مسجل'
+            'user_id'  => Auth::id() ?? 'غير مسجل'
         ]);
 
         try {
@@ -583,7 +598,7 @@ class WhatsAppOTPService
     private function logWhatsAppMessage($phone, $template, $params, $status, $messageId = null, $contentPreview = null)
     {
         return \App\Models\WhatsAppMessage::create([
-            'user_id'         => auth()->id() ?? null,
+            'user_id'         => Auth::id() ?? null,
             'phone'           => $phone,
             'template'        => $template,
             'type'            => 'outgoing',

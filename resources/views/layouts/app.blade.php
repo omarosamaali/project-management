@@ -1,3 +1,9 @@
+@php
+    $useAcademyShell = Auth::check() && Auth::user()->usesAcademyShell();
+@endphp
+@if($useAcademyShell)
+    @include('layouts.academy-app')
+@else
 <!DOCTYPE html>
 <html class="light" lang="ar" dir="rtl">
 
@@ -44,7 +50,11 @@
                         <span class="sr-only">Toggle sidebar</span>
                     </button>
                     <a href="{{ route('dashboard') }}" class="flex items-center justify-between md:mr-24">
+                        @if(Auth::check() && (Auth::user()->isTrainer() || Auth::user()->isTrainee()))
+                        <img src="{{ \App\Models\Setting::academyLogoUrl() }}" class="h-14 w-auto max-w-[13rem] object-contain" alt="{{ __('messages.academy') }}">
+                        @else
                         <img src="{{ asset('assets/images/logo.webp') }}" class="h-20" alt="">
+                        @endif
                     </a>
                 </div>
                 @if(!empty($attendanceWidget['show']))
@@ -126,7 +136,7 @@
                         </a>
                     </li>
                     @endif
-                    @if(Auth::user()->role != 'client')
+                    @if(!in_array(Auth::user()->role, ['client', 'trainer', 'trainee']))
                     <li>
                         <a href="{{ route('dashboard.performance.show') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.performance.show' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -174,15 +184,100 @@
                         </a>
                     </li>
                     @endif
-                    @if(Auth::user()->role != 'admin')
+                    @if(Auth::user()->canLearnCourses() && !Auth::user()->canManageCourses())
                     <li>
                         <a href="{{ route('dashboard.my_courses.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.my_courses.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <i
-                                class="{{ Route::currentRouteName() == 'dashboard.my_courses.index' ? 'text-white' : '' }} fas fa-briefcase text-gray-500 pl-2"></i>
+                                class="{{ Route::currentRouteName() == 'dashboard.my_courses.index' ? 'text-white' : '' }} fas fa-graduation-cap text-gray-500 pl-2"></i>
                             <span class="ml-3">دوراتي</span>
                         </a>
                     </li>
+                    @endif
+
+                    @if (Auth::user()->canManageCourses())
+                    <span
+                        class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-4 border-t">{{ __('messages.academy') }}</span>
+                    @if(Auth::user()->canLearnCourses())
+                    <li>
+                        <a href="{{ route('dashboard.my_courses.index') }}"
+                            class="{{ request()->routeIs('dashboard.my_courses.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.my_courses.*') ? 'text-white' : '' }} fas fa-graduation-cap text-gray-500 pl-2"></i>
+                            <span class="ml-3">دوراتي المشترك بها</span>
+                        </a>
+                    </li>
+                    @endif
+                    <li>
+                        <a href="{{ route('dashboard.courses.index') }}"
+                            class="{{ request()->routeIs('dashboard.courses.*') && !request()->routeIs('dashboard.course-categories.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.courses.*') && !request()->routeIs('dashboard.course-categories.*') ? 'text-white' : '' }} fas fa-chalkboard-teacher text-gray-500 pl-2"></i>
+                            <span class="ml-3">{{ __('messages.manage_courses') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.course-categories.index') }}"
+                            class="{{ request()->routeIs('dashboard.course-categories.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.course-categories.*') ? 'text-white' : '' }} fas fa-folder-tree text-gray-500 pl-2"></i>
+                            <span class="ml-3">تصنيفات الدورات</span>
+                        </a>
+                    </li>
+                    @if (Auth::user()->isAdmin())
+                    <li>
+                        <a href="{{ route('dashboard.academy.settings.edit') }}"
+                            class="{{ request()->routeIs('dashboard.academy.settings.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.settings.*') ? 'text-white' : '' }} fas fa-sliders-h text-gray-500 pl-2"></i>
+                            <span class="ml-3">إعدادات الأكاديمية</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.profits.index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.profits.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.profits.*') ? 'text-white' : '' }} fas fa-sack-dollar text-gray-500 pl-2"></i>
+                            <span class="ml-3">أرباح المحاضرين</span>
+                        </a>
+                    </li>
+                    @endif
+                    @if (Auth::user()->isTrainer())
+                    <li>
+                        <a href="{{ route('dashboard.academy.my-profits') }}"
+                            class="{{ request()->routeIs('dashboard.academy.my-profits') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.my-profits') ? 'text-white' : '' }} fas fa-wallet text-gray-500 pl-2"></i>
+                            <span class="ml-3">أرباح دوراتي</span>
+                        </a>
+                    </li>
+                    @endif
+                    @if (Auth::user()->isAdmin())
+                    <li>
+                        <a href="{{ route('dashboard.trainers.index') }}"
+                            class="{{ request()->routeIs('dashboard.trainers.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.trainers.*') ? 'text-white' : '' }} fas fa-user-tie text-gray-500 pl-2"></i>
+                            <span class="ml-3">{{ __('messages.trainers_accounts') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.trainees.index') }}"
+                            class="{{ request()->routeIs('dashboard.trainees.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.trainees.*') ? 'text-white' : '' }} fas fa-user-graduate text-gray-500 pl-2"></i>
+                            <span class="ml-3">{{ __('messages.trainees_accounts') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.ratings.index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.ratings.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.ratings.*') ? 'text-white' : '' }} fas fa-star text-gray-500 pl-2"></i>
+                            <span class="ml-3">{{ __('messages.academy_ratings') }}</span>
+                        </a>
+                    </li>
+                    @endif
                     @endif
 
                     @if (Auth::user()->role == 'admin')
@@ -210,14 +305,6 @@
                         </a>
                     </li>
                     @endif
-                    <li>
-                        <a href="{{ route('dashboard.courses.index') }}"
-                            class="{{ Route::currentRouteName() == 'dashboard.courses.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                            <i
-                                class="{{ Route::currentRouteName() == 'dashboard.courses.index' ? 'text-white' : '' }} fab fa-chrome text-gray-500 pl-2"></i>
-                            <span class="ml-3">الدورات</span>
-                        </a>
-                    </li>
                     <li>
                         <a href="{{ route('dashboard.services.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.services.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -402,7 +489,7 @@
                     </li>
                     @endif
 
-                    @if(Auth::user()->role == 'admin' || Auth::user()->role == 'client')
+                    @if(in_array(Auth::user()->role, ['admin', 'client', 'trainer', 'trainee']))
                     <span class="sidebar-item block text-sm text-black dark:text-white font-bold px-2 pt-5 border-t">
                         @if(Auth::user()->role == 'admin' || Auth::user()->role == 'partner')
                         المهام والدعم
@@ -410,7 +497,7 @@
                         الدعم الفني
                         @endif
                     </span>
-                    @if(Auth::user()->role != 'client')
+                    @if(Auth::user()->role != 'client' && !in_array(Auth::user()->role, ['trainer', 'trainee']))
                     <li>
                         <a href="{{ route('dashboard.support.index') }}"
                             class="{{ Route::currentRouteName() == 'dashboard.support.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
@@ -512,7 +599,7 @@
                     </a>
                     @endif
 
-                    @if(Auth::user()->role != 'client' && Auth::user()->role != 'admin')
+                    @if(!in_array(Auth::user()->role, ['client', 'admin', 'trainer', 'trainee']))
                     <a href="{{ route('dashboard.kb.index') }}"
                         class="{{ Route::currentRouteName() == 'dashboard.kb.index' ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                         <i
@@ -602,7 +689,80 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/js/intlTelInput.min.js"></script>
     <script>
+        window.EVORQ_LOGIN_URL = @json(route('login'));
+        window.__sessionExpiredShown = false;
+
+        window.showSessionExpiredModal = function () {
+            if (window.__sessionExpiredShown) return;
+            window.__sessionExpiredShown = true;
+            const goLogin = () => { window.location.href = window.EVORQ_LOGIN_URL; };
+            if (typeof Swal === 'undefined') {
+                goLogin();
+                return;
+            }
+            Swal.fire({
+                icon: 'warning',
+                title: 'انتهت صلاحية الجلسة',
+                text: 'يجب تسجيل الدخول مرة أخرى للمتابعة.',
+                confirmButtonText: 'تسجيل الدخول',
+                confirmButtonColor: '#0D2444',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+            }).then(goLogin);
+        };
+
+        // Intercept fetch 401/419 (AJAX actions after session expiry)
+        (function () {
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = async function (...args) {
+                const response = await originalFetch(...args);
+                if (response.status === 401 || response.status === 419) {
+                    let expired = response.status === 419;
+                    try {
+                        const clone = response.clone();
+                        const data = await clone.json();
+                        if (data && (data.session_expired || data.message)) {
+                            expired = true;
+                        }
+                    } catch (_) {
+                        expired = true;
+                    }
+                    if (expired) window.showSessionExpiredModal();
+                }
+                return response;
+            };
+        })();
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
+        // jQuery AJAX 401/419
+        if (window.jQuery) {
+            $(document).ajaxError(function (_event, jqXHR) {
+                if (jqXHR && (jqXHR.status === 401 || jqXHR.status === 419)) {
+                    window.showSessionExpiredModal();
+                }
+            });
+        }
+
+        @if(session('session_expired') || $errors->has('csrf'))
+            window.showSessionExpiredModal();
+        @elseif(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: @json(session('success')),
+                confirmButtonText: 'حسناً',
+                confirmButtonColor: '#0D2444',
+            });
+        @elseif(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'تنبيه',
+                text: @json(session('error')),
+                confirmButtonText: 'حسناً',
+                confirmButtonColor: '#0D2444',
+            });
+        @endif
+
         // Employee attendance widgets (navbar + sidebar + work-times page)
         const attendanceWidgets = document.querySelectorAll('.attendance-widget-root');
         const attendanceStates = [];
@@ -834,3 +994,4 @@
 </body>
 
 </html>
+@endif

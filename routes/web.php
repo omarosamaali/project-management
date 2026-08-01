@@ -12,6 +12,7 @@ use App\Http\Controllers\ProjectBudgetController;
 use App\Http\Controllers\RequestMessageController;
 use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseLectureController;
 
 Route::patch('special-request/payment/{payment}/mark-paid', [SpecialRequestController::class, 'markPaymentAsPaid'])
     ->name('special-request.payment.mark-paid');
@@ -23,6 +24,8 @@ Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(func
         ->name('courses.toggle-attendance');
 
     // تحضير جماعي للمشتركين
+    Route::post('/courses/{course}/ratings/{rating}/toggle-featured', [CourseController::class, 'toggleFeaturedRating'])
+        ->name('courses.ratings.toggle-featured');
     Route::post('/courses/{course}/bulk-attendance', [CourseController::class, 'bulkAttendance'])
         ->name('courses.bulk-attendance');
 
@@ -30,7 +33,13 @@ Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(func
     Route::get('/payments/{payment}/certificate', [CourseController::class, 'showCertificate'])
         ->name('courses.certificate');
 
-    // اختبار الدورة
+    // اختبارات أيام الدورة
+    Route::post('/courses/{course}/day-exams/{dayExam}/start', [CourseController::class, 'startDayExam'])
+        ->name('courses.day-exams.start');
+    Route::post('/courses/{course}/day-exams/{dayExam}/end', [CourseController::class, 'endDayExam'])
+        ->name('courses.day-exams.end');
+    Route::post('/courses/{course}/day-exams/{dayExam}/skip', [CourseController::class, 'skipDayExam'])
+        ->name('courses.day-exams.skip');
     Route::post('/courses/{course}/start-exam', [CourseController::class, 'startExam'])
         ->name('courses.start-exam');
     Route::post('/courses/{course}/end-exam', [CourseController::class, 'endExam'])
@@ -39,12 +48,50 @@ Route::prefix('dashboard')->name('dashboard.')->middleware(['auth'])->group(func
         ->name('courses.exam-statuses');
     Route::get('/exam/pending-check', [\App\Http\Controllers\CourseExamController::class, 'pendingCheck'])
         ->name('courses.exam.pending-check');
-    Route::get('/courses/{course}/exam', [\App\Http\Controllers\CourseExamController::class, 'take'])
+    Route::get('/courses/{course}/day-exams/{dayExam}/exam', [\App\Http\Controllers\CourseExamController::class, 'take'])
         ->name('courses.exam.take');
-    Route::post('/courses/{course}/exam', [\App\Http\Controllers\CourseExamController::class, 'submit'])
+    Route::post('/courses/{course}/day-exams/{dayExam}/exam', [\App\Http\Controllers\CourseExamController::class, 'submit'])
         ->name('courses.exam.submit');
-    Route::get('/courses/{course}/exam/result', [\App\Http\Controllers\CourseExamController::class, 'result'])
+    Route::get('/courses/{course}/day-exams/{dayExam}/exam/result', [\App\Http\Controllers\CourseExamController::class, 'result'])
         ->name('courses.exam.result');
+    Route::get('/courses/{course}/rating', [\App\Http\Controllers\CourseRatingController::class, 'show'])
+        ->name('courses.rating');
+    Route::post('/courses/{course}/rating', [\App\Http\Controllers\CourseRatingController::class, 'store'])
+        ->name('courses.rating.store');
+
+    // غرفة المحاضرة الأونلاين + نقاش مباشر / أرشيف
+    Route::get('/my_courses/{payment}/lecture', [CourseLectureController::class, 'show'])
+        ->name('my_courses.lecture');
+    Route::get('/courses/{course}/lecture', [CourseLectureController::class, 'showForManager'])
+        ->name('courses.lecture');
+    Route::get('/courses/{course}/chat', [CourseLectureController::class, 'archive'])
+        ->name('courses.chat-archive');
+    Route::get('/courses/{course}/chat/messages', [CourseLectureController::class, 'messages'])
+        ->name('courses.chat.messages');
+    Route::post('/courses/{course}/chat/messages', [CourseLectureController::class, 'storeMessage'])
+        ->name('courses.chat.store');
+    Route::post('/courses/{course}/chat/messages/{message}/hide', [CourseLectureController::class, 'hideMessage'])
+        ->name('courses.chat.hide');
+    Route::post('/courses/{course}/chat/messages/{message}/unhide', [CourseLectureController::class, 'unhideMessage'])
+        ->name('courses.chat.unhide');
+    Route::post('/courses/{course}/chat/block', [CourseLectureController::class, 'blockUser'])
+        ->name('courses.chat.block');
+    Route::post('/courses/{course}/chat/unblock/{userId}', [CourseLectureController::class, 'unblockUser'])
+        ->name('courses.chat.unblock');
+    Route::post('/courses/{course}/chat/lock', [CourseLectureController::class, 'toggleChatLock'])
+        ->name('courses.chat.lock');
+
+    // المسار التعليمي للدورات المسجّلة
+    Route::get('/my_courses/{payment}/path', [\App\Http\Controllers\CoursePathController::class, 'show'])
+        ->name('my_courses.path');
+    Route::post('/courses/{course}/path/items/{item}/progress', [\App\Http\Controllers\CoursePathController::class, 'progress'])
+        ->name('courses.path.progress');
+    Route::get('/courses/{course}/path/items/{item}/stream', [\App\Http\Controllers\CoursePathController::class, 'stream'])
+        ->name('courses.path.stream');
+    Route::post('/courses/{course}/path/items/{item}/thumbnail', [\App\Http\Controllers\CoursePathController::class, 'saveThumbnail'])
+        ->name('courses.path.thumbnail');
+    Route::post('/courses/{course}/path/items/{item}/exam', [\App\Http\Controllers\CoursePathController::class, 'submitExam'])
+        ->name('courses.path.exam');
 });
 Route::post('/resend-otp/{type}', [App\Http\Controllers\Auth\OTPController::class, 'resend'])->name('otp.resend');    
 Route::middleware(['auth'])->group(function () {
@@ -142,6 +189,9 @@ Route::get('/lang/{lang}', function ($lang) {
 
 // System Routes
 Route::get('/', [SystemController::class, 'index'])->name('system.index');
+Route::get('/academy', [\App\Http\Controllers\AcademyController::class, 'index'])->name('academy.index');
+Route::get('/academy/courses', [\App\Http\Controllers\AcademyController::class, 'courses'])->name('academy.courses');
+Route::get('/academy/categories/{category}', [\App\Http\Controllers\AcademyController::class, 'category'])->name('academy.category');
 Route::get('/system/{system}', [SystemController::class, 'show'])->name('system.show');
 Route::post('/system/request', [RequestsController::class, 'clientStore'])->name('dashboard.requests.clientStore');
 

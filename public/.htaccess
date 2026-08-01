@@ -1,3 +1,17 @@
+# Increase PHP upload limits for full lesson videos (when PHP runs as Apache module)
+<IfModule mod_php.c>
+    php_value upload_max_filesize 1024M
+    php_value post_max_size 1100M
+    php_value max_execution_time 600
+    php_value max_input_time 600
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 1024M
+    php_value post_max_size 1100M
+    php_value max_execution_time 600
+    php_value max_input_time 600
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

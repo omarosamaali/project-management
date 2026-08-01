@@ -405,10 +405,9 @@
                 <span id="priceLabel">السعر:</span>
                 <span id="originalPrice" class="font-bold"></span>
             </div>
-            <div class="flex justify-between text-sm text-gray-600">
-                <span class="flex items-center gap-1">رسوم الدفع (7.9% + 2 <x-drhm-icon width="12" height="12" />)
-                </span>
-                <span id="fees"></span>
+            <div class="flex justify-between items-center gap-3 text-sm text-gray-600">
+                <span class="inline-flex items-center gap-1 whitespace-nowrap">رسوم الدفع (7.9% + 2 <x-drhm-icon width="12" height="12" />):</span>
+                <span id="fees" class="whitespace-nowrap"></span>
             </div>
             <div class="flex justify-between text-lg font-bold border-t pt-3">
                 <span>الإجمالي:</span>

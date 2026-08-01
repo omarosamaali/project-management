@@ -5,6 +5,18 @@
 @section('content')
 
 <x-auth-session-status class="mb-4" :status="session('status')" />
+
+@if(session('success'))
+<div class="mx-auto max-w-4xl mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200" role="alert">
+    <i class="fas fa-check-circle ml-1"></i>{{ session('success') }}
+</div>
+@endif
+
+@if(session('error') || $errors->has('csrf'))
+<div class="mx-auto max-w-4xl mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200" role="alert">
+    <i class="fas fa-exclamation-circle ml-1"></i>{{ session('error') ?: $errors->first('csrf') }}
+</div>
+@endif
     
 <div class="my-10 mx-auto max-w-4xl w-full bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
 

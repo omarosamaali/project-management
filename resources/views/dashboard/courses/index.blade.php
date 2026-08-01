@@ -4,34 +4,95 @@
 
 @section('content')
 <section class="!pl-0 p-3 sm:p-5">
+    @unless(auth()->user()->usesAcademyShell())
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.courses.index') }}" second="الدورات" />
+    @else
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div>
+            <h1 class="text-xl font-extrabold text-slate-900">إدارة الدورات</h1>
+            <p class="text-sm text-slate-500 mt-1">أنشئ وعدّل دوراتك من هنا</p>
+        </div>
+        <a href="{{ route('dashboard.courses.create') }}"
+            class="ac-btn ac-btn-primary">
+            <i class="fas fa-plus"></i> إضافة دورة
+        </a>
+    </div>
+    @endunless
+
     <div class="mx-auto w-full">
+        @if(session('success'))
+        <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200 flex items-center gap-2">
+            <i class="fas fa-check-circle"></i>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
+        @endif
+        @if(session('error'))
+        <div class="mb-4 p-4 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+            <i class="fas fa-times-circle"></i>
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+        @endif
+
+        <form action="{{ route('dashboard.courses.index') }}" method="GET" class="mb-5">
+            <div class="relative max-w-xl">
+                <input value="{{ request()->search }}" type="text" name="search"
+                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-10 text-sm"
+                    placeholder="بحث في الدورات...">
+                <button type="submit" class="absolute inset-y-0 left-0 px-3 text-slate-400">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+
+        @if(auth()->user()->usesAcademyShell())
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            @forelse ($courses as $course)
+            <article class="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col shadow-sm hover:shadow-md transition">
+                <img src="{{ $course->main_image ? asset('storage/'.$course->main_image) : asset('assets/images/logo.webp') }}"
+                    alt="" class="w-full aspect-video object-cover bg-slate-100">
+                <div class="p-4 flex flex-col gap-2 flex-1">
+                    <div class="flex items-start justify-between gap-2">
+                        <h3 class="font-extrabold text-slate-900 leading-snug">{{ $course->name_ar }}</h3>
+                        <span class="shrink-0 text-[11px] font-bold px-2 py-1 rounded-lg {{ $course->status === 'active' ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-500' }}">
+                            {{ $course->status === 'active' ? 'نشطة' : 'غير نشطة' }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        {{ match($course->location_type) { 'online' => 'أونلاين', 'recorded' => 'مسجّلة', default => 'حضوري' } }}
+                        · <span class="inline-flex items-center gap-1">{{ number_format((float)$course->price, 0) }} <x-drhm-icon width="12" height="14" /></span>
+                        · {{ $course->students?->count() ?? 0 }} مشترك
+                    </p>
+                    <div class="ac-card-actions">
+                        <a href="{{ route('dashboard.courses.show', $course) }}"
+                            class="ac-btn ac-btn-primary ac-btn-sm">عرض</a>
+                        <a href="{{ route('dashboard.courses.edit', $course->id) }}"
+                            class="ac-btn ac-btn-ghost ac-btn-sm">تعديل</a>
+                        <form action="{{ route('dashboard.courses.destroy', $course->id) }}" method="POST"
+                            onsubmit="return confirm('هل أنت متأكد من حذف هذا الكورس.')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="ac-btn ac-btn-danger ac-btn-sm">
+                                حذف
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+            @empty
+            <div class="col-span-full text-center py-14 bg-white border border-dashed border-slate-200 rounded-2xl text-slate-400">
+                لا يوجد دورات لعرضها حالياً
+                <div class="mt-3">
+                    <a href="{{ route('dashboard.courses.create') }}" class="ac-btn ac-btn-primary" style="background-color:#0D2444;color:#fff;">إضافة دورة</a>
+                </div>
+            </div>
+            @endforelse
+        </div>
+        @if($courses->hasPages())
+        <div class="ac-pagination mt-6">{{ $courses->links() }}</div>
+        @endif
+        @else
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
             <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
-                <div class="w-full md:w-1/2">
-                    <form action="{{ route('dashboard.courses.index') }}" method="GET" class="flex items-center">
-                        <label for="search" class="sr-only">بحث</label>
-                        <div class="relative w-full">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                @if(request()->search == null)
-                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                    fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                                @else
-                                <a href="{{ route('dashboard.courses.index') }}">
-                                    <i class="fa-solid fa-arrow-rotate-right w-5 h-5 text-gray-500 relative z-50"></i>
-                                </a>
-                                @endif
-                            </div>
-                            <input value="{{ request()->search }}" type="text" id="search" name="search"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full pl-10 p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                                placeholder="بحث" required="">
-                        </div>
-                    </form>
-                </div>
                 <div class="w-full md:w-auto flex flex-col md:flex-row md:items-center justify-end !ml-0">
                     <a href="{{ route('dashboard.courses.create') }}"
                         class="flex items-center justify-center text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-primary-600 dark:hover:bg-primary-700 focus:outline-none dark:focus:ring-primary-800">
@@ -46,35 +107,12 @@
             </div>
 
             <div class="overflow-x-auto">
-                @if(session('success'))
-                <div class="mx-4 p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 border border-green-200"
-                    role="alert">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-check-circle"></i>
-                        <span class="font-medium">{{ session('success') }}</span>
-                    </div>
-                </div>
-                @endif
-
-                @if(session('error'))
-                <div class="mx-4 p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 border border-red-200"
-                    role="alert">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-times-circle"></i>
-                        <span class="font-medium">{{ session('error') }}</span>
-                    </div>
-                </div>
-                @endif
-
-                @foreach ($errors->all() as $error)
-                <div class="text-red-600">{{ $error }}</div>
-                @endforeach
-
                 <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th scope="col" class="px-4 py-3">#</th>
                             <th scope="col" class="px-4 py-3">الإسم</th>
+                            <th scope="col" class="px-4 py-3">المحاضر</th>
                             <th scope="col" class="px-4 py-3">السعر</th>
                             <th scope="col" class="px-4 py-3">عدد ايام الدورة</th>
                             <th scope="col" class="px-4 py-3">عدد العملاء</th>
@@ -101,6 +139,9 @@
                                 @endif
                                 {{ Str::limit($course->name_ar, 20) }}
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {{ $course->trainer?->name ?? '—' }}
+                            </td>
                             <td class="px-4 py-3 flex items-center">
                                 <div class="flex items-center gap-1">
                                     {{ number_format($course->price) }}
@@ -113,13 +154,11 @@
                             <span class="text-xs">يوم</span>
                             @else
                             @php
-                            // حساب الفرق بالساعات والدقائق
                             $start = \Carbon\Carbon::parse($course->start_date);
                             $end = \Carbon\Carbon::parse($course->end_date);
                             $hours = $start->diffInHours($end);
                             $minutes = $start->diffInMinutes($end) % 60;
                             @endphp
-                        
                             <div class="flex flex-col">
                                 <span class="font-semibold text-blue-600">
                                     @if($hours > 0)
@@ -150,14 +189,10 @@
                                     class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="عرض التفاصيل والتحقق">
                                     <i class="fas fa-id-card text-lg"></i>
                                 </a>
-                                
-                                {{-- زر التعديل --}}
                                 <a href="{{ route('dashboard.courses.edit', $course->id) }}"
                                     class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                                     <i class="fas fa-user-edit"></i>
                                 </a>
-                                
-                                {{-- زر الحذف --}}
                                 <form action="{{ route('dashboard.courses.destroy', $course->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
@@ -171,7 +206,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7"
+                            <td colspan="8"
                                 class="text-center px-4 py-8 font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800">
                                 <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
                                 لا يوجد دورات لعرضها حالياً
@@ -186,6 +221,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 </section>
 @endsection

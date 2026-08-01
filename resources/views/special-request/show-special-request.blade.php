@@ -75,7 +75,7 @@
                 </div>
 
                 <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
-                    <span class="text-gray-700 dark:text-gray-300">رسوم المعالجة (7.9% + 2 <x-drhm-icon color="000" />):</span>
+                    <span class="text-gray-700 dark:text-gray-300 inline-flex items-center gap-1 whitespace-nowrap">رسوم المعالجة (7.9% + 2 <x-drhm-icon color="000" />):</span>
                     <span class="font-bold text-gray-900 dark:text-white" id="fees">0.00 <x-drhm-icon color="000" /></span>
                 </div>
 

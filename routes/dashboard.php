@@ -3,6 +3,10 @@
 use App\Http\Controllers\Dashboard\SystemController;
 use App\Http\Controllers\Dashboard\PartnerController;
 use App\Http\Controllers\Dashboard\ClientController;
+use App\Http\Controllers\Dashboard\AcademyAccountController;
+use App\Http\Controllers\Dashboard\AcademyProfitController;
+use App\Http\Controllers\Dashboard\AcademyRatingController;
+use App\Http\Controllers\Dashboard\AcademySettingsController;
 use App\Http\Controllers\Dashboard\RequestsController;
 use App\Http\Controllers\Dashboard\SupportController;
 use App\Http\Controllers\Dashboard\TechnicalSupportController;
@@ -11,6 +15,7 @@ use App\Http\Controllers\Dashboard\RatingController;
 use App\Http\Controllers\Dashboard\PerformanceController;
 use App\Http\Controllers\Dashboard\WithdrawalRequestsController;
 use App\Http\Controllers\Dashboard\SpecialRequestController;
+use App\Http\Controllers\Dashboard\CourseCategoryController;
 use App\Http\Controllers\Dashboard\ServiceController;
 use App\Http\Controllers\Dashboard\MyServiceController;
 use App\Http\Controllers\Dashboard\LogoController;
@@ -136,8 +141,12 @@ Route::middleware(['auth'])->prefix('dashboard')->name('dashboard.')->group(func
     Route::get('/my-services/show', [MyServicesController::class, 'show'])->name('my_service.show');
 });
 
-Route::name('dashboard.')->prefix('dashboard')->group(function () {
+Route::name('dashboard.')->prefix('dashboard')->middleware('auth')->group(function () {
+    Route::get('courses/resolve-video-duration', [CourseController::class, 'resolveVideoDuration'])
+        ->name('courses.resolve-video-duration');
     Route::resource('courses', CourseController::class);
+
+    Route::resource('course-categories', CourseCategoryController::class)->except(['show']);
 });
 Route::get('/courses/{course}', [CourseController::class, 'userShow'])->name('courses.show');
 
@@ -169,6 +178,44 @@ Route::middleware('auth')->group(function () {
     Route::get('my-profile', [PartnerController::class, 'myProfile'])->name('dashboard.my-profile');
     Route::resource('partners', PartnerController::class)->names('dashboard.partners');
     Route::resource('clients', ClientController::class)->names('dashboard.clients');
+
+    // Academy: trainers / trainees / ratings (admin)
+    foreach (['trainers' => 'trainer', 'trainees' => 'trainee'] as $plural => $role) {
+        Route::get($plural, [AcademyAccountController::class, 'index'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.index");
+        Route::get("{$plural}/create", [AcademyAccountController::class, 'create'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.create");
+        Route::post($plural, [AcademyAccountController::class, 'store'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.store");
+        Route::get("{$plural}/{user}", [AcademyAccountController::class, 'show'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.show");
+        Route::get("{$plural}/{user}/edit", [AcademyAccountController::class, 'edit'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.edit");
+        Route::put("{$plural}/{user}", [AcademyAccountController::class, 'update'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.update");
+        Route::delete("{$plural}/{user}", [AcademyAccountController::class, 'destroy'])
+            ->defaults('role', $role)
+            ->name("dashboard.{$plural}.destroy");
+    }
+    Route::get('academy/ratings', [AcademyRatingController::class, 'index'])
+        ->name('dashboard.academy.ratings.index');
+    Route::get('academy/ratings/{rating}', [AcademyRatingController::class, 'show'])
+        ->name('dashboard.academy.ratings.show');
+    Route::get('academy/settings', [AcademySettingsController::class, 'edit'])
+        ->name('dashboard.academy.settings.edit');
+    Route::put('academy/settings', [AcademySettingsController::class, 'update'])
+        ->name('dashboard.academy.settings.update');
+    Route::get('academy/profits', [AcademyProfitController::class, 'index'])
+        ->name('dashboard.academy.profits.index');
+    Route::get('academy/my-profits', [AcademyProfitController::class, 'myProfits'])
+        ->name('dashboard.academy.my-profits');
+
     Route::resource('requests', RequestsController::class)->names('dashboard.requests');
     Route::resource('tasks', RequestsController::class)->names('dashboard.tasks');
     Route::resource('technical_support', TechnicalSupportController::class)->names('dashboard.technical_support');

@@ -41,7 +41,8 @@ class DatabaseSeeder extends Seeder
             PartnerAssignmentSeeder::class,
             SystemPaymentsSeeder::class,
             RequestsTableSeeder::class,
-            WorkTimeSeeder::class
+            WorkTimeSeeder::class,
+            AcademySeeder::class,
         ]);
     }
 }

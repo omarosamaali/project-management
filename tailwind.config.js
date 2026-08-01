@@ -46,6 +46,8 @@ export default {
         "hover:bg-red-700",
         "bg-blue-600",
         "hover:bg-blue-700",
+        "bg-indigo-600",
+        "hover:bg-indigo-700",
         "bg-gray-900",
         "hover:bg-black",
         "bg-gray-600",

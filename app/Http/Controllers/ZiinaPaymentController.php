@@ -570,6 +570,13 @@ class ZiinaPaymentController extends Controller
             ], 401);
         }
 
+        if (!auth()->user()->canLearnCourses()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الاشتراك في الدورات متاح للمتدربين والمحاضرين والإدارة فقط'
+            ], 403);
+        }
+
         try {
             $course = Course::findOrFail($request->course_id);
 

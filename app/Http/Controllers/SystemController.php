@@ -14,6 +14,10 @@ class SystemController extends Controller
 {
     public function index()
     {
+        if (Auth::check() && Auth::user()->isTrainee()) {
+            return redirect()->route('academy.index');
+        }
+
         // 1. جلب البيانات من الداتابيز
         $systems = System::where('status', 'active')
             ->withCount('payments')
@@ -22,7 +26,7 @@ class SystemController extends Controller
 
         $courses = Course::where('status', 'active')
             ->withCount('payments')
-            ->with(['service'])
+            ->with(['category'])
             ->get();
 
         $stores = MyStore::where('status', 'نشط')
@@ -64,7 +68,7 @@ class SystemController extends Controller
                     'description_en' => $course->description_en,
                     'main_image' => $course->main_image,
                     'price' => $course->price,
-                    'service_name_ar' => $course->service?->name_ar,
+                    'service_name_ar' => $course->category?->title_ar,
                     'total_participants' => $remaining > 0 ? $remaining : 0,
                     'count_days' => $course->count_days ?? 0,
                     'start_date' => $course->start_date,

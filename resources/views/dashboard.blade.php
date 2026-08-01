@@ -6,6 +6,7 @@
 
 <section class="!pl-0 p-3 sm:p-5 space-y-6">
 
+    @unless(auth()->user()->isTrainer())
     {{-- ====== كروت فلتر المشاريع ====== --}}
     <div>
         <h2 class="text-lg font-bold text-gray-700 dark:text-white mb-3 flex items-center gap-2">
@@ -59,6 +60,7 @@
             </a>
         </div>
     </div>
+    @endunless
 
     {{-- ====== كروت فلتر الدورات ====== --}}
     <div>
@@ -105,6 +107,7 @@
         </div>
     </div>
 
+    @unless(auth()->user()->isTrainer())
     {{-- ====== كروت المهام ====== --}}
     <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
         <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40">
@@ -160,6 +163,7 @@
             </div>
         </div>
     </div>
+    @endunless
 
     @if($attendanceStats)
     {{-- ====== كروت الحضور والرواتب ====== --}}
@@ -209,6 +213,7 @@
     </div>
     @endif
 
+    @unless(auth()->user()->isTrainer())
     {{-- ====== جميع المهام والمراحل ====== --}}
     <div id="tasks-list" class="grid grid-cols-1 xl:grid-cols-2 gap-6 scroll-mt-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
@@ -306,6 +311,7 @@
             </div>
         </div>
     </div>
+    @endunless
 
     {{-- ====== الإشعارات ====== --}}
     <div>

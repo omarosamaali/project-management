@@ -30,44 +30,14 @@
                             حالة الدورة: {{ $course->courseStatusLabel() }}
                         </span>
 
-                        {{-- Exam status --}}
-                        @if($course->has_exam)
-                            @php $examStatus = $course->examStatus(); @endphp
-                            @if($examStatus === 'not_started')
-                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+                        {{-- Day exams (online / on-site only) --}}
+                        @if($course->usesDayExams() && !$course->isRecorded())
+                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
                                 <i class="fas fa-clipboard-list"></i>
-                                حالة الاختبار: لم يبدأ
+                                {{ $course->dayExams->count() }} اختبار —
+                                مطلوب اجتياز {{ $course->effectiveRequiredExamPassCount() }}
                             </span>
-                            <button type="button" onclick="openStartExamModal()"
-                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 font-bold">
-                                <i class="fas fa-play"></i>
-                                بدء الاختبار
-                            </button>
-                            <form id="startExamForm" action="{{ route('dashboard.courses.start-exam', $course) }}" method="POST" class="hidden">
-                                @csrf
-                            </form>
-                            @elseif($examStatus === 'running')
-                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-100 text-amber-800">
-                                <i class="fas fa-play-circle"></i>
-                                حالة الاختبار: جارٍ
-                                <span class="text-amber-700/80 font-normal">منذ {{ $course->exam_started_at->format('Y-m-d H:i') }}</span>
-                            </span>
-                            <button type="button" onclick="openEndExamModal()"
-                                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 font-bold">
-                                <i class="fas fa-stop"></i>
-                                إنهاء الاختبار
-                            </button>
-                            <form id="endExamForm" action="{{ route('dashboard.courses.end-exam', $course) }}" method="POST" class="hidden">
-                                @csrf
-                            </form>
-                            @elseif($examStatus === 'finished')
-                            <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-red-100 text-red-800">
-                                <i class="fas fa-flag-checkered"></i>
-                                حالة الاختبار: منتهٍ
-                                <span class="text-red-700/80 font-normal">عند {{ $course->exam_ended_at->format('Y-m-d H:i') }}</span>
-                            </span>
-                            @endif
-                        @else
+                        @elseif(!$course->isRecorded())
                             <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-500">
                                 <i class="fas fa-minus-circle"></i>
                                 لا يوجد اختبار
@@ -115,9 +85,9 @@
                             </div>
 
                             <div class="flex justify-between">
-                                <dt class="text-gray-600 dark:text-gray-400">نوع الخدمة</dt>
+                                <dt class="text-gray-600 dark:text-gray-400">التصنيف</dt>
                                 <dd class="font-medium">
-                                    {{ $course->service ? $course->service->name_ar : 'غير محدد' }}
+                                    {{ $course->category?->title_ar ?? 'غير محدد' }}
                                 </dd>
                             </div>
 
@@ -216,8 +186,8 @@
                             <p>
                                 <strong>النوع:</strong>
                                 <span
-                                    class="{{ $course->location_type === 'online' ? 'text-blue-600' : 'text-green-600' }}">
-                                    {{ $course->location_type === 'online' ? 'أونلاين' : 'حضوري' }}
+                                    class="{{ $course->location_type === 'online' ? 'text-blue-600' : ($course->location_type === 'recorded' ? 'text-amber-600' : 'text-green-600') }}">
+                                    {{ $course->location_type === 'online' ? 'أونلاين' : ($course->location_type === 'recorded' ? 'مسجّلة' : 'حضوري') }}
                                 </span>
                             </p>
 
@@ -232,6 +202,27 @@
                                 @else
                                 <span class="text-gray-500">غير محدد</span>
                                 @endif
+                            </p>
+                            @if($course->online_link)
+                            <div class="flex flex-wrap gap-2 mt-3">
+                                <x-course-lecture-link :course="$course"
+                                    label="غرفة المحاضرة والنقاش"
+                                    classes="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700" />
+                                <a href="{{ route('dashboard.courses.chat-archive', $course) }}"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 text-white rounded-lg text-xs font-medium hover:bg-slate-800">
+                                    <i class="fas fa-comments"></i>
+                                    أرشيف النقاش
+                                </a>
+                            </div>
+                            @endif
+                            @elseif($course->location_type === 'recorded')
+                            <p>
+                                <strong>المدة الكلية للفيديوهات:</strong>
+                                {{ $course->formattedTotalVideoDuration() }}
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                {{ $course->units->count() }} وحدة —
+                                {{ $course->orderedPathItems()->count() }} عنصر في المسار
                             </p>
                             @else
                             <p><strong>اسم المكان:</strong> {{ $course->venue_name ?: 'غير محدد' }}</p>
@@ -327,6 +318,28 @@
                     </div>
                 </div>
 
+                @if(!empty($course->suitable_for))
+                <div class="mt-8">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-user-check text-indigo-600"></i>
+                        مناسبة لمن
+                    </h3>
+                    <ul class="grid sm:grid-cols-2 gap-3">
+                        @foreach($course->suitable_for as $item)
+                        <li class="flex items-start gap-3 text-gray-700 dark:text-gray-300 bg-indigo-50/60 dark:bg-indigo-900/20 rounded-lg p-3">
+                            <i class="fas fa-user mt-1 text-indigo-500 flex-shrink-0"></i>
+                            <div>
+                                <div class="font-medium">{{ $item['ar'] ?? '' }}</div>
+                                @if(!empty($item['en']))
+                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $item['en'] }}</div>
+                                @endif
+                            </div>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+
                 <!-- Buttons & Actions -->
                 @if(!empty($course->buttons))
                 <div class="mt-10">
@@ -363,6 +376,17 @@
                     </h3>
                     <img src="{{ Storage::url($course->main_image) }}" alt="{{ $course->name_ar }}"
                         class="w-full max-h-96 object-cover rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                </div>
+                @endif
+
+                @if($course->video)
+                <div class="mt-10">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                        <i class="fas fa-video text-purple-600"></i>
+                        الفيديو التعريفي
+                    </h3>
+                    <video controls class="w-full max-h-[28rem] rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-black"
+                        src="{{ Storage::url($course->video) }}"></video>
                 </div>
                 @endif
                 <!-- الصور الإضافية -->
@@ -402,6 +426,133 @@
                 @endif
                 <!-- المشتركين -->
                 <div class="my-12">
+                    @if($course->usesDayExams() && !$course->isRecorded())
+                    <div class="mb-8 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <h2 class="text-xl font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-2">
+                                <i class="fas fa-clipboard-list"></i>
+                                اختبارات أيام الدورة
+                            </h2>
+                            <span class="text-sm text-indigo-700">
+                                مطلوب اجتياز {{ $course->effectiveRequiredExamPassCount() }} من {{ $course->dayExams->count() }}
+                            </span>
+                        </div>
+                        <div class="space-y-3">
+                            @foreach($course->dayExams as $dayExam)
+                            @php
+                                $canStart = $course->canStartDayExam($dayExam);
+                                $canSkip = $course->canSkipDayExam($dayExam);
+                                $isRunning = $dayExam->isRunning();
+                            @endphp
+                            <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-gray-800 rounded-lg p-4 border border-indigo-100">
+                                <div>
+                                    <div class="font-semibold text-gray-900 dark:text-white">
+                                        اليوم {{ $dayExam->day_index }} — {{ $dayExam->displayTitle() }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ $dayExam->questions->count() }} سؤال —
+                                        مدة {{ $dayExam->duration_minutes }} د —
+                                        نجاح من {{ $dayExam->pass_score }}
+                                        — <strong>{{ $dayExam->statusLabel() }}</strong>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    @if($canStart)
+                                    <form action="{{ route('dashboard.courses.day-exams.start', [$course, $dayExam]) }}" method="POST" class="inline"
+                                        id="startDayExamForm-{{ $dayExam->id }}">
+                                        @csrf
+                                        <button type="button" onclick="openDayExamModal('start', {{ $dayExam->id }}, @js($dayExam->displayTitle()))"
+                                            class="px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
+                                            <i class="fas fa-play ml-1"></i> بدء
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @if($isRunning)
+                                    <form action="{{ route('dashboard.courses.day-exams.end', [$course, $dayExam]) }}" method="POST" class="inline"
+                                        id="endDayExamForm-{{ $dayExam->id }}">
+                                        @csrf
+                                        <button type="button" onclick="openDayExamModal('end', {{ $dayExam->id }}, @js($dayExam->displayTitle()))"
+                                            class="px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700">
+                                            <i class="fas fa-stop ml-1"></i> إنهاء
+                                        </button>
+                                    </form>
+                                    @endif
+                                    @if($canSkip)
+                                    <form action="{{ route('dashboard.courses.day-exams.skip', [$course, $dayExam]) }}" method="POST" class="inline"
+                                        id="skipDayExamForm-{{ $dayExam->id }}">
+                                        @csrf
+                                        <button type="button" onclick="openDayExamModal('skip', {{ $dayExam->id }}, @js($dayExam->displayTitle()))"
+                                            class="px-3 py-2 bg-amber-500 text-white rounded-lg text-sm font-bold hover:bg-amber-600">
+                                            <i class="fas fa-forward ml-1"></i> تخطي
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    @php
+                        $completedRatings = $course->ratings->filter(fn ($r) => $r->isCompleted())->values();
+                        $featuredAvg = $course->featuredAverageRating();
+                    @endphp
+                    <div class="mb-10 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl p-5">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                            <h2 class="text-xl font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                                <i class="fas fa-star"></i>
+                                تقييمات المتدربين
+                            </h2>
+                            <div class="text-sm text-amber-800">
+                                المعروض للعامة: {{ $completedRatings->where('is_featured', true)->count() }}
+                                @if($featuredAvg)
+                                 — المتوسط {{ $featuredAvg }}/5
+                                @endif
+                            </div>
+                        </div>
+                        <p class="text-xs text-amber-800/80 mb-4">
+                            فعّل «إظهار في الصفحة العامة» للتقييمات التي تريد عرضها في صفحة الدورة العامة، وهي التي تُحسب منها متوسط النجوم.
+                        </p>
+                        @if($completedRatings->isEmpty())
+                        <p class="text-sm text-gray-500">لا توجد تقييمات مكتملة بعد.</p>
+                        @else
+                        <div class="space-y-3">
+                            @foreach($completedRatings as $rating)
+                            <div class="bg-white dark:bg-gray-800 rounded-lg border border-amber-100 p-4 flex flex-wrap items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <div class="font-semibold text-gray-900 dark:text-white">
+                                        {{ $rating->user->name ?? 'متدرب' }}
+                                        @if($rating->overallScore() !== null)
+                                        <span class="text-amber-600 text-sm font-bold mr-2">
+                                            {{ $rating->overallScore() }}/5
+                                            <i class="fas fa-star text-xs"></i>
+                                        </span>
+                                        @endif
+                                        @if($rating->is_featured)
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">معروض</span>
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">{{ optional($rating->completed_at)->format('Y-m-d H:i') }}</p>
+                                    @if($rating->feedbackText())
+                                    <p class="text-sm text-gray-700 mt-2 leading-relaxed">{{ $rating->feedbackText() }}</p>
+                                    @else
+                                    <p class="text-sm text-gray-400 mt-2 italic">بدون ملاحظات نصية</p>
+                                    @endif
+                                </div>
+                                <form action="{{ route('dashboard.courses.ratings.toggle-featured', [$course, $rating]) }}" method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                        class="px-3 py-2 rounded-lg text-sm font-bold {{ $rating->is_featured ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' : 'bg-amber-500 text-white hover:bg-amber-600' }}">
+                                        {{ $rating->is_featured ? 'إخفاء من العامة' : 'إظهار في الصفحة العامة' }}
+                                    </button>
+                                </form>
+                            </div>
+                            @endforeach
+                        </div>
+                        @endif
+                    </div>
+
                     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                        <h2 class="pt-6 text-2xl font-bold flex items-center gap-3">
                         <i class="fas fa-users text-indigo-600 text-2xl"></i>
@@ -467,12 +618,12 @@
                                         class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         المبلغ المدفوع
                                     </th>
-                                    @if($course->has_exam)
-                                    <th
-                                        class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        حالة الاختبار
-                                    </th>
-                                    @endif
+                    @if($course->usesDayExams())
+                    <th
+                        class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        حالة الاختبار
+                    </th>
+                    @endif
                                     <th
                                         class="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                         إجراءات
@@ -521,19 +672,22 @@
                                         {{ number_format($payment->amount, 2) }}
                                         <x-drhm-icon width="12" height="14" />
                                     </td>
-                                    @if($course->has_exam)
+                                    @if($course->usesDayExams())
                                     @php
-                                        $examAttempt = $payment->is_attended
-                                            ? $course->examAttempts->firstWhere('user_id', $payment->user_id)
+                                        $runningExam = $course->runningDayExam();
+                                        $examAttempt = ($payment->is_attended && $runningExam)
+                                            ? $course->dayExamAttempts->firstWhere(fn ($a) => (int) $a->user_id === (int) $payment->user_id && (int) $a->course_day_exam_id === (int) $runningExam->id)
                                             : null;
                                         $examStatus = $payment->is_attended
                                             ? $course->userExamStatus($payment->user_id, $examAttempt)
                                             : 'none';
+                                        $passedCount = $payment->is_attended ? $course->userPassedDayExamCount($payment->user_id) : 0;
+                                        $requiredPass = $course->effectiveRequiredExamPassCount();
                                         $examStatusUi = match ($examStatus) {
                                             'not_entered' => ['لم يدخل بعد', 'bg-gray-100 text-gray-700'],
                                             'in_progress' => ['قيد الاختبار', 'bg-amber-100 text-amber-800'],
-                                            'passed' => ['ناجح' . ($examAttempt ? ' (' . $examAttempt->score . '/' . $course->examQuestions->count() . ')' : ''), 'bg-green-100 text-green-800'],
-                                            'failed' => ['راسب' . ($examAttempt ? ' (' . $examAttempt->score . '/' . $course->examQuestions->count() . ')' : ''), 'bg-red-100 text-red-800'],
+                                            'passed' => ['مكتمل (' . $passedCount . '/' . $requiredPass . ')', 'bg-green-100 text-green-800'],
+                                            'failed' => ['غير مكتمل (' . $passedCount . '/' . $requiredPass . ')', 'bg-red-100 text-red-800'],
                                             default => ['—', 'bg-gray-50 text-gray-400'],
                                         };
                                     @endphp
@@ -564,10 +718,7 @@
                                     
                                         @if($payment->is_attended)
                                             <span class="exam-cert-slot inline" data-user-id="{{ $payment->user_id }}" data-payment-id="{{ $payment->id }}">
-                                            @php
-                                                $canCertificate = !$course->has_exam || $course->userPassedExam($payment->user_id);
-                                            @endphp
-                                            @if($canCertificate)
+                                            @if($course->userCanGetCertificate($payment->user_id))
                                             <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
                                                 class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                                 <i class="fas fa-certificate"></i> الشهادة
@@ -772,7 +923,7 @@
 </script>
 @endif
 
-@if($course->has_exam)
+@if($course->usesDayExams())
 <script>
     (function () {
         const url = @json(route('dashboard.courses.exam-statuses', $course));
@@ -781,16 +932,19 @@
         const uiMap = {
             not_entered: { label: 'لم يدخل بعد', classes: 'bg-gray-100 text-gray-700' },
             in_progress: { label: 'قيد الاختبار', classes: 'bg-amber-100 text-amber-800' },
-            passed: { label: 'ناجح', classes: 'bg-green-100 text-green-800' },
-            failed: { label: 'راسب', classes: 'bg-red-100 text-red-800' },
+            passed: { label: 'مكتمل', classes: 'bg-green-100 text-green-800' },
+            failed: { label: 'غير مكتمل', classes: 'bg-red-100 text-red-800' },
             none: { label: '—', classes: 'bg-gray-50 text-gray-400' },
         };
 
-        function renderBadge(el, status, score, total) {
+        function renderBadge(el, info) {
+            const status = info.status;
             const ui = uiMap[status] || uiMap.none;
             let label = ui.label;
-            if ((status === 'passed' || status === 'failed') && score !== null && score !== undefined) {
-                label += ' (' + score + (total ? '/' + total : '') + ')';
+            if (info.passed_count !== undefined && info.required_pass !== undefined) {
+                label += ' (' + info.passed_count + '/' + info.required_pass + ')';
+            } else if ((status === 'passed' || status === 'failed') && info.score !== null && info.score !== undefined) {
+                label += ' (' + info.score + (info.total ? '/' + info.total : '') + ')';
             }
             el.dataset.status = status;
             el.className = 'exam-status-badge px-3 py-1 rounded-full text-xs font-medium ' + ui.classes;
@@ -825,11 +979,7 @@
                         const userId = String(badge.dataset.userId);
                         const info = statuses[userId];
                         if (!info) return;
-                        if (badge.dataset.status === info.status
-                            && badge.textContent.includes(String(info.score ?? ''))) {
-                            // still update label if score changed presentation
-                        }
-                        renderBadge(badge, info.status, info.score, info.total);
+                        renderBadge(badge, info);
                     });
                     document.querySelectorAll('.exam-cert-slot[data-user-id]').forEach((slot) => {
                         const userId = String(slot.dataset.userId);
@@ -851,104 +1001,91 @@
 </script>
 @endif
 
-@if($course->has_exam && $course->examStatus() === 'not_started')
-{{-- Start Exam Modal --}}
-<div id="startExamModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
+@if($course->usesDayExams() && !$course->isRecorded())
+{{-- Shared day-exam confirm modal (start / end / skip) --}}
+<div id="dayExamModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="p-6 text-center">
-            <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+            <div id="dayExamModalIcon" class="mx-auto mb-4 w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
                 <i class="fas fa-clipboard-list text-2xl"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">بدء الاختبار</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                سيتم فتح الاختبار لجميع الحضور فوراً. هل أنت متأكد؟
-            </p>
+            <h3 id="dayExamModalTitle" class="text-xl font-bold text-gray-900 dark:text-white mb-2">تأكيد</h3>
+            <p id="dayExamModalText" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed"></p>
         </div>
         <div class="px-6 pb-6 flex gap-3">
-            <button type="button" onclick="closeStartExamModal()"
+            <button type="button" onclick="closeDayExamModal()"
                 class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg font-medium transition">
                 إلغاء
             </button>
-            <button type="button" onclick="confirmStartExam()"
+            <button type="button" id="dayExamModalConfirm" onclick="confirmDayExamModal()"
                 class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold transition">
-                نعم، ابدأ الآن
+                تأكيد
             </button>
         </div>
     </div>
 </div>
 
 <script>
-    function openStartExamModal() {
-        const modal = document.getElementById('startExamModal');
+    let dayExamModalAction = null;
+    let dayExamModalId = null;
+
+    function openDayExamModal(action, examId, title) {
+        dayExamModalAction = action;
+        dayExamModalId = examId;
+        const modal = document.getElementById('dayExamModal');
+        const icon = document.getElementById('dayExamModalIcon');
+        const titleEl = document.getElementById('dayExamModalTitle');
+        const textEl = document.getElementById('dayExamModalText');
+        const btn = document.getElementById('dayExamModalConfirm');
+
+        if (action === 'start') {
+            icon.className = 'mx-auto mb-4 w-14 h-14 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center';
+            icon.innerHTML = '<i class="fas fa-play text-2xl"></i>';
+            titleEl.textContent = 'بدء الاختبار';
+            textEl.textContent = 'سيتم فتح «' + title + '» لجميع الحضور فوراً. هل أنت متأكد؟';
+            btn.className = 'flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-bold transition';
+            btn.textContent = 'نعم، ابدأ الآن';
+        } else if (action === 'end') {
+            icon.className = 'mx-auto mb-4 w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center';
+            icon.innerHTML = '<i class="fas fa-stop text-2xl"></i>';
+            titleEl.textContent = 'إنهاء الاختبار';
+            textEl.textContent = 'سيتم إغلاق «' + title + '» ولن يتمكن الطلاب من دخوله بعد الآن.';
+            btn.className = 'flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-bold transition';
+            btn.textContent = 'نعم، أنهِ الاختبار';
+        } else {
+            icon.className = 'mx-auto mb-4 w-14 h-14 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center';
+            icon.innerHTML = '<i class="fas fa-forward text-2xl"></i>';
+            titleEl.textContent = 'تخطي الاختبار';
+            textEl.textContent = 'تخطي «' + title + '»؟ لن يتمكن المتدربون من أدائه، ويمكنك بدء الاختبار التالي بعده.';
+            btn.className = 'flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-lg font-bold transition';
+            btn.textContent = 'نعم، تخطَّ هذا الاختبار';
+        }
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
     }
-    function closeStartExamModal() {
-        const modal = document.getElementById('startExamModal');
+
+    function closeDayExamModal() {
+        const modal = document.getElementById('dayExamModal');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         document.body.style.overflow = '';
+        dayExamModalAction = null;
+        dayExamModalId = null;
     }
-    function confirmStartExam() {
-        document.getElementById('startExamForm').submit();
+
+    function confirmDayExamModal() {
+        if (!dayExamModalAction || !dayExamModalId) return;
+        const form = document.getElementById(dayExamModalAction + 'DayExamForm-' + dayExamModalId);
+        if (form) form.submit();
     }
-    document.getElementById('startExamModal')?.addEventListener('click', function (e) {
-        if (e.target === this) closeStartExamModal();
+
+    document.getElementById('dayExamModal')?.addEventListener('click', function (e) {
+        if (e.target === this) closeDayExamModal();
     });
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeStartExamModal();
-    });
-</script>
-@endif
-
-@if($course->has_exam && $course->examStatus() === 'running')
-{{-- End Exam Modal --}}
-<div id="endExamModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="p-6 text-center">
-            <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
-                <i class="fas fa-stop text-2xl"></i>
-            </div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">إنهاء الاختبار</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                سيتم إغلاق الاختبار ولن يتمكن الطلاب من دخوله بعد الآن. هل أنت متأكد؟
-            </p>
-        </div>
-        <div class="px-6 pb-6 flex gap-3">
-            <button type="button" onclick="closeEndExamModal()"
-                class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2.5 rounded-lg font-medium transition">
-                إلغاء
-            </button>
-            <button type="button" onclick="confirmEndExam()"
-                class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-bold transition">
-                نعم، أنهِ الاختبار
-            </button>
-        </div>
-    </div>
-</div>
-
-<script>
-    function openEndExamModal() {
-        const modal = document.getElementById('endExamModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeEndExamModal() {
-        const modal = document.getElementById('endExamModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.style.overflow = '';
-    }
-    function confirmEndExam() {
-        document.getElementById('endExamForm').submit();
-    }
-    document.getElementById('endExamModal')?.addEventListener('click', function (e) {
-        if (e.target === this) closeEndExamModal();
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeEndExamModal();
+        if (e.key === 'Escape') closeDayExamModal();
     });
 </script>
 @endif

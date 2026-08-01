@@ -20,12 +20,16 @@ class User extends Authenticatable
     protected $fillable = [
         'skills',
         'id_card_path',
+        'id_card_front_path',
+        'id_card_back_path',
+        'terms_accepted_at',
         'verification_video',
         'name',
         'account_type',
         'company_name',
         'company_logo',
         'avatar',
+        'course_category_id',
         'otp',
         'email',
         'password',
@@ -97,6 +101,7 @@ class User extends Authenticatable
         'services_screen_available' => 'boolean',
         'apply_salary_scale' => 'boolean',
         'hiring_date' => 'date',
+        'terms_accepted_at' => 'datetime',
         
     ];
 
@@ -147,6 +152,58 @@ class User extends Authenticatable
         return \App\Support\CountryNames::forCode($this->country);
     }
 
+    public function avatarUrl(): string
+    {
+        if ($this->avatar) {
+            return asset('storage/' . ltrim($this->avatar, '/'));
+        }
+
+        // Trainers must upload a photo — never fall back to the site logo.
+        if ($this->isTrainer()) {
+            return 'data:image/svg+xml,' . rawurlencode(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#e5e7eb"/><circle cx="40" cy="30" r="14" fill="#9ca3af"/><path d="M16 70c4-14 14-20 24-20s20 6 24 20" fill="#9ca3af"/></svg>'
+            );
+        }
+
+        return asset('assets/images/logo.webp');
+    }
+
+    public function courseCategory()
+    {
+        return $this->belongsTo(CourseCategory::class, 'course_category_id');
+    }
+
+    public function idCardFrontUrl(): ?string
+    {
+        $path = $this->id_card_front_path ?: $this->id_card_path;
+        return $path ? asset('storage/' . ltrim($path, '/')) : null;
+    }
+
+    public function idCardBackUrl(): ?string
+    {
+        return $this->id_card_back_path
+            ? asset('storage/' . ltrim($this->id_card_back_path, '/'))
+            : null;
+    }
+
+    public function isPendingApproval(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Flag image URL for ISO country code (placeholder until dedicated trainer country UX).
+     */
+    public function countryFlagUrl(): ?string
+    {
+        $code = strtolower(trim((string) $this->country));
+        if (strlen($code) !== 2) {
+            return null;
+        }
+
+        return 'https://flagcdn.com/w40/' . $code . '.png';
+    }
+
     public function getDisplayNameAttribute(): string
     {
         return SystemManager::nameFor($this);
@@ -172,8 +229,78 @@ class User extends Authenticatable
             'partner' => 'شريك مطور أنظمة',
             'design_partner' => 'شريك مصمم',
             'advertising_partner' => 'شريك معلن',
+            'independent_partner' => 'شريك مستقل',
+            'trainer' => 'محاضر',
+            'trainee' => 'متدرب',
             default => 'غير محدد',
         };
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isTrainer(): bool
+    {
+        return $this->role === 'trainer';
+    }
+
+    public function isTrainee(): bool
+    {
+        return $this->role === 'trainee';
+    }
+
+    /** Modern academy shell (top/bottom nav) instead of main admin dashboard chrome. */
+    public function usesAcademyShell(): bool
+    {
+        return $this->isTrainer() || $this->isTrainee();
+    }
+
+    /**
+     * Public landing home for this user (trainees stay in the academy flow).
+     */
+    public function publicHomeRoute(): string
+    {
+        return $this->isTrainee() ? 'academy.index' : 'system.index';
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === 'client';
+    }
+
+    /** Can enroll in / take courses (learner path). */
+    public function canLearnCourses(): bool
+    {
+        return in_array($this->role, ['admin', 'trainee', 'trainer'], true);
+    }
+
+    /** Can manage courses (create/edit/attendance/exams). */
+    public function canManageCourses(): bool
+    {
+        return in_array($this->role, ['admin', 'trainer'], true);
+    }
+
+    /** Whether this user manages a specific course. */
+    public function managesCourse($course): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if (!$this->isTrainer()) {
+            return false;
+        }
+
+        $trainerId = is_object($course) ? ($course->trainer_id ?? null) : null;
+
+        return $trainerId !== null && (int) $trainerId === (int) $this->id;
+    }
+
+    public function trainedCourses()
+    {
+        return $this->hasMany(Course::class, 'trainer_id');
     }
 
     public function performances()

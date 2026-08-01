@@ -6,12 +6,17 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Payment;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
 class MyCoursesController extends Controller
 {
     public function index(Request $request)
     {
+        if (!Auth::user()?->canLearnCourses()) {
+            abort(403, 'دوراتي متاحة للمتدربين والمحاضرين والإدارة فقط.');
+        }
+
         if ($redirect = $this->redirectToPendingExam()) {
             return $redirect;
         }
@@ -21,36 +26,54 @@ class MyCoursesController extends Controller
 
         $allPayments = Payment::where('user_id', Auth::id())
             ->whereNotNull('course_id')
-            ->with('course')
+            ->with(['course.units.items', 'course.dayExams', 'course.ratings'])
             ->latest()
-            ->get();
+            ->get()
+            ->filter(fn ($p) => $p->course !== null)
+            ->values();
+
+        // Persist 100% recorded-path completion so ended filter stays in sync
+        foreach ($allPayments as $payment) {
+            $course = $payment->course;
+            if (
+                $course
+                && $course->isRecorded()
+                && !$payment->path_completed_at
+                && $course->isPathFullyCompletedBy((int) $payment->user_id)
+            ) {
+                $payment->forceFill(['path_completed_at' => now()])->save();
+            }
+        }
 
         $myPayments = match ($filter) {
-            'active'   => $allPayments->filter(fn($p) => $p->course
-                                && $now->between(
-                                    Carbon::parse($p->course->start_date),
-                                    Carbon::parse($p->course->end_date)
-                                )),
-            'upcoming' => $allPayments->filter(fn($p) => $p->course
-                                && $now->lt(Carbon::parse($p->course->start_date))),
-            'ended'    => $allPayments->filter(fn($p) => $p->course
-                                && $now->gt(Carbon::parse($p->course->end_date))),
+            'active'   => $allPayments->filter(fn ($p) => $p->isCourseActiveForLearner($now))->values(),
+            'upcoming' => $allPayments->filter(fn ($p) => $p->isCourseUpcomingForLearner($now))->values(),
+            'ended'    => $allPayments->filter(fn ($p) => $p->isCourseEndedForLearner($now))->values(),
             default    => $allPayments,
         };
 
-        $activeCourses   = $allPayments->filter(fn($p) => $p->course
-                                && $now->between(
-                                    Carbon::parse($p->course->start_date),
-                                    Carbon::parse($p->course->end_date)
-                                ))->count();
-        $upcomingCourses = $allPayments->filter(fn($p) => $p->course
-                                && $now->lt(Carbon::parse($p->course->start_date)))->count();
-        $endedCourses    = $allPayments->filter(fn($p) => $p->course
-                                && $now->gt(Carbon::parse($p->course->end_date)))->count();
+        $totalCourses    = $allPayments->count();
+        $activeCourses   = $allPayments->filter(fn ($p) => $p->isCourseActiveForLearner($now))->count();
+        $upcomingCourses = $allPayments->filter(fn ($p) => $p->isCourseUpcomingForLearner($now))->count();
+        $endedCourses    = $allPayments->filter(fn ($p) => $p->isCourseEndedForLearner($now))->count();
+
+        $perPage = 9;
+        $page = max(1, (int) $request->query('page', 1));
+        $myPayments = new LengthAwarePaginator(
+            $myPayments->forPage($page, $perPage)->values(),
+            $myPayments->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         return view('dashboard.my_courses.index', compact(
             'myPayments',
             'filter',
+            'totalCourses',
             'activeCourses',
             'upcomingCourses',
             'endedCourses'
@@ -59,12 +82,16 @@ class MyCoursesController extends Controller
 
     public function show($id)
     {
+        if (!Auth::user()?->canLearnCourses()) {
+            abort(403, 'دوراتي متاحة للمتدربين والمحاضرين والإدارة فقط.');
+        }
+
         if ($redirect = $this->redirectToPendingExam()) {
             return $redirect;
         }
 
         $payment = Payment::where('user_id', Auth::user()->id)
-            ->where('id', $id)->with('course')->firstOrFail();
+            ->where('id', $id)->with(['course.dayExams', 'course.ratings', 'course.dayExamAttempts'])->firstOrFail();
 
         return view('dashboard.my_courses.show', compact('payment'));
     }
@@ -74,13 +101,16 @@ class MyCoursesController extends Controller
      */
     protected function redirectToPendingExam()
     {
-        $payment = CourseExamController::findPendingExamPayment(Auth::id());
+        $pending = CourseExamController::findPendingExamPayment(Auth::id());
 
-        if (!$payment) {
+        if (!$pending) {
             return null;
         }
 
-        return redirect()->route('dashboard.courses.exam.take', $payment->course_id);
+        return redirect()->route('dashboard.courses.exam.take', [
+            $pending['payment']->course_id,
+            $pending['dayExam']->id,
+        ]);
     }
 
     /**

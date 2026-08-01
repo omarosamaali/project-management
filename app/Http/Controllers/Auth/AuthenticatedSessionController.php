@@ -26,29 +26,40 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
-        // التحقق مما إذا كان الحساب محظوراً فور تسجيل الدخول
-        if ($request->user()->status === 'blocked') {
-            // تسجيل الخروج فوراً لإنهاء الجلسة التي فُتحت
-            auth()->logout();
+        $user = $request->user();
 
-            // تدمير الجلسة ومسح التوكن للأمان
+        // التحقق مما إذا كان الحساب محظوراً فور تسجيل الدخول
+        if ($user->status === 'blocked') {
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            // العودة مع رسالة خطأ
             return redirect()->route('login')->withErrors([
                 'email' => 'هذا الحساب محظور حالياً. يرجى التواصل مع الإدارة للمزيد من التفاصيل.',
             ]);
         }
 
-        $request->session()->regenerate();
+        if ($user->status === 'pending') {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-        // التوجيه حسب الدور (Role)
-        if ($request->user()->role === 'client') {
-            return redirect()->route('dashboard.requests.index');
+            return redirect()->route('login')->withErrors([
+                'email' => __('messages.trainer_login_pending'),
+            ]);
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $request->session()->regenerate();
+
+        if ($user && method_exists($user, 'isTrainee') && $user->isTrainee()) {
+            return redirect()->route('academy.index');
+        }
+
+        if ($user && method_exists($user, 'isTrainer') && $user->isTrainer()) {
+            return redirect()->route('academy.index');
+        }
+
+        return redirect()->route('system.index');
     }
 
     /**

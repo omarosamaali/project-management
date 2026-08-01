@@ -11,8 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\ForceDashboardLocale::class,
             \App\Http\Middleware\EnsureAccountNotBlocked::class,
             \App\Http\Middleware\CheckOtpVerification::class,
         ]);
@@ -38,19 +40,43 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         });
 
-        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
-            $previous = url()->previous();
-            $registerUrl = route('register');
-            $loginUrl = route('login');
-
-            if (str_contains($previous, 'register') || $request->routeIs('register')) {
-                return redirect()->route('register')
-                    ->withInput($request->except('password', 'password_confirmation'))
-                    ->withErrors(['csrf' => 'انتهت صلاحية الجلسة، يرجى المحاولة مرة أخرى.']);
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى.',
+                    'session_expired' => true,
+                    'login_url' => route('login'),
+                ], 401);
             }
 
-            return redirect()->back()
-                ->withInput($request->except('password', 'password_confirmation'))
-                ->withErrors(['csrf' => 'انتهت صلاحية الجلسة، يرجى المحاولة مرة أخرى.']);
+            return redirect()->guest(route('login'))
+                ->with('session_expired', true)
+                ->with('error', 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى.');
+        });
+
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, \Illuminate\Http\Request $request) {
+            $message = 'انتهت صلاحية الجلسة، يرجى تسجيل الدخول مرة أخرى.';
+
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => $message,
+                    'session_expired' => true,
+                    'login_url' => route('login'),
+                ], 419);
+            }
+
+            $previous = url()->previous();
+
+            // Keep the user on the register form so they can retry without losing context
+            if (str_contains((string) $previous, 'register') || $request->routeIs('register')) {
+                return redirect()->route('register')
+                    ->withInput($request->except('password', 'password_confirmation'))
+                    ->withErrors(['csrf' => 'انتهت صلاحية الجلسة، يرجى تحديث الصفحة والمحاولة مرة أخرى.'])
+                    ->with('error', 'انتهت صلاحية الجلسة، يرجى تحديث الصفحة والمحاولة مرة أخرى.');
+            }
+
+            return redirect()->route('login')
+                ->with('session_expired', true)
+                ->with('error', $message);
         });
     })->create();

@@ -15,7 +15,7 @@ class SendCourseAnnouncement extends Command
 {
     protected $signature = 'course:announce
         {course : معرف الدورة (ID)}
-        {--audience=clients : الجمهور المستهدف: clients | others | enrolled | all}
+        {--audience=learners : الجمهور المستهدف: learners | trainers | trainees | clients | others | enrolled | all}
         {--channel=all : قناة الإرسال: all | whatsapp | email}
         {--exclude-sent : تجاهل من استلم إعلان هذه الدورة مسبقاً (إرسال للمتبقّين فقط)}
         {--test= : إرسال رسالة تجريبية واحدة فقط لرقم هاتف أو بريد}';
@@ -120,9 +120,15 @@ class SendCourseAnnouncement extends Command
             'enrolled' => $course->students()->select('users.id', 'users.name', 'users.phone', 'users.email')->get(),
             'all' => User::notBlocked()->select('id', 'name', 'phone', 'email')->get(),
             'others' => User::notBlocked()
-                ->where(fn ($q) => $q->where('role', '!=', 'client')->orWhereNull('role'))
+                ->where(fn ($q) => $q->whereNotIn('role', ['trainer', 'trainee'])->orWhereNull('role'))
                 ->select('id', 'name', 'phone', 'email')->get(),
-            default => User::where('role', 'client')->notBlocked()
+            'trainers' => User::where('role', 'trainer')->notBlocked()
+                ->select('id', 'name', 'phone', 'email')->get(),
+            'trainees' => User::where('role', 'trainee')->notBlocked()
+                ->select('id', 'name', 'phone', 'email')->get(),
+            'clients' => User::where('role', 'client')->notBlocked()
+                ->select('id', 'name', 'phone', 'email')->get(),
+            default => User::whereIn('role', ['trainer', 'trainee'])->notBlocked()
                 ->select('id', 'name', 'phone', 'email')->get(),
         };
 

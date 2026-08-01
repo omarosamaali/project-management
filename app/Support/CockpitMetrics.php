@@ -86,16 +86,9 @@ class CockpitMetrics
 
         return [
             'all' => $withCourse->count(),
-            'active' => $withCourse->filter(fn ($p) => $now->between(
-                Carbon::parse($p->course->start_date)->startOfDay(),
-                Carbon::parse($p->course->end_date)->endOfDay()
-            ))->count(),
-            'upcoming' => $withCourse->filter(fn ($p) => $now->lt(
-                Carbon::parse($p->course->start_date)->startOfDay()
-            ))->count(),
-            'ended' => $withCourse->filter(fn ($p) => $now->gt(
-                Carbon::parse($p->course->end_date)->endOfDay()
-            ))->count(),
+            'active' => $withCourse->filter(fn ($p) => $p->isCourseActiveForLearner($now))->count(),
+            'upcoming' => $withCourse->filter(fn ($p) => $p->isCourseUpcomingForLearner($now))->count(),
+            'ended' => $withCourse->filter(fn ($p) => $p->isCourseEndedForLearner($now))->count(),
         ];
     }
 
