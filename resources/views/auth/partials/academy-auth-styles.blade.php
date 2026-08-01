@@ -137,9 +137,24 @@
         border-radius: .85rem !important;
         padding: .85rem 1rem !important;
         background: #fff !important;
-        color: var(--ink);
+        color: #0f172a !important;
         box-shadow: none !important;
         transition: border-color .18s, box-shadow .18s;
+    }
+    .academy-auth-form input::placeholder,
+    .academy-auth-form textarea::placeholder {
+        color: #0f172a !important;
+        opacity: 0.35;
+    }
+    .academy-auth-form input::-webkit-input-placeholder,
+    .academy-auth-form textarea::-webkit-input-placeholder {
+        color: #0f172a !important;
+        opacity: 0.35;
+    }
+    .academy-auth-form input::-moz-placeholder,
+    .academy-auth-form textarea::-moz-placeholder {
+        color: #0f172a !important;
+        opacity: 0.35;
     }
     .academy-auth-form input:focus,
     .academy-auth-form select:focus,

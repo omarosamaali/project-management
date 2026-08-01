@@ -160,10 +160,10 @@
        Shadows use soft ink + a light color tint so they dissolve into --sand / page bg. */
     .cat-slide {
         display: inline-flex; flex-direction: row; align-items: center; justify-content: flex-start;
-        gap: .75rem; text-align: start;
+        gap: 1.15rem; text-align: start;
         width: max-content; min-width: 14rem; max-width: none;
         height: 4.6rem; box-sizing: border-box;
-        padding: .85rem 1.1rem .85rem .85rem;
+        padding: .85rem 1.15rem .85rem 1rem;
         border: 0; text-decoration: none; color: #fff;
         border-radius: 1.25rem;
         background: linear-gradient(145deg, var(--accent-purple), #6d28d9);
@@ -182,11 +182,13 @@
             0 22px 44px rgba(6, 21, 37, .12);
     }
     .cat-slide img {
-        width: 3.1rem; height: 3.1rem; border-radius: 0; object-fit: contain;
+        width: 1.85rem; height: 1.85rem; border-radius: 0; object-fit: contain;
         border: 0; box-shadow: none; background: transparent;
         flex-shrink: 0; transition: transform .35s ease;
+        /* Force uploaded SVG/PNG icons to white on colored chips */
+        filter: brightness(0) invert(1);
     }
-    .cat-slide:hover img { transform: scale(1.06) rotate(-3deg); }
+    .cat-slide:hover img { transform: scale(1.08); }
     .cat-slide > span {
         min-width: 0; flex: 1 1 auto;
         text-align: start; display: block;

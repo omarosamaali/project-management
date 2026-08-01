@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AcademyOtpMail;
 use App\Models\User;
 use App\Support\AuthUi;
 use Illuminate\Http\Request;
@@ -138,12 +139,7 @@ class OTPController extends Controller
         $user->otp = $otp;
         $user->save();
 
-        Mail::raw(
-            "مرحباً {$user->name},\n\nكود التحقق الخاص بك في أكاديمية إيفورك هو: {$otp}\n\nصالح للاستخدام مرة واحدة.",
-            function ($message) use ($user) {
-                $message->to($user->email)->subject('تأكيد الحساب - كود التحقق');
-            }
-        );
+        Mail::to($user->email, $user->name)->send(new AcademyOtpMail($user, $otp));
 
         return $otp;
     }
