@@ -1705,8 +1705,7 @@ class CourseController extends Controller
         $link = trim((string) ($data['online_link'] ?? ''));
 
         if ($link !== '' && $course->start_date) {
-            $deadline = \Carbon\Carbon::parse($course->start_date)->subMinutes(30);
-            if (now()->greaterThan($deadline)) {
+            if (now()->greaterThanOrEqualTo(\Carbon\Carbon::parse($course->start_date))) {
                 throw ValidationException::withMessages([
                     'online_link' => __('messages.private_meeting_link_deadline'),
                 ]);
@@ -1715,9 +1714,7 @@ class CourseController extends Controller
 
         $course->update(['online_link' => $link !== '' ? $link : null]);
 
-        return redirect()
-            ->route('dashboard.courses.show', $course)
-            ->with('success', __('messages.private_meeting_link_saved'));
+        return back()->with('success', __('messages.private_meeting_link_saved'));
     }
 
     public function uploadSpecialCertificate(Request $request, Payment $payment)

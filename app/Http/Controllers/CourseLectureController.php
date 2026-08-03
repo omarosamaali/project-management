@@ -22,7 +22,7 @@ class CourseLectureController extends Controller
         $payment->load('course');
         $course = $payment->course;
         abort_unless($course && (int) $payment->user_id === (int) Auth::id(), 403);
-        abort_unless($course->location_type === 'online' && $course->online_link, 404);
+        abort_unless(in_array($course->location_type, ['online', 'private'], true) && $course->online_link, 404);
 
         $meeting = MeetingLink::analyze($course->online_link);
         $youtubeEmbed = YouTubeLive::embedUrl($course->online_link);
@@ -77,7 +77,7 @@ class CourseLectureController extends Controller
     public function showForManager(Course $course)
     {
         abort_unless($course->canModerateChat(Auth::user()), 403);
-        abort_unless($course->location_type === 'online' && $course->online_link, 404);
+        abort_unless(in_array($course->location_type, ['online', 'private'], true) && $course->online_link, 404);
 
         $meeting = MeetingLink::analyze($course->online_link);
         $youtubeEmbed = YouTubeLive::embedUrl($course->online_link);

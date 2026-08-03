@@ -154,12 +154,19 @@
     @endif
 
     {{-- شارة الفلتر النشط --}}
-    @if($filter)
-    <div class="mb-4 flex items-center gap-2">
+    @if($filter || ($type ?? null))
+    <div class="mb-4 flex items-center gap-2 flex-wrap">
         <span class="text-sm text-gray-600 dark:text-gray-400">
             <i class="fas fa-filter ml-1"></i>
             عرض:
-            <strong>{{ ['active' => 'الدورات النشطة', 'upcoming' => 'الدورات القادمة', 'ended' => 'الدورات المنتهية'][$filter] ?? '' }}</strong>
+            <strong>
+                @if($filter)
+                    {{ ['active' => 'الدورات النشطة', 'upcoming' => 'الدورات القادمة', 'ended' => 'الدورات المنتهية'][$filter] ?? '' }}
+                @endif
+                @if(($type ?? null) === 'private')
+                    {{ $filter ? ' · ' : '' }}الدورات الخاصة
+                @endif
+            </strong>
         </span>
         <a href="{{ route('dashboard.my_courses.index') }}"
             class="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
@@ -185,7 +192,10 @@
                 $now = \Carbon\Carbon::now();
                 $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
                 $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
-                $showLink = $startDate && $endDate
+                $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
+                $showLink = $isLiveMeetingCourse
+                    && filled($course->online_link)
+                    && $startDate && $endDate
                     && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
                     && $now->lessThanOrEqualTo($endDate);
                 $isFinished = $payment->isCourseEndedForLearner($now);
@@ -197,6 +207,7 @@
                     'online' => __('messages.academy_type_online'),
                     'recorded' => __('messages.academy_type_recorded'),
                     'on_site' => __('messages.academy_type_onsite'),
+                    'private' => 'خاصة',
                     default => $course->location_type ?: '—',
                 };
             @endphp
@@ -221,13 +232,19 @@
                     </p>
 
                     <div class="ac-card-actions-auto">
-                        @if($course->location_type == 'online' && $showLink)
+                        @if($isLiveMeetingCourse && $showLink)
                         <x-course-lecture-link :course="$course" :payment="$payment"
                             label="دخول المحاضرة"
                             classes="ac-btn ac-btn-primary ac-btn-sm"
                             style="background-color:#0D2444;color:#fff;">
                             <i class="fas fa-video"></i> دخول المحاضرة
                         </x-course-lecture-link>
+                        @elseif($isLiveMeetingCourse && $course->isCanceled())
+                        <span class="text-xs font-bold text-red-600">ملغاة — بانتظار الاسترداد</span>
+                        @elseif($isLiveMeetingCourse && ! filled($course->online_link) && $startDate && $now->greaterThanOrEqualTo($startDate))
+                        <span class="text-xs font-bold text-red-600">انتهى الموعد بدون رابط — جاري الإلغاء</span>
+                        @elseif($isLiveMeetingCourse && ! filled($course->online_link))
+                        <span class="text-xs font-bold text-amber-700">بانتظار رابط الاجتماع</span>
                         @elseif($course->location_type == 'recorded')
                         <a href="{{ route('dashboard.my_courses.path', $payment->id) }}"
                             class="ac-btn ac-btn-sm {{ $isFinished ? 'ac-btn-ghost' : 'ac-btn-amber' }}"
@@ -303,7 +320,10 @@
                 $now = \Carbon\Carbon::now();
                 $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
                 $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
-                $showLink = $startDate && $endDate
+                $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
+                $showLink = $isLiveMeetingCourse
+                    && filled($course->online_link)
+                    && $startDate && $endDate
                     && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
                     && $now->lessThanOrEqualTo($endDate);
                 $isFinished = $payment->isCourseEndedForLearner($now);
@@ -315,6 +335,7 @@
                     'online' => __('messages.academy_type_online'),
                     'recorded' => __('messages.academy_type_recorded'),
                     'on_site' => __('messages.academy_type_onsite'),
+                    'private' => 'خاصة',
                     default => $course->location_type ?: '—',
                 };
             @endphp
@@ -338,8 +359,14 @@
                     @endif
                 </div>
 
-                @if($course->location_type == 'online')
-                    @if($showLink)
+                @if($isLiveMeetingCourse)
+                    @if($course->isCanceled())
+                    <p class="text-red-600 text-xs font-semibold">ملغاة — بانتظار الاسترداد</p>
+                    @elseif(! filled($course->online_link) && $startDate && $now->greaterThanOrEqualTo($startDate))
+                    <p class="text-red-600 text-xs font-semibold">انتهى الموعد بدون رابط — جاري الإلغاء</p>
+                    @elseif(! filled($course->online_link))
+                    <p class="text-amber-700 text-xs font-semibold">بانتظار رابط الاجتماع</p>
+                    @elseif($showLink)
                     <x-course-lecture-link :course="$course" :payment="$payment"
                         label="دخول المحاضرة"
                         classes="inline-flex items-center justify-center w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
@@ -443,7 +470,10 @@
                             $now = \Carbon\Carbon::now();
                             $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
                             $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
-                            $showLink = $startDate && $endDate
+                            $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
+                            $showLink = $isLiveMeetingCourse
+                                && filled($course->online_link)
+                                && $startDate && $endDate
                                 && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
                                 && $now->lessThanOrEqualTo($endDate);
                             $isFinished = $payment->isCourseEndedForLearner($now);
@@ -455,6 +485,7 @@
                                 'online' => __('messages.academy_type_online'),
                                 'recorded' => __('messages.academy_type_recorded'),
                                 'on_site' => __('messages.academy_type_onsite'),
+                                'private' => 'خاصة',
                                 default => $course->location_type ?: '—',
                             };
                         @endphp
@@ -484,8 +515,14 @@
                             </td>
                             <td class="px-4 py-4 text-center">
                                 <div class="flex flex-col items-center gap-2">
-                                    @if($course->location_type == 'online')
-                                        @if($showLink)
+                                    @if($isLiveMeetingCourse)
+                                        @if($course->isCanceled())
+                                        <span class="text-red-600 font-semibold text-xs">ملغاة — بانتظار الاسترداد</span>
+                                        @elseif(! filled($course->online_link) && $startDate && $now->greaterThanOrEqualTo($startDate))
+                                        <span class="text-red-600 font-semibold text-xs">انتهى الموعد بدون رابط — جاري الإلغاء</span>
+                                        @elseif(! filled($course->online_link))
+                                        <span class="text-amber-700 font-semibold text-xs">بانتظار رابط الاجتماع</span>
+                                        @elseif($showLink)
                                         <x-course-lecture-link :course="$course" :payment="$payment"
                                             label="دخول المحاضرة"
                                             classes="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 animate-pulse">

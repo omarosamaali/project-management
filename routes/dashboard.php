@@ -186,6 +186,8 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.academy.private-requests.admin-unassigned');
     Route::get('academy/private-requests', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'adminIndex'])
         ->name('dashboard.academy.private-requests.admin-index');
+    Route::post('academy/private-requests/{privateRequest}/meeting-link', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'updateMeetingLink'])
+        ->name('dashboard.academy.private-requests.meeting-link');
     Route::post('academy/private-requests/{privateRequest}/approve', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'approve'])
         ->name('dashboard.academy.private-requests.approve');
     Route::post('academy/private-requests/{privateRequest}/reject', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'reject'])
@@ -194,12 +196,18 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.academy.private-requests.respond-date-change');
     Route::post('academy/private-requests/{privateRequest}/block', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'block'])
         ->name('dashboard.academy.private-requests.block');
-    Route::post('academy/private-refunds/{refund}/confirm', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'confirmRefund'])
-        ->name('dashboard.academy.private-refunds.confirm');
     Route::get('academy/private-refunds', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'refundsIndex'])
         ->name('dashboard.academy.private-refunds.index');
+    Route::get('academy/private-refunds/{refund}/screenshot', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'showRefundScreenshot'])
+        ->name('dashboard.academy.private-refunds.screenshot');
+    Route::get('academy/private-refunds/files/{screenshot}', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'showRefundScreenshotFile'])
+        ->name('dashboard.academy.private-refunds.screenshot-file');
     Route::post('academy/private-refunds/{refund}/screenshot', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'uploadRefundScreenshot'])
         ->name('dashboard.academy.private-refunds.upload-screenshot');
+    Route::post('academy/private-refunds/{refund}/mark-ready', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'markRefundReadyForTrainee'])
+        ->name('dashboard.academy.private-refunds.mark-ready');
+    Route::post('academy/private-refunds/{refund}/confirm', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'confirmRefund'])
+        ->name('dashboard.academy.private-refunds.confirm');
     Route::post('/payments/{payment}/special-certificate', [CourseController::class, 'uploadSpecialCertificate'])
         ->name('dashboard.courses.special-certificate.upload');
     Route::get('/payments/{payment}/special-certificate', [CourseController::class, 'downloadSpecialCertificate'])

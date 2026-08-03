@@ -8,13 +8,19 @@
 $course = $payment->course;
 $learnerId = (int) ($payment->user_id ?: auth()->id());
 $isRecorded = $course->isRecorded();
+$isPrivate = $course->isPrivate();
 $startDate = \Carbon\Carbon::parse($course->start_date);
 $endDate = \Carbon\Carbon::parse($course->end_date);
 $now = \Carbon\Carbon::now();
 $pathCompletion = $isRecorded ? $course->pathCompletionForUser($learnerId) : null;
 
-// منطق ظهور الرابط (قبل 30 دقيقة) — للدروس المباشرة فقط
-$showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) && $now->lessThanOrEqualTo($endDate);
+$hasMeetingLink = filled($course->online_link);
+$isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
+// منطق ظهور الرابط (قبل 30 دقيقة) — للأونلاين والدورات الخاصة فقط عند وجود رابط
+$showLink = $isLiveMeetingCourse
+    && $hasMeetingLink
+    && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
+    && $now->lessThanOrEqualTo($endDate);
 $isFinished = $now->greaterThan($endDate);
 $isUpcoming = $now->lt($startDate->copy()->subMinutes(30));
 
@@ -22,7 +28,11 @@ $needsRating = $course->userNeedsRating($learnerId);
 $canCertificate = $course->userCanGetCertificate($learnerId);
 $ratingDone = $course->userCompletedRating($learnerId);
 
-if ($isRecorded) {
+if ($course->isCanceled()) {
+    $courseStatus = 'canceled';
+    $courseStatusLabel = 'ملغاة';
+    $courseStatusClass = 'bg-red-100 text-red-800 border-red-200';
+} elseif ($isRecorded) {
     $pathPercent = (int) ($pathCompletion['percent'] ?? 0);
     if ($canCertificate) {
         $courseStatus = 'completed';
@@ -77,6 +87,7 @@ $typeLabel = match ($course->location_type) {
     'online' => 'أونلاين',
     'recorded' => 'مسجّلة',
     'on_site' => 'حضوري',
+    'private' => 'خاصة',
     default => $course->location_type,
 };
 @endphp
@@ -148,7 +159,7 @@ $typeLabel = match ($course->location_type) {
                         </div>
                         <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                             <i class="fas fa-map-marker-alt text-blue-500 w-5"></i>
-                            <span>نوع الحضور: <strong>{{ $course->location_type == 'online' ? 'أونلاين' : 'في المقر' }}</strong></span>
+                            <span>نوع الحضور: <strong>{{ $typeLabel }}</strong></span>
                         </div>
                         <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
                             <i class="fas fa-hourglass-half text-blue-500 w-5"></i>
@@ -395,8 +406,34 @@ $typeLabel = match ($course->location_type) {
                     <i class="fas fa-video ml-2"></i> رابط دخول المحاضرة
                     @endif
                 </h3>
-                @if($course->location_type == 'online')
-                @if($showLink)
+                @if($isLiveMeetingCourse)
+                @if($course->isCanceled())
+                <div class="flex items-start gap-3 text-red-700 bg-red-50 p-3 rounded-lg border border-red-100">
+                    <i class="fas fa-ban mt-0.5"></i>
+                    <div class="text-sm space-y-1">
+                        <p class="font-bold">تم إلغاء هذه الدورة الخاصة.</p>
+                        @if(($course->cancel_reason ?? null) === 'missing_meeting_link')
+                        <p>لم يُضف رابط الاجتماع قبل موعد البدء. سيتم معالجة استرداد المبلغ للمتدرب.</p>
+                        @endif
+                    </div>
+                </div>
+                @elseif(! $hasMeetingLink && $now->greaterThanOrEqualTo($startDate))
+                <div class="flex items-start gap-3 text-red-700 bg-red-50 p-3 rounded-lg border border-red-100">
+                    <i class="fas fa-ban mt-0.5"></i>
+                    <div class="text-sm space-y-1">
+                        <p class="font-bold">مرّ موعد البدء بدون رابط اجتماع.</p>
+                        <p>تُلغى الدورة تلقائياً ويُنشأ طلب استرداد للمتدرب خلال دقائق.</p>
+                    </div>
+                </div>
+                @elseif(! $hasMeetingLink)
+                <div class="flex items-start gap-3 text-amber-800 bg-amber-50 p-3 rounded-lg border border-amber-100">
+                    <i class="fas fa-link mt-0.5"></i>
+                    <div class="text-sm space-y-1">
+                        <p class="font-bold">بانتظار رابط الاجتماع من المحاضر.</p>
+                        <p>إذا مرّ موعد بدء الدورة بدون رابط، تُلغى الدورة تلقائياً ويُنشأ طلب استرداد للمتدرب.</p>
+                    </div>
+                </div>
+                @elseif($showLink)
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <p class="text-sm text-blue-700 dark:text-blue-400">المحاضرة جارية الآن، يمكنك الانضمام مباشرة من
                         خلال الرابط:</p>
@@ -413,7 +450,7 @@ $typeLabel = match ($course->location_type) {
                             }}</strong> الساعة <strong>{{ $startDate->copy()->subMinutes(30)->format('h:i A') }}</strong>.</p>
                 </div>
                 @endif
-                @if($course->canAccessLectureChat())
+                @if($course->canAccessLectureChat() && $hasMeetingLink && ! $course->isCanceled())
                 <div class="mt-4 pt-3 border-t border-blue-100 dark:border-blue-800">
                     <a href="{{ route('dashboard.courses.chat-archive', $course) }}"
                         class="inline-flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-300 hover:underline">

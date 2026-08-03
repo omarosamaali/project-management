@@ -7,6 +7,7 @@ use App\Models\AppNotification;
 use App\Models\Course;
 use App\Models\Payment;
 use App\Models\PrivateCourseRefund;
+use App\Models\PrivateCourseRefundScreenshot;
 use App\Models\PrivateCourseRequest;
 use App\Models\PrivateCourseRequestEvent;
 use App\Models\User;
@@ -326,9 +327,7 @@ class PrivateCourseRequestService
             throw new UserFacingException(__('messages.private_request_invalid_status'));
         }
 
-        if ($req->payment_due_at && now()->greaterThan($req->payment_due_at)) {
-            throw new UserFacingException(__('messages.private_request_payment_expired'));
-        }
+        $this->assertPaymentStillAllowed($req);
 
         return DB::transaction(function () use ($req, $payment) {
             $req->loadMissing(['sourceCourse', 'trainee']);
@@ -364,6 +363,8 @@ class PrivateCourseRequestService
                 'private_of_course_id' => $source->id,
                 'start_date' => $start,
                 'end_date' => $end,
+                // Required non-null column (enrollment deadline); private seats are already paid.
+                'last_date' => $start,
                 'count_days' => Course::computeCourseDays($start, $end, $restDays),
                 'rest_days' => $restDays,
                 'status' => 'active',
@@ -429,22 +430,39 @@ class PrivateCourseRequestService
 
     public function expireUnpaid(): int
     {
+        $now = now();
+
         $requests = PrivateCourseRequest::query()
             ->where('status', PrivateCourseRequest::STATUS_AWAITING_PAYMENT)
-            ->whereNotNull('payment_due_at')
-            ->where('payment_due_at', '<', now())
+            ->where(function ($query) use ($now) {
+                $query
+                    ->where(function ($q) use ($now) {
+                        $q->whereNotNull('payment_due_at')
+                            ->where('payment_due_at', '<', $now);
+                    })
+                    ->orWhere(function ($q) use ($now) {
+                        // Confirmed schedule ended before payment succeeded.
+                        $q->whereNotNull('proposed_end_at')
+                            ->where('proposed_end_at', '<', $now);
+                    });
+            })
             ->with(['sourceCourse', 'trainee', 'trainer'])
             ->get();
 
         $count = 0;
 
         foreach ($requests as $req) {
+            $schedulePassed = $req->proposed_end_at && $req->proposed_end_at->lt($now);
             $req->update(['status' => PrivateCourseRequest::STATUS_EXPIRED_UNPAID]);
-            $this->addEvent($req, null, 'expired_unpaid');
+            $this->addEvent($req, null, 'expired_unpaid', null, [
+                'reason' => $schedulePassed ? 'schedule_passed' : 'payment_window',
+            ]);
 
             $courseName = $req->sourceCourse?->name_ar ?: $req->sourceCourse?->name_en;
             $url = $this->privateRequestUrl($req);
-            $message = "انتهت مهلة الدفع (24 ساعة) لطلب الدورة الخاصة «{$courseName}».";
+            $message = $schedulePassed
+                ? "انتهى موعد الدورة المقترح قبل إتمام الدفع لطلب «{$courseName}»، وتم إلغاء الطلب."
+                : "انتهت مهلة الدفع (24 ساعة) لطلب الدورة الخاصة «{$courseName}».";
 
             if ($req->trainee) {
                 $this->notifyUser($req->trainee, 'انتهت مهلة الدفع', $message, $url, 'fa-clock', 'warning');
@@ -458,6 +476,37 @@ class PrivateCourseRequestService
         }
 
         return $count;
+    }
+
+    /**
+     * Payment is blocked after the 24h window or after the confirmed schedule end.
+     */
+    public function assertPaymentStillAllowed(PrivateCourseRequest $req): void
+    {
+        if ($req->proposed_end_at && now()->greaterThan($req->proposed_end_at)) {
+            throw new UserFacingException(__('messages.private_request_schedule_passed'));
+        }
+
+        if ($req->payment_due_at && now()->greaterThan($req->payment_due_at)) {
+            throw new UserFacingException(__('messages.private_request_payment_expired'));
+        }
+    }
+
+    public function paymentWindowExpired(PrivateCourseRequest $req): bool
+    {
+        if ($req->status !== PrivateCourseRequest::STATUS_AWAITING_PAYMENT) {
+            return false;
+        }
+
+        if ($req->proposed_end_at && now()->greaterThan($req->proposed_end_at)) {
+            return true;
+        }
+
+        if ($req->payment_due_at && now()->greaterThan($req->payment_due_at)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function expireBusy(): int
@@ -592,6 +641,9 @@ class PrivateCourseRequestService
             ->whereNotNull('trainee_confirm_due_at')
             ->where('trainee_confirm_due_at', '<=', now())
             ->whereNull('trainee_confirmed_at')
+            ->whereHas('screenshots', function ($q) {
+                $q->where('kind', PrivateCourseRefundScreenshot::KIND_SUCCESS);
+            })
             ->with(['trainee', 'request.sourceCourse'])
             ->get();
 
@@ -635,6 +687,45 @@ class PrivateCourseRequestService
         }
 
         return $count;
+    }
+
+    public function markRefundReadyForTrainee(PrivateCourseRefund $refund, User $admin): void
+    {
+        if (! $refund->canMarkReadyForTrainee()) {
+            throw new \RuntimeException(__('messages.private_refund_mark_ready_blocked'));
+        }
+
+        $refund->update([
+            'status' => PrivateCourseRefund::STATUS_PENDING_TRAINEE_CONFIRM,
+            'admin_id' => $admin->id,
+            'trainee_confirm_due_at' => now()->addDay(),
+            'trainee_confirmed_at' => null,
+        ]);
+
+        $refund->loadMissing(['trainee', 'request.sourceCourse']);
+
+        if ($refund->request) {
+            $this->addEvent($refund->request, $admin, 'refund_ready_for_trainee', null, [
+                'refund_id' => $refund->id,
+            ]);
+        }
+
+        $courseName = $refund->request?->sourceCourse?->name_ar
+            ?: $refund->request?->sourceCourse?->name_en
+            ?: '#'.$refund->id;
+        $amount = number_format((float) $refund->amount, 2);
+        $url = route('dashboard.academy.private-requests.trainee-index');
+
+        if ($refund->trainee) {
+            $this->notifyUser(
+                $refund->trainee,
+                'تأكيد استلام الاسترداد',
+                "يرجى مراجعة إثباتات التحويل للدورة «{$courseName}» وتأكيد استلام مبلغ {$amount}.",
+                $url,
+                'fa-money-bill-wave',
+                'warning',
+            );
+        }
     }
 
     public function createRefundForRequest(PrivateCourseRequest $req): PrivateCourseRefund

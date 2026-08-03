@@ -882,10 +882,12 @@ class ZiinaPaymentController extends Controller
                 ], 422);
             }
 
-            if ($privateRequest->payment_due_at && now()->greaterThan($privateRequest->payment_due_at)) {
+            try {
+                app(PrivateCourseRequestService::class)->assertPaymentStillAllowed($privateRequest);
+            } catch (\App\Exceptions\UserFacingException $e) {
                 return response()->json([
                     'success' => false,
-                    'message' => __('messages.private_request_payment_expired'),
+                    'message' => $e->getMessage(),
                 ], 422);
             }
 
@@ -896,10 +898,14 @@ class ZiinaPaymentController extends Controller
             $cancelUrl = route('course.private.payment.cancel', ['private_request_id' => $privateRequest->id]);
 
             $source = $privateRequest->sourceCourse;
-            $payItem = $source ?: (object) [
+            $payItem = (object) [
+                'id' => $source?->id ?? $privateRequest->id,
                 'price' => $basePrice,
-                'name_ar' => 'دورة خاصة',
-                'name_en' => 'Private course',
+                'name' => $source
+                    ? ($source->name_ar ?: $source->name_en ?: 'دورة خاصة')
+                    : 'دورة خاصة',
+                'name_ar' => $source?->name_ar,
+                'name_en' => $source?->name_en,
             ];
 
             $response = $this->ziinaHandler->createSystemPaymentIntent(
@@ -974,13 +980,16 @@ class ZiinaPaymentController extends Controller
             }
 
             if ($privateRequest->status === PrivateCourseRequest::STATUS_PAID) {
-                return redirect()->route('dashboard.my_courses.index')
+                $paidPaymentId = $privateRequest->payment_id ?: $payment->id;
+
+                return redirect()->route('dashboard.my_courses.show', $paidPaymentId)
                     ->with('success', __('messages.private_request_already_paid'));
             }
 
-            $payment->update(['status' => 'completed']);
-
+            // Complete enrollment first; only then mark payment completed.
             app(PrivateCourseRequestService::class)->markPaidAndClone($privateRequest->fresh(), $payment->fresh());
+
+            $payment->update(['status' => 'completed']);
 
             $user = auth()->user();
             if ($user) {
@@ -1003,13 +1012,21 @@ class ZiinaPaymentController extends Controller
                 }
             }
 
-            return redirect()->route('dashboard.my_courses.index')
+            $privateRequest->refresh();
+            $showPaymentId = $privateRequest->payment_id ?: $payment->id;
+
+            return redirect()->route('dashboard.my_courses.show', $showPaymentId)
                 ->with('success', __('messages.private_request_payment_success'));
+        } catch (\App\Exceptions\UserFacingException $e) {
+            Log::error('خطأ في privateCourseSuccess (user): '.$e->getMessage());
+
+            return redirect()->route('dashboard.academy.private-requests.trainee-index')
+                ->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('خطأ في privateCourseSuccess: '.$e->getMessage());
 
             return redirect()->route('dashboard.academy.private-requests.trainee-index')
-                ->with('error', 'حدث خطأ فني');
+                ->with('error', 'تعذر تفعيل الدورة الخاصة بعد الدفع. تواصل مع الدعم إن استمر الخطأ.');
         }
     }
 

@@ -77,6 +77,38 @@
         background: #fff7ed; border: 1px solid #fed7aa;
     }
     .pr-refund-card h2 { margin: 0 0 .85rem; font-size: .98rem; font-weight: 800; color: #9a3412; }
+    .pr-refund-item {
+        background: #fff; border-radius: 1rem; border: 1px solid #fed7aa;
+        padding: 1rem 1.1rem; display: grid; gap: .9rem;
+    }
+    .pr-refund-item-top {
+        display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem;
+    }
+    .pr-refund-item-top h3 { margin: 0; font-size: .98rem; font-weight: 800; color: #061525; }
+    .pr-refund-hint { margin: .35rem 0 0; font-size: .8rem; color: #9a3412; font-weight: 600; line-height: 1.45; }
+    .pr-refund-amount {
+        margin-top: .35rem; font-weight: 800; font-size: .9rem;
+        display: inline-flex; align-items: center; gap: .35rem; direction: ltr;
+    }
+    .pr-proof-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .65rem;
+    }
+    .pr-proof-card {
+        display: block; text-decoration: none !important; color: inherit;
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .9rem; overflow: hidden;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .pr-proof-card:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(6,21,37,.1); }
+    .pr-proof-card img {
+        width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #eef2f6;
+    }
+    .pr-proof-card .meta {
+        padding: .45rem .55rem; font-size: .7rem; font-weight: 800; text-align: center;
+    }
+    .pr-proof-card .meta.is-pending { color: #c2410c; background: #fff7ed; }
+    .pr-proof-card .meta.is-success { color: #047857; background: #ecfdf5; }
+    .pr-proof-card .meta.is-fail { color: #b91c1c; background: #fef2f2; }
+    .pr-proof-note { margin: .2rem 0 0; font-size: .68rem; font-weight: 600; color: #5a6d82; line-height: 1.35; }
     /* Match academy shell action buttons when this page is outside .academy-shell */
     .pr-index-page .ac-btn {
         display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
@@ -115,24 +147,57 @@
         <h2><i class="fas fa-money-bill-wave ml-1"></i> تأكيدات استرداد</h2>
         <div class="space-y-3">
             @foreach($pendingRefunds as $refund)
-            <div class="bg-white rounded-xl border border-orange-100 p-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <p class="font-bold text-gray-900">{{ $refund->request?->sourceCourse?->name_ar ?? '—' }}</p>
-                    <p class="text-sm text-gray-500 mt-0.5 inline-flex items-center gap-1" dir="ltr">
-                        <x-drhm-icon width="12" height="14" />
-                        {{ number_format((float) $refund->amount, 2) }}
+            @php $shots = $refund->screenshots; @endphp
+            <div class="pr-refund-item">
+                <div class="pr-refund-item-top">
+                    <div>
+                        <h3>{{ $refund->request?->sourceCourse?->name_ar ?? '—' }}</h3>
+                        <p class="pr-refund-amount" dir="ltr">
+                            <x-drhm-icon width="12" height="14" />
+                            {{ number_format((float) $refund->amount, 2) }}
+                        </p>
+                        <p class="pr-refund-hint">{{ __('messages.private_refund_confirm_hint') }}</p>
+                        @if($refund->trainee_confirm_due_at)
+                        <p class="pr-refund-hint" style="opacity:.85;">
+                            يُغلق تلقائياً إن لم تؤكد قبل:
+                            {{ $refund->trainee_confirm_due_at->format('Y-m-d H:i') }}
+                        </p>
+                        @endif
+                    </div>
+                    @if($refund->canTraineeConfirm())
+                    <form method="POST" action="{{ route('dashboard.academy.private-refunds.confirm', $refund) }}">
+                        @csrf
+                        <button type="submit" class="ac-btn ac-btn-primary ac-btn-sm">
+                            <i class="fas fa-check"></i>
+                            {{ __('messages.private_refund_confirm') }}
+                        </button>
+                    </form>
+                    @else
+                    <p class="text-sm font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 m-0">
+                        <i class="fas fa-hourglass-half ml-1"></i>
+                        {{ __('messages.private_refund_waiting_success') }}
                     </p>
-                    @if($refund->screenshotUrl())
-                    <a href="{{ $refund->screenshotUrl() }}" target="_blank" class="text-sm text-teal-700 font-bold hover:underline">عرض إثبات التحويل</a>
                     @endif
                 </div>
-                <form method="POST" action="{{ route('dashboard.academy.private-refunds.confirm', $refund) }}">
-                    @csrf
-                    <button type="submit" class="ac-btn ac-btn-primary ac-btn-sm">
-                        <i class="fas fa-check"></i>
-                        {{ __('messages.private_refund_confirm') }}
-                    </button>
-                </form>
+
+                @if($shots->isNotEmpty())
+                <div>
+                    <p class="text-xs font-extrabold text-slate-600 mb-2">{{ __('messages.private_refund_proofs_title') }}</p>
+                    <div class="pr-proof-grid">
+                        @foreach($shots as $shot)
+                        <a href="{{ $shot->url() }}" target="_blank" rel="noopener" class="pr-proof-card">
+                            <img src="{{ $shot->url() }}" alt="{{ $shot->kindLabel() }}">
+                            <div class="meta is-{{ $shot->kind }}">{{ $shot->kindLabel() }}</div>
+                            @if($shot->note)
+                            <div class="px-2 pb-2">
+                                <p class="pr-proof-note">{{ $shot->note }}</p>
+                            </div>
+                            @endif
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
             @endforeach
         </div>

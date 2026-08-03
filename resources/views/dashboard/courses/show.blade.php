@@ -227,8 +227,8 @@
                                 @endif
                             </p>
                             @php
-                                $meetingDeadline = $course->start_date ? \Carbon\Carbon::parse($course->start_date)->subMinutes(30) : null;
-                                $canEditMeetingLink = $meetingDeadline && now()->lessThanOrEqualTo($meetingDeadline);
+                                $courseStartAt = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
+                                $canEditMeetingLink = $courseStartAt && now()->lessThan($courseStartAt);
                             @endphp
                             @if($canEditMeetingLink)
                             <form method="POST" action="{{ route('dashboard.courses.update', $course) }}" class="mt-3 space-y-2 max-w-lg">

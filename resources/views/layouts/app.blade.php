@@ -23,6 +23,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 
 <body>
@@ -329,7 +330,7 @@
                             <i class="fas fa-money-bill-wave text-gray-500 pl-2"></i>
                             <span class="ml-3 flex-1">الاستردادات</span>
                             @if(($pendingPrivateRefundsCount ?? 0) > 0)
-                            <span class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold leading-none">
+                            <span class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-[11px] font-bold leading-none">
                                 {{ $pendingPrivateRefundsCount > 99 ? '99+' : $pendingPrivateRefundsCount }}
                             </span>
                             @endif
@@ -1049,6 +1050,7 @@
     @endif
     @endauth
     </script>
+    @stack('scripts')
 </body>
 
 </html>

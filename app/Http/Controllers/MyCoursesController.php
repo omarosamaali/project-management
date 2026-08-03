@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Course;
 use App\Models\Payment;
+use App\Support\PrivateCourseRequestService;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +23,7 @@ class MyCoursesController extends Controller
         }
 
         $filter = $request->query('filter'); // null | active | upcoming | ended
+        $type = $request->query('type'); // null | private | online | recorded | on_site
         $now    = Carbon::now();
 
         $with = ['course', 'specialCertificate'];
@@ -46,6 +48,12 @@ class MyCoursesController extends Controller
             ->get()
             ->filter(fn ($p) => $p->course !== null)
             ->values();
+
+        if (in_array($type, ['private', 'online', 'recorded', 'on_site'], true)) {
+            $allPayments = $allPayments
+                ->filter(fn ($p) => $p->course?->location_type === $type)
+                ->values();
+        }
 
         // Persist 100% recorded-path completion so ended filter stays in sync
         $canPersistPathCompleted = false;
@@ -104,6 +112,7 @@ class MyCoursesController extends Controller
         return view('dashboard.my_courses.index', compact(
             'myPayments',
             'filter',
+            'type',
             'totalCourses',
             'activeCourses',
             'upcomingCourses',
@@ -123,6 +132,27 @@ class MyCoursesController extends Controller
 
         $payment = Payment::where('user_id', Auth::user()->id)
             ->where('id', $id)->with(['course.dayExams', 'course.ratings', 'course.dayExamAttempts', 'specialCertificate'])->firstOrFail();
+
+        // Cancel overdue private courses missing a meeting link (same job as the scheduler).
+        try {
+            $course = $payment->course;
+            if (
+                $course
+                && $course->isPrivate()
+                && ! $course->isCanceled()
+                && ! filled($course->online_link)
+                && $course->start_date
+                && now()->greaterThanOrEqualTo(Carbon::parse($course->start_date))
+            ) {
+                app(PrivateCourseRequestService::class)->cancelMissingMeetingLinks();
+                $payment->load(['course.dayExams', 'course.ratings', 'course.dayExamAttempts', 'specialCertificate']);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('[MY_COURSES] cancel missing meeting check failed', [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         return view('dashboard.my_courses.show', compact('payment'));
     }

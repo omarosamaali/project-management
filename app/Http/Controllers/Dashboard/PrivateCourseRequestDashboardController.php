@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\PrivateCourseRefund;
+use App\Models\PrivateCourseRefundScreenshot;
 use App\Models\PrivateCourseRequest;
 use App\Models\User;
 use App\Support\PrivateCourseRequestService;
@@ -34,7 +35,7 @@ class PrivateCourseRequestDashboardController extends Controller
             ->where('trainee_id', $user->id)
             ->where('status', PrivateCourseRefund::STATUS_PENDING_TRAINEE_CONFIRM)
             ->whereNull('trainee_confirmed_at')
-            ->with(['request.sourceCourse'])
+            ->with(['request.sourceCourse', 'screenshots'])
             ->latest()
             ->get();
 
@@ -166,11 +167,67 @@ class PrivateCourseRequestDashboardController extends Controller
         return back()->with('success', __('messages.private_request_blocked_success'));
     }
 
+    public function updateMeetingLink(Request $request, PrivateCourseRequest $privateRequest)
+    {
+        $user = Auth::user();
+        abort_unless($user->isAdmin() || ((int) $privateRequest->trainer_id === (int) $user->id), 403);
+        abort_unless($privateRequest->status === PrivateCourseRequest::STATUS_PAID, 422);
+        abort_unless($privateRequest->private_course_id, 422);
+
+        $privateRequest->loadMissing('privateCourse');
+        $course = $privateRequest->privateCourse;
+        abort_unless($course && $course->isPrivate() && ! $course->isCanceled(), 422);
+
+        $data = $request->validate([
+            'meeting_provider' => ['required', 'in:youtube,external'],
+            'online_link' => [
+                'required',
+                'url',
+                'max:2048',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                    if ($request->input('meeting_provider') === 'youtube'
+                        && ! \App\Support\YouTubeLive::isYouTubeUrl((string) $value)) {
+                        $fail(__('messages.private_meeting_link_youtube_invalid'));
+                    }
+                },
+            ],
+        ], [
+            'meeting_provider.required' => __('messages.private_meeting_provider_required'),
+            'online_link.required' => __('messages.private_meeting_link_required'),
+            'online_link.url' => __('messages.private_meeting_link_invalid'),
+        ]);
+
+        $link = trim((string) $data['online_link']);
+        if ($data['meeting_provider'] === 'youtube') {
+            $watch = \App\Support\YouTubeLive::watchUrl($link);
+            if ($watch) {
+                $link = $watch;
+            }
+        }
+
+        if ($course->start_date && now()->greaterThanOrEqualTo(Carbon::parse($course->start_date))) {
+            return back()
+                ->withInput()
+                ->with('error', __('messages.private_meeting_link_deadline'));
+        }
+
+        $course->update(['online_link' => $link]);
+
+        $this->service->addEvent($privateRequest, $user, 'meeting_link_saved', null, [
+            'course_id' => $course->id,
+            'meeting_provider' => $data['meeting_provider'],
+        ]);
+
+        return back()->with('success', __('messages.private_meeting_link_saved'));
+    }
+
     public function confirmRefund(PrivateCourseRefund $refund)
     {
         abort_unless((int) $refund->trainee_id === (int) Auth::id(), 403);
         abort_unless(
-            $refund->status === PrivateCourseRefund::STATUS_PENDING_TRAINEE_CONFIRM,
+            $refund->status === PrivateCourseRefund::STATUS_PENDING_TRAINEE_CONFIRM
+            && $refund->trainee_confirmed_at === null
+            && $refund->hasSuccessScreenshot(),
             422
         );
 
@@ -195,7 +252,7 @@ class PrivateCourseRequestDashboardController extends Controller
         $status = trim((string) $request->query('status', ''));
 
         $query = PrivateCourseRefund::query()
-            ->with(['trainee', 'request.sourceCourse', 'payment'])
+            ->with(['trainee', 'request.sourceCourse', 'payment', 'screenshots'])
             ->latest();
 
         if ($status !== '') {
@@ -207,38 +264,93 @@ class PrivateCourseRequestDashboardController extends Controller
         return view('dashboard.academy.refunds.index', compact('refunds', 'status'));
     }
 
+    public function showRefundScreenshot(PrivateCourseRefund $refund)
+    {
+        $this->authorizeRefundScreenshotAccess($refund);
+
+        // Prefer multi-screenshot relation; fall back to legacy single path.
+        $shot = $refund->screenshots()->latest('id')->first();
+        if ($shot && $shot->existsOnDisk()) {
+            return Storage::disk('public')->response($shot->path);
+        }
+
+        abort_unless(
+            filled($refund->screenshot_path)
+            && Storage::disk('public')->exists($refund->screenshot_path),
+            404
+        );
+
+        return Storage::disk('public')->response($refund->screenshot_path);
+    }
+
+    public function showRefundScreenshotFile(PrivateCourseRefundScreenshot $screenshot)
+    {
+        $screenshot->loadMissing('refund');
+        abort_unless($screenshot->refund, 404);
+        $this->authorizeRefundScreenshotAccess($screenshot->refund);
+        abort_unless($screenshot->existsOnDisk(), 404);
+
+        return Storage::disk('public')->response($screenshot->path);
+    }
+
     public function uploadRefundScreenshot(Request $request, PrivateCourseRefund $refund)
     {
         abort_unless(Auth::user()->isAdmin(), 403);
+        abort_unless($refund->canUploadScreenshots(), 422, __('messages.private_refund_upload_locked'));
 
         $data = $request->validate([
             'screenshot' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
+            'kind' => 'required|in:pending,success,fail',
             'admin_note' => 'nullable|string|max:2000',
         ]);
 
-        if ($refund->screenshot_path) {
-            Storage::disk('public')->delete($refund->screenshot_path);
-        }
-
         $path = $data['screenshot']->store('private-refunds', 'public');
 
+        $refund->screenshots()->create([
+            'path' => $path,
+            'kind' => $data['kind'],
+            'note' => $data['admin_note'] ?? null,
+            'uploaded_by' => Auth::id(),
+        ]);
+
+        // Keep legacy columns in sync for older views/links; do NOT ask trainee yet.
         $refund->update([
-            'status' => PrivateCourseRefund::STATUS_PENDING_TRAINEE_CONFIRM,
             'screenshot_path' => $path,
             'screenshot_uploaded_at' => now(),
             'admin_id' => Auth::id(),
-            'admin_note' => $data['admin_note'] ?? null,
-            'trainee_confirm_due_at' => now()->addDay(),
-            'trainee_confirmed_at' => null,
+            'admin_note' => $data['admin_note'] ?? $refund->admin_note,
         ]);
 
         if ($refund->request) {
-            $this->service->addEvent($refund->request, Auth::user(), 'refund_screenshot_uploaded', null, [
+            $this->service->addEvent($refund->request, Auth::user(), 'refund_screenshot_uploaded', $data['admin_note'] ?? null, [
                 'refund_id' => $refund->id,
+                'kind' => $data['kind'],
             ]);
         }
 
         return back()->with('success', __('messages.private_refund_screenshot_uploaded'));
+    }
+
+    public function markRefundReadyForTrainee(PrivateCourseRefund $refund)
+    {
+        abort_unless(Auth::user()->isAdmin(), 403);
+
+        try {
+            $this->service->markRefundReadyForTrainee($refund, Auth::user());
+        } catch (\RuntimeException $e) {
+            return back()->withErrors(['refund' => $e->getMessage()]);
+        }
+
+        return back()->with('success', __('messages.private_refund_marked_ready'));
+    }
+
+    protected function authorizeRefundScreenshotAccess(PrivateCourseRefund $refund): void
+    {
+        $user = Auth::user();
+        abort_unless(
+            $user && ($user->isAdmin() || (int) $refund->trainee_id === (int) $user->id),
+            403
+        );
     }
 
     protected function authorizeTrainerAction(PrivateCourseRequest $privateRequest): void
