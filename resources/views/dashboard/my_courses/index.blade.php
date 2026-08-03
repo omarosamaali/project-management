@@ -249,6 +249,12 @@
                             style="background-color:#0D2444;color:#fff;">
                             <i class="fas fa-certificate"></i> الشهادة
                         </a>
+                        <a href="{{ route('dashboard.courses.certificate', ['payment' => $payment->id, 'pdf' => 1]) }}"
+                            target="_blank" rel="noopener"
+                            class="ac-btn ac-btn-sm"
+                            style="background-color:#059669;color:#fff;">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
                         @elseif($needsRating)
                         <a href="{{ route('dashboard.courses.rating', $course) }}"
                             class="ac-btn ac-btn-amber ac-btn-sm"
@@ -260,6 +266,13 @@
                             class="ac-btn ac-btn-primary ac-btn-sm"
                             style="background-color:#0D2444;color:#fff;">
                             <i class="fas fa-clipboard-list"></i> الاختبار
+                        </a>
+                        @endif
+                        @if($payment->specialCertificate)
+                        <a href="{{ route('dashboard.courses.special-certificate.download', $payment->id) }}"
+                            class="ac-btn ac-btn-sm"
+                            style="background-color:#7c3aed;color:#fff;">
+                            <i class="fas fa-award"></i> {{ __('messages.special_certificate_download') }}
                         </a>
                         @endif
                     </div>
@@ -295,9 +308,9 @@
                     && $now->lessThanOrEqualTo($endDate);
                 $isFinished = $payment->isCourseEndedForLearner($now);
                 $pathCompletion = $course->isRecorded() ? $course->pathCompletionForUser($payment->user_id) : null;
-                $canCertificate = $payment->is_attended && $course && $course->userCanGetCertificate($payment->user_id);
+                $canCertificate = $course && $course->userCanGetCertificate($payment->user_id);
                 $runningDayExam = $course && $course->usesDayExams() ? $course->runningDayExam() : null;
-                $needsRating = $payment->is_attended && $course && $course->userNeedsRating($payment->user_id);
+                $needsRating = $course && $course->userNeedsRating($payment->user_id);
                 $typeLabel = match($course->location_type) {
                     'online' => __('messages.academy_type_online'),
                     'recorded' => __('messages.academy_type_recorded'),
@@ -378,16 +391,27 @@
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium">
                         <i class="fas fa-certificate"></i> الشهادة
                     </a>
+                    <a href="{{ route('dashboard.courses.certificate', ['payment' => $payment->id, 'pdf' => 1]) }}"
+                        target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </a>
                     @elseif($needsRating)
                     <a href="{{ route('dashboard.courses.rating', $course) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-medium">
                         <i class="fas fa-star"></i> أكمل التقييم
                     </a>
-                    <p class="text-[10px] text-amber-700 w-full">يجب إكمال التقييم للحصول على الشهادة</p>
                     @elseif($runningDayExam)
                     <a href="{{ route('dashboard.courses.exam.take', [$course, $runningDayExam]) }}"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-medium">
                         <i class="fas fa-clipboard-list"></i> الاختبار
+                    </a>
+                    @endif
+                    @if($payment->specialCertificate)
+                    <a href="{{ route('dashboard.courses.special-certificate.download', $payment->id) }}"
+                        target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium">
+                        <i class="fas fa-award"></i> {{ __('messages.special_certificate_download') }}
                     </a>
                     @endif
                 </div>
@@ -424,6 +448,9 @@
                                 && $now->lessThanOrEqualTo($endDate);
                             $isFinished = $payment->isCourseEndedForLearner($now);
                             $pathCompletion = $course->isRecorded() ? $course->pathCompletionForUser($payment->user_id) : null;
+                            $canCertificate = $course && $course->userCanGetCertificate($payment->user_id);
+                            $runningDayExam = $course && $course->usesDayExams() ? $course->runningDayExam() : null;
+                            $needsRating = $course && $course->userNeedsRating($payment->user_id);
                             $typeLabel = match($course->location_type) {
                                 'online' => __('messages.academy_type_online'),
                                 'recorded' => __('messages.academy_type_recorded'),
@@ -445,22 +472,26 @@
                                 {{ $payment->created_at->format('Y-m-d') }}
                             </td>
                             <td class="px-4 py-4 text-sm">
-                                @if($isFinished)
+                                @if($canCertificate)
+                                    <span class="px-2 py-1 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-800">الشهادة جاهزة</span>
+                                @elseif($needsRating)
+                                    <span class="px-2 py-1 rounded-full text-[11px] font-medium bg-amber-100 text-amber-800">بانتظار التقييم</span>
+                                @elseif($isFinished)
                                     <span class="px-2 py-1 rounded-full text-[11px] font-medium bg-gray-200 text-gray-700">منتهية</span>
                                 @else
                                     مدفوع
                                 @endif
                             </td>
                             <td class="px-4 py-4 text-center">
-                                @if($course->location_type == 'online')
-                                    @if($showLink)
-                                    <x-course-lecture-link :course="$course" :payment="$payment"
-                                        label="دخول المحاضرة"
-                                        classes="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 animate-pulse">
-                                        <i class="fas fa-video ml-2"></i> دخول المحاضرة
-                                    </x-course-lecture-link>
-                                    @elseif($isFinished)
-                                    <div class="flex flex-col items-center gap-2">
+                                <div class="flex flex-col items-center gap-2">
+                                    @if($course->location_type == 'online')
+                                        @if($showLink)
+                                        <x-course-lecture-link :course="$course" :payment="$payment"
+                                            label="دخول المحاضرة"
+                                            classes="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 animate-pulse">
+                                            <i class="fas fa-video ml-2"></i> دخول المحاضرة
+                                        </x-course-lecture-link>
+                                        @elseif($isFinished)
                                         <span class="text-red-500 font-semibold italic text-xs">الدورة انتهت</span>
                                         @if($course->canAccessLectureChat())
                                         <a href="{{ route('dashboard.courses.chat-archive', $course) }}"
@@ -468,15 +499,13 @@
                                             <i class="fas fa-comments ml-1"></i> أرشيف النقاش
                                         </a>
                                         @endif
-                                    </div>
-                                    @else
-                                    <div class="text-gray-400 text-xs flex flex-col">
-                                        <span>الرابط سيظهر في:</span>
-                                        <span class="font-bold">{{ $startDate?->format('Y-m-d h:i A') ?? '—' }}</span>
-                                    </div>
-                                    @endif
-                                @elseif($course->location_type == 'recorded')
-                                    <div class="flex flex-col items-center gap-1">
+                                        @else
+                                        <div class="text-gray-400 text-xs flex flex-col">
+                                            <span>الرابط سيظهر في:</span>
+                                            <span class="font-bold">{{ $startDate?->format('Y-m-d h:i A') ?? '—' }}</span>
+                                        </div>
+                                        @endif
+                                    @elseif($course->location_type == 'recorded')
                                         @if($isFinished)
                                         <span class="text-green-700 font-semibold text-xs">
                                             مكتملة {{ $pathCompletion['percent'] ?? 100 }}%
@@ -489,10 +518,42 @@
                                             <i class="fas fa-route ml-2"></i>
                                             {{ $isFinished ? 'مراجعة المسار' : 'المسار التعليمي' }}
                                         </a>
+                                    @else
+                                        <span class="text-gray-500 text-xs italic">حضور شخصي (مقر)</span>
+                                    @endif
+
+                                    @if($canCertificate)
+                                    <div class="flex flex-wrap items-center justify-center gap-1.5">
+                                        <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
+                                            target="_blank" rel="noopener"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-[#0D2444] text-white rounded-lg hover:bg-[#163a66] text-xs font-bold">
+                                            <i class="fas fa-certificate"></i> الشهادة
+                                        </a>
+                                        <a href="{{ route('dashboard.courses.certificate', ['payment' => $payment->id, 'pdf' => 1]) }}"
+                                            target="_blank" rel="noopener"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-xs font-bold">
+                                            <i class="fas fa-file-pdf"></i> PDF
+                                        </a>
+                                        @if($payment->specialCertificate)
+                                        <a href="{{ route('dashboard.courses.special-certificate.download', $payment->id) }}"
+                                            target="_blank" rel="noopener"
+                                            class="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-xs font-bold">
+                                            <i class="fas fa-award"></i> الخاصة
+                                        </a>
+                                        @endif
                                     </div>
-                                @else
-                                <span class="text-gray-500 text-xs italic">حضور شخصي (مقر)</span>
-                                @endif
+                                    @elseif($needsRating)
+                                    <a href="{{ route('dashboard.courses.rating', $course) }}"
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 text-xs font-bold">
+                                        <i class="fas fa-star"></i> أكمل التقييم
+                                    </a>
+                                    @elseif($runningDayExam)
+                                    <a href="{{ route('dashboard.courses.exam.take', [$course, $runningDayExam]) }}"
+                                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-xs font-bold">
+                                        <i class="fas fa-clipboard-list"></i> الاختبار
+                                    </a>
+                                    @endif
+                                </div>
                             </td>
                             <td class="px-4 py-4 text-left">
                                 <div class="flex items-center gap-3">
@@ -504,31 +565,6 @@
                                     <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style" title="الفاتورة">
                                         <i class="fas fa-file-invoice"></i>
                                     </a>
-                                    @endif
-                                    @if($payment->is_attended || ($course && $course->isRecorded()))
-                                        @php
-                                            $canCertificate = $course && $course->userCanGetCertificate($payment->user_id);
-                                            $runningDayExam = $course && $course->usesDayExams() ? $course->runningDayExam() : null;
-                                            $needsRating = $course && $course->userNeedsRating($payment->user_id);
-                                        @endphp
-                                        @if($canCertificate)
-                                        <a href="{{ route('dashboard.courses.certificate', $payment->id) }}"
-                                            target="_blank" rel="noopener"
-                                            class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                                            <i class="fas fa-certificate"></i> الشهادة
-                                        </a>
-                                        @elseif($needsRating)
-                                        <a href="{{ route('dashboard.courses.rating', $course) }}"
-                                            class="px-3 py-.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition"
-                                            title="يجب إكمال التقييم للحصول على الشهادة">
-                                            <i class="fas fa-star"></i> أكمل التقييم
-                                        </a>
-                                        @elseif($runningDayExam)
-                                        <a href="{{ route('dashboard.courses.exam.take', [$course, $runningDayExam]) }}"
-                                            class="px-3 py-.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                                            <i class="fas fa-clipboard-list"></i> الاختبار
-                                        </a>
-                                        @endif
                                     @endif
                                 </div>
                             </td>

@@ -6,25 +6,27 @@
 
 @php
 $course = $payment->course;
+$learnerId = (int) ($payment->user_id ?: auth()->id());
 $isRecorded = $course->isRecorded();
 $startDate = \Carbon\Carbon::parse($course->start_date);
 $endDate = \Carbon\Carbon::parse($course->end_date);
 $now = \Carbon\Carbon::now();
-$pathCompletion = $isRecorded ? $course->pathCompletionForUser(auth()->id()) : null;
+$pathCompletion = $isRecorded ? $course->pathCompletionForUser($learnerId) : null;
 
 // منطق ظهور الرابط (قبل 30 دقيقة) — للدروس المباشرة فقط
 $showLink = $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30)) && $now->lessThanOrEqualTo($endDate);
 $isFinished = $now->greaterThan($endDate);
 $isUpcoming = $now->lt($startDate->copy()->subMinutes(30));
 
-$needsRating = $course->userNeedsRating(auth()->id());
-$canCertificate = $course->userCanGetCertificate(auth()->id());
+$needsRating = $course->userNeedsRating($learnerId);
+$canCertificate = $course->userCanGetCertificate($learnerId);
+$ratingDone = $course->userCompletedRating($learnerId);
 
 if ($isRecorded) {
     $pathPercent = (int) ($pathCompletion['percent'] ?? 0);
     if ($canCertificate) {
         $courseStatus = 'completed';
-        $courseStatusLabel = 'مكتملة';
+        $courseStatusLabel = 'مكتملة — الشهادة جاهزة';
         $courseStatusClass = 'bg-emerald-100 text-emerald-800 border-emerald-200';
     } elseif ($needsRating) {
         $courseStatus = 'rating';
@@ -52,6 +54,10 @@ if ($isRecorded) {
         $courseStatus = 'rating';
         $courseStatusLabel = 'منتهية — أكمل التقييم';
         $courseStatusClass = 'bg-amber-100 text-amber-800 border-amber-200';
+    } elseif ($ratingDone) {
+        $courseStatus = 'ended';
+        $courseStatusLabel = 'منتهية — تم التقييم';
+        $courseStatusClass = 'bg-slate-200 text-slate-700 border-slate-300';
     } else {
         $courseStatus = 'ended';
         $courseStatusLabel = 'منتهية';
@@ -167,7 +173,7 @@ $typeLabel = match ($course->location_type) {
 
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
                     @if($canCertificate)
-                        تهانينا! يمكنك الآن استخراج شهادة إتمام الدورة.
+                        تهانينا! تم إكمال التقييم بنجاح ويمكنك الآن عرض أو تحميل شهادة إتمام الدورة.
                     @elseif($needsRating)
                         أكملت متطلبات الدورة. أكمل التقييم لاستخراج الشهادة.
                     @elseif($isRecorded)
@@ -189,11 +195,26 @@ $typeLabel = match ($course->location_type) {
                         <i class="fas fa-certificate"></i>
                         عرض الشهادة
                     </a>
+                    <a href="{{ route('dashboard.courses.certificate', ['payment' => $payment->id, 'pdf' => 1]) }}"
+                        target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition">
+                        <i class="fas fa-file-pdf"></i>
+                        تحميل PDF
+                    </a>
                     @elseif($needsRating)
                     <a href="{{ route('dashboard.courses.rating', $course) }}"
                         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition">
                         <i class="fas fa-star"></i>
                         أكمل التقييم
+                    </a>
+                    @endif
+
+                    @if($payment->specialCertificate)
+                    <a href="{{ route('dashboard.courses.special-certificate.download', $payment->id) }}"
+                        target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-violet-600 text-white text-sm font-bold hover:bg-violet-700 transition">
+                        <i class="fas fa-award"></i>
+                        {{ __('messages.special_certificate_download') }}
                     </a>
                     @endif
 

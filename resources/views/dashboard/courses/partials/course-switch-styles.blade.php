@@ -29,20 +29,21 @@
         content: '';
         position: absolute;
         top: 1px;
-        inset-inline-start: 1px;
+        /* Keep LTR on/off semantics (left=off, right=on) even on RTL pages */
+        left: 1px;
         width: 1.2rem;
         height: 1.2rem;
         border-radius: 9999px;
         background: #fff;
         box-shadow: 0 1px 3px rgba(15, 23, 42, .25);
-        transition: inset-inline-start .2s ease;
+        transition: left .2s ease;
     }
     .course-switch input:checked + .course-switch-track {
         background: #0b8f7f;
         border-color: #087a6c;
     }
     .course-switch input:checked + .course-switch-track::after {
-        inset-inline-start: calc(100% - 1.2rem - 1px);
+        left: calc(100% - 1.2rem - 1px);
     }
     .course-switch input:focus-visible + .course-switch-track {
         outline: 2px solid rgba(11, 143, 127, .45);

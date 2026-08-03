@@ -96,4 +96,74 @@ class Setting extends Model
     {
         return max(0, min(100, (float) static::get('academy_trainer_profit_percentage', 50)));
     }
+
+    /**
+     * Trainer profit % for a course location_type.
+     * Onsite returns 0 until admin sets a value (empty setting).
+     *
+     * @param  string  $locationType  online|recorded|on_site|private
+     */
+    public static function academyTrainerProfitPercentageFor(string $locationType): float
+    {
+        $map = [
+            'online' => 'academy_trainer_profit_online',
+            'recorded' => 'academy_trainer_profit_recorded',
+            'private' => 'academy_trainer_profit_private',
+            'on_site' => 'academy_trainer_profit_onsite',
+        ];
+
+        $key = $map[$locationType] ?? null;
+        if (! $key) {
+            return static::academyTrainerProfitPercentage();
+        }
+
+        $defaults = [
+            'academy_trainer_profit_online' => 60,
+            'academy_trainer_profit_recorded' => 50,
+            'academy_trainer_profit_private' => 70,
+            'academy_trainer_profit_onsite' => null,
+        ];
+
+        $raw = static::get($key, null);
+
+        // Migrate once from legacy global for online/recorded/private if never set.
+        if ($raw === null && $key !== 'academy_trainer_profit_onsite' && static::get('academy_trainer_profit_percentage') !== null) {
+            $legacy = static::academyTrainerProfitPercentage();
+            // Only use legacy as soft default when type-specific never stored; do not write here.
+            if ($defaults[$key] === null) {
+                return 0.0;
+            }
+            // Prefer the new type defaults over legacy when key missing.
+            $raw = $defaults[$key];
+        }
+
+        if ($key === 'academy_trainer_profit_onsite') {
+            if ($raw === null || $raw === '') {
+                return 0.0;
+            }
+
+            return max(0, min(100, (float) $raw));
+        }
+
+        if ($raw === null || $raw === '') {
+            return (float) ($defaults[$key] ?? 50);
+        }
+
+        return max(0, min(100, (float) $raw));
+    }
+
+    /**
+     * @return array{online: float, recorded: float, private: float, onsite: float|null}
+     */
+    public static function academyTrainerProfitPercentages(): array
+    {
+        $onsiteRaw = static::get('academy_trainer_profit_onsite', null);
+
+        return [
+            'online' => static::academyTrainerProfitPercentageFor('online'),
+            'recorded' => static::academyTrainerProfitPercentageFor('recorded'),
+            'private' => static::academyTrainerProfitPercentageFor('private'),
+            'onsite' => ($onsiteRaw === null || $onsiteRaw === '') ? null : static::academyTrainerProfitPercentageFor('on_site'),
+        ];
+    }
 }

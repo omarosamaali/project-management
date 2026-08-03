@@ -589,9 +589,11 @@
         document.getElementById('priceLabel').textContent = 
             type === 'store' ? 'سعر المتجر:' : (type === 'course' ? 'سعر الدورة:' : 'سعر النظام:');
         
-        document.getElementById('originalPrice').textContent = price.toFixed(2) + ' AED';
-        document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
-        document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
+        const aedIcon = '<img src="{{ asset('assets/images/drhm-icon.svg') }}" alt="" class="inline-block align-middle" style="width:12px;height:14px">';
+        const formatAed = (n) => `<span class="inline-flex items-center gap-1 whitespace-nowrap" dir="ltr">${aedIcon}${Number(n).toFixed(2)}</span>`;
+        document.getElementById('originalPrice').innerHTML = formatAed(price);
+        document.getElementById('fees').innerHTML = formatAed(fees);
+        document.getElementById('totalPrice').innerHTML = formatAed(total);
 
         document.getElementById('paymentModal').classList.remove('hidden');
     }

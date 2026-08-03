@@ -30,6 +30,10 @@ class User extends Authenticatable
         'company_logo',
         'avatar',
         'course_category_id',
+        'teaching_language',
+        'resume_path',
+        'teaching_sample_path',
+        'trainer_bio',
         'otp',
         'email',
         'password',
@@ -158,14 +162,48 @@ class User extends Authenticatable
             return asset('storage/' . ltrim($this->avatar, '/'));
         }
 
-        // Trainers must upload a photo — never fall back to the site logo.
+        // Trainers must upload a photo — generic silhouette, never the site logo.
         if ($this->isTrainer()) {
             return 'data:image/svg+xml,' . rawurlencode(
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#e5e7eb"/><circle cx="40" cy="30" r="14" fill="#9ca3af"/><path d="M16 70c4-14 14-20 24-20s20 6 24 20" fill="#9ca3af"/></svg>'
             );
         }
 
-        return asset('assets/images/logo.webp');
+        // Trainees / other roles: letter avatar (not the brand logo).
+        return $this->letterAvatarDataUri();
+    }
+
+    public function letterAvatarDataUri(?string $background = null): string
+    {
+        $letter = mb_strtoupper(mb_substr(trim((string) ($this->name ?: '?')), 0, 1));
+        if ($letter === '') {
+            $letter = '?';
+        }
+
+        $bg = $background ?: $this->letterAvatarBackground();
+        $safeLetter = htmlspecialchars($letter, ENT_QUOTES | ENT_XML1, 'UTF-8');
+
+        return 'data:image/svg+xml,' . rawurlencode(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">'
+            . '<rect width="80" height="80" rx="40" fill="'.$bg.'"/>'
+            . '<text x="40" y="44" text-anchor="middle" dominant-baseline="middle" '
+            . 'font-family="Segoe UI, Cairo, Arial, sans-serif" font-size="36" font-weight="700" fill="#ffffff">'
+            . $safeLetter
+            . '</text></svg>'
+        );
+    }
+
+    public function letterAvatarBackground(): string
+    {
+        $palette = ['#ec4899', '#0b8f7f', '#6366f1', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'];
+        $seed = abs(crc32((string) ($this->id ?: $this->name ?: 'user')));
+
+        return $palette[$seed % count($palette)];
+    }
+
+    public function hasCustomAvatar(): bool
+    {
+        return filled($this->avatar);
     }
 
     public function courseCategory()
@@ -183,6 +221,20 @@ class User extends Authenticatable
     {
         return $this->id_card_back_path
             ? asset('storage/' . ltrim($this->id_card_back_path, '/'))
+            : null;
+    }
+
+    public function resumeUrl(): ?string
+    {
+        return $this->resume_path
+            ? asset('storage/' . ltrim($this->resume_path, '/'))
+            : null;
+    }
+
+    public function teachingSampleUrl(): ?string
+    {
+        return $this->teaching_sample_path
+            ? asset('storage/' . ltrim($this->teaching_sample_path, '/'))
             : null;
     }
 
@@ -435,6 +487,16 @@ class User extends Authenticatable
                 'expires_at'
             ])
             ->withTimestamps();
+    }
+
+    public function privateCourseRequestsAsTrainee()
+    {
+        return $this->hasMany(PrivateCourseRequest::class, 'trainee_id');
+    }
+
+    public function privateCourseRequestsAsTrainer()
+    {
+        return $this->hasMany(PrivateCourseRequest::class, 'trainer_id');
     }
 
     public function whatsappMessages()

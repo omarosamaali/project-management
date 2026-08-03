@@ -29,7 +29,7 @@
             position: sticky;
             top: 0;
             z-index: 20;
-            width: min(100%, 210mm);
+            width: min(100%, 900px);
             display: flex;
             justify-content: center;
             gap: .65rem;
@@ -62,50 +62,30 @@
             background: rgba(255,255,255,.12);
         }
 
+        /* Same landscape frame as academy homepage certificate (900 × 640). */
         .cert-sheet {
-            width: 210mm;
-            min-height: 297mm;
-            background: #fff;
+            width: min(100%, 900px);
+            aspect-ratio: 900 / 640;
+            background: transparent;
             box-shadow: 0 18px 50px rgba(0,0,0,.22);
-            padding: 12mm;
             display: flex;
             align-items: stretch;
             justify-content: center;
+            overflow: hidden;
+            border-radius: .35rem;
         }
 
-        /* Portrait A4 certificate — fills the sheet fully */
-        .certificate.is-portrait {
-            width: 100%;
+        .cert-sheet .certificate {
+            width: 900px;
+            min-height: 640px;
+            height: 640px;
             max-width: none;
-            min-height: 100%;
-            height: 100%;
-            padding: 28px 26px 32px;
             box-shadow: none;
+            flex-shrink: 0;
         }
-
-        .certificate.is-portrait .logo-wrap img { height: 64px; }
-        .certificate.is-portrait .cert-title h2 { font-size: 1.45rem; }
-        .certificate.is-portrait .cert-title p { font-size: .88rem; }
-        .certificate.is-portrait .trainee-name { font-size: 2.7rem; }
-        .certificate.is-portrait .course-name-ar { font-size: 1.55rem; }
-        .certificate.is-portrait .course-name-en { font-size: 1rem; }
-        .certificate.is-portrait .certify-text,
-        .certificate.is-portrait .completion-text { font-size: 1.05rem; }
-        .certificate.is-portrait .name-underline { width: min(280px, 70%); }
-        .certificate.is-portrait .cert-content {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: calc(297mm - 24mm - 8px);
-            height: 100%;
-            padding: 10px 8px 6px;
-        }
-        .certificate.is-portrait .trainee-section { margin: 1.4rem 0 .8rem; }
-        .certificate.is-portrait .course-section { margin: .9rem 0 .8rem; }
-        .certificate.is-portrait .cert-footer { margin-top: auto; padding-top: 1rem; }
 
         @page {
-            size: A4 portrait;
+            size: 900px 640px;
             margin: 0;
         }
 
@@ -117,8 +97,8 @@
 
             html, body {
                 background: #fff !important;
-                width: 210mm;
-                height: 297mm;
+                width: 900px;
+                height: 640px;
             }
 
             .cert-toolbar { display: none !important; }
@@ -130,32 +110,36 @@
             }
 
             .cert-sheet {
-                width: 210mm;
-                min-height: 297mm;
-                height: 297mm;
+                width: 900px;
+                height: 640px;
+                aspect-ratio: auto;
                 margin: 0;
-                padding: 12mm;
                 box-shadow: none;
+                border-radius: 0;
                 page-break-after: avoid;
                 page-break-inside: avoid;
+                overflow: visible;
             }
 
-            .certificate.is-portrait {
+            [data-cert-scale] {
+                transform: none !important;
+                width: 900px !important;
+            }
+
+            .cert-sheet .certificate {
                 page-break-inside: avoid;
             }
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 940px) {
             .cert-sheet {
-                width: min(100%, 210mm);
-                min-height: auto;
-                padding: 4vw;
+                width: min(100%, 900px);
+                height: auto;
+            }
+            .cert-sheet-scale {
+                width: 900px;
                 transform-origin: top center;
             }
-            .certificate.is-portrait .cert-content {
-                min-height: 0;
-            }
-            .certificate.is-portrait .trainee-name { font-size: clamp(1.8rem, 8vw, 2.7rem); }
         }
     </style>
 </head>
@@ -171,25 +155,46 @@
         <button type="button" id="printCertificateBtn">
             طباعة / حفظ PDF
         </button>
+        <a href="{{ route('dashboard.courses.certificate', ['payment' => $payment->id, 'pdf' => 1]) }}" class="is-muted">
+            عرض PDF
+        </a>
         <a href="{{ route('dashboard.my_courses.index') }}" class="is-muted">العودة لدوراتي</a>
     </div>
 
-    <div class="cert-sheet" id="certSheet">
-        @include('dashboard.courses.partials.certificate-document', [
-            'traineeName' => $payment->user->name,
-            'courseNameAr' => $payment->course->name_ar,
-            'courseNameEn' => $payment->course->name_en,
-            'courseDate' => $courseDate,
-            'certificateId' => 'certificate',
-            'certificateClass' => 'is-portrait',
-        ])
+    <div class="cert-sheet" id="certSheet" data-cert-frame>
+        <div data-cert-scale>
+            @include('dashboard.courses.partials.certificate-document', [
+                'traineeName' => $payment->user->name,
+                'courseNameAr' => $payment->course->name_ar,
+                'courseNameEn' => $payment->course->name_en,
+                'courseDate' => $courseDate,
+                'certificateId' => 'certificate',
+            ])
+        </div>
     </div>
 </div>
 
 <script>
-    document.getElementById('printCertificateBtn')?.addEventListener('click', function () {
-        window.print();
-    });
+    (function () {
+        function fitCertificate() {
+            var frame = document.querySelector('[data-cert-frame]');
+            var scaleEl = document.querySelector('[data-cert-scale]');
+            if (!frame || !scaleEl) return;
+            var frameW = frame.clientWidth;
+            if (!frameW) return;
+            var scale = frameW / 900;
+            scaleEl.style.width = '900px';
+            scaleEl.style.transformOrigin = 'top left';
+            scaleEl.style.transform = 'scale(' + scale + ')';
+            frame.style.height = (640 * scale) + 'px';
+        }
+
+        fitCertificate();
+        window.addEventListener('resize', fitCertificate);
+        document.getElementById('printCertificateBtn')?.addEventListener('click', function () {
+            window.print();
+        });
+    })();
 </script>
 </body>
 </html>

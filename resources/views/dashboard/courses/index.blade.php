@@ -267,4 +267,15 @@
         @endif
     </div>
 </section>
+@if(session('clear_course_create_draft'))
+<script>
+(function () {
+    try { localStorage.removeItem('course_create_draft_v1'); } catch (e) {}
+    try {
+        var req = indexedDB.deleteDatabase('course_create_draft_db');
+        req.onerror = function () {};
+    } catch (e) {}
+})();
+</script>
+@endif
 @endsection

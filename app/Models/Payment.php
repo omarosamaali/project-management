@@ -11,12 +11,16 @@ class Payment extends Model
         'system_id',
         'payment_id',
         'course_id',
+        'private_course_request_id',
         'last_path_item_id',
         'path_completed_at',
         'special_request_id',
         'request_payment_id',
         'amount',
         'original_price',
+        'trainer_profit_pct',
+        'trainer_profit_amount',
+        'platform_profit_amount',
         'fees',
         'status',
         'store_id',
@@ -28,6 +32,9 @@ class Payment extends Model
     protected $casts = [
         'is_attended' => 'boolean',
         'path_completed_at' => 'datetime',
+        'trainer_profit_pct' => 'decimal:2',
+        'trainer_profit_amount' => 'decimal:2',
+        'platform_profit_amount' => 'decimal:2',
     ];
 
     public function user()
@@ -48,6 +55,16 @@ class Payment extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function privateCourseRequest()
+    {
+        return $this->belongsTo(PrivateCourseRequest::class, 'private_course_request_id');
+    }
+
+    public function specialCertificate()
+    {
+        return $this->hasOne(CourseSpecialCertificate::class);
     }
 
     public function store()

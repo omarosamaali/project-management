@@ -216,8 +216,22 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function submitRating() {
+        // Capture optional/required text answer from the last step before submit
+        const q = questions[current];
+        if (q && q.type === 'text') {
+            answers[q.id] = (textInput.value || '').trim();
+            if (q.required && !answers[q.id]) {
+                validation.classList.remove('hidden');
+                return;
+            }
+        }
+
         nextBtn.disabled = true;
         nextBtn.innerHTML = '<i class="fas fa-spinner fa-spin ml-1"></i> جاري الإرسال...';
+
+        // Clear any previous answer fields (in case of re-submit after validation bounce)
+        form.querySelectorAll('input[name^="answers["]').forEach((el) => el.remove());
+
         for (const [key, val] of Object.entries(answers)) {
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -225,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
             input.value = val;
             form.appendChild(input);
         }
+
         form.submit();
     }
 

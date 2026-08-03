@@ -443,6 +443,40 @@
     // Initial render
     render(initialData.length ? initialData : []);
 
+    function notifyDraft() {
+        if (typeof window.__saveCourseDraft === 'function') {
+            window.__saveCourseDraft();
+        }
+    }
+
+    // After structural edits (clicks don't always fire form "input")
+    daysWrap.addEventListener('click', () => setTimeout(notifyDraft, 0));
+    daysWrap.addEventListener('change', notifyDraft);
+    hasExamToggle?.addEventListener('change', notifyDraft);
+    requiredInput?.addEventListener('input', notifyDraft);
+
+    window.collectDayExamsDraft = function () {
+        return {
+            has_exam: !!(hasExamToggle && hasExamToggle.checked),
+            required_exam_pass_count: requiredInput ? (requiredInput.value || '1') : '1',
+            day_exams: collectCurrentExams(),
+        };
+    };
+
+    window.restoreDayExamsDraft = function (data) {
+        if (!data || typeof data !== 'object') return;
+        if (hasExamToggle) {
+            hasExamToggle.checked = !!data.has_exam;
+            hasExamToggle.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        if (requiredInput && data.required_exam_pass_count != null && data.required_exam_pass_count !== '') {
+            requiredInput.value = String(data.required_exam_pass_count);
+        }
+        render(Array.isArray(data.day_exams) ? data.day_exams : []);
+        syncHasExamVisibility();
+        updateRequiredMax();
+    };
+
     // Expose for location_type toggle
     window.refreshDayExamsBuilder = refreshFromSchedule;
     window.setDayExamsSectionVisible = function (visible) {

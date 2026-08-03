@@ -142,6 +142,10 @@
                             @php
                                 $editPrice = old('price', $course->price);
                                 $isFreeOld = $editPrice !== null && (float) $editPrice <= 0;
+                                $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
+                                $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
+                                $allowPrivateOld = (string) old('allows_private_requests', $course->allows_private_requests ? '1' : '0') === '1';
+                                $trainerPrivateCapped = $trainerPriceCapped;
                             @endphp
                             <div class="space-y-3">
                                 <div>
@@ -158,12 +162,8 @@
                                     </label>
                                 </div>
 
-                                <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }}">
-                                    @php
-                                        $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
-                                        $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
-                                    @endphp
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }} space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">
                                         السعر الكلي <span class="text-red-600">*</span>
                                     </label>
                                     <div class="relative">
@@ -172,13 +172,12 @@
                                             value="{{ $editPrice }}"
                                             {{ $isFreeOld ? '' : 'required' }}
                                             class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20">
-                                        <span
-                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
                                             <x-drhm-icon width="12" height="14" />
                                         </span>
                                     </div>
                                     @if($trainerPriceCapped)
-                                    <p class="text-xs text-slate-500 mt-1.5">
+                                    <p class="text-xs text-slate-500">
                                         الحد الأقصى للسعر هو
                                         <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
                                             {{ number_format($trainerMaxPrice, 0) }}
@@ -186,9 +185,57 @@
                                         </span>
                                     </p>
                                     @endif
-                                    @error('price') <span class="text-red-600 text-xs mt-1">{{ $message }}</span> @enderror
+                                    @error('price') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
                                     @include('dashboard.courses.partials.trainer-profit-preview', [
                                         'trainerProfitPercentage' => $trainerProfitPercentage ?? null,
+                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
+                                        'course' => $course,
+                                    ])
+                                </div>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        طلبات الدورات الخاصة
+                                    </label>
+                                    <label class="course-switch-field cursor-pointer">
+                                        <span class="text-sm text-gray-600 truncate">السماح بطلب دورة خاصة فردية</span>
+                                        <span class="course-switch">
+                                            <input type="hidden" name="allows_private_requests" value="0">
+                                            <input type="checkbox" name="allows_private_requests" id="allows_private_requests"
+                                                value="1" {{ $allowPrivateOld ? 'checked' : '' }}>
+                                            <span class="course-switch-track" aria-hidden="true"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="private_price_wrap" class="{{ $allowPrivateOld ? '' : 'hidden' }} space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        سعر الدورة الخاصة <span class="text-red-600">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" name="private_course_price" id="private_course_price" min="0" step="0.01"
+                                            @if($trainerPrivateCapped) max="500" @endif
+                                            value="{{ old('private_course_price', $course->private_course_price) }}"
+                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
+                                            placeholder="{{ $trainerPrivateCapped ? '500.00' : '999.00' }}">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                            <x-drhm-icon width="12" height="14" />
+                                        </span>
+                                    </div>
+                                    @if($trainerPrivateCapped)
+                                    <p class="text-xs text-slate-500">
+                                        الحد الأقصى لسعر الدورة الخاصة للمحاضر
+                                        <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
+                                            500 <x-drhm-icon width="11" height="12" />
+                                        </span>
+                                    </p>
+                                    @endif
+                                    @error('private_course_price')
+                                    <span class="text-red-600 text-xs">{{ $message }}</span>
+                                    @enderror
+                                    @include('dashboard.courses.partials.trainer-profit-preview-private', [
+                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
                                     ])
                                 </div>
                             </div>
@@ -1525,6 +1572,31 @@
         applyFreeState();
     }
 
+    function setupPrivateRequestsToggle() {
+        const toggle = document.getElementById('allows_private_requests');
+        const wrap = document.getElementById('private_price_wrap');
+        const priceInput = document.getElementById('private_course_price');
+        if (!toggle || !wrap) return;
+
+        function apply() {
+            const on = toggle.checked;
+            wrap.classList.toggle('hidden', !on);
+            if (priceInput) {
+                if (on) {
+                    priceInput.setAttribute('required', 'required');
+                } else {
+                    priceInput.removeAttribute('required');
+                }
+            }
+            if (typeof window.__renderPrivateTrainerProfitPreview === 'function') {
+                window.__renderPrivateTrainerProfitPreview();
+            }
+        }
+
+        toggle.addEventListener('change', apply);
+        apply();
+    }
+
     // ========== Location Type Toggle ==========
     function setupLocationTypeToggle() {
         const locationInputs = document.querySelectorAll('input[name="location_type"]');
@@ -1661,9 +1733,11 @@
         const extraImagesPreview = document.getElementById('extra_images_preview');
 
         if (extraImagesInput && extraImagesPreview) {
-            extraImagesInput.addEventListener('change', (e) => {
+            window.__extraImagesFiles = window.__extraImagesFiles || [];
+
+            function renderExtraImagePreviews(files) {
                 extraImagesPreview.innerHTML = '';
-                Array.from(e.target.files).forEach((file, index) => {
+                Array.from(files || []).forEach((file, index) => {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         const div = document.createElement('div');
@@ -1679,6 +1753,35 @@
                     };
                     reader.readAsDataURL(file);
                 });
+            }
+
+            window.__syncExtraImages = function(files, { merge = false } = {}) {
+                let list = Array.from(files || []);
+                if (merge) {
+                    list = (window.__extraImagesFiles || []).concat(list);
+                }
+                const seen = new Set();
+                list = list.filter((f) => {
+                    const key = `${f.name}|${f.size}|${f.lastModified}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                const dt = new DataTransfer();
+                list.forEach((f) => dt.items.add(f));
+                extraImagesInput.files = dt.files;
+                window.__extraImagesFiles = list;
+                renderExtraImagePreviews(list);
+            };
+
+            extraImagesInput.addEventListener('change', (e) => {
+                if (extraImagesInput.dataset.syncing === '1') {
+                    delete extraImagesInput.dataset.syncing;
+                    window.__extraImagesFiles = Array.from(extraImagesInput.files);
+                    renderExtraImagePreviews(window.__extraImagesFiles);
+                    return;
+                }
+                window.__syncExtraImages(Array.from(e.target.files || []), { merge: true });
             });
         }
 
@@ -1828,10 +1931,14 @@
         
         setupLocationTypeToggle();
         setupFreePriceToggle();
+        setupPrivateRequestsToggle();
         if (typeof setupTrainerProfitPreview === 'function') {
             setupTrainerProfitPreview();
         }
-        
+        if (typeof setupPrivateTrainerProfitPreview === 'function') {
+            setupPrivateTrainerProfitPreview();
+        }
+
         setupDynamicRows('requirements-container', 'add-requirement-btn', 'remove-requirement-btn', 'requirement-row', createRequirementRow);
         setupDynamicRows('features-container', 'add-feature-btn', 'remove-feature-btn', 'feature-row', createFeatureRow);
         setupDynamicRows('suitable-for-container', 'add-suitable-for-btn', 'remove-suitable-for-btn', 'suitable-for-row', createSuitableForRow);
@@ -1873,13 +1980,19 @@
     window.removeExtraImage = function(index) {
         const input = document.getElementById('extra_images_input');
         if (!input) return;
-        const dt = new DataTransfer();
-        const files = input.files;
-        for (let i = 0; i < files.length; i++) {
-            if (i !== index) dt.items.add(files[i]);
+        const current = window.__extraImagesFiles && window.__extraImagesFiles.length
+            ? window.__extraImagesFiles
+            : Array.from(input.files || []);
+        const next = current.filter((_, i) => i !== index);
+        if (typeof window.__syncExtraImages === 'function') {
+            window.__syncExtraImages(next, { merge: false });
+        } else {
+            const dt = new DataTransfer();
+            next.forEach((f) => dt.items.add(f));
+            input.dataset.syncing = '1';
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        input.files = dt.files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
     };
 
     window.removeCourseVideo = function() {

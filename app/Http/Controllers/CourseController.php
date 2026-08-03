@@ -14,6 +14,7 @@ use App\Models\CoursePathExamAnswer;
 use App\Models\CoursePathExamQuestion;
 use App\Models\CoursePathItem;
 use App\Models\CourseRating;
+use App\Models\CourseSpecialCertificate;
 use App\Models\CourseUnit;
 use App\Models\CourseWishlist;
 use App\Models\Setting;
@@ -95,9 +96,10 @@ class CourseController extends Controller
             ? User::where('role', 'trainer')->notBlocked()->orderBy('name')->get(['id', 'name', 'email'])
             : collect();
 
-        $trainerProfitPercentage = Setting::academyTrainerProfitPercentage();
+        $trainerProfitPercentages = Setting::academyTrainerProfitPercentages();
+        $trainerProfitPercentage = $trainerProfitPercentages['online'] ?? 60;
 
-        return view('dashboard.courses.create', compact('categories', 'trainers', 'trainerProfitPercentage'));
+        return view('dashboard.courses.create', compact('categories', 'trainers', 'trainerProfitPercentage', 'trainerProfitPercentages'));
     }
 
     protected function prepareJsonFields(Request $request, array &$data)
@@ -232,7 +234,9 @@ class CourseController extends Controller
             AnnounceNewCourseJob::dispatch($course->id);
         }
 
-        return redirect()->route('dashboard.courses.index')->with('success', 'تم إضافة الدورة بنجاح.');
+        return redirect()->route('dashboard.courses.index')
+            ->with('success', 'تم إضافة الدورة بنجاح.')
+            ->with('clear_course_create_draft', true);
     }
 
     protected function resolveTrainerId(Request $request, ?Course $course = null): ?int
@@ -264,7 +268,7 @@ class CourseController extends Controller
         $course->load([
             'payments' => function ($query) {
                 $query->whereIn('status', ['completed', 'success', 'paid', 'active', 'pending'])
-                    ->with('user')
+                    ->with(['user', 'specialCertificate'])
                     ->latest();
             },
             'dayExams.questions.answers',
@@ -290,14 +294,19 @@ class CourseController extends Controller
             ? User::where('role', 'trainer')->notBlocked()->orderBy('name')->get(['id', 'name', 'email'])
             : collect();
 
-        $trainerProfitPercentage = Setting::academyTrainerProfitPercentage();
+        $trainerProfitPercentages = Setting::academyTrainerProfitPercentages();
+        $trainerProfitPercentage = Setting::academyTrainerProfitPercentageFor((string) $course->location_type);
 
-        return view('dashboard.courses.edit', compact('course', 'categories', 'trainers', 'trainerProfitPercentage'));
+        return view('dashboard.courses.edit', compact('course', 'categories', 'trainers', 'trainerProfitPercentage', 'trainerProfitPercentages'));
     }
 
     public function update(Request $request, Course $course)
     {
         $this->authorizeCourseManager($course);
+
+        if ($course->isPrivate()) {
+            return $this->updatePrivateCourse($request, $course);
+        }
 
         $data = $this->validateCourse($request, $course->id);
         $this->prepareJsonFields($request, $data);
@@ -411,8 +420,98 @@ class CourseController extends Controller
         return VideoDownloadGuard::fileResponse($path);
     }
 
+    /**
+     * Drop empty / invalid upload slots so Laravel does not fail images.* validation
+     * on a blank FileList entry (common after draft restore / re-submit).
+     */
+    protected function scrubEmptyUploads(Request $request): void
+    {
+        $images = $request->file('images');
+        if (is_array($images)) {
+            $clean = array_values(array_filter($images, function ($file) {
+                return $file instanceof \Illuminate\Http\UploadedFile
+                    && $file->isValid()
+                    && $file->getSize() > 0;
+            }));
+
+            if ($clean === []) {
+                $request->files->remove('images');
+            } else {
+                $request->files->set('images', $clean);
+            }
+        }
+
+        foreach (['main_image', 'video'] as $key) {
+            $file = $request->file($key);
+            if ($file instanceof \Illuminate\Http\UploadedFile && (! $file->isValid() || $file->getSize() <= 0)) {
+                $request->files->remove($key);
+            }
+        }
+    }
+
+    protected function assertValidCourseImage(mixed $value, \Closure $fail, string $label): void
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        if (! $value instanceof \Illuminate\Http\UploadedFile) {
+            $fail("{$label}: الملف غير صالح. أعد اختيار الصورة من جهازك.");
+
+            return;
+        }
+
+        if (! $value->isValid() || $value->getSize() <= 0) {
+            $fail("{$label}: تعذر قراءة الملف. احذفه وأعد اختيار صورة JPG أو PNG أو WEBP.");
+
+            return;
+        }
+
+        $ext = strtolower((string) $value->getClientOriginalExtension());
+        $allowedExt = ['jpg', 'jpeg', 'png', 'webp'];
+        $path = $value->getRealPath();
+        $info = ($path && is_file($path)) ? @getimagesize($path) : false;
+        $mime = strtolower((string) ($value->getMimeType() ?: $value->getClientMimeType()));
+        $okMime = in_array($mime, ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'], true);
+
+        if (! in_array($ext, $allowedExt, true) || ($info === false && ! $okMime)) {
+            $fail("{$label}: الصيغة غير مدعومة أو الملف تالف. استخدم JPG أو PNG أو WEBP وبحد أقصى 2 ميجابايت، وأعد الاختيار من جهازك إن ظهرت من المسودة فقط.");
+        }
+    }
+
+    protected function assertValidCourseVideo(mixed $value, \Closure $fail): void
+    {
+        if ($value === null || $value === '' || ! $value instanceof \Illuminate\Http\UploadedFile) {
+            return;
+        }
+
+        if (! $value->isValid() || $value->getSize() <= 0) {
+            $fail('الفيديو التعريفي غير صالح. أعد اختيار ملف MP4 أو WEBM أو MOV.');
+
+            return;
+        }
+
+        $ext = strtolower((string) $value->getClientOriginalExtension());
+        $mime = strtolower((string) ($value->getMimeType() ?: $value->getClientMimeType()));
+        $allowedExt = ['mp4', 'webm', 'mov', 'ogg', 'ogv'];
+        $allowedMime = [
+            'video/mp4',
+            'video/webm',
+            'video/quicktime',
+            'video/ogg',
+            'application/ogg',
+            'application/octet-stream',
+        ];
+
+        if (! in_array($ext, $allowedExt, true) && ! in_array($mime, $allowedMime, true)) {
+            $fail('صيغة الفيديو التعريفي غير مدعومة. استخدم MP4 أو WEBM أو MOV (حد أقصى 50 ميجابايت).');
+        }
+    }
+
     protected function validateCourse(Request $request, $id = null)
     {
+        $this->scrubEmptyUploads($request);
+
         $priceRules = ['required', 'numeric', 'min:0'];
         $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
         if (auth()->user()?->isTrainer() && ! auth()->user()?->isAdmin()) {
@@ -476,6 +575,21 @@ class CourseController extends Controller
             'course_category_id' => 'required|exists:course_categories,id',
             'trainer_id' => 'nullable|exists:users,id',
             'status' => 'required|in:active,inactive',
+            'allows_private_requests' => 'nullable|boolean',
+            'private_course_price' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                Rule::requiredIf(fn () => $request->boolean('allows_private_requests')),
+                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                    if (! $request->boolean('allows_private_requests')) {
+                        return;
+                    }
+                    if (auth()->user()?->isTrainer() && ! auth()->user()?->isAdmin() && (float) $value > 500) {
+                        $fail(__('messages.private_course_price_max_trainer'));
+                    }
+                },
+            ],
             'has_exam' => 'nullable|boolean',
             'exam_pass_score' => 'nullable|integer|min:1',
             'exam_duration_minutes' => 'nullable|integer|min:1|max:600',
@@ -496,9 +610,31 @@ class CourseController extends Controller
             'exam_questions.*.answers' => 'nullable|array|min:1|max:6',
             'exam_questions.*.answers.*' => 'nullable|string|max:500',
             'exam_questions.*.correct' => 'nullable|integer|min:0|max:5',
-            'main_image' => ($id ? 'nullable' : 'required') . '|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'video' => 'nullable|file|mimetypes:video/mp4,video/webm,video/quicktime,video/ogg|max:51200',
+            'main_image' => array_values(array_filter([
+                $id ? 'nullable' : 'required',
+                'file',
+                'max:2048',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $this->assertValidCourseImage($value, $fail, 'الصورة الرئيسية');
+                },
+            ])),
+            'images' => 'nullable|array',
+            'images.*' => [
+                'nullable',
+                'file',
+                'max:2048',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $this->assertValidCourseImage($value, $fail, 'الصور الإضافية');
+                },
+            ],
+            'video' => [
+                'nullable',
+                'file',
+                'max:51200',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $this->assertValidCourseVideo($value, $fail);
+                },
+            ],
             'remove_video' => 'nullable|boolean',
             'units' => 'nullable|array',
             'units.*.items' => 'nullable|array',
@@ -513,10 +649,14 @@ class CourseController extends Controller
             'course_category_id.required' => 'اختر تصنيف الدورة',
             'requirements_ar.*.required' => 'كل متطلب بالعربية مطلوب',
             'features_ar.*.required' => 'كل ميزة بالعربية مطلوبة',
-            'main_image.required' => 'الصورة الرئيسية مطلوبة عند الإضافة',
+            'main_image.required' => 'الصورة الرئيسية مطلوبة. اختر صورة من جهازك قبل الحفظ.',
+            'main_image.file' => 'الصورة الرئيسية غير صالحة. أعد اختيار صورة JPG أو PNG أو WEBP.',
+            'main_image.max' => 'حجم الصورة الرئيسية يجب ألا يتجاوز 2 ميجابايت.',
+            'images.*.file' => 'إحدى الصور الإضافية غير صالحة. احذفها وأعد اختيارها من جهازك.',
+            'images.*.max' => 'حجم كل صورة إضافية يجب ألا يتجاوز 2 ميجابايت.',
             'rest_days.*.in' => 'يوم الراحة المحدد غير صحيح',
-            'video.max' => 'حجم الفيديو يجب ألا يتجاوز 50 ميجابايت',
-            'video.mimetypes' => 'صيغة الفيديو غير مدعومة (MP4, WEBM, MOV, OGG)',
+            'video.max' => 'حجم الفيديو التعريفي يجب ألا يتجاوز 50 ميجابايت.',
+            'video.file' => 'ملف الفيديو التعريفي غير صالح. استخدم MP4 أو WEBM أو MOV.',
             'units.*.items.*.video.max' => 'حجم فيديو الدرس يجب ألا يتجاوز 1 جيجابايت',
             'units.*.items.*.video.mimetypes' => 'صيغة فيديو الدرس غير مدعومة (MP4, WEBM, MOV, OGG, AVI)',
             'units.*.items.*.thumbnail.image' => 'صورة المصغّر غير صالحة',
@@ -555,6 +695,10 @@ class CourseController extends Controller
         }
 
         $data['has_exam'] = $request->boolean('has_exam');
+        $data['allows_private_requests'] = $request->boolean('allows_private_requests');
+        if (! $data['allows_private_requests']) {
+            $data['private_course_price'] = null;
+        }
         if (($data['location_type'] ?? null) === 'recorded') {
             $data['has_exam'] = false;
         }
@@ -912,6 +1056,20 @@ class CourseController extends Controller
 
     public function userShow(Course $course)
     {
+        $user = Auth::user();
+        $isStaff = $user && ($user->isAdmin() || (int) $user->id === (int) $course->trainer_id);
+        $isEnrolled = $user ? $course->isUserEnrolled() : false;
+
+        if ($course->isPrivate()) {
+            abort_unless($isStaff || $isEnrolled, 404);
+        } elseif (
+            ! $course->isPubliclyListable()
+            && ! $isStaff
+            && ! $isEnrolled
+        ) {
+            abort(404);
+        }
+
         $course->loadCount(['payments' => function ($query) {
             $query->whereIn('status', ['completed', 'success', 'paid']);
         }]);
@@ -919,16 +1077,17 @@ class CourseController extends Controller
 
         $course->load([
             'category',
+            'trainer',
             'featuredRatings.user',
             'completedRatings',
             'units.items',
         ]);
 
         $related_courses = Course::query()
+            ->publiclyListable()
             ->when($course->course_category_id, fn ($q) => $q->where('course_category_id', $course->course_category_id))
             ->when(!$course->course_category_id, fn ($q) => $q->whereRaw('1 = 0'))
             ->where('id', '!=', $course->id)
-            ->where('status', 'active')
             ->with('category')
             ->withCount(['payments' => function ($query) {
                 $query->whereIn('status', ['completed', 'success', 'paid']);
@@ -1092,21 +1251,71 @@ class CourseController extends Controller
                 ->with('error', 'الشهادة غير متاحة حالياً');
         }
 
-        // Rich HTML preview (same design as academy trust certificate).
-        if (request()->boolean('html')) {
+        // HTML certificate preview (default).
+        if (request()->boolean('html') || request()->boolean('preview') || (! request()->boolean('pdf') && ! request()->boolean('pdf_stream'))) {
             return response()
                 ->view('dashboard.courses.certificate', compact('payment'))
-                ->header('Content-Disposition', 'inline; filename="certificate.html"');
+                ->header('Content-Type', 'text/html; charset=UTF-8')
+                ->header('Content-Disposition', 'inline; filename="certificate.html"')
+                ->header('X-Content-Type-Options', 'nosniff');
         }
 
         $safeName = preg_replace('/[^\p{L}\p{N}\-_]+/u', '-', (string) $payment->user->name) ?: 'certificate';
         $filename = 'certificate-'.$safeName.'.pdf';
 
-        $pdf = Pdf::loadView('dashboard.courses.certificate-pdf', compact('payment'))
-            ->setPaper('a4', 'portrait');
+        // PDF viewer shell (HTML). Avoid navigating the tab to a raw PDF so IDM cannot hijack it.
+        if (request()->boolean('pdf') && ! request()->boolean('pdf_stream')) {
+            return response()
+                ->view('dashboard.courses.certificate-pdf-viewer', [
+                    'payment' => $payment,
+                    'filename' => $filename,
+                    'streamUrl' => route('dashboard.courses.certificate', [
+                        'payment' => $payment->id,
+                        'pdf_stream' => 1,
+                    ]),
+                ])
+                ->header('Content-Type', 'text/html; charset=UTF-8')
+                ->header('X-Content-Type-Options', 'nosniff')
+                ->header('Cache-Control', 'private, no-store, max-age=0');
+        }
 
-        // Opens in the browser PDF viewer; user can print from there.
-        return $pdf->stream($filename);
+        // Only XHR/fetch from the viewer — never a navigable PDF URL (IDM hooks those).
+        $isViewerFetch = request()->ajax()
+            || strcasecmp((string) request()->header('X-Requested-With'), 'XMLHttpRequest') === 0
+            || str_contains((string) request()->header('Accept', ''), 'application/json');
+
+        if (! $isViewerFetch) {
+            return redirect()->route('dashboard.courses.certificate', [
+                'payment' => $payment->id,
+                'pdf' => 1,
+            ]);
+        }
+
+        $ua = strtolower((string) request()->userAgent());
+        foreach (['idm', 'internet download manager', 'downloadmaster', 'fdm', 'freedownloadmanager'] as $blocked) {
+            if (str_contains($ua, $blocked)) {
+                abort(403, 'Download managers are not allowed for certificate streaming.');
+            }
+        }
+
+        $pdf = Pdf::loadView('dashboard.courses.certificate-pdf', compact('payment'))
+            // Exact academy homepage certificate canvas (900×640 CSS px → 675×480 pt).
+            ->setPaper([0, 0, 675.0, 480.0])
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('defaultFont', 'Amiri');
+
+        // JSON + base64 avoids Content-Type: application/pdf which IDM intercepts.
+        return response()
+            ->json([
+                'ok' => true,
+                'filename' => $filename,
+                'mime' => 'application/pdf',
+                'data' => base64_encode($pdf->output()),
+            ])
+            ->header('Cache-Control', 'private, no-store, max-age=0, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('X-Content-Type-Options', 'nosniff');
     }
 
     /**
@@ -1483,5 +1692,91 @@ class CourseController extends Controller
                 $course->academy_path_percent = (int) ($course->pathCompletionForUser($userId)['percent'] ?? 0);
             }
         }
+    }
+
+    protected function updatePrivateCourse(Request $request, Course $course)
+    {
+        $data = $request->validate([
+            'online_link' => ['nullable', 'url', 'max:2048'],
+        ], [
+            'online_link.url' => __('messages.private_meeting_link_invalid'),
+        ]);
+
+        $link = trim((string) ($data['online_link'] ?? ''));
+
+        if ($link !== '' && $course->start_date) {
+            $deadline = \Carbon\Carbon::parse($course->start_date)->subMinutes(30);
+            if (now()->greaterThan($deadline)) {
+                throw ValidationException::withMessages([
+                    'online_link' => __('messages.private_meeting_link_deadline'),
+                ]);
+            }
+        }
+
+        $course->update(['online_link' => $link !== '' ? $link : null]);
+
+        return redirect()
+            ->route('dashboard.courses.show', $course)
+            ->with('success', __('messages.private_meeting_link_saved'));
+    }
+
+    public function uploadSpecialCertificate(Request $request, Payment $payment)
+    {
+        $payment->load('course');
+        $this->authorizeCourseManager($payment->course);
+        abort_unless($payment->is_attended, 422, __('messages.special_certificate_attendance_required'));
+
+        $data = $request->validate([
+            'certificate' => 'required|file|mimes:pdf,jpeg,png,jpg,webp|max:8192',
+        ]);
+
+        if ($payment->specialCertificate) {
+            Storage::disk('public')->delete($payment->specialCertificate->file_path);
+            $payment->specialCertificate->delete();
+        }
+
+        $path = $data['certificate']->store('special-certificates', 'public');
+
+        CourseSpecialCertificate::create([
+            'course_id' => $payment->course_id,
+            'payment_id' => $payment->id,
+            'user_id' => $payment->user_id,
+            'uploaded_by' => Auth::id(),
+            'file_path' => $path,
+        ]);
+
+        return back()->with('success', __('messages.special_certificate_uploaded'));
+    }
+
+    public function downloadSpecialCertificate(Payment $payment)
+    {
+        $payment->load(['specialCertificate', 'course']);
+
+        $isOwner = (int) $payment->user_id === (int) Auth::id();
+        $canManage = Auth::user()?->canManageCourses()
+            && $this->userCanManageCourse(Auth::user(), $payment->course);
+
+        abort_unless($isOwner || $canManage || Auth::user()?->isAdmin(), 403);
+
+        $certificate = $payment->specialCertificate;
+        abort_unless($certificate, 404);
+
+        $absolute = Storage::disk('public')->path($certificate->file_path);
+        abort_unless(is_file($absolute), 404);
+
+        return response()->download($absolute, basename($certificate->file_path));
+    }
+
+    protected function userCanManageCourse(User $user, ?Course $course): bool
+    {
+        if (! $course) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $user->isTrainer() && (int) $course->trainer_id === (int) $user->id;
     }
 }

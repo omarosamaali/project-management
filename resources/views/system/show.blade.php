@@ -206,11 +206,13 @@
         // حساب الرسوم (7.9% + 2 درهم)
         const fees = (parseFloat(price) * 0.079) + 2;
         const total = parseFloat(price) + fees;
-        
+        const aedIcon = '<img src="{{ asset('assets/images/drhm-icon.svg') }}" alt="" class="inline-block align-middle" style="width:12px;height:14px">';
+        const formatAed = (n) => `<span class="inline-flex items-center gap-1 whitespace-nowrap" dir="ltr">${aedIcon}${Number(n).toFixed(2)}</span>`;
+
         // تحديث النصوص في الـ Modal
-        document.getElementById('originalPrice').textContent = parseFloat(price).toFixed(2) + ' AED';
-        document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
-        document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
+        document.getElementById('originalPrice').innerHTML = formatAed(price);
+        document.getElementById('fees').innerHTML = formatAed(fees);
+        document.getElementById('totalPrice').innerHTML = formatAed(total);
         
         // إظهار المودال
         const modal = document.getElementById('purchaseModal');

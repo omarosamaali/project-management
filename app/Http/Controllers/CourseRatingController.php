@@ -14,13 +14,15 @@ class CourseRatingController extends Controller
     {
         $payment = $this->resolvePayment($course);
 
-        if (!$course->userNeedsRating(Auth::id())) {
-            if ($course->userCompletedRating(Auth::id()) && $course->userCanGetCertificate(Auth::id())) {
-                return redirect()->route('dashboard.courses.certificate', $payment);
-            }
-
-            return redirect()->route('dashboard.my_courses.index')
-                ->with('error', 'التقييم غير متاح حالياً.');
+        if (! $course->userNeedsRating(Auth::id())) {
+            return redirect()
+                ->route('dashboard.my_courses.show', $payment)
+                ->with(
+                    $course->userCompletedRating(Auth::id()) ? 'success' : 'error',
+                    $course->userCompletedRating(Auth::id())
+                        ? 'تم حفظ التقييم مسبقاً. يمكنك عرض الشهادة من صفحة الدورة.'
+                        : 'التقييم غير متاح حالياً.'
+                );
         }
 
         $questions = config("course_rating.{$course->location_type}", []);
@@ -33,12 +35,9 @@ class CourseRatingController extends Controller
         $payment = $this->resolvePayment($course);
 
         if ($course->userCompletedRating(Auth::id())) {
-            if ($course->userCanGetCertificate(Auth::id())) {
-                return redirect()->route('dashboard.courses.certificate', $payment);
-            }
-
-            return redirect()->route('dashboard.my_courses.index')
-                ->with('success', 'تم حفظ التقييم مسبقاً.');
+            return redirect()
+                ->route('dashboard.my_courses.show', $payment)
+                ->with('success', 'تم حفظ التقييم مسبقاً. يمكنك عرض الشهادة من صفحة الدورة.');
         }
 
         $questions = config("course_rating.{$course->location_type}", []);
@@ -46,7 +45,7 @@ class CourseRatingController extends Controller
         $messages = [];
 
         foreach ($questions as $q) {
-            $key = 'answers.' . $q['id'];
+            $key = 'answers.'.$q['id'];
             $type = $q['type'] ?? 'text';
 
             if ($type === 'scale') {
@@ -66,7 +65,7 @@ class CourseRatingController extends Controller
             }
 
             if ($q['required'] ?? false) {
-                $messages[$key . '.required'] = 'هذا السؤال مطلوب';
+                $messages[$key.'.required'] = 'هذا السؤال مطلوب';
             }
         }
 
@@ -84,26 +83,27 @@ class CourseRatingController extends Controller
             ]
         );
 
-        if ($course->fresh()->userCanGetCertificate(Auth::id())) {
-            return redirect()->route('dashboard.courses.certificate', $payment)
-                ->with('success', 'شكراً لتقييمك. يمكنك الآن استخراج الشهادة.');
-        }
+        $canCertificate = $course->fresh()->userCanGetCertificate(Auth::id());
 
-        return redirect()->route('dashboard.my_courses.index')
-            ->with('success', 'تم حفظ التقييم. شكراً لمشاركتك.');
+        return redirect()
+            ->route('dashboard.my_courses.show', $payment)
+            ->with(
+                'success',
+                $canCertificate
+                    ? 'شكراً لتقييمك. يمكنك الآن عرض الشهادة من صفحة الدورة.'
+                    : 'تم حفظ التقييم. شكراً لمشاركتك.'
+            );
     }
 
     protected function resolvePayment(Course $course): Payment
     {
-        // Match enrollment lookup used across academy home / my-courses.
-        // Rating eligibility is enforced separately via userNeedsRating().
         $payment = Payment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
             ->whereIn('status', ['completed', 'success', 'paid', 'active', 'pending'])
             ->latest('id')
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             abort(403, 'التقييم متاح فقط للمشتركين.');
         }
 

@@ -44,7 +44,7 @@
 @endphp
 
 <div class="academy-page">
-    <section class="academy-section reveal is-in" id="all-courses">
+    <section class="academy-section reveal is-in" id="all-courses" data-academy-listing>
         <a href="{{ route('academy.index') }}" class="academy-back">
             <i class="fas fa-arrow-{{ $locale === 'ar' ? 'right' : 'left' }}"></i>
             {{ __('messages.academy_back_home') }}
@@ -154,4 +154,5 @@
 @include('academy.partials.snap-slider-script')
 @include('academy.partials.interactions-script')
 @include('academy.partials.wishlist-script')
+@include('academy.partials.filter-ajax-script')
 @endsection

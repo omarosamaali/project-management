@@ -8,25 +8,23 @@ use App\Models\Requests;
 use App\Models\MyStore;
 use App\Models\System;
 use App\Models\Service;
-use App\Models\Course;
 
 class SystemController extends Controller
 {
     public function index()
     {
-        if (Auth::check() && Auth::user()->isTrainee()) {
-            return redirect()->route('academy.index');
+        $user = Auth::user();
+        if ($user && ($user->isTrainee() || $user->isTrainer())) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return redirect()->route('system.index');
         }
 
-        // 1. جلب البيانات من الداتابيز
         $systems = System::where('status', 'active')
             ->withCount('payments')
             ->with(['service'])
-            ->get();
-
-        $courses = Course::where('status', 'active')
-            ->withCount('payments')
-            ->with(['category'])
             ->get();
 
         $stores = MyStore::where('status', 'نشط')
@@ -34,7 +32,6 @@ class SystemController extends Controller
             ->with(['service'])
             ->get();
 
-        // 2. معالجة الأنظمة
         $items = $systems->map(function ($system) {
             return (object) [
                 'type' => 'system',
@@ -52,58 +49,32 @@ class SystemController extends Controller
                 'counter' => $system->counter ?? 0,
                 'route' => route('system.show', $system),
             ];
-        })
-            // 3. دمج ومعالجة الدورات
-            ->concat($courses->map(function ($course) {
-                $total_capacity = $course->counter ?? 0;
-                $current_payments = $course->payments_count ?? 0;
-                $remaining = $total_capacity - $current_payments;
-                return (object) [
-                    'type' => 'course',
-                    'id' => $course->id,
-                    'service_id' => $course->service_id,
-                    'name_ar' => $course->name_ar,
-                    'name_en' => $course->name_en,
-                    'description_ar' => $course->description_ar,
-                    'description_en' => $course->description_en,
-                    'main_image' => $course->main_image,
-                    'price' => $course->price,
-                    'service_name_ar' => $course->category?->title_ar,
-                    'total_participants' => $remaining > 0 ? $remaining : 0,
-                    'count_days' => $course->count_days ?? 0,
-                    'start_date' => $course->start_date,
-                    'end_date' => $course->end_date,
-                    'route' => route('courses.show', $course),
-                ];
-            }))
-            // 4. دمج ومعالجة المتاجر (الإضافة الجديدة)
-            // ... الكود السابق للأنظمة والدورات ...
-
-            ->concat($stores->map(function ($store) {
-
-
-                $obj = new \stdClass();
-                $obj->type = 'store';
-                $obj->id = $store->id;
-                $obj->service_id = $store->service_id;
-                $obj->name_ar = $store->name_ar;
-                $obj->name_en = $store->name_en;
-                $obj->description_ar = $store->description_ar;
-                $obj->description_en = $store->description_en;
-                $obj->main_image = $store->main_image;
-                $obj->price = $store->price;
-                $obj->original_price = $store->original_price;
-                $obj->service_name_ar = $store->service?->name_ar;
-                $obj->total_participants = $store->payments_count ?? 0;
-                $obj->execution_days = $store->execution_days;
-                $obj->support_days = $store->support_days;
-                $obj->route = route('stores.show', $store->id);
-
-                return $obj;
-            }));
+        })->concat($stores->map(function ($store) {
+            return (object) [
+                'type' => 'store',
+                'id' => $store->id,
+                'service_id' => $store->service_id,
+                'name_ar' => $store->name_ar,
+                'name_en' => $store->name_en,
+                'description_ar' => $store->description_ar,
+                'description_en' => $store->description_en,
+                'main_image' => $store->main_image,
+                'price' => $store->price,
+                'original_price' => $store->original_price,
+                'service_name_ar' => $store->service?->name_ar,
+                'total_participants' => $store->payments_count ?? 0,
+                'execution_days' => $store->execution_days,
+                'support_days' => $store->support_days,
+                'route' => route('stores.show', $store->id),
+            ];
+        }));
 
         $logos = Logo::all();
-        $services = Service::where('status', 'active')->get();
+        $services = Service::where('status', 'active')
+            ->where('name_ar', 'not like', '%دورة%')
+            ->where('name_en', 'not like', '%training%')
+            ->where('name_en', 'not like', '%course%')
+            ->get();
 
         return view('system.index', compact('items', 'logos', 'services'));
     }

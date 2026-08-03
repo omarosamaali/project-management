@@ -12,8 +12,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Course;
 use App\Models\MyStore;
+use App\Models\PrivateCourseRequest;
 use App\Models\RequestPayment;
 use App\Support\InstallmentPaymentService;
+use App\Support\PrivateCourseRequestService;
 use Illuminate\Support\Facades\Http;
 
 class ZiinaPaymentController extends Controller
@@ -588,6 +590,20 @@ class ZiinaPaymentController extends Controller
                 ], 400);
             }
 
+            if ($course->isPrivate()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'الاشتراك في الدورة الخاصة يتم عبر طلب الدفع الخاص فقط',
+                ], 400);
+            }
+
+            if ($course->isRegistrationClosed()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('messages.academy_apply_closed_status'),
+                ], 400);
+            }
+
             // التحقق من المقاعد المتاحة
             $current_enrolled = Payment::where('course_id', $course->id)
                 ->where('status', '!=', 'failed')
@@ -618,6 +634,7 @@ class ZiinaPaymentController extends Controller
                     'payment_method' => 'free',
                     'currency'       => 'AED',
                 ]);
+                \App\Support\CourseProfitSplitter::applyToPayment($payment, $course);
 
                 // إضافة المستخدم للدورة
                 $course->students()->attach(auth()->id(), [
@@ -726,8 +743,8 @@ class ZiinaPaymentController extends Controller
                 $course = \App\Models\Course::find($courseId);
 
                 if ($course && $user) {
-                    \App\Models\Payment::where('payment_id', $paymentIntentId)
-                        ->update(['status' => 'completed']);
+                    $payment->update(['status' => 'completed']);
+                    \App\Support\CourseProfitSplitter::applyToPayment($payment->fresh(), $course);
 
                     $user->update(['whatsapp_verified' => 1]);
 
@@ -825,5 +842,187 @@ class ZiinaPaymentController extends Controller
 
         return redirect()->route('courses.show', $courseId ?? 1)
             ->with('error', 'تم إلغاء عملية الدفع');
+    }
+
+    public function createPrivateCoursePayment(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'private_course_request_id' => 'required|exists:private_course_requests,id',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'بيانات غير صحيحة',
+                'errors' => $e->errors(),
+            ], 422);
+        }
+
+        if (! auth()->check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'يجب تسجيل الدخول أولاً',
+            ], 401);
+        }
+
+        try {
+            $privateRequest = PrivateCourseRequest::with('sourceCourse')->findOrFail($validated['private_course_request_id']);
+
+            if ((int) $privateRequest->trainee_id !== (int) auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('messages.private_request_forbidden'),
+                ], 403);
+            }
+
+            if ($privateRequest->status !== PrivateCourseRequest::STATUS_AWAITING_PAYMENT) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('messages.private_request_invalid_status'),
+                ], 422);
+            }
+
+            if ($privateRequest->payment_due_at && now()->greaterThan($privateRequest->payment_due_at)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('messages.private_request_payment_expired'),
+                ], 422);
+            }
+
+            $basePrice = (float) $privateRequest->private_price;
+            $fees = ($basePrice * 0.079) + 2;
+            $totalAmount = $basePrice + $fees;
+            $successUrl = route('course.private.payment.success');
+            $cancelUrl = route('course.private.payment.cancel', ['private_request_id' => $privateRequest->id]);
+
+            $source = $privateRequest->sourceCourse;
+            $payItem = $source ?: (object) [
+                'price' => $basePrice,
+                'name_ar' => 'دورة خاصة',
+                'name_en' => 'Private course',
+            ];
+
+            $response = $this->ziinaHandler->createSystemPaymentIntent(
+                $payItem,
+                $successUrl,
+                $cancelUrl,
+            );
+
+            Payment::create([
+                'user_id' => auth()->id(),
+                'course_id' => $privateRequest->source_course_id,
+                'private_course_request_id' => $privateRequest->id,
+                'payment_id' => $response['id'] ?? null,
+                'amount' => $totalAmount,
+                'original_price' => $basePrice,
+                'fees' => round($fees, 2),
+                'status' => 'pending',
+                'payment_method' => 'ziina',
+                'currency' => 'AED',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'payment_url' => $response['redirect_url'],
+                'total_amount' => $totalAmount,
+                'fees' => round($fees, 2),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('فشل إنشاء دفع الدورة الخاصة', [
+                'error' => $e->getMessage(),
+                'private_course_request_id' => $request->private_course_request_id ?? null,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'حدث خطأ أثناء معالجة الدفع: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function privateCourseSuccess(Request $request)
+    {
+        $paymentIntentId = $request->query('payment_intent_id');
+
+        if (! $paymentIntentId) {
+            return redirect()->route('dashboard.academy.private-requests.trainee-index')
+                ->with('error', 'بيانات الدفع غير مكتملة');
+        }
+
+        try {
+            $paymentIntent = $this->ziinaHandler->getPaymentIntent($paymentIntentId);
+            $status = $paymentIntent['status'] ?? '';
+
+            if (! in_array($status, ['completed', 'paid', 'succeeded'], true)) {
+                return redirect()->route('dashboard.academy.private-requests.trainee-index')
+                    ->with('error', 'فشل التحقق من حالة الدفع');
+            }
+
+            $payment = Payment::where('payment_id', $paymentIntentId)
+                ->whereNotNull('private_course_request_id')
+                ->first();
+
+            if (! $payment) {
+                return redirect()->route('dashboard.academy.private-requests.trainee-index')
+                    ->with('error', 'سجل الدفع غير موجود');
+            }
+
+            $privateRequest = PrivateCourseRequest::find($payment->private_course_request_id);
+            if (! $privateRequest) {
+                return redirect()->route('dashboard.academy.private-requests.trainee-index')
+                    ->with('error', 'طلب الدورة الخاصة غير موجود');
+            }
+
+            if ($privateRequest->status === PrivateCourseRequest::STATUS_PAID) {
+                return redirect()->route('dashboard.my_courses.index')
+                    ->with('success', __('messages.private_request_already_paid'));
+            }
+
+            $payment->update(['status' => 'completed']);
+
+            app(PrivateCourseRequestService::class)->markPaidAndClone($privateRequest->fresh(), $payment->fresh());
+
+            $user = auth()->user();
+            if ($user) {
+                $user->update(['whatsapp_verified' => 1]);
+
+                try {
+                    $whatsapp = new \App\Services\WhatsAppOTPService();
+                    $clone = $privateRequest->fresh()->privateCourse;
+                    if ($clone) {
+                        $courseName = app()->getLocale() === 'ar' ? $clone->name_ar : $clone->name_en;
+                        $whatsapp->sendCourseConfirmation(
+                            $user->phone,
+                            $user->name,
+                            $courseName,
+                            $clone,
+                        );
+                    }
+                } catch (\Exception $e) {
+                    Log::error('عطل في إرسال رسالة الواتساب للدورة الخاصة: '.$e->getMessage());
+                }
+            }
+
+            return redirect()->route('dashboard.my_courses.index')
+                ->with('success', __('messages.private_request_payment_success'));
+        } catch (\Exception $e) {
+            Log::error('خطأ في privateCourseSuccess: '.$e->getMessage());
+
+            return redirect()->route('dashboard.academy.private-requests.trainee-index')
+                ->with('error', 'حدث خطأ فني');
+        }
+    }
+
+    public function privateCourseCancel(Request $request)
+    {
+        $privateRequestId = $request->query('private_request_id');
+
+        if ($privateRequestId) {
+            return redirect()->route('private-requests.show', $privateRequestId)
+                ->with('error', __('messages.private_request_payment_cancelled'));
+        }
+
+        return redirect()->route('dashboard.academy.private-requests.trainee-index')
+            ->with('error', __('messages.private_request_payment_cancelled'));
     }
 }

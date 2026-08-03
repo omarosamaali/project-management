@@ -8,7 +8,7 @@
 <x-hero-section variant="academy" />
 
 <div class="academy-page">
-    <section class="academy-section reveal is-in" id="category-courses">
+    <section class="academy-section reveal is-in" id="category-courses" data-academy-listing>
         <a href="{{ route('academy.index') }}" class="academy-back">
             <i class="fas fa-arrow-{{ $locale === 'ar' ? 'right' : 'left' }}"></i>
             {{ __('messages.academy_back_home') }}
@@ -100,4 +100,5 @@
 </div>
 
 @include('academy.partials.wishlist-script')
+@include('academy.partials.filter-ajax-script')
 @endsection

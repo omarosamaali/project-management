@@ -44,15 +44,54 @@
                             <th class="px-4 py-3">{{ __('messages.name') }}</th>
                             <th class="px-4 py-3">{{ __('messages.email') }}</th>
                             <th class="px-4 py-3">{{ __('messages.phone') }}</th>
+                            @if($meta['role'] === 'trainer')
+                            <th class="px-4 py-3">{{ __('messages.trainer_review_list_category') }}</th>
+                            <th class="px-4 py-3">{{ __('messages.trainer_review_list_lang') }}</th>
+                            <th class="px-4 py-3">{{ __('messages.trainer_documents') }}</th>
+                            @endif
                             <th class="px-4 py-3">{{ __('messages.status') }}</th>
                             <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($users as $account)
-                        <tr class="border-b dark:border-gray-700">
+                        @php
+                            $statusLabel = match ($account->status) {
+                                'active' => __('messages.active'),
+                                'pending' => __('messages.pending'),
+                                'inactive' => __('messages.inactive'),
+                                'blocked' => __('messages.blocked'),
+                                default => $account->status,
+                            };
+                            $statusClass = match ($account->status) {
+                                'active' => 'bg-green-100 text-green-800',
+                                'pending' => 'bg-amber-100 text-amber-800',
+                                'inactive' => 'bg-gray-100 text-gray-700',
+                                'blocked' => 'bg-red-100 text-red-800',
+                                default => 'bg-gray-100 text-gray-700',
+                            };
+                            $docsReady = $meta['role'] === 'trainer'
+                                && $account->avatar
+                                && $account->course_category_id
+                                && $account->resume_path
+                                && $account->teaching_sample_path
+                                && filled($account->trainer_bio)
+                                && ($account->id_card_front_path || $account->id_card_path)
+                                && $account->id_card_back_path;
+                            $teachLangShort = ($account->teaching_language ?? 'ar') === 'en'
+                                ? __('messages.become_trainer_teaching_lang_en')
+                                : __('messages.become_trainer_teaching_lang_ar');
+                        @endphp
+                        <tr class="border-b dark:border-gray-700 {{ $meta['role'] === 'trainer' && $account->status === 'pending' ? 'bg-amber-50/40' : '' }}">
                             <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $users->firstItem() + $loop->index }}</td>
-                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ $account->name }}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                                <div class="flex items-center gap-2.5">
+                                    @if($meta['role'] === 'trainer')
+                                    <img src="{{ $account->avatarUrl() }}" alt="" class="w-9 h-9 rounded-full object-cover border border-slate-200 flex-shrink-0">
+                                    @endif
+                                    <span>{{ $account->name }}</span>
+                                </div>
+                            </td>
                             <td class="px-4 py-3">{{ $account->email }}</td>
                             <td class="px-4 py-3">
                                 @if($account->phone)
@@ -61,23 +100,18 @@
                                 —
                                 @endif
                             </td>
+                            @if($meta['role'] === 'trainer')
                             <td class="px-4 py-3">
-                                @php
-                                    $statusLabel = match ($account->status) {
-                                        'active' => __('messages.active'),
-                                        'pending' => __('messages.pending'),
-                                        'inactive' => __('messages.inactive'),
-                                        'blocked' => __('messages.blocked'),
-                                        default => $account->status,
-                                    };
-                                    $statusClass = match ($account->status) {
-                                        'active' => 'bg-green-100 text-green-800',
-                                        'pending' => 'bg-amber-100 text-amber-800',
-                                        'inactive' => 'bg-gray-100 text-gray-700',
-                                        'blocked' => 'bg-red-100 text-red-800',
-                                        default => 'bg-gray-100 text-gray-700',
-                                    };
-                                @endphp
+                                {{ $account->courseCategory?->title(app()->getLocale()) ?: '—' }}
+                            </td>
+                            <td class="px-4 py-3">{{ $teachLangShort }}</td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex px-2 py-1 rounded-full text-xs font-bold {{ $docsReady ? 'bg-green-100 text-green-800' : 'bg-rose-100 text-rose-800' }}">
+                                    {{ $docsReady ? __('messages.trainer_review_docs_ready') : __('messages.trainer_review_docs_incomplete') }}
+                                </span>
+                            </td>
+                            @endif
+                            <td class="px-4 py-3">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
                                     {{ $statusLabel }}
                                 </span>
@@ -108,7 +142,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center px-4 py-8 text-gray-500 bg-gray-50">
+                            <td colspan="{{ $meta['role'] === 'trainer' ? 9 : 6 }}" class="text-center px-4 py-8 text-gray-500 bg-gray-50">
                                 {{ $meta['empty'] }}
                             </td>
                         </tr>

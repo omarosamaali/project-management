@@ -42,6 +42,14 @@
         : null;
     $is_already_in = (bool) $enrollmentPayment;
     $canEnroll = auth()->check() && auth()->user()->canLearnCourses();
+    $registrationClosed = $course->isRegistrationClosed();
+    $showApplyDeadline = $course->hasRegistrationDeadline();
+    $applyUntilLabel = $showApplyDeadline
+        ? $course->last_date->copy()->locale($locale)->translatedFormat($locale === 'ar' ? 'j M Y' : 'M j, Y')
+        : null;
+    $allowsPrivate = (bool) $course->allows_private_requests;
+    $privateRequestUrl = route('courses.private-request.create', $course);
+    $privateLoginUrl = \App\Support\AuthUi::loginUrl(['ui' => 'academy', 'redirect' => $privateRequestUrl]);
 
     $visibleButtons = collect($course->buttons ?? [])->filter(fn ($b) => empty($b['needs_login']));
 @endphp
@@ -491,6 +499,82 @@
         border-radius: .75rem;
         border: 1px solid;
     }
+    .course-apply-status {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        margin-top: .85rem;
+        padding: .75rem .85rem;
+        border-radius: .9rem;
+        border: 1px solid;
+        text-align: start;
+    }
+    .course-apply-status.is-open {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+    }
+    .course-apply-status.is-closed {
+        background: #fff1f2;
+        border-color: #fecdd3;
+        color: #9f1239;
+    }
+    .course-apply-status__icon {
+        width: 1.85rem;
+        height: 1.85rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: .8rem;
+    }
+    .course-apply-status.is-open .course-apply-status__icon {
+        background: #059669;
+        color: #fff;
+    }
+    .course-apply-status.is-closed .course-apply-status__icon {
+        background: #e11d48;
+        color: #fff;
+    }
+    .course-apply-status__title {
+        margin: 0;
+        font-size: .82rem;
+        font-weight: 800;
+        line-height: 1.3;
+    }
+    .course-apply-status__date {
+        margin: .2rem 0 0;
+        font-size: .75rem;
+        font-weight: 600;
+        opacity: .9;
+    }
+    .course-apply-status__hint {
+        margin: .35rem 0 0;
+        font-size: .7rem;
+        line-height: 1.45;
+        opacity: .88;
+        font-weight: 600;
+    }
+    .course-apply-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        height: 1.7rem;
+        padding: .2rem .7rem;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .course-apply-chip.is-open {
+        background: #d1fae5;
+        color: #047857;
+    }
+    .course-apply-chip.is-closed {
+        background: #ffe4e6;
+        color: #be123c;
+    }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp {
         from { opacity: 0; transform: translateY(16px); }
@@ -549,7 +633,7 @@
 
         <div class="course-layout">
             <div class="course-main min-w-0">
-                @if($typeLabel || count($levelKeys) || $categoryName)
+                @if($typeLabel || count($levelKeys) || $categoryName || $showApplyDeadline)
                 <div class="course-meta-row">
                     @if($typeLabel)
                     <span class="course-type-badge is-{{ $typeTone }}">
@@ -574,6 +658,14 @@
                         <i class="fas fa-folder-open" aria-hidden="true"></i>
                         @endif
                         {{ $categoryName }}
+                    </span>
+                    @endif
+                    @if($showApplyDeadline)
+                    <span class="course-apply-chip {{ $registrationClosed ? 'is-closed' : 'is-open' }}"
+                        title="{{ __('messages.academy_apply_until') }}: {{ $applyUntilLabel }}">
+                        <i class="fas {{ $registrationClosed ? 'fa-calendar-times' : 'fa-calendar-check' }}"></i>
+                        {{ $registrationClosed ? __('messages.academy_apply_closed_status') : __('messages.academy_apply_open_status') }}
+                        · {{ $applyUntilLabel }}
                     </span>
                     @endif
                 </div>
@@ -823,6 +915,27 @@
                                 <i class="fas fa-check ml-1"></i> دورة مجانية
                             </div>
                             @endif
+
+                            @if($showApplyDeadline)
+                            <div class="course-apply-status {{ $registrationClosed ? 'is-closed' : 'is-open' }}">
+                                <span class="course-apply-status__icon" aria-hidden="true">
+                                    <i class="fas {{ $registrationClosed ? 'fa-ban' : 'fa-calendar-check' }}"></i>
+                                </span>
+                                <div>
+                                    <p class="course-apply-status__title">
+                                        {{ $registrationClosed
+                                            ? __('messages.academy_apply_closed_status')
+                                            : __('messages.academy_apply_open_status') }}
+                                    </p>
+                                    <p class="course-apply-status__date">
+                                        {{ __('messages.academy_apply_until') }}: {{ $applyUntilLabel }}
+                                    </p>
+                                    @if($registrationClosed)
+                                    <p class="course-apply-status__hint">{{ __('messages.academy_apply_ended_hint') }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
                         </div>
 
                         <div class="mb-4">
@@ -883,6 +996,19 @@
                                     <i class="fas fa-play-circle"></i>
                                     الذهاب إلى دورتي
                                 </a>
+                                @elseif ($registrationClosed)
+                                    @if($allowsPrivate)
+                                    <a href="{{ $privateRequestUrl }}"
+                                        class="cta-primary inline-flex items-center justify-center gap-2"
+                                        title="{{ __('messages.academy_apply_ended_hint') }}">
+                                        <i class="fas fa-chalkboard-teacher"></i>
+                                        {{ __('messages.academy_private_course_apply') }}
+                                    </a>
+                                    @else
+                                    <div class="cta-disabled bg-gray-50 border-gray-300 text-gray-600 text-sm">
+                                        {{ __('messages.academy_apply_closed_status') }}
+                                    </div>
+                                    @endif
                                 @elseif($actual_remaining <= 0)
                                 <div class="cta-disabled bg-red-50 border-red-300 text-red-700 text-sm">
                                     عذراً، اكتمل العدد ولا توجد مقاعد شاغرة
@@ -893,14 +1019,41 @@
                                     class="cta-primary">
                                     التحق بالدورة
                                 </button>
+                                @if($allowsPrivate)
+                                <a href="{{ $privateRequestUrl }}"
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-pink-300 bg-pink-50 px-4 py-3 text-sm font-bold text-pink-700 hover:bg-pink-100 transition">
+                                    <i class="fas fa-user-graduate"></i>
+                                    {{ __('messages.academy_private_course_apply') }}
+                                </a>
+                                @endif
                                 <p class="text-[11px] text-center text-gray-400">المقاعد المتاحة: {{ $actual_remaining }}</p>
                                 @endif
                             @else
+                                @if ($registrationClosed)
+                                    @if($allowsPrivate)
+                                    <a href="{{ $privateLoginUrl }}"
+                                        class="cta-primary"
+                                        title="{{ __('messages.academy_apply_ended_hint') }}">
+                                        {{ __('messages.academy_private_course_login') }}
+                                    </a>
+                                    @else
+                                    <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'academy', 'redirect' => route('courses.show', $course)]) }}"
+                                        class="cta-primary">{{ __('messages.academy_login_to_enroll') }}</a>
+                                    @endif
+                                @else
                                 @php
                                     $enrollReturnUrl = route('courses.show', [$course, 'enroll' => 1]);
                                 @endphp
                                 <a href="{{ \App\Support\AuthUi::loginUrl(['ui' => 'academy', 'redirect' => $enrollReturnUrl]) }}"
-                                    class="cta-primary">سجل دخول للاشتراك</a>
+                                    class="cta-primary">{{ __('messages.academy_login_to_enroll') }}</a>
+                                @if($allowsPrivate)
+                                <a href="{{ $privateLoginUrl }}"
+                                    class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-pink-300 bg-pink-50 px-4 py-3 text-sm font-bold text-pink-700 hover:bg-pink-100 transition">
+                                    <i class="fas fa-user-graduate"></i>
+                                    {{ __('messages.academy_private_course_login') }}
+                                </a>
+                                @endif
+                                @endif
                             @endauth
                         </div>
 
@@ -1098,9 +1251,11 @@
         const total = price + fees;
         document.getElementById('modalTitle').textContent = title;
         document.getElementById('priceLabel').textContent = type === 'course' ? 'سعر الدورة:' : 'سعر النظام:';
-        document.getElementById('originalPrice').textContent = price.toFixed(2) + ' AED';
-        document.getElementById('fees').textContent = fees.toFixed(2) + ' AED';
-        document.getElementById('totalPrice').textContent = total.toFixed(2) + ' AED';
+        const aedIcon = '<img src="{{ asset('assets/images/drhm-icon.svg') }}" alt="" class="inline-block align-middle" style="width:12px;height:14px">';
+        const formatAed = (n) => `<span class="inline-flex items-center gap-1 whitespace-nowrap" dir="ltr">${aedIcon}${Number(n).toFixed(2)}</span>`;
+        document.getElementById('originalPrice').innerHTML = formatAed(price);
+        document.getElementById('fees').innerHTML = formatAed(fees);
+        document.getElementById('totalPrice').innerHTML = formatAed(total);
         document.getElementById('paymentModal').classList.remove('hidden');
     }
 
@@ -1186,7 +1341,7 @@
     }
 
     @auth
-    @if($canEnroll && !$is_already_in && $actual_remaining > 0 && request()->boolean('enroll'))
+    @if($canEnroll && !$is_already_in && !$registrationClosed && $actual_remaining > 0 && request()->boolean('enroll'))
     document.addEventListener('DOMContentLoaded', function () {
         // Drop ?enroll=1 so refresh doesn't re-open the flow.
         try {

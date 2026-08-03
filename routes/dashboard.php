@@ -174,6 +174,36 @@ Route::middleware('auth')->group(function () {
     Route::post('/course/payment/create', [ZiinaPaymentController::class, 'createCoursePayment'])->name('course.payment.create');
     Route::get('/course/payment/success', [ZiinaPaymentController::class, 'courseSuccess'])->name('course.payment.success');
     Route::get('/course/payment/cancel', [ZiinaPaymentController::class, 'courseCancel'])->name('course.payment.cancel');
+    Route::post('/course/private/payment/create', [ZiinaPaymentController::class, 'createPrivateCoursePayment'])->name('course.private.payment.create');
+    Route::get('/course/private/payment/success', [ZiinaPaymentController::class, 'privateCourseSuccess'])->name('course.private.payment.success');
+    Route::get('/course/private/payment/cancel', [ZiinaPaymentController::class, 'privateCourseCancel'])->name('course.private.payment.cancel');
+
+    Route::get('academy/my-private-requests', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'traineeIndex'])
+        ->name('dashboard.academy.private-requests.trainee-index');
+    Route::get('academy/private-requests/inbox', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'trainerInbox'])
+        ->name('dashboard.academy.private-requests.trainer-inbox');
+    Route::get('academy/private-requests/unassigned', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'adminUnassigned'])
+        ->name('dashboard.academy.private-requests.admin-unassigned');
+    Route::get('academy/private-requests', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'adminIndex'])
+        ->name('dashboard.academy.private-requests.admin-index');
+    Route::post('academy/private-requests/{privateRequest}/approve', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'approve'])
+        ->name('dashboard.academy.private-requests.approve');
+    Route::post('academy/private-requests/{privateRequest}/reject', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'reject'])
+        ->name('dashboard.academy.private-requests.reject');
+    Route::post('academy/private-requests/{privateRequest}/respond-date-change', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'respondToDateChange'])
+        ->name('dashboard.academy.private-requests.respond-date-change');
+    Route::post('academy/private-requests/{privateRequest}/block', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'block'])
+        ->name('dashboard.academy.private-requests.block');
+    Route::post('academy/private-refunds/{refund}/confirm', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'confirmRefund'])
+        ->name('dashboard.academy.private-refunds.confirm');
+    Route::get('academy/private-refunds', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'refundsIndex'])
+        ->name('dashboard.academy.private-refunds.index');
+    Route::post('academy/private-refunds/{refund}/screenshot', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'uploadRefundScreenshot'])
+        ->name('dashboard.academy.private-refunds.upload-screenshot');
+    Route::post('/payments/{payment}/special-certificate', [CourseController::class, 'uploadSpecialCertificate'])
+        ->name('dashboard.courses.special-certificate.upload');
+    Route::get('/payments/{payment}/special-certificate', [CourseController::class, 'downloadSpecialCertificate'])
+        ->name('dashboard.courses.special-certificate.download');
         
     Route::get('/stores/{store}', [CourseController::class, 'userShowStore'])->name('stores.show');
     Route::get('my-profile', [PartnerController::class, 'myProfile'])->name('dashboard.my-profile');

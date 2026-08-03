@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AcademyProfitController extends Controller
 {
@@ -18,7 +20,7 @@ class AcademyProfitController extends Controller
         $user = Auth::user();
         abort_unless($user instanceof User && $user->isAdmin(), 403);
 
-        $percentage = Setting::academyTrainerProfitPercentage();
+        $percentages = Setting::academyTrainerProfitPercentages();
         $trainers = $this->loadTrainerProfitRows();
 
         $summary = [
@@ -27,9 +29,15 @@ class AcademyProfitController extends Controller
             'subscriptions_count' => (int) $trainers->sum('subscriptions_count'),
             'gross_revenue' => (float) $trainers->sum('gross_revenue'),
             'trainer_profit' => (float) $trainers->sum('trainer_profit'),
+            'platform_profit' => (float) $trainers->sum('platform_profit'),
         ];
 
-        return view('dashboard.academy.profits.index', compact('trainers', 'percentage', 'summary'));
+        return view('dashboard.academy.profits.index', [
+            'trainers' => $trainers,
+            'percentage' => $percentages['online'] ?? 60,
+            'percentages' => $percentages,
+            'summary' => $summary,
+        ]);
     }
 
     public function myProfits(Request $request)
@@ -39,20 +47,8 @@ class AcademyProfitController extends Controller
         /** @var User $trainerUser */
         $trainerUser = $user;
 
-        $percentage = Setting::academyTrainerProfitPercentage();
-        $trainer = $this->buildTrainerProfitRow($trainerUser->load([
-            'trainedCourses' => function ($query) {
-                $query->withCount([
-                    'payments as successful_payments_count' => function ($payments) {
-                        $payments->whereIn('status', self::SUCCESSFUL_PAYMENT_STATUSES);
-                    },
-                ])->withSum([
-                    'payments as successful_payments_sum_original_price' => function ($payments) {
-                        $payments->whereIn('status', self::SUCCESSFUL_PAYMENT_STATUSES);
-                    },
-                ], 'original_price');
-            },
-        ]), $percentage);
+        $percentages = Setting::academyTrainerProfitPercentages();
+        $trainer = $this->buildTrainerProfitRow($trainerUser);
 
         $allCourses = $trainer['courses'];
         $summary = [
@@ -60,6 +56,7 @@ class AcademyProfitController extends Controller
             'subscriptions_count' => $trainer['subscriptions_count'],
             'gross_revenue' => $trainer['gross_revenue'],
             'trainer_profit' => $trainer['trainer_profit'],
+            'platform_profit' => $trainer['platform_profit'],
         ];
 
         $perPage = 9;
@@ -75,64 +72,68 @@ class AcademyProfitController extends Controller
             ]
         );
 
-        return view('dashboard.academy.profits.my-profits', compact('courses', 'percentage', 'summary'));
+        return view('dashboard.academy.profits.my-profits', [
+            'courses' => $courses,
+            'percentage' => $percentages['online'] ?? 60,
+            'percentages' => $percentages,
+            'summary' => $summary,
+        ]);
     }
 
     protected function loadTrainerProfitRows()
     {
-        $percentage = Setting::academyTrainerProfitPercentage();
-
         return User::query()
             ->where('role', 'trainer')
-            ->with([
-                'trainedCourses' => function ($query) {
-                    $query->withCount([
-                        'payments as successful_payments_count' => function ($payments) {
-                            $payments->whereIn('status', self::SUCCESSFUL_PAYMENT_STATUSES);
-                        },
-                    ])->withSum([
-                        'payments as successful_payments_sum_original_price' => function ($payments) {
-                            $payments->whereIn('status', self::SUCCESSFUL_PAYMENT_STATUSES);
-                        },
-                    ], 'original_price');
-                },
-            ])
             ->orderBy('name')
             ->get()
-            ->map(fn (User $trainer) => $this->buildTrainerProfitRow($trainer, $percentage))
+            ->map(fn (User $trainer) => $this->buildTrainerProfitRow($trainer))
             ->filter(fn (array $trainer) => $trainer['courses_count'] > 0)
             ->values();
     }
 
-    protected function buildTrainerProfitRow(User $trainer, float $percentage): array
+    protected function buildTrainerProfitRow(User $trainer): array
     {
-        $courses = $trainer->trainedCourses
-            ->map(function ($course) use ($percentage) {
-                $subscriptionsCount = (int) ($course->successful_payments_count ?? 0);
-                $grossRevenue = (float) ($course->successful_payments_sum_original_price ?? 0);
-                $trainerProfit = round($grossRevenue * ($percentage / 100), 2);
+        $rows = Payment::query()
+            ->select([
+                'payments.course_id',
+                DB::raw('COUNT(*) as subscriptions_count'),
+                DB::raw('COALESCE(SUM(payments.original_price), 0) as gross_revenue'),
+                DB::raw('COALESCE(SUM(payments.trainer_profit_amount), 0) as trainer_profit'),
+                DB::raw('COALESCE(SUM(payments.platform_profit_amount), 0) as platform_profit'),
+            ])
+            ->join('courses', 'courses.id', '=', 'payments.course_id')
+            ->where('courses.trainer_id', $trainer->id)
+            ->whereIn('payments.status', self::SUCCESSFUL_PAYMENT_STATUSES)
+            ->groupBy('payments.course_id')
+            ->with(['course' => fn ($q) => $q->select('id', 'name_ar', 'name_en', 'location_type')])
+            ->get();
+
+        $courses = $rows
+            ->map(function ($row) {
+                $course = $row->course;
 
                 return [
-                    'id' => $course->id,
-                    'name_ar' => $course->name_ar,
-                    'name_en' => $course->name_en,
-                    'subscriptions_count' => $subscriptionsCount,
-                    'gross_revenue' => $grossRevenue,
-                    'trainer_profit' => $trainerProfit,
+                    'id' => (int) $row->course_id,
+                    'name_ar' => $course?->name_ar,
+                    'name_en' => $course?->name_en,
+                    'location_type' => $course?->location_type,
+                    'subscriptions_count' => (int) $row->subscriptions_count,
+                    'gross_revenue' => round((float) $row->gross_revenue, 2),
+                    'trainer_profit' => round((float) $row->trainer_profit, 2),
+                    'platform_profit' => round((float) $row->platform_profit, 2),
                 ];
             })
             ->sortByDesc('gross_revenue')
             ->values();
-
-        $grossRevenue = (float) $courses->sum('gross_revenue');
 
         return [
             'id' => $trainer->id,
             'name' => $trainer->name,
             'courses_count' => $courses->count(),
             'subscriptions_count' => (int) $courses->sum('subscriptions_count'),
-            'gross_revenue' => $grossRevenue,
-            'trainer_profit' => round($grossRevenue * ($percentage / 100), 2),
+            'gross_revenue' => round((float) $courses->sum('gross_revenue'), 2),
+            'trainer_profit' => round((float) $courses->sum('trainer_profit'), 2),
+            'platform_profit' => round((float) $courses->sum('platform_profit'), 2),
             'courses' => $courses,
         ];
     }

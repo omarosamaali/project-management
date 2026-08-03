@@ -534,11 +534,11 @@
 <!-- Hero Section (default / non-academy) -->
 <section class="relative text-white overflow-x-clip bg-gradient-to-br from-gray-900 via-black to-gray-900">
     <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div class="absolute inset-0 opacity-10">
-            <div class="absolute inset-0"
-                style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
-            </div>
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute inset-0"
+            style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
         </div>
+    </div>
         <div class="absolute top-20 left-10 w-72 h-72 bg-black rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
         <div class="absolute top-40 right-10 w-72 h-72 bg-gray-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-0 left-40 w-72 h-72 bg-black rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
@@ -582,9 +582,9 @@
                         <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                        </svg>
-                        {{ __('messages.talk_to_expert') }}
-                    </a>
+    </svg>
+    {{ __('messages.talk_to_expert') }}
+</a>
                 </div>
 
                 @unless($trustUnderImage)
@@ -614,9 +614,9 @@
                             <div class="min-w-0">
                                 <p class="text-xs sm:text-sm font-bold truncate" style="margin:0;color:#6b7280;">{{ $floatTopLabel }}</p>
                                 <p class="text-xl sm:text-2xl font-bold" style="margin:.15rem 0 0;line-height:1;color:#16a34a;">{{ $floatTopValue }}</p>
-                            </div>
-                        </div>
                     </div>
+                </div>
+            </div>
 
                     <div class="absolute z-20 bg-white rounded-xl shadow-2xl p-3 sm:p-4 animate-float animation-delay-2000
                         bottom-3 left-3 md:-bottom-5 md:-left-6 lg:-left-10"
@@ -625,11 +625,11 @@
                             <div class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center"
                                 style="background:#3b82f6;color:#fff;">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            </div>
+                    </div>
                             <div class="min-w-0">
                                 <p class="text-xs sm:text-sm font-bold truncate" style="margin:0;color:#6b7280;">{{ $floatBottomLabel }}</p>
                                 <p class="text-xl sm:text-2xl font-bold" style="margin:.15rem 0 0;line-height:1;color:#2563eb;">{{ $floatBottomValue }}</p>
-                            </div>
+                        </div>
                         </div>
                     </div>
                 </div>

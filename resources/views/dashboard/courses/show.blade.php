@@ -215,6 +215,33 @@
                                 </a>
                             </div>
                             @endif
+                            @elseif($course->location_type === 'private')
+                            <p>
+                                <strong>رابط الاجتماع (دورة خاصة):</strong>
+                                @if($course->online_link)
+                                <a href="{{ $course->online_link }}" target="_blank" class="text-blue-600 hover:underline">
+                                    {{ Str::limit($course->online_link, 40) }}
+                                </a>
+                                @else
+                                <span class="text-red-600 font-semibold">غير محدد — أضف الرابط قبل الموعد</span>
+                                @endif
+                            </p>
+                            @php
+                                $meetingDeadline = $course->start_date ? \Carbon\Carbon::parse($course->start_date)->subMinutes(30) : null;
+                                $canEditMeetingLink = $meetingDeadline && now()->lessThanOrEqualTo($meetingDeadline);
+                            @endphp
+                            @if($canEditMeetingLink)
+                            <form method="POST" action="{{ route('dashboard.courses.update', $course) }}" class="mt-3 space-y-2 max-w-lg">
+                                @csrf
+                                @method('PUT')
+                                <input type="url" name="online_link" value="{{ old('online_link', $course->online_link) }}"
+                                    placeholder="https://..." class="w-full rounded-lg border px-3 py-2 text-sm" required>
+                                @error('online_link')<p class="text-red-600 text-xs">{{ $message }}</p>@enderror
+                                <button type="submit" class="px-4 py-2 rounded-lg bg-pink-600 text-white text-sm font-bold">حفظ رابط الاجتماع</button>
+                            </form>
+                            @elseif($course->start_date)
+                            <p class="text-xs text-amber-700 mt-2">{{ __('messages.private_meeting_link_deadline') }}</p>
+                            @endif
                             @elseif($course->location_type === 'recorded')
                             <p>
                                 <strong>المدة الكلية للفيديوهات:</strong>
@@ -735,6 +762,18 @@
                                                 class="px-3 py-.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                                                 <i class="fas fa-certificate"></i> الشهادة
                                             </a>
+                                            @endif
+                                            @if($payment->specialCertificate)
+                                            <a href="{{ route('dashboard.courses.special-certificate.download', $payment->id) }}"
+                                                class="px-3 py-1 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition">
+                                                <i class="fas fa-award"></i> خاصة
+                                            </a>
+                                            @else
+                                            <form action="{{ route('dashboard.courses.special-certificate.upload', $payment->id) }}" method="POST" enctype="multipart/form-data" class="inline-flex items-center gap-1">
+                                                @csrf
+                                                <input type="file" name="certificate" accept=".pdf,image/*" required class="text-[10px] max-w-[7rem]">
+                                                <button type="submit" class="px-2 py-1 bg-violet-600 text-white rounded text-[10px]">رفع شهادة</button>
+                                            </form>
                                             @endif
                                             </span>
                                         @endif

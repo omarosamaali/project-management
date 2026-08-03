@@ -7,7 +7,7 @@
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard') }}" second="الأكاديمية" third="أرباح المحاضرين" />
 
     <div class="space-y-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-white rounded-xl border shadow-sm p-5">
                 <p class="text-sm text-slate-500">عدد المحاضرين</p>
                 <p class="text-2xl font-black text-slate-900 mt-2">{{ $summary['trainers_count'] }}</p>
@@ -24,9 +24,16 @@
                 </p>
             </div>
             <div class="bg-white rounded-xl border shadow-sm p-5">
-                <p class="text-sm text-slate-500">أرباح المحاضرين ({{ rtrim(rtrim(number_format($percentage, 2), '0'), '.') }}%)</p>
+                <p class="text-sm text-slate-500">أرباح المحاضرين</p>
                 <p class="text-2xl font-black text-green-700 mt-2 inline-flex items-center gap-1.5">
                     {{ number_format($summary['trainer_profit'], 2) }}
+                    <x-drhm-icon width="16" height="18" />
+                </p>
+            </div>
+            <div class="bg-white rounded-xl border shadow-sm p-5">
+                <p class="text-sm text-slate-500">أرباح المنصة</p>
+                <p class="text-2xl font-black text-slate-900 mt-2 inline-flex items-center gap-1.5">
+                    {{ number_format($summary['platform_profit'] ?? 0, 2) }}
                     <x-drhm-icon width="16" height="18" />
                 </p>
             </div>
@@ -36,7 +43,7 @@
             <div class="p-4 border-b bg-slate-50 flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h2 class="text-lg font-bold text-slate-900">تقرير أرباح المحاضرين</h2>
-                    <p class="text-sm text-slate-500">الاحتساب مبني على الاشتراكات المكتملة/الفعالة فقط وبسعر الدورة الأساسي.</p>
+                    <p class="text-sm text-slate-500">الاحتساب من لقطات الربح المخزّنة على كل اشتراك (حسب نوع الدورة وقت الدفع).</p>
                 </div>
                 <a href="{{ route('dashboard.academy.settings.edit') }}" class="px-4 py-2 rounded-lg text-white text-sm" style="background:#0D2444;">إعدادات الأكاديمية</a>
             </div>

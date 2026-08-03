@@ -142,7 +142,12 @@
 
                             <!-- Price / Free toggle -->
                             @php
-                                $isFreeOld = old('price') !== null && (float) old('price') <= 0;
+                                // Only treat as free when an explicit price of 0 was posted (never empty/default).
+                                $isFreeOld = old('price') !== null && old('price') !== '' && (float) old('price') <= 0;
+                                $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
+                                $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
+                                $allowPrivateOld = (string) old('allows_private_requests', '0') === '1';
+                                $trainerPrivateCapped = $trainerPriceCapped;
                             @endphp
                             <div class="space-y-3">
                                 <div>
@@ -159,12 +164,8 @@
                                     </label>
                                 </div>
 
-                                <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }}">
-                                    @php
-                                        $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
-                                        $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
-                                    @endphp
-                                    <label class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                                <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }} space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">
                                         السعر الكلي <span class="text-red-600">*</span>
                                     </label>
                                     <div class="relative">
@@ -174,13 +175,12 @@
                                             {{ $isFreeOld ? '' : 'required' }}
                                             class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
                                             placeholder="{{ $trainerPriceCapped ? number_format($trainerMaxPrice, 2, '.', '') : '999.00' }}">
-                                        <span
-                                            class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
                                             <x-drhm-icon width="12" height="14" />
                                         </span>
                                     </div>
                                     @if($trainerPriceCapped)
-                                    <p class="text-xs text-slate-500 mt-1.5">
+                                    <p class="text-xs text-slate-500">
                                         الحد الأقصى للسعر هو
                                         <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
                                             {{ number_format($trainerMaxPrice, 0) }}
@@ -189,10 +189,58 @@
                                     </p>
                                     @endif
                                     @error('price')
-                                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                    <span class="text-red-600 text-xs">{{ $message }}</span>
                                     @enderror
                                     @include('dashboard.courses.partials.trainer-profit-preview', [
                                         'trainerProfitPercentage' => $trainerProfitPercentage ?? null,
+                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
+                                    ])
+                                </div>
+                            </div>
+
+                            <!-- Private course requests -->
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        طلبات الدورات الخاصة
+                                    </label>
+                                    <label class="course-switch-field cursor-pointer">
+                                        <span class="text-sm text-gray-600 truncate">السماح بطلب دورة خاصة فردية</span>
+                                        <span class="course-switch">
+                                            <input type="hidden" name="allows_private_requests" value="0">
+                                            <input type="checkbox" name="allows_private_requests" id="allows_private_requests"
+                                                value="1" {{ $allowPrivateOld ? 'checked' : '' }}>
+                                            <span class="course-switch-track" aria-hidden="true"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="private_price_wrap" class="{{ $allowPrivateOld ? '' : 'hidden' }} space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        سعر الدورة الخاصة <span class="text-red-600">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" name="private_course_price" id="private_course_price" min="0" step="0.01"
+                                            @if($trainerPrivateCapped) max="500" @endif
+                                            value="{{ old('private_course_price') }}"
+                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
+                                            placeholder="{{ $trainerPrivateCapped ? '500.00' : '999.00' }}">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                            <x-drhm-icon width="12" height="14" />
+                                        </span>
+                                    </div>
+                                    @if($trainerPrivateCapped)
+                                    <p class="text-xs text-slate-500">
+                                        الحد الأقصى لسعر الدورة الخاصة للمحاضر
+                                        <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
+                                            500 <x-drhm-icon width="11" height="12" />
+                                        </span>
+                                    </p>
+                                    @endif
+                                    @error('private_course_price')
+                                    <span class="text-red-600 text-xs">{{ $message }}</span>
+                                    @enderror
+                                    @include('dashboard.courses.partials.trainer-profit-preview-private', [
+                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
                                     ])
                                 </div>
                             </div>
@@ -1398,6 +1446,31 @@
         applyFreeState();
     }
 
+    function setupPrivateRequestsToggle() {
+        const toggle = document.getElementById('allows_private_requests');
+        const wrap = document.getElementById('private_price_wrap');
+        const priceInput = document.getElementById('private_course_price');
+        if (!toggle || !wrap) return;
+
+        function apply() {
+            const on = toggle.checked;
+            wrap.classList.toggle('hidden', !on);
+            if (priceInput) {
+                if (on) {
+                    priceInput.setAttribute('required', 'required');
+                } else {
+                    priceInput.removeAttribute('required');
+                }
+            }
+            if (typeof window.__renderPrivateTrainerProfitPreview === 'function') {
+                window.__renderPrivateTrainerProfitPreview();
+            }
+        }
+
+        toggle.addEventListener('change', apply);
+        apply();
+    }
+
     // ========== Location Type Toggle ==========
     function setupLocationTypeToggle() {
         const locationInputs = document.querySelectorAll('input[name="location_type"]');
@@ -1518,6 +1591,45 @@
     }
 
     // ========== Image Previews ==========
+    function normalizeUploadFile(file, kind) {
+        if (!file || !(file.size > 0)) return null;
+        const name = String(file.name || (kind === 'video' ? 'video.mp4' : 'image.jpg'));
+        const lower = name.toLowerCase();
+        let type = String(file.type || '').toLowerCase();
+
+        if (kind === 'image') {
+            if (!type.startsWith('image/')) {
+                if (lower.endsWith('.png')) type = 'image/png';
+                else if (lower.endsWith('.webp')) type = 'image/webp';
+                else if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) type = 'image/jpeg';
+                else return null;
+            }
+            if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(type)) {
+                return null;
+            }
+            if (type === 'image/jpg') type = 'image/jpeg';
+        } else if (kind === 'video') {
+            if (!type.startsWith('video/') && type !== 'application/ogg') {
+                if (lower.endsWith('.mp4')) type = 'video/mp4';
+                else if (lower.endsWith('.webm')) type = 'video/webm';
+                else if (lower.endsWith('.mov')) type = 'video/quicktime';
+                else if (lower.endsWith('.ogg') || lower.endsWith('.ogv')) type = 'video/ogg';
+                else return null;
+            }
+        }
+
+        if (file.type === type && file instanceof File) return file;
+        try {
+            return new File([file], name, {
+                type,
+                lastModified: file.lastModified || Date.now(),
+            });
+        } catch (e) {
+            return file;
+        }
+    }
+    window.normalizeUploadFile = normalizeUploadFile;
+
     function setupImagePreviews() {
         const mainImageInput = document.getElementById('main_image_input');
         const mainPreviewContainer = document.getElementById('main_preview_container');
@@ -1541,9 +1653,11 @@
         const extraImagesPreview = document.getElementById('extra_images_preview');
 
         if (extraImagesInput && extraImagesPreview) {
-            extraImagesInput.addEventListener('change', (e) => {
+            window.__extraImagesFiles = window.__extraImagesFiles || [];
+
+            function renderExtraImagePreviews(files) {
                 extraImagesPreview.innerHTML = '';
-                Array.from(e.target.files).forEach((file, index) => {
+                Array.from(files || []).forEach((file, index) => {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         const div = document.createElement('div');
@@ -1559,6 +1673,40 @@
                     };
                     reader.readAsDataURL(file);
                 });
+            }
+
+            window.__syncExtraImages = function(files, { merge = false } = {}) {
+                let list = Array.from(files || []);
+                if (merge) {
+                    list = (window.__extraImagesFiles || []).concat(list);
+                }
+                const seen = new Set();
+                list = list
+                    .map((f) => normalizeUploadFile(f, 'image'))
+                    .filter(Boolean)
+                    .filter((f) => {
+                        const key = `${f.name}|${f.size}|${f.lastModified}`;
+                        if (seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                const dt = new DataTransfer();
+                list.forEach((f) => dt.items.add(f));
+                extraImagesInput.files = dt.files;
+                window.__extraImagesFiles = list;
+                renderExtraImagePreviews(list);
+            };
+
+            extraImagesInput.addEventListener('change', (e) => {
+                // Programmatic sync (remove/restore) already set the final FileList.
+                if (extraImagesInput.dataset.syncing === '1') {
+                    delete extraImagesInput.dataset.syncing;
+                    window.__extraImagesFiles = Array.from(extraImagesInput.files);
+                    renderExtraImagePreviews(window.__extraImagesFiles);
+                    return;
+                }
+                // Native file picker replaces FileList — append to what we already keep.
+                window.__syncExtraImages(Array.from(e.target.files || []), { merge: true });
             });
         }
 
@@ -1705,8 +1853,12 @@
         
         setupLocationTypeToggle();
         setupFreePriceToggle();
+        setupPrivateRequestsToggle();
         if (typeof setupTrainerProfitPreview === 'function') {
             setupTrainerProfitPreview();
+        }
+        if (typeof setupPrivateTrainerProfitPreview === 'function') {
+            setupPrivateTrainerProfitPreview();
         }
         
         setupDynamicRows('requirements-container', 'add-requirement-btn', 'remove-requirement-btn', 'requirement-row', createRequirementRow);
@@ -1742,20 +1894,31 @@
     window.removeMainImage = function() {
         const input = document.getElementById('main_image_input');
         const container = document.getElementById('main_preview_container');
-        if (input) input.value = '';
+        if (input) {
+            input.value = '';
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         if (container) container.classList.add('hidden');
+        if (typeof window.__saveCourseDraft === 'function') window.__saveCourseDraft();
     };
 
     window.removeExtraImage = function(index) {
         const input = document.getElementById('extra_images_input');
         if (!input) return;
-        const dt = new DataTransfer();
-        const files = input.files;
-        for (let i = 0; i < files.length; i++) {
-            if (i !== index) dt.items.add(files[i]);
+        const current = window.__extraImagesFiles && window.__extraImagesFiles.length
+            ? window.__extraImagesFiles
+            : Array.from(input.files || []);
+        const next = current.filter((_, i) => i !== index);
+        if (typeof window.__syncExtraImages === 'function') {
+            window.__syncExtraImages(next, { merge: false });
+        } else {
+            const dt = new DataTransfer();
+            next.forEach((f) => dt.items.add(f));
+            input.dataset.syncing = '1';
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        input.files = dt.files;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof window.__saveCourseDraft === 'function') window.__saveCourseDraft();
     };
 
     window.removeCourseVideo = function() {
@@ -1763,7 +1926,10 @@
         const container = document.getElementById('video_preview_container');
         const preview = document.getElementById('video_preview');
         const fileName = document.getElementById('video_file_name');
-        if (input) input.value = '';
+        if (input) {
+            input.value = '';
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
         if (preview) {
             if (preview.dataset.objectUrl) {
                 URL.revokeObjectURL(preview.dataset.objectUrl);
@@ -1774,11 +1940,15 @@
         }
         if (fileName) fileName.textContent = '';
         if (container) container.classList.add('hidden');
+        if (typeof window.__saveCourseDraft === 'function') window.__saveCourseDraft();
     };
 
-    // ========== Draft Autosave (localStorage) ==========
+    // ========== Draft Autosave (localStorage + IndexedDB for media) ==========
     (function setupDraftPersistence() {
         const DRAFT_KEY = 'course_create_draft_v1';
+        const MEDIA_DB = 'course_create_draft_db';
+        const MEDIA_STORE = 'files';
+        const MEDIA_KEY = 'course_create_media_v1';
         const form = document.getElementById('courseForm');
         if (!form) return;
 
@@ -1791,6 +1961,110 @@
             return el ? el.value : '';
         };
 
+        function openMediaDb() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(MEDIA_DB, 1);
+                req.onupgradeneeded = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains(MEDIA_STORE)) {
+                        db.createObjectStore(MEDIA_STORE);
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function idbPut(store, key, value) {
+            return openMediaDb().then((db) => new Promise((resolve, reject) => {
+                const tx = db.transaction(store, 'readwrite');
+                tx.objectStore(store).put(value, key);
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            }));
+        }
+
+        function idbGet(store, key) {
+            return openMediaDb().then((db) => new Promise((resolve, reject) => {
+                const tx = db.transaction(store, 'readonly');
+                const req = tx.objectStore(store).get(key);
+                req.onsuccess = () => { db.close(); resolve(req.result || null); };
+                req.onerror = () => { db.close(); reject(req.error); };
+            }));
+        }
+
+        function idbDelete(store, key) {
+            return openMediaDb().then((db) => new Promise((resolve, reject) => {
+                const tx = db.transaction(store, 'readwrite');
+                tx.objectStore(store).delete(key);
+                tx.oncomplete = () => { db.close(); resolve(); };
+                tx.onerror = () => { db.close(); reject(tx.error); };
+            })).catch(() => {});
+        }
+
+        function assignFiles(input, files) {
+            if (!input) return;
+            const normalized = (files || []).map((f) => {
+                if (!f) return null;
+                if (input.id === 'video_input') return normalizeUploadFile(f, 'video');
+                return normalizeUploadFile(f, 'image');
+            }).filter(Boolean);
+            if (input.id === 'extra_images_input' && typeof window.__syncExtraImages === 'function') {
+                window.__syncExtraImages(normalized, { merge: false });
+                return;
+            }
+            const dt = new DataTransfer();
+            normalized.forEach((f) => dt.items.add(f));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        async function restoreMediaDraft() {
+            try {
+                const media = await idbGet(MEDIA_STORE, MEDIA_KEY);
+                if (!media) return;
+                if (media.main) assignFiles(document.getElementById('main_image_input'), [media.main]);
+                if (media.extras && media.extras.length) {
+                    assignFiles(document.getElementById('extra_images_input'), media.extras);
+                }
+                if (media.video) assignFiles(document.getElementById('video_input'), [media.video]);
+            } catch (e) { /* ignore */ }
+        }
+
+        async function saveMediaDraft({ allowEmpty = true } = {}) {
+            try {
+                const mainInput = document.getElementById('main_image_input');
+                const extraInput = document.getElementById('extra_images_input');
+                const videoInput = document.getElementById('video_input');
+                const extras = (window.__extraImagesFiles && window.__extraImagesFiles.length)
+                    ? window.__extraImagesFiles
+                    : Array.from(extraInput?.files || []);
+                const next = {
+                    main: mainInput?.files?.[0] || null,
+                    extras: extras.filter((f) => f && f.size > 0),
+                    video: videoInput?.files?.[0] || null,
+                };
+
+                // Never wipe previously drafted media with an empty snapshot (e.g. after scrub on failed submit).
+                if (!allowEmpty) {
+                    const prev = await idbGet(MEDIA_STORE, MEDIA_KEY);
+                    if (prev) {
+                        if (!next.main && prev.main) next.main = prev.main;
+                        if ((!next.extras || !next.extras.length) && prev.extras && prev.extras.length) {
+                            next.extras = prev.extras;
+                        }
+                        if (!next.video && prev.video) next.video = prev.video;
+                    }
+                }
+
+                await idbPut(MEDIA_STORE, MEDIA_KEY, next);
+            } catch (e) { /* quota / private mode */ }
+        }
+
+        async function clearMediaDraft() {
+            await idbDelete(MEDIA_STORE, MEDIA_KEY);
+        }
+
         function collectDraft() {
             const data = {
                 scalars: {},
@@ -1799,19 +2073,29 @@
                 features: [],
                 suitable_for: [],
                 buttons: [],
-                exam: { has_exam: false, pass_score: '', duration: '', questions: [] },
+                exam: {
+                    has_exam: false,
+                    required_exam_pass_count: '1',
+                    day_exams: [],
+                    pass_score: '',
+                    duration: '',
+                    questions: [],
+                },
                 activeTab: currentTab,
             };
 
-            ['name_ar','name_en','price','course_category_id','counter',
+            ['name_ar','name_en','price','private_course_price','course_category_id','counter',
              'start_date','end_date','last_date','count_days',
              'online_link','venue_name','venue_map_url','venue_details',
              'description_ar','description_en'].forEach(n => { data.scalars[n] = val(n); });
 
             data.scalars.location_type = radioVal('location_type');
             data.scalars.status = radioVal('status');
+            // Checkbox (not the hidden 0 twin)
+            data.scalars.allows_private_requests = form.querySelector('#allows_private_requests')?.checked ? '1' : '0';
 
             data.rest_days = Array.from(form.querySelectorAll('input[name="rest_days[]"]:checked')).map(cb => cb.value);
+            data.levels = Array.from(form.querySelectorAll('input[name="levels[]"]:checked')).map(cb => cb.value);
 
             form.querySelectorAll('.requirement-row').forEach(row => {
                 data.requirements.push({
@@ -1844,21 +2128,17 @@
                 });
             });
 
-            const examToggle = form.querySelector('#has_exam_toggle');
-            data.exam.has_exam = !!(examToggle && examToggle.checked);
-            data.exam.pass_score = val('exam_pass_score');
-            data.exam.duration = val('exam_duration_minutes');
-            form.querySelectorAll('.exam-question-row').forEach(row => {
-                const answers = Array.from(row.querySelectorAll('input[name*="[answers]"]')).map(i => i.value);
-                const radios = Array.from(row.querySelectorAll('input[type="radio"]'));
-                let correct = radios.findIndex(r => r.checked);
-                if (correct < 0) correct = 0;
-                data.exam.questions.push({
-                    question: row.querySelector('input[name*="[question]"]')?.value || '',
-                    answers,
-                    correct,
-                });
-            });
+            // Day exams (final settings)
+            if (typeof window.collectDayExamsDraft === 'function') {
+                const dayExamDraft = window.collectDayExamsDraft();
+                data.exam.has_exam = !!dayExamDraft.has_exam;
+                data.exam.required_exam_pass_count = dayExamDraft.required_exam_pass_count || '1';
+                data.exam.day_exams = dayExamDraft.day_exams || [];
+            } else {
+                const examToggle = form.querySelector('#has_exam_toggle');
+                data.exam.has_exam = !!(examToggle && examToggle.checked);
+                data.exam.required_exam_pass_count = val('required_exam_pass_count') || '1';
+            }
 
             return data;
         }
@@ -1867,6 +2147,7 @@
             try {
                 localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft()));
             } catch (e) { /* storage full / disabled */ }
+            saveMediaDraft();
         }
 
         let saveTimer = null;
@@ -1888,23 +2169,48 @@
         function restoreDraft(draft) {
             // Scalars
             Object.entries(draft.scalars || {}).forEach(([name, value]) => {
-                if (value === '' || value == null) return;
+                if (name === 'allows_private_requests') {
+                    const toggle = form.querySelector('#allows_private_requests');
+                    if (toggle) {
+                        toggle.checked = value === '1' || value === 1 || value === true;
+                        toggle.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    return;
+                }
+                if (value === '' || value == null) {
+                    // Still clear private price when explicitly empty after toggle off
+                    if (name === 'private_course_price') {
+                        const el = form.querySelector('#private_course_price');
+                        if (el) el.value = '';
+                    }
+                    return;
+                }
                 if (name === 'location_type' || name === 'status') {
                     const radio = form.querySelector(`[name="${name}"][value="${value}"]`);
                     if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); }
+                    return;
+                }
+                if (name === 'private_course_price') {
+                    const el = form.querySelector('#private_course_price');
+                    if (el) el.value = value;
                     return;
                 }
                 const el = form.querySelector(`[name="${name}"]`);
                 if (el) el.value = value;
             });
 
-            // Sync free / paid toggle with restored price
+            // Sync free / paid toggle with restored price (empty price = paid, not free)
             const priceEl = form.querySelector('#price');
             const freeToggle = form.querySelector('#is_free_toggle');
             if (priceEl && freeToggle) {
-                const isFree = parseFloat(priceEl.value || '0') <= 0;
+                const raw = String(priceEl.value || '').trim();
+                const isFree = raw !== '' && Number.isFinite(parseFloat(raw)) && parseFloat(raw) <= 0;
                 freeToggle.checked = isFree;
                 freeToggle.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if (typeof window.__renderPrivateTrainerProfitPreview === 'function') {
+                window.__renderPrivateTrainerProfitPreview();
             }
 
             // Dates -> rebuild rest-day checkboxes, then restore selections
@@ -1918,6 +2224,15 @@
                     if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
                 });
             }
+
+            // Course levels
+            form.querySelectorAll('input[name="levels[]"]').forEach((cb) => {
+                cb.checked = false;
+            });
+            (draft.levels || []).forEach((level) => {
+                const cb = form.querySelector(`input[name="levels[]"][value="${level}"]`);
+                if (cb) cb.checked = true;
+            });
 
             // Requirements
             if ((draft.requirements || []).length) {
@@ -1981,84 +2296,140 @@
                 });
             }
 
-            // Exam
+            // Day exams (final settings)
             const examData = draft.exam || {};
-            if (examData.has_exam) {
+            if (typeof window.restoreDayExamsDraft === 'function') {
+                window.restoreDayExamsDraft({
+                    has_exam: !!examData.has_exam,
+                    required_exam_pass_count: examData.required_exam_pass_count || '1',
+                    day_exams: examData.day_exams || [],
+                });
+            } else if (examData.has_exam) {
                 const toggle = form.querySelector('#has_exam_toggle');
                 if (toggle && !toggle.checked) {
                     toggle.checked = true;
                     toggle.dispatchEvent(new Event('change', { bubbles: true }));
                 }
-                if (examData.duration) { const d = form.querySelector('[name="exam_duration_minutes"]'); if (d) d.value = examData.duration; }
-
-                const container = document.getElementById('exam-questions-container');
-                const addQBtn = document.getElementById('add-exam-question');
-                if (container && addQBtn && (examData.questions || []).length) {
-                    while (container.querySelectorAll('.exam-question-row').length < examData.questions.length) {
-                        addQBtn.click();
-                    }
-                    const qRows = container.querySelectorAll('.exam-question-row');
-                    examData.questions.forEach((q, qi) => {
-                        const row = qRows[qi];
-                        if (!row) return;
-                        const qInput = row.querySelector('input[name*="[question]"]');
-                        if (qInput) qInput.value = q.question || '';
-                        const answersWrap = row.querySelector('.exam-answers');
-                        const addABtn = row.querySelector('.add-exam-answer');
-                        const wanted = (q.answers && q.answers.length) ? q.answers.length : 1;
-                        while (addABtn && answersWrap.querySelectorAll('.exam-answer-row').length < wanted) {
-                            addABtn.click();
-                        }
-                        const aRows = answersWrap.querySelectorAll('.exam-answer-row');
-                        (q.answers || []).forEach((ans, ai) => {
-                            const t = aRows[ai] && aRows[ai].querySelector('input[type="text"]');
-                            if (t) t.value = ans;
-                        });
-                        const radios = row.querySelectorAll('input[type="radio"]');
-                        if (radios[q.correct]) radios[q.correct].checked = true;
-                    });
+                if (examData.required_exam_pass_count) {
+                    const p = form.querySelector('[name="required_exam_pass_count"]');
+                    if (p) p.value = examData.required_exam_pass_count;
                 }
-                if (examData.pass_score) { const p = form.querySelector('[name="exam_pass_score"]'); if (p) p.value = examData.pass_score; }
             }
 
             if (typeof draft.activeTab === 'number') showTab(draft.activeTab);
         }
 
-        function showRestoredBanner() {
+        function showRestoredBanner(message) {
+            if (document.getElementById('course-draft-restore-banner')) return;
             const bar = document.createElement('div');
+            bar.id = 'course-draft-restore-banner';
             bar.className = 'flex items-center justify-between gap-3 m-4 p-3 text-sm text-blue-800 bg-blue-50 border border-blue-200 rounded-lg';
             bar.innerHTML = `
-                <span class="flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> تم استرجاع مسودة غير محفوظة.</span>
+                <span class="flex items-center gap-2"><i class="fas fa-clock-rotate-left"></i> ${message || 'تم استرجاع مسودة غير محفوظة.'}</span>
                 <button type="button" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-xs">
                     <i class="fas fa-trash ml-1"></i> مسح المسودة والبدء من جديد
                 </button>`;
-            bar.querySelector('button').addEventListener('click', () => {
+            bar.querySelector('button').addEventListener('click', async () => {
                 try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+                await clearMediaDraft();
                 window.location.reload();
             });
             form.parentNode.insertBefore(bar, form);
         }
 
-        // Restore on load (skip when server returned old input, to avoid duplicates)
-        if (!window.__courseHasOldInput) {
-            let raw = null;
-            try { raw = localStorage.getItem(DRAFT_KEY); } catch (e) {}
-            if (raw) {
-                try {
-                    const draft = JSON.parse(raw);
-                    restoreDraft(draft);
-                    showRestoredBanner();
-                } catch (e) { /* corrupt draft */ }
+        // Restore on load — always prefer the local draft (survives validation errors).
+        // Draft is cleared ONLY after a successful create (clear_course_create_draft flash).
+        window.__courseMediaReady = false;
+        async function runInitialRestore() {
+            let draft = null;
+            try {
+                const raw = localStorage.getItem(DRAFT_KEY);
+                if (raw) draft = JSON.parse(raw);
+            } catch (e) { /* corrupt */ }
+
+            if (draft) {
+                restoreDraft(draft);
+                showRestoredBanner(
+                    window.__courseHasOldInput
+                        ? 'تم استرجاع مسودتك بعد خطأ الحفظ. راجع البيانات وأعد المحاولة.'
+                        : 'تم استرجاع مسودة غير محفوظة.'
+                );
             }
+            await restoreMediaDraft();
+            window.__courseMediaReady = true;
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => setTimeout(() => { runInitialRestore(); }, 0));
+        } else {
+            setTimeout(() => { runInitialRestore(); }, 0);
         }
 
         // Save on any change / typing
         form.addEventListener('input', debouncedSave);
         form.addEventListener('change', debouncedSave);
 
-        // Clear draft once the course is actually submitted
-        form.addEventListener('submit', () => {
-            try { localStorage.removeItem(DRAFT_KEY); } catch (e) {}
+        function scrubExtraImagesForSubmit() {
+            const input = document.getElementById('extra_images_input');
+            if (!input) return;
+            const raw = (window.__extraImagesFiles && window.__extraImagesFiles.length)
+                ? window.__extraImagesFiles
+                : Array.from(input.files || []);
+            const valid = raw.map((f) => normalizeUploadFile(f, 'image')).filter(Boolean);
+            if (typeof window.__syncExtraImages === 'function') {
+                window.__syncExtraImages(valid, { merge: false });
+            } else {
+                const dt = new DataTransfer();
+                valid.forEach((f) => dt.items.add(f));
+                input.files = dt.files;
+            }
+            window.__extraImagesFiles = valid;
+        }
+
+        function scrubSingleFileInput(id, kind) {
+            const input = document.getElementById(id);
+            if (!input || !input.files || !input.files[0]) return;
+            const normalized = normalizeUploadFile(input.files[0], kind || 'image');
+            if (!normalized) {
+                input.value = '';
+                return;
+            }
+            const dt = new DataTransfer();
+            dt.items.add(normalized);
+            input.files = dt.files;
+        }
+
+        // Persist full draft BEFORE scrubbing. Never clear here — only after successful create.
+        let submitting = false;
+        form.addEventListener('submit', (e) => {
+            if (!window.__courseMediaReady) {
+                e.preventDefault();
+                runInitialRestore().then(() => form.requestSubmit());
+                return;
+            }
+            if (submitting) {
+                e.preventDefault();
+                return;
+            }
+
+            // Snapshot complete form + media first (before any scrub can empty inputs).
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft()));
+            } catch (err) {}
+            saveMediaDraft({ allowEmpty: true });
+
+            scrubExtraImagesForSubmit();
+            scrubSingleFileInput('main_image_input', 'image');
+            scrubSingleFileInput('video_input', 'video');
+
+            // Update media draft after scrub, but do not wipe previous files if scrub removed them.
+            saveMediaDraft({ allowEmpty: false });
+
+            submitting = true;
+            const btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-wait');
+            }
         });
     })();
 })();

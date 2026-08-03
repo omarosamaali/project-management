@@ -24,6 +24,18 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\App\Exceptions\UserFacingException $e, \Illuminate\Http\Request $request) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+
+            $redirect = $e->redirectUrl
+                ? redirect()->to($e->redirectUrl)
+                : redirect()->back();
+
+            return $redirect->withInput()->with('error', $e->getMessage());
+        });
+
         $exceptions->render(function (\JsonException $e, \Illuminate\Http\Request $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'خطأ في ترميز البيانات. تواصل مع الدعم.'], 500);

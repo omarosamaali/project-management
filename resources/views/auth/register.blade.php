@@ -4,18 +4,7 @@
 
 @section('content')
 <style>
-    .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__clear {
-        display: none !important;
-    }
     .select2-container, .iti { width: 100%; }
-    .select2-container--default .select2-selection--single .select2-selection__placeholder,
-    .select2-container[dir="rtl"] .select2-selection--single .select2-selection__rendered {
-        position: relative !important;
-        top: 4px !important;
-    }
-    .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__arrow {
-        top: 9px !important;
-    }
 </style>
 
 <div class="my-10 mx-auto max-w-7xl w-[96%] bg-white rounded-xl shadow-2xl overflow-hidden grid md:grid-cols-2">
@@ -150,10 +139,10 @@
             <x-input-error :messages="$errors->get('phone')" class="mt-2" />
         </div>
 
-        <div>
+        <div class="country-select2-host is-classic">
             <x-input-label for="country_select2" :value="__('messages.country')" />
             <select id="country_select2" name="country" class="block mt-1 w-full rtl:text-right" required>
-                <option value="" disabled selected>... جاري تحميل الدول ...</option>
+                <option value="" disabled selected>اختر دولتك</option>
             </select>
             <x-input-error :messages="$errors->get('country')" class="mt-2" />
         </div>
@@ -272,39 +261,14 @@
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+@include('partials.country-select2', [
+    'selector' => '#country_select2',
+    'oldCountry' => old('country', ''),
+    'variant' => 'classic',
+])
 
 <script>
     $(document).ready(function() {
-            const countryDataUrl = 'https://raw.githubusercontent.com/mledoze/countries/master/countries.json';
-            fetch(countryDataUrl)
-                .then(response => response.json())
-                .then(data => {
-                    const selectElement = $('#country_select2');
-                    selectElement.empty();
-
-                    selectElement.append(new Option("اختر دولتك", "", true, true));
-                    data.forEach(country => {
-                        const countryName = country.translations.ara.common || country.name.common;
-                        const countryCode = country.cca2;
-                        const newOption = new Option(countryName, countryCode, false, false);
-                        if ('{{ old('country') }}' === countryCode) {
-                            newOption.selected = true;
-                        }
-
-                        selectElement.append(newOption);
-                    });
-
-                    selectElement.select2({
-                        placeholder: "اختر دولتك",
-                        allowClear: true,
-                        dir: "rtl"
-                    });
-                })
-                .catch(error => {
-                    console.error('حدث خطأ أثناء تحميل قائمة الدول:', error);
-                    $('#country_select2').empty().append(new Option("تعذر تحميل الدول", "", true, true));
-                });
-
             const businessFields = document.getElementById('business-fields');
             const companyName = document.getElementById('company_name');
             const companyLogo = document.getElementById('company_logo');

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -63,42 +64,71 @@ class RegisteredUserController extends Controller
             'company_name' => ['required_if:account_type,business', 'nullable', 'string', 'max:255'],
             'company_logo' => ['required_if:account_type,business', 'nullable', 'image', 'max:5120'],
             'course_category_id' => ['exclude_unless:role,trainer', 'required', 'exists:course_categories,id'],
+            'teaching_language' => ['exclude_unless:role,trainer', 'nullable', 'in:ar,en'],
             'avatar' => ['exclude_unless:role,trainer', 'required', 'file', 'image', 'max:2048'],
+            'resume' => ['exclude_unless:role,trainer', 'required', 'file', 'mimes:pdf', 'max:10240'],
+            'teaching_sample' => ['exclude_unless:role,trainer', 'required', 'file', 'mimetypes:video/mp4,video/quicktime,video/x-m4v', 'max:307200'],
+            'trainer_bio' => ['exclude_unless:role,trainer', 'required', 'string', 'min:120', 'max:2000'],
             'id_card_front' => ['exclude_unless:role,trainer', 'required', 'file', 'image', 'max:4096'],
             'id_card_back' => ['exclude_unless:role,trainer', 'required', 'file', 'image', 'max:4096'],
             'accept_terms' => ['exclude_unless:role,trainer', 'accepted'],
         ];
 
-        $request->validate($rules, [
-            'account_type.required' => 'يرجى اختيار نوع الحساب.',
-            'account_type.in' => 'نوع الحساب غير صالح.',
-            'role.required' => 'يرجى اختيار نوع العضوية.',
-            'role.in' => 'نوع العضوية غير صالح.',
-            'company_name.required_if' => 'اسم الشركة مطلوب للحساب التجاري.',
-            'company_logo.required_if' => 'لوجو الشركة مطلوب للحساب التجاري.',
-            'company_logo.image' => 'يجب أن يكون لوجو الشركة صورة.',
-            'company_logo.max' => 'حجم لوجو الشركة يجب ألا يتجاوز 5 ميجابايت.',
-            'course_category_id.required' => __('messages.trainer_category_required'),
-            'course_category_id.exists' => __('messages.trainer_category_invalid'),
-            'avatar.required' => __('messages.trainer_avatar_required'),
-            'avatar.file' => __('messages.trainer_avatar_required'),
-            'avatar.image' => __('messages.trainer_image_invalid'),
-            'avatar.max' => __('messages.trainer_image_max_2'),
-            'id_card_front.required' => __('messages.trainer_id_front_required'),
-            'id_card_front.file' => __('messages.trainer_id_front_required'),
-            'id_card_front.image' => __('messages.trainer_image_invalid'),
-            'id_card_front.max' => __('messages.trainer_image_max_4'),
-            'id_card_back.required' => __('messages.trainer_id_back_required'),
-            'id_card_back.file' => __('messages.trainer_id_back_required'),
-            'id_card_back.image' => __('messages.trainer_image_invalid'),
-            'id_card_back.max' => __('messages.trainer_image_max_4'),
-            'accept_terms.accepted' => __('messages.trainer_terms_required'),
-        ]);
+        try {
+            $request->validate($rules, [
+                'account_type.required' => 'يرجى اختيار نوع الحساب.',
+                'account_type.in' => 'نوع الحساب غير صالح.',
+                'role.required' => 'يرجى اختيار نوع العضوية.',
+                'role.in' => 'نوع العضوية غير صالح.',
+                'company_name.required_if' => 'اسم الشركة مطلوب للحساب التجاري.',
+                'company_logo.required_if' => 'لوجو الشركة مطلوب للحساب التجاري.',
+                'company_logo.image' => 'يجب أن يكون لوجو الشركة صورة.',
+                'company_logo.max' => 'حجم لوجو الشركة يجب ألا يتجاوز 5 ميجابايت.',
+                'course_category_id.required' => __('messages.trainer_category_required'),
+                'course_category_id.exists' => __('messages.trainer_category_invalid'),
+                'avatar.required' => __('messages.trainer_avatar_required'),
+                'avatar.file' => __('messages.trainer_avatar_required'),
+                'avatar.image' => __('messages.trainer_image_invalid'),
+                'avatar.max' => __('messages.trainer_image_max_2'),
+                'resume.required' => __('messages.trainer_resume_required'),
+                'resume.file' => __('messages.trainer_resume_required'),
+                'resume.mimes' => __('messages.trainer_resume_mimes'),
+                'resume.max' => __('messages.trainer_resume_max'),
+                'teaching_sample.required' => __('messages.trainer_sample_required'),
+                'teaching_sample.file' => __('messages.trainer_sample_required'),
+                'teaching_sample.mimetypes' => __('messages.trainer_sample_mimes'),
+                'teaching_sample.max' => __('messages.trainer_sample_max'),
+                'trainer_bio.required' => __('messages.trainer_bio_required'),
+                'trainer_bio.min' => __('messages.trainer_bio_min'),
+                'trainer_bio.max' => __('messages.trainer_bio_max'),
+                'id_card_front.required' => __('messages.trainer_id_front_required'),
+                'id_card_front.file' => __('messages.trainer_id_front_required'),
+                'id_card_front.image' => __('messages.trainer_image_invalid'),
+                'id_card_front.max' => __('messages.trainer_image_max_4'),
+                'id_card_back.required' => __('messages.trainer_id_back_required'),
+                'id_card_back.file' => __('messages.trainer_id_back_required'),
+                'id_card_back.image' => __('messages.trainer_image_invalid'),
+                'id_card_back.max' => __('messages.trainer_image_max_4'),
+                'accept_terms.accepted' => __('messages.trainer_terms_required'),
+            ]);
+        } catch (ValidationException $e) {
+            if ($isTrainer && $isAcademy) {
+                throw $e->redirectTo(route('academy.become-trainer'));
+            }
+
+            throw $e;
+        }
 
         if ($isTrainer) {
             $missing = [];
             if (! $request->hasFile('avatar')) {
                 $missing['avatar'] = __('messages.trainer_avatar_required');
+            }
+            if (! $request->hasFile('resume')) {
+                $missing['resume'] = __('messages.trainer_resume_required');
+            }
+            if (! $request->hasFile('teaching_sample')) {
+                $missing['teaching_sample'] = __('messages.trainer_sample_required');
             }
             if (! $request->hasFile('id_card_front')) {
                 $missing['id_card_front'] = __('messages.trainer_id_front_required');
@@ -107,7 +137,9 @@ class RegisteredUserController extends Controller
                 $missing['id_card_back'] = __('messages.trainer_id_back_required');
             }
             if ($missing !== []) {
-                return back()->withErrors($missing)->withInput();
+                return $this->trainerRegistrationRedirect($isAcademy)
+                    ->withErrors($missing)
+                    ->withInput();
             }
 
             $categoryOk = CourseCategory::query()
@@ -115,9 +147,11 @@ class RegisteredUserController extends Controller
                 ->where('is_active', true)
                 ->exists();
             if (! $categoryOk) {
-                return back()->withErrors([
-                    'course_category_id' => __('messages.trainer_category_invalid'),
-                ])->withInput();
+                return $this->trainerRegistrationRedirect($isAcademy)
+                    ->withErrors([
+                        'course_category_id' => __('messages.trainer_category_invalid'),
+                    ])
+                    ->withInput();
             }
         }
 
@@ -128,11 +162,15 @@ class RegisteredUserController extends Controller
 
         $role = $request->role;
         $avatarPath = null;
+        $resumePath = null;
+        $teachingSamplePath = null;
         $idFrontPath = null;
         $idBackPath = null;
 
         if ($isTrainer) {
             $avatarPath = WatermarkedUpload::store($request->file('avatar'), 'trainers/avatars');
+            $resumePath = $request->file('resume')->store('trainers/resumes', 'public');
+            $teachingSamplePath = $request->file('teaching_sample')->store('trainers/samples', 'public');
             $idFrontPath = $request->file('id_card_front')->store('trainers/id-cards', 'public');
             $idBackPath = $request->file('id_card_back')->store('trainers/id-cards', 'public');
         }
@@ -154,6 +192,10 @@ class RegisteredUserController extends Controller
             'status' => $isTrainer ? 'pending' : 'active',
             'avatar' => $avatarPath,
             'course_category_id' => $isTrainer ? $request->course_category_id : null,
+            'teaching_language' => $isTrainer ? ($request->input('teaching_language') ?: 'ar') : null,
+            'resume_path' => $resumePath,
+            'teaching_sample_path' => $teachingSamplePath,
+            'trainer_bio' => $isTrainer ? $request->input('trainer_bio') : null,
             'id_card_front_path' => $idFrontPath,
             'id_card_back_path' => $idBackPath,
             'id_card_path' => $idFrontPath,
@@ -180,7 +222,7 @@ class RegisteredUserController extends Controller
             $this->notifyAdminsOfPendingTrainer($user->fresh(['courseCategory']));
 
             return redirect()
-                ->route('login')
+                ->route('login', ['ui' => 'academy', 'trainer_applied' => 1])
                 ->with('success', __('messages.trainer_register_pending'));
         }
 
@@ -275,5 +317,17 @@ class RegisteredUserController extends Controller
                 ]);
             }
         });
+    }
+
+    /**
+     * Academy trainers apply from the become-trainer page; keep validation errors there.
+     */
+    protected function trainerRegistrationRedirect(bool $isAcademy): RedirectResponse
+    {
+        if ($isAcademy) {
+            return redirect()->route('academy.become-trainer');
+        }
+
+        return redirect()->back();
     }
 }

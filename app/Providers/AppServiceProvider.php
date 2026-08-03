@@ -50,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
             $attendanceWidget = null;
             $support = null;
             $pendingTrainersCount = 0;
+            $pendingPrivateRefundsCount = 0;
 
             if (Auth::check() && Auth::user()->role == 'client') {
                 $support = Support::where('user_id', Auth::user()->id)->first();
@@ -60,6 +61,16 @@ class AppServiceProvider extends ServiceProvider
                     $pendingTrainersCount = \App\Models\User::pendingTrainersCount();
                 } catch (\Throwable $e) {
                     Log::warning('[PENDING_TRAINERS] count failed', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                try {
+                    $pendingPrivateRefundsCount = \App\Models\PrivateCourseRefund::query()
+                        ->where('status', \App\Models\PrivateCourseRefund::STATUS_REQUIRED)
+                        ->count();
+                } catch (\Throwable $e) {
+                    Log::warning('[PRIVATE_REFUNDS] count failed', [
                         'error' => $e->getMessage(),
                     ]);
                 }
@@ -89,6 +100,7 @@ class AppServiceProvider extends ServiceProvider
             $view->with('support', $support);
             $view->with('attendanceWidget', $attendanceWidget);
             $view->with('pendingTrainersCount', $pendingTrainersCount);
+            $view->with('pendingPrivateRefundsCount', $pendingPrivateRefundsCount);
         });
     }
 }

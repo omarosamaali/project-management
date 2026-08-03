@@ -261,6 +261,19 @@
         });
     }
 
-    document.querySelectorAll('[data-snap-slider-wrap]').forEach((wrap) => setupSnapSlider(wrap));
+    function initSnapSliders(root) {
+        const scope = root && root.querySelectorAll ? root : document;
+        const wraps = scope.matches && scope.matches('[data-snap-slider-wrap]')
+            ? [scope]
+            : Array.from(scope.querySelectorAll('[data-snap-slider-wrap]'));
+        wraps.forEach((wrap) => {
+            if (wrap.dataset.snapReady === '1') return;
+            wrap.dataset.snapReady = '1';
+            setupSnapSlider(wrap);
+        });
+    }
+
+    window.AcademySnapSlider = { init: initSnapSliders };
+    initSnapSliders(document);
 })();
 </script>

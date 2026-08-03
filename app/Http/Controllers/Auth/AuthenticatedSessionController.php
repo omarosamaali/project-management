@@ -117,6 +117,19 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
+        $redirect = $request->input('redirect') ?: $request->query('redirect');
+        if (is_string($redirect) && $redirect !== '') {
+            $host = parse_url($redirect, PHP_URL_HOST);
+            $appHost = parse_url(url('/'), PHP_URL_HOST);
+            if ($host === null || $host === $appHost) {
+                if (str_contains($redirect, 'become-trainer') || str_contains($redirect, 'academy')) {
+                    session([AuthUi::SESSION_KEY => AuthUi::ACADEMY]);
+                }
+
+                return redirect()->to($redirect);
+            }
+        }
+
         if ($toAcademyHome) {
             session([AuthUi::SESSION_KEY => AuthUi::ACADEMY]);
 

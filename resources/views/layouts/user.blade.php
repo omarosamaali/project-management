@@ -377,10 +377,17 @@
                             @else
                             <a href="{{ route('lang.switch', 'ar') }}" class="ac-pub-link">العربية</a>
                             @endif
-                            <a href="{{ route('academy.courses') }}" class="ac-pub-cta">
-                                <i class="fas fa-play text-xs"></i>
-                                {{ __('messages.academy_explore_courses') }}
+                            @auth
+                            <a href="{{ route('academy.courses') }}" class="ac-pub-cta {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') ? 'is-active' : '' }}">
+                                <i class="fas fa-layer-group text-xs"></i>
+                                {{ __('messages.academy_view_all_courses') }}
                             </a>
+                            @else
+                            <a href="{{ route('academy.become-trainer') }}" class="ac-pub-cta {{ request()->routeIs('academy.become-trainer') ? 'is-active' : '' }}">
+                                <i class="fas fa-chalkboard-teacher text-xs"></i>
+                                {{ __('messages.become_trainer_nav') }}
+                            </a>
+                            @endauth
                         </div>
 
                         <div class="ac-pub-mobile flex items-center gap-1">
@@ -610,6 +617,13 @@
                 <i class="fas fa-chalkboard-teacher w-5 text-center opacity-70"></i>
                 {{ __('messages.academy_trainers_kicker') }}
             </a>
+            @guest
+            <a href="{{ route('academy.become-trainer') }}"
+                class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('academy.become-trainer') ? 'is-drawer-active' : '' }}">
+                <i class="fas fa-user-plus w-5 text-center opacity-70"></i>
+                {{ __('messages.become_trainer_nav') }}
+            </a>
+            @endguest
             @auth
             <a href="{{ route('academy.wishlist.index') }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('academy.wishlist.*') ? 'is-drawer-active' : '' }}">

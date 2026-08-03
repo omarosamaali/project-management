@@ -405,9 +405,21 @@
             'route' => route('dashboard.my_courses.index'),
             'active' => request()->routeIs('dashboard.my_courses.*'),
         ];
+        $navItems[] = [
+            'label' => 'طلباتي الخاصة',
+            'icon' => 'fas fa-user-lock',
+            'route' => route('dashboard.academy.private-requests.trainee-index'),
+            'active' => request()->routeIs('dashboard.academy.private-requests.trainee-index'),
+        ];
     }
 
     if ($isTrainer) {
+        $navItems[] = [
+            'label' => 'طلبات الدورات الخاصة',
+            'icon' => 'fas fa-inbox',
+            'route' => route('dashboard.academy.private-requests.trainer-inbox'),
+            'active' => request()->routeIs('dashboard.academy.private-requests.trainer-inbox'),
+        ];
         $navItems[] = [
             'label' => 'إدارة الدورات',
             'icon' => 'fas fa-chalkboard-teacher',
@@ -463,7 +475,7 @@
         <div class="ac-nav-actions">
             <a href="{{ route('profile.edit') }}" class="ac-user-chip" title="{{ $acUser->name }}">
                 <img src="{{ $acUser->avatarUrl() }}" alt=""
-                    onerror="this.src='{{ asset('assets/images/logo.webp') }}'">
+                    onerror="this.onerror=null;this.src='{{ $acUser->letterAvatarDataUri() }}';">
                 <span class="meta">
                     <span class="name">{{ $acUser->name }}</span>
                     <span class="role">{{ $roleLabel }}</span>
@@ -485,13 +497,6 @@
 </div>
 
 <main class="ac-main">
-    @if(session('success'))
-    <div class="ac-flash ac-flash-success"><i class="fas fa-check-circle ml-1"></i>{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-    <div class="ac-flash ac-flash-error"><i class="fas fa-exclamation-circle ml-1"></i>{{ session('error') }}</div>
-    @endif
-
     @yield('content')
 </main>
 
@@ -505,6 +510,53 @@
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .academy-shell .swal2-popup {
+        border-radius: 1.25rem !important;
+        font-family: inherit !important;
+        padding: 1.5rem 1.25rem 1.35rem !important;
+    }
+    .academy-shell .swal2-title {
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        color: #061525 !important;
+    }
+    .academy-shell .swal2-html-container {
+        font-size: .92rem !important;
+        color: #5a6d82 !important;
+        font-weight: 600 !important;
+    }
+    .academy-shell .swal2-confirm {
+        border-radius: 999px !important;
+        font-weight: 800 !important;
+        padding: .55rem 1.35rem !important;
+        box-shadow: 0 8px 18px rgba(6,21,37,.16) !important;
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    @if(session('success'))
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'success',
+            title: @json(session('success')),
+            confirmButtonText: 'حسناً',
+            confirmButtonColor: '#0D2444',
+        });
+    }
+    @elseif(session('error'))
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'error',
+            title: 'تنبيه',
+            text: @json(session('error')),
+            confirmButtonText: 'حسناً',
+            confirmButtonColor: '#0D2444',
+        });
+    }
+    @endif
+});
+</script>
 <script>
 @auth
 (function () {

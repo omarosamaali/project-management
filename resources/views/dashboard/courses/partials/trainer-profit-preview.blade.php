@@ -1,12 +1,21 @@
-{{-- Live trainer profit preview under course price (AED + EGP). --}}
+{{-- Live trainer profit preview under course price (AED + EGP). Per location_type %. --}}
 @php
-    $trainerProfitPct = (float) ($trainerProfitPercentage ?? \App\Models\Setting::academyTrainerProfitPercentage());
+    $pctMap = $trainerProfitPercentages ?? \App\Models\Setting::academyTrainerProfitPercentages();
+    $defaultType = old('location_type', $course->location_type ?? 'online');
+    $trainerProfitPct = (float) ($pctMap[$defaultType === 'on_site' ? 'onsite' : $defaultType] ?? $pctMap['online'] ?? 60);
+    if ($defaultType === 'on_site' && ($pctMap['onsite'] ?? null) === null) {
+        $trainerProfitPct = 0.0;
+    }
     $platformFeePct = max(0, round(100 - $trainerProfitPct, 2));
     $fmtPct = fn ($n) => rtrim(rtrim(number_format($n, 2, '.', ''), '0'), '.');
 @endphp
 <div id="trainer_profit_preview"
     class="hidden mt-3 rounded-xl border border-emerald-200 bg-emerald-50/80 text-sm text-slate-700"
     style="padding: 1rem 1.15rem;"
+    data-pct-online="{{ (float) ($pctMap['online'] ?? 60) }}"
+    data-pct-recorded="{{ (float) ($pctMap['recorded'] ?? 50) }}"
+    data-pct-private="{{ (float) ($pctMap['private'] ?? 70) }}"
+    data-pct-onsite="{{ $pctMap['onsite'] === null ? '' : (float) $pctMap['onsite'] }}"
     data-trainer-pct="{{ $trainerProfitPct }}"
     data-platform-pct="{{ $platformFeePct }}"
     data-rate-url="{{ route('dashboard.academy.currency.aed-egp') }}"
@@ -25,7 +34,7 @@
                     </span>
                 </div>
                 <div class="flex items-center justify-between gap-4">
-                    <span class="text-slate-600">رسوم المنصة <span class="text-slate-400">({{ $fmtPct($platformFeePct) }}%)</span></span>
+                    <span class="text-slate-600">رسوم المنصة <span class="text-slate-400">(<span id="tp_platform_pct_label">{{ $fmtPct($platformFeePct) }}</span>%)</span></span>
                     <span class="inline-flex items-center gap-1 font-semibold text-slate-800 tabular-nums" dir="ltr">
                         <span id="tp_fee">—</span>
                         <x-drhm-icon width="12" height="14" />
@@ -58,10 +67,10 @@
 
             <p class="text-[11px] text-slate-400 leading-relaxed pt-0.5">
                 نسبة ربحك
-                <bdi dir="ltr">{{ $fmtPct($trainerProfitPct) }}%</bdi>
+                <bdi dir="ltr"><span id="tp_trainer_pct_label">{{ $fmtPct($trainerProfitPct) }}</span>%</bdi>
                 <span class="mx-1 text-slate-300">·</span>
                 رسوم المنصة
-                <bdi dir="ltr">{{ $fmtPct($platformFeePct) }}%</bdi>
+                <bdi dir="ltr"><span id="tp_platform_pct_label_2">{{ $fmtPct($platformFeePct) }}</span>%</bdi>
             </p>
         </div>
     </div>

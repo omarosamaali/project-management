@@ -415,6 +415,72 @@
     .soni-stars { display: inline-flex; align-items: center; gap: .15rem; color: var(--gold); }
     .soni-stars .is-empty { color: #d5dbe5; }
     .soni-stars strong { color: var(--ink); margin-inline-start: .3rem; font-size: .78rem; }
+    .soni-apply-by {
+        display: inline-flex; align-items: center; gap: .35rem; flex-wrap: wrap;
+        width: fit-content; max-width: 100%;
+        margin: 0; padding: .22rem .55rem;
+        border-radius: 999px;
+        background: rgba(255, 61, 122, .08);
+        border: 1px solid rgba(255, 61, 122, .16);
+        color: var(--action-deep);
+        font-size: .72rem; font-weight: 700; line-height: 1.2;
+    }
+    .soni-apply-by i { font-size: .7rem; opacity: .9; }
+    .soni-apply-by__label { opacity: .85; font-weight: 700; }
+    .soni-apply-by strong { font-weight: 800; color: var(--ink); }
+    .soni-apply-by.is-ended {
+        background: #f3f5f8;
+        border-color: #d5dde8;
+        color: #64748b;
+    }
+    .soni-apply-by.is-ended strong { color: #475569; text-decoration: line-through; text-decoration-thickness: 1px; }
+    .soni-apply-ended {
+        position: relative;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 100%; height: 2.5rem; min-height: 2.5rem; padding: .55rem .5rem;
+        border-radius: 999px; box-sizing: border-box;
+        background: #f1f5f9;
+        border: 1px solid #d7e0ea;
+        color: #475569;
+        font-size: .78rem; font-weight: 800; line-height: 1.2;
+        cursor: help; outline: none;
+    }
+    .soni-apply-ended__label {
+        display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+        white-space: nowrap;
+    }
+    .soni-apply-ended__tip {
+        position: absolute;
+        inset-inline: 0;
+        bottom: calc(100% + .45rem);
+        z-index: 5;
+        padding: .65rem .75rem;
+        border-radius: .85rem;
+        background: #061525;
+        color: #fff;
+        font-size: .72rem; font-weight: 600; line-height: 1.55;
+        text-align: start;
+        box-shadow: 0 12px 28px rgba(6, 21, 37, .28);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(.2rem);
+        pointer-events: none;
+        transition: opacity .18s ease, transform .18s ease, visibility .18s;
+    }
+    .soni-apply-ended__tip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        inset-inline-start: 1.1rem;
+        border: 6px solid transparent;
+        border-top-color: #061525;
+    }
+    .soni-apply-ended:hover .soni-apply-ended__tip,
+    .soni-apply-ended:focus-visible .soni-apply-ended__tip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
     .soni-card-footer {
         margin-top: auto; display: flex; flex-direction: column; gap: .55rem;
         padding-top: .25rem; flex-shrink: 0;

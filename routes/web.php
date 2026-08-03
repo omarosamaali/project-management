@@ -196,6 +196,21 @@ Route::get('/academy/courses', [\App\Http\Controllers\AcademyController::class, 
 Route::get('/academy/categories/{category}', [\App\Http\Controllers\AcademyController::class, 'category'])->name('academy.category');
 Route::get('/academy/trainers', [\App\Http\Controllers\AcademyController::class, 'trainers'])->name('academy.trainers.index');
 Route::get('/academy/trainers/{trainer}', [\App\Http\Controllers\AcademyController::class, 'trainer'])->name('academy.trainers.show');
+Route::get('/academy/become-trainer', [\App\Http\Controllers\AcademyController::class, 'becomeTrainer'])->name('academy.become-trainer');
+Route::get('/courses/{course}/private-request', [\App\Http\Controllers\PrivateCourseRequestController::class, 'createForm'])
+    ->name('courses.private-request.create');
+Route::middleware(['auth'])->group(function () {
+    Route::post('/courses/{course}/private-request', [\App\Http\Controllers\PrivateCourseRequestController::class, 'store'])
+        ->name('courses.private-request.store');
+    Route::get('/private-requests/{privateRequest}', [\App\Http\Controllers\PrivateCourseRequestController::class, 'show'])
+        ->name('private-requests.show');
+    Route::post('/private-requests/{privateRequest}/accept-dates', [\App\Http\Controllers\PrivateCourseRequestController::class, 'acceptDates'])
+        ->name('private-requests.accept-dates');
+    Route::post('/private-requests/{privateRequest}/request-date-change', [\App\Http\Controllers\PrivateCourseRequestController::class, 'requestDateChange'])
+        ->name('private-requests.request-date-change');
+    Route::post('/private-requests/{privateRequest}/pay', [\App\Http\Controllers\PrivateCourseRequestController::class, 'pay'])
+        ->name('private-requests.pay');
+});
 Route::get('/academy/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'index'])
     ->middleware('auth')
     ->name('academy.wishlist.index');

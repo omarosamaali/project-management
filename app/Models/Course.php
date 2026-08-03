@@ -48,12 +48,19 @@ class Course extends Model
         'required_exam_pass_count',
         'trainer_id',
         'chat_locked_for_trainees',
+        'allows_private_requests',
+        'private_course_price',
+        'private_of_course_id',
+        'canceled_at',
+        'cancel_reason',
     ];
 
     protected $casts = [
         'system_external' => 'boolean',
         'chat_locked_for_trainees' => 'boolean',
+        'allows_private_requests' => 'boolean',
         'price' => 'decimal:2',
+        'private_course_price' => 'decimal:2',
         'requirements' => 'array',
         'features' => 'array',
         'suitable_for' => 'array',
@@ -64,6 +71,7 @@ class Course extends Model
         'start_date' => 'datetime',
         'end_date' => 'datetime',
         'last_date' => 'datetime',
+        'canceled_at' => 'datetime',
         'counter' => 'integer',
         'count_days' => 'integer',
         'rest_days' => 'array',
@@ -108,6 +116,78 @@ class Course extends Model
     public function isOnSite(): bool
     {
         return $this->location_type === 'on_site';
+    }
+
+    public function isPrivate(): bool
+    {
+        return $this->location_type === 'private';
+    }
+
+    public function isCanceled(): bool
+    {
+        return $this->canceled_at !== null || $this->status === 'canceled';
+    }
+
+    /**
+     * Whether this course should appear in public academy listings.
+     * Expired online/onsite without private requests are hidden.
+     */
+    public function isPubliclyListable(): bool
+    {
+        if ($this->isPrivate() || $this->isCanceled()) {
+            return false;
+        }
+
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        if ($this->isRegistrationClosed() && ! $this->allows_private_requests) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function scopePubliclyListable($query)
+    {
+        return $query
+            ->where('status', 'active')
+            ->whereNull('canceled_at')
+            ->where('location_type', '!=', 'private')
+            ->where(function ($q) {
+                $q->where('location_type', 'recorded')
+                    ->orWhereNull('last_date')
+                    ->orWhere('last_date', '>=', now())
+                    ->orWhere('allows_private_requests', true);
+            });
+    }
+
+    public function privateOfCourse()
+    {
+        return $this->belongsTo(self::class, 'private_of_course_id');
+    }
+
+    public function privateClones()
+    {
+        return $this->hasMany(self::class, 'private_of_course_id');
+    }
+
+    public function privateCourseRequests()
+    {
+        return $this->hasMany(PrivateCourseRequest::class, 'source_course_id');
+    }
+
+    /** Online / on-site courses use last_date as the enrollment deadline. */
+    public function hasRegistrationDeadline(): bool
+    {
+        return ! $this->isRecorded() && ! $this->isPrivate() && $this->last_date !== null;
+    }
+
+    public function isRegistrationClosed(): bool
+    {
+        return $this->hasRegistrationDeadline()
+            && now()->greaterThan($this->last_date);
     }
 
     /**

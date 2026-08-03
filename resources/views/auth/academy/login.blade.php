@@ -77,4 +77,22 @@
     </div>
 </x-auth.academy-shell>
 
+@if(request()->boolean('trainer_applied') || session('success'))
+<script>
+(function () {
+    try {
+        if (new URLSearchParams(window.location.search).get('trainer_applied') === '1') {
+            localStorage.setItem(@json(\App\Support\TrainerJourney::STORAGE_KEY), JSON.stringify({
+                step: 2,
+                completed: 1,
+                allDone: false,
+                source: 'application',
+                at: Date.now()
+            }));
+        }
+    } catch (e) {}
+})();
+</script>
+@endif
+
 @endsection

@@ -35,27 +35,51 @@
             </div>
 
             <div class="border-t pt-5">
-                <h2 class="text-lg font-bold text-slate-800">نسبة أرباح المحاضرين</h2>
-                <p class="text-sm text-slate-500 mt-1">يتم احتساب ربح المحاضر من سعر الاشتراك الأساسي للدورة بدون رسوم الدفع.</p>
+                <h2 class="text-lg font-bold text-slate-800">نسب أرباح المحاضرين حسب نوع الدورة</h2>
+                <p class="text-sm text-slate-500 mt-1">تُطبَّق النسبة على سعر الاشتراك الأساسي فقط (بدون رسوم الدفع)، وعلى الدورات المرتبطة بمحاضر. الدورات بدون محاضر تذهب بالكامل للمنصة.</p>
 
-                <div class="mt-4 max-w-md">
-                    <label for="trainer_profit_percentage" class="block text-sm font-medium text-gray-700 mb-1">نسبة الربح لكل اشتراك</label>
-                    <div class="relative">
-                        <input
-                            type="number"
-                            name="trainer_profit_percentage"
-                            id="trainer_profit_percentage"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            value="{{ old('trainer_profit_percentage', $trainerProfitPercentage) }}"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">%</span>
+                <div class="mt-4 grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">أونلاين (افتراضي 60%)</label>
+                        <div class="relative">
+                            <input type="number" name="trainer_profit_online" min="0" max="100" step="0.01"
+                                value="{{ old('trainer_profit_online', $profitOnline) }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">%</span>
+                        </div>
+                        @error('trainer_profit_online')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
-                    @error('trainer_profit_percentage')
-                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                    @enderror
-                    <p class="text-xs text-slate-400 mt-2">مثال: إذا كانت الدورة بسعر 100 AED والنسبة 50%، يصبح ربح المحاضر 50 AED لكل اشتراك مكتمل.</p>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">مسجّلة (افتراضي 50%)</label>
+                        <div class="relative">
+                            <input type="number" name="trainer_profit_recorded" min="0" max="100" step="0.01"
+                                value="{{ old('trainer_profit_recorded', $profitRecorded) }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">%</span>
+                        </div>
+                        @error('trainer_profit_recorded')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">خاصة (افتراضي 70%)</label>
+                        <div class="relative">
+                            <input type="number" name="trainer_profit_private" min="0" max="100" step="0.01"
+                                value="{{ old('trainer_profit_private', $profitPrivate) }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">%</span>
+                        </div>
+                        @error('trainer_profit_private')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">حضوري (فارغ = 0% للمحاضر)</label>
+                        <div class="relative">
+                            <input type="number" name="trainer_profit_onsite" min="0" max="100" step="0.01"
+                                value="{{ old('trainer_profit_onsite', $profitOnsite) }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                placeholder="اتركه فارغاً حتى التحديد">
+                            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400">%</span>
+                        </div>
+                        @error('trainer_profit_onsite')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
                 </div>
             </div>
 

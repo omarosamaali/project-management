@@ -39,6 +39,16 @@
             $showPrimary = false;
         }
     }
+
+    $showApplyDeadline = $course->hasRegistrationDeadline();
+    $registrationClosed = $showApplyDeadline && $course->isRegistrationClosed();
+    $applyEndedBadge = $registrationClosed && ! $owned;
+    if ($applyEndedBadge) {
+        $showPrimary = false;
+    }
+    $applyUntilLabel = $showApplyDeadline
+        ? $course->last_date->copy()->locale($locale)->translatedFormat($locale === 'ar' ? 'j M Y' : 'M j, Y')
+        : null;
 @endphp
 <article class="soni-card">
     <div class="soni-card-media">
@@ -95,9 +105,25 @@
                 @endif
             </span>
         </div>
+        @if($showApplyDeadline)
+        <div class="soni-apply-by {{ $registrationClosed ? 'is-ended' : '' }}" title="{{ __('messages.academy_apply_until') }}: {{ $applyUntilLabel }}">
+            <i class="fas fa-calendar-day" aria-hidden="true"></i>
+            <span class="soni-apply-by__label">{{ __('messages.academy_apply_until') }}</span>
+            <strong>{{ $applyUntilLabel }}</strong>
+        </div>
+        @endif
         <div class="soni-card-footer">
-            <div class="soni-card-actions {{ $showPrimary ? '' : 'is-single' }}">
-                @if($showPrimary)
+            <div class="soni-card-actions {{ ($showPrimary || $applyEndedBadge) ? '' : 'is-single' }}">
+                @if($applyEndedBadge)
+                <span class="soni-apply-ended" tabindex="0" role="status"
+                    aria-label="{{ __('messages.academy_apply_ended') }}. {{ __('messages.academy_apply_ended_hint') }}">
+                    <span class="soni-apply-ended__label">
+                        <i class="fas fa-ban" aria-hidden="true"></i>
+                        {{ __('messages.academy_apply_ended') }}
+                    </span>
+                    <span class="soni-apply-ended__tip" role="tooltip">{{ __('messages.academy_apply_ended_hint') }}</span>
+                </span>
+                @elseif($showPrimary)
                 <a href="{{ $primaryUrl }}" class="soni-btn-primary">{{ $primaryLabel }}</a>
                 @endif
                 <a href="{{ $detailsUrl }}" class="soni-btn-ghost">{{ __('messages.academy_course_details') }}</a>

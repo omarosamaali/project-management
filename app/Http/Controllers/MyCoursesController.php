@@ -24,7 +24,7 @@ class MyCoursesController extends Controller
         $filter = $request->query('filter'); // null | active | upcoming | ended
         $now    = Carbon::now();
 
-        $with = ['course'];
+        $with = ['course', 'specialCertificate'];
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('course_units')) {
                 $with[] = 'course.units.items';
@@ -122,7 +122,7 @@ class MyCoursesController extends Controller
         }
 
         $payment = Payment::where('user_id', Auth::user()->id)
-            ->where('id', $id)->with(['course.dayExams', 'course.ratings', 'course.dayExamAttempts'])->firstOrFail();
+            ->where('id', $id)->with(['course.dayExams', 'course.ratings', 'course.dayExamAttempts', 'specialCertificate'])->firstOrFail();
 
         return view('dashboard.my_courses.show', compact('payment'));
     }

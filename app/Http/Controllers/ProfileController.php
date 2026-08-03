@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Support\ClientCompanyFields;
 use App\Support\EmployeeProfileStats;
+use App\Support\TrainerJourney;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +24,21 @@ class ProfileController extends Controller
             ? EmployeeProfileStats::forUser($user)
             : null;
 
+        $trainerJourney = null;
+        if ($user->isTrainer()) {
+            $state = TrainerJourney::stateFor($user);
+            $trainerJourney = [
+                'step' => $state['step'],
+                'completed' => $state['completed'],
+                'all_done' => $state['all_done'],
+                'hint' => TrainerJourney::hintFor($state['step'], $state['all_done']),
+            ];
+        }
+
         return view('profile.edit', [
             'user' => $user,
             'employeeStats' => $employeeStats,
+            'trainerJourney' => $trainerJourney,
         ]);
     }
 

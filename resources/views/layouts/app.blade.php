@@ -193,6 +193,14 @@
                             <span class="ml-3">دوراتي</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.private-requests.trainee-index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.private-requests.trainee-index') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.private-requests.trainee-index') ? 'text-white' : '' }} fas fa-user-lock text-gray-500 pl-2"></i>
+                            <span class="ml-3">طلباتي الخاصة</span>
+                        </a>
+                    </li>
                     @endif
 
                     @if (Auth::user()->canManageCourses())
@@ -205,6 +213,24 @@
                             <i
                                 class="{{ request()->routeIs('dashboard.my_courses.*') ? 'text-white' : '' }} fas fa-graduation-cap text-gray-500 pl-2"></i>
                             <span class="ml-3">دوراتي المشترك بها</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.private-requests.trainee-index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.private-requests.trainee-index') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.private-requests.trainee-index') ? 'text-white' : '' }} fas fa-user-lock text-gray-500 pl-2"></i>
+                            <span class="ml-3">طلباتي الخاصة</span>
+                        </a>
+                    </li>
+                    @endif
+                    @if(Auth::user()->isTrainer())
+                    <li>
+                        <a href="{{ route('dashboard.academy.private-requests.trainer-inbox') }}"
+                            class="{{ request()->routeIs('dashboard.academy.private-requests.trainer-inbox') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i
+                                class="{{ request()->routeIs('dashboard.academy.private-requests.trainer-inbox') ? 'text-white' : '' }} fas fa-inbox text-gray-500 pl-2"></i>
+                            <span class="ml-3">طلبات الدورات الخاصة</span>
                         </a>
                     </li>
                     @endif
@@ -281,6 +307,32 @@
                             <i
                                 class="{{ request()->routeIs('dashboard.academy.ratings.*') ? 'text-white' : '' }} fas fa-star text-gray-500 pl-2"></i>
                             <span class="ml-3">{{ __('messages.academy_ratings') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.private-requests.admin-index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.private-requests.admin-index') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="fas fa-user-lock text-gray-500 pl-2"></i>
+                            <span class="ml-3">طلبات خاصة</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.private-requests.admin-unassigned') }}"
+                            class="{{ request()->routeIs('dashboard.academy.private-requests.admin-unassigned') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="fas fa-user-clock text-gray-500 pl-2"></i>
+                            <span class="ml-3">{{ __('messages.private_requests_my_courses') }}</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.private-refunds.index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.private-refunds.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="fas fa-money-bill-wave text-gray-500 pl-2"></i>
+                            <span class="ml-3 flex-1">الاستردادات</span>
+                            @if(($pendingPrivateRefundsCount ?? 0) > 0)
+                            <span class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[11px] font-bold leading-none">
+                                {{ $pendingPrivateRefundsCount > 99 ? '99+' : $pendingPrivateRefundsCount }}
+                            </span>
+                            @endif
                         </a>
                     </li>
                     @endif

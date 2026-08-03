@@ -8,6 +8,8 @@ use App\Models\CourseRating;
 use App\Models\CourseWishlist;
 use App\Models\Payment;
 use App\Models\User;
+use App\Support\AuthUi;
+use App\Support\TrainerJourney;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +28,7 @@ class AcademyController extends Controller
             ->get();
 
         $latestCourses = Course::query()
-            ->where('status', 'active')
+            ->publiclyListable()
             ->with(['category', 'trainer', 'units.items'])
             ->withCount([
                 'payments as payments_count' => fn ($query) => $query->whereIn('status', $paidStatuses),
@@ -90,6 +92,50 @@ class AcademyController extends Controller
         $this->enrichPublicTrainers($trainers->getCollection());
 
         return view('academy.trainers.index', compact('trainers', 'locale', 'q'));
+    }
+
+    /**
+     * Public become-trainer landing + registration (new trainer accounts only).
+     */
+    public function becomeTrainer(Request $request)
+    {
+        AuthUi::resolve(AuthUi::ACADEMY);
+
+        $user = Auth::user();
+        if ($user && $user->isTrainer() && $user->status === 'active') {
+            return redirect()->route('dashboard');
+        }
+
+        $categories = CourseCategory::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        $locale = app()->getLocale();
+        $formBlocked = $user && ! $user->isTrainer();
+        $journey = TrainerJourney::stateFor(
+            ($user && $user->isTrainer()) ? $user : null
+        );
+        $journeyStep = $journey['step'];
+        $completedSteps = $journey['completed'];
+        $allDone = $journey['all_done'];
+        $journeyHint = TrainerJourney::hintFor($journeyStep, $allDone);
+
+        if ($user && $user->isTrainer() && $user->isPendingApproval()) {
+            $formBlocked = true;
+        }
+
+        return view('academy.become-trainer', compact(
+            'categories',
+            'locale',
+            'formBlocked',
+            'journeyStep',
+            'completedSteps',
+            'allDone',
+            'journeyHint',
+            'user'
+        ));
     }
 
     public function trainer(User $trainer)
@@ -224,7 +270,7 @@ class AcademyController extends Controller
             : null;
 
         $coursesQuery = Course::query()
-            ->where('status', 'active')
+            ->publiclyListable()
             ->with(['category', 'trainer', 'units.items'])
             ->withCount([
                 'payments as payments_count' => fn ($query) => $query->whereIn('status', $paidStatuses),
@@ -269,7 +315,7 @@ class AcademyController extends Controller
         $paidStatuses = ['completed', 'success', 'paid', 'active'];
 
         $coursesQuery = Course::query()
-            ->where('status', 'active')
+            ->publiclyListable()
             ->where('course_category_id', $category->id)
             ->with(['category', 'trainer', 'units.items'])
             ->withCount([
