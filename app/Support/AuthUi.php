@@ -35,7 +35,13 @@ class AuthUi
      */
     public static function rememberFromCurrentPage(): void
     {
-        if (request()->routeIs('academy.*') || request()->routeIs('courses.show')) {
+        if (\App\Support\AppDomains::isAcademyRequest()) {
+            session([self::SESSION_KEY => self::ACADEMY]);
+
+            return;
+        }
+
+        if (request()->routeIs('academy.*') || request()->routeIs('courses.show') || request()->routeIs('academy.home')) {
             session([self::SESSION_KEY => self::ACADEMY]);
 
             return;

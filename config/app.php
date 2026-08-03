@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Academy public URL
+    |--------------------------------------------------------------------------
+    |
+    | When this differs from APP_URL, academy catalog/auth pages are served on
+    | this host and the main site stays on APP_URL. Point both domains at the
+    | same Laravel public/ folder on the host.
+    |
+    */
+
+    'academy_url' => env('ACADEMY_URL', env('APP_URL', 'http://localhost')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

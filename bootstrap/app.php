@@ -12,6 +12,19 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn () => route('login'));
+        $middleware->trustHosts(at: function () {
+            $hosts = [
+                parse_url((string) config('app.url'), PHP_URL_HOST),
+                parse_url((string) config('app.academy_url'), PHP_URL_HOST),
+                'localhost',
+                '127.0.0.1',
+            ];
+
+            return array_values(array_unique(array_filter($hosts)));
+        });
+        $middleware->web(prepend: [
+            \App\Http\Middleware\EnsureDomainSeparation::class,
+        ]);
         $middleware->web(append: [
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\ForceDashboardLocale::class,
@@ -21,6 +34,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'dashboard/api-messages',
             'dashboard/api-messages/*',
+            'payment/webhook',
+            'payment/special-request/callback',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

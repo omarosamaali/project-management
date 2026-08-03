@@ -62,7 +62,7 @@ class AcademyAccountController extends Controller
 
     protected function notifyTrainerApproved(User $trainer): array
     {
-        $loginUrl = Course::publicBaseUrl() . '/login';
+        $loginUrl = \App\Support\AppDomains::academyUrl('/login?ui=academy');
         $result = ['email' => false, 'whatsapp' => false];
 
         try {

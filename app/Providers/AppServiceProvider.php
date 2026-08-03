@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Support\CountryNames;
 use App\Support\WorkAttendanceState;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +31,18 @@ class AppServiceProvider extends ServiceProvider
     {
         Requests::observe(RequestObserver::class);
         Requests::observe(RequestsObserver::class);
+
+        if (! $this->app->runningInConsole()) {
+            $request = request();
+            if ($request && \App\Support\AppDomains::enabled()) {
+                URL::forceRootUrl(
+                    \App\Support\AppDomains::isAcademyRequest($request)
+                        ? \App\Support\AppDomains::academyBase()
+                        : \App\Support\AppDomains::mainBase()
+                );
+                URL::forceScheme(str_starts_with(\App\Support\AppDomains::mainBase(), 'https') ? 'https' : 'http');
+            }
+        }
 
         View::composer('*', function () {
             if (! Auth::check()) {

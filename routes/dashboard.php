@@ -149,7 +149,11 @@ Route::name('dashboard.')->prefix('dashboard')->middleware('auth')->group(functi
 
     Route::resource('course-categories', CourseCategoryController::class)->except(['show']);
 });
-Route::get('/courses/{course}', [CourseController::class, 'userShow'])->name('courses.show');
+
+// Public course page is registered in web.php (academy domain when split is enabled).
+if (! \App\Support\AppDomains::enabled()) {
+    Route::get('/courses/{course}', [CourseController::class, 'userShow'])->name('courses.show');
+}
 
 // System Routes
 Route::middleware('auth')->group(function () {

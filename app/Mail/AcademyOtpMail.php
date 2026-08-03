@@ -28,7 +28,7 @@ class AcademyOtpMail extends Mailable
 
     public function content(): Content
     {
-        $base = rtrim(Course::publicBaseUrl(), '/');
+        $base = rtrim(Course::academyBaseUrl(), '/');
 
         return new Content(
             view: 'emails.academy-otp',

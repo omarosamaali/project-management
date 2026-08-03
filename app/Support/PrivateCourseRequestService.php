@@ -766,7 +766,7 @@ class PrivateCourseRequestService
 
     protected function privateRequestUrl(PrivateCourseRequest $req): string
     {
-        return Course::publicBaseUrl() . '/private-requests/' . $req->id;
+        return \App\Support\AppDomains::academyUrl('/private-requests/' . $req->id);
     }
 
     protected function notifyUser(

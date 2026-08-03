@@ -1129,16 +1129,19 @@ class Course extends Model
     }
 
     /**
-     * Absolute public base URL, always the live domain (never localhost),
-     * so links in emails/WhatsApp work even when generated from CLI/queue.
+     * Absolute public base URL for the main site (never localhost in production links).
      */
     public static function publicBaseUrl(): string
     {
-        $base = rtrim((string) config('app.url'), '/');
-        if ($base === '' || str_contains($base, 'localhost') || str_contains($base, '127.0.0.1')) {
-            $base = 'https://evorq.online';
-        }
-        return $base;
+        return \App\Support\AppDomains::liveMainBase();
+    }
+
+    /**
+     * Absolute public base URL for academy catalog / course pages.
+     */
+    public static function academyBaseUrl(): string
+    {
+        return \App\Support\AppDomains::liveAcademyBase();
     }
 
     /**
@@ -1146,7 +1149,7 @@ class Course extends Model
      */
     public function publicUrl(): string
     {
-        return self::publicBaseUrl() . '/courses/' . $this->id;
+        return self::academyBaseUrl() . '/courses/' . $this->id;
     }
 
     /**
@@ -1155,9 +1158,9 @@ class Course extends Model
     public function mainImageUrl(): string
     {
         if (empty($this->main_image)) {
-            return self::publicBaseUrl() . '/assets/images/logo.webp';
+            return self::academyBaseUrl() . '/assets/images/logo.webp';
         }
-        return self::publicBaseUrl() . '/storage/' . ltrim($this->main_image, '/');
+        return self::academyBaseUrl() . '/storage/' . ltrim($this->main_image, '/');
     }
 
     /**

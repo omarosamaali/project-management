@@ -189,48 +189,68 @@ Route::get('/lang/{lang}', function ($lang) {
     return redirect()->back();
 })->name('lang.switch');
 
-// System Routes
-Route::get('/', [SystemController::class, 'index'])->name('system.index');
-Route::get('/academy', [\App\Http\Controllers\AcademyController::class, 'index'])->name('academy.index');
-Route::get('/academy/courses', [\App\Http\Controllers\AcademyController::class, 'courses'])->name('academy.courses');
-Route::get('/academy/categories/{category}', [\App\Http\Controllers\AcademyController::class, 'category'])->name('academy.category');
-Route::get('/academy/trainers', [\App\Http\Controllers\AcademyController::class, 'trainers'])->name('academy.trainers.index');
-Route::get('/academy/trainers/{trainer}', [\App\Http\Controllers\AcademyController::class, 'trainer'])->name('academy.trainers.show');
-Route::get('/academy/become-trainer', [\App\Http\Controllers\AcademyController::class, 'becomeTrainer'])->name('academy.become-trainer');
-Route::get('/courses/{course}/private-request', [\App\Http\Controllers\PrivateCourseRequestController::class, 'createForm'])
-    ->name('courses.private-request.create');
-Route::middleware(['auth'])->group(function () {
-    Route::post('/courses/{course}/private-request', [\App\Http\Controllers\PrivateCourseRequestController::class, 'store'])
-        ->name('courses.private-request.store');
-    Route::get('/private-requests/{privateRequest}', [\App\Http\Controllers\PrivateCourseRequestController::class, 'show'])
-        ->name('private-requests.show');
-    Route::post('/private-requests/{privateRequest}/accept-dates', [\App\Http\Controllers\PrivateCourseRequestController::class, 'acceptDates'])
-        ->name('private-requests.accept-dates');
-    Route::post('/private-requests/{privateRequest}/request-date-change', [\App\Http\Controllers\PrivateCourseRequestController::class, 'requestDateChange'])
-        ->name('private-requests.request-date-change');
-    Route::post('/private-requests/{privateRequest}/pay', [\App\Http\Controllers\PrivateCourseRequestController::class, 'pay'])
-        ->name('private-requests.pay');
-});
-Route::get('/academy/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'index'])
-    ->middleware('auth')
-    ->name('academy.wishlist.index');
-Route::post('/academy/courses/{course}/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'toggle'])
-    ->name('academy.wishlist.toggle');
-Route::get('/system/{system}', [SystemController::class, 'show'])->name('system.show');
-Route::post('/system/request', [RequestsController::class, 'clientStore'])->name('dashboard.requests.clientStore');
+$registerAcademyPublicRoutes = function () {
+    Route::get('/academy', [\App\Http\Controllers\AcademyController::class, 'index'])->name('academy.index');
+    Route::get('/academy/courses', [\App\Http\Controllers\AcademyController::class, 'courses'])->name('academy.courses');
+    Route::get('/academy/categories/{category}', [\App\Http\Controllers\AcademyController::class, 'category'])->name('academy.category');
+    Route::get('/academy/trainers', [\App\Http\Controllers\AcademyController::class, 'trainers'])->name('academy.trainers.index');
+    Route::get('/academy/trainers/{trainer}', [\App\Http\Controllers\AcademyController::class, 'trainer'])->name('academy.trainers.show');
+    Route::get('/academy/become-trainer', [\App\Http\Controllers\AcademyController::class, 'becomeTrainer'])->name('academy.become-trainer');
+    Route::get('/courses/{course}/private-request', [\App\Http\Controllers\PrivateCourseRequestController::class, 'createForm'])
+        ->name('courses.private-request.create');
+    Route::middleware(['auth'])->group(function () {
+        Route::post('/courses/{course}/private-request', [\App\Http\Controllers\PrivateCourseRequestController::class, 'store'])
+            ->name('courses.private-request.store');
+        Route::get('/private-requests/{privateRequest}', [\App\Http\Controllers\PrivateCourseRequestController::class, 'show'])
+            ->name('private-requests.show');
+        Route::post('/private-requests/{privateRequest}/accept-dates', [\App\Http\Controllers\PrivateCourseRequestController::class, 'acceptDates'])
+            ->name('private-requests.accept-dates');
+        Route::post('/private-requests/{privateRequest}/request-date-change', [\App\Http\Controllers\PrivateCourseRequestController::class, 'requestDateChange'])
+            ->name('private-requests.request-date-change');
+        Route::post('/private-requests/{privateRequest}/pay', [\App\Http\Controllers\PrivateCourseRequestController::class, 'pay'])
+            ->name('private-requests.pay');
+    });
+    Route::get('/academy/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'index'])
+        ->middleware('auth')
+        ->name('academy.wishlist.index');
+    Route::post('/academy/courses/{course}/wishlist', [\App\Http\Controllers\CourseWishlistController::class, 'toggle'])
+        ->name('academy.wishlist.toggle');
+    Route::get('/courses/{course}', [\App\Http\Controllers\CourseController::class, 'userShow'])->name('courses.show');
+};
 
-// Special Requests
-Route::get('/special-request/index', [SpecialRequestController::class, 'index'])->name('special-request.index');
-Route::post('/special-request/store', [SpecialRequestController::class, 'store'])->name('special-request.store');
-Route::get('/special-request/show', [SpecialRequestController::class, 'show'])->name('special-request.show');
-Route::get('/special-request/edit', [SpecialRequestController::class, 'edit'])->name('special-request.edit');
-Route::delete('/special-request/{specialRequest}', [SpecialRequestController::class, 'destroy'])
-    ->name('show.special-request.destroy');
-Route::get('/special-request/show-special-request/{specialRequest}', [SpecialRequestController::class, 'showSpecialRequest'])
-->name('special-request.show-special-request');
-Route::resource('special-request', SpecialRequestController::class)->names('special-request')->except(['show']);
+$registerMainPublicRoutes = function () {
+    Route::get('/', [\App\Http\Controllers\SystemController::class, 'index'])->name('system.index');
+    Route::get('/system/{system}', [\App\Http\Controllers\SystemController::class, 'show'])->name('system.show');
+    Route::post('/system/request', [\App\Http\Controllers\Dashboard\RequestsController::class, 'clientStore'])->name('dashboard.requests.clientStore');
 
-// Dashboard — قمرة القيادة
+    // Special Requests
+    Route::get('/special-request/index', [\App\Http\Controllers\SpecialRequestController::class, 'index'])->name('special-request.index');
+    Route::post('/special-request/store', [\App\Http\Controllers\SpecialRequestController::class, 'store'])->name('special-request.store');
+    Route::get('/special-request/show', [\App\Http\Controllers\SpecialRequestController::class, 'show'])->name('special-request.show');
+    Route::get('/special-request/edit', [\App\Http\Controllers\SpecialRequestController::class, 'edit'])->name('special-request.edit');
+    Route::delete('/special-request/{specialRequest}', [\App\Http\Controllers\SpecialRequestController::class, 'destroy'])
+        ->name('show.special-request.destroy');
+    Route::get('/special-request/show-special-request/{specialRequest}', [\App\Http\Controllers\SpecialRequestController::class, 'showSpecialRequest'])
+        ->name('special-request.show-special-request');
+    Route::resource('special-request', \App\Http\Controllers\SpecialRequestController::class)->names('special-request')->except(['show']);
+};
+
+if (\App\Support\AppDomains::enabled()) {
+    Route::domain(\App\Support\AppDomains::academyHost())->group(function () use ($registerAcademyPublicRoutes) {
+        // Academy landing page on its own domain root.
+        Route::get('/', [\App\Http\Controllers\AcademyController::class, 'index'])->name('academy.home');
+        $registerAcademyPublicRoutes();
+    });
+
+    Route::domain(\App\Support\AppDomains::mainHost())->group(function () use ($registerMainPublicRoutes) {
+        $registerMainPublicRoutes();
+    });
+} else {
+    $registerMainPublicRoutes();
+    $registerAcademyPublicRoutes();
+}
+
+// Dashboard — قمرة القيادة (shared: works on both domains)
 Route::get('/dashboard', [\App\Http\Controllers\Dashboard\CockpitController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');

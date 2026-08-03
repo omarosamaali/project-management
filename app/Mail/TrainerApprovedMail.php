@@ -27,8 +27,8 @@ class TrainerApprovedMail extends Mailable
 
     public function content(): Content
     {
-        $base = Course::publicBaseUrl();
-        $loginUrl = $base . '/login';
+        $base = Course::academyBaseUrl();
+        $loginUrl = $base . '/login?ui=academy';
 
         return new Content(
             view: 'emails.trainer-approved',
