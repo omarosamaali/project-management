@@ -22,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return array_values(array_unique(array_filter($hosts)));
         });
+        // Hostinger / reverse proxies terminate SSL; trust forwarded HTTPS.
+        $middleware->trustProxies(at: '*');
         $middleware->web(prepend: [
             \App\Http\Middleware\EnsureDomainSeparation::class,
         ]);

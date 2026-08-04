@@ -411,7 +411,7 @@ class CourseController extends Controller
      */
     public function streamPromo(Request $request, Course $course)
     {
-        abort_unless($request->hasValidSignature(), 403, 'Invalid or expired video link.');
+        abort_unless($request->hasValidSignature(absolute: false), 403, 'Invalid or expired video link.');
         abort_unless(filled($course->video), 404);
 
         $path = VideoDownloadGuard::absolutePath($course->video);

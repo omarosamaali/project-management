@@ -1182,6 +1182,7 @@ class Course extends Model
             'courses.video.stream',
             now()->addMinutes($minutes),
             ['course' => $course instanceof self ? $course->id : $course],
+            absolute: false,
         );
     }
 

@@ -285,7 +285,7 @@ class CoursePathController extends Controller
      */
     public function stream(Request $request, Course $course, CoursePathItem $item)
     {
-        abort_unless($request->hasValidSignature(), 403, 'Invalid or expired video link.');
+        abort_unless($request->hasValidSignature(absolute: false), 403, 'Invalid or expired video link.');
 
         $user = Auth::user();
         abort_unless($user, 403);
@@ -310,6 +310,7 @@ class CoursePathController extends Controller
 
     /**
      * Temporary signed playback URL for a lesson file (never expose /storage/…).
+     * Relative so the same signature works on evorq.online and evorqacademy.com.
      */
     public static function signedStreamUrl(Course|int $course, CoursePathItem|int $item, int $minutes = 90): string
     {
@@ -320,6 +321,7 @@ class CoursePathController extends Controller
                 'course' => $course instanceof Course ? $course->id : $course,
                 'item' => $item instanceof CoursePathItem ? $item->id : $item,
             ],
+            absolute: false,
         );
     }
 
