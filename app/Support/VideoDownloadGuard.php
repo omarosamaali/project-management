@@ -178,7 +178,7 @@ class VideoDownloadGuard
 
         abort_unless(is_file($absolutePath), 404);
 
-        $mime = mime_content_type($absolutePath) ?: 'video/mp4';
+        $mime = self::guessVideoMime($absolutePath);
 
         return response()->file($absolutePath, [
             'Content-Type' => $mime,
@@ -189,8 +189,27 @@ class VideoDownloadGuard
             'Expires' => '0',
             'X-Content-Type-Options' => 'nosniff',
             'X-Robots-Tag' => 'noindex, nofollow, noarchive',
-            // Discourage plugins / managers that honor these hints
             'X-Download-Options' => 'noopen',
         ]);
+    }
+
+    protected static function guessVideoMime(string $absolutePath): string
+    {
+        $ext = strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
+        $byExt = match ($ext) {
+            'mp4', 'm4v' => 'video/mp4',
+            'webm' => 'video/webm',
+            'ogg', 'ogv' => 'video/ogg',
+            'mov' => 'video/quicktime',
+            'mkv' => 'video/x-matroska',
+            default => null,
+        };
+
+        $detected = @mime_content_type($absolutePath) ?: null;
+        if (is_string($detected) && str_starts_with(strtolower($detected), 'video/')) {
+            return $detected;
+        }
+
+        return $byExt ?: ($detected ?: 'video/mp4');
     }
 }

@@ -62,7 +62,16 @@
         display: block;
         padding-top: 56.25%; /* 16:9 — same as YouTube */
     }
+    /* Watermark wrap must fill the shell; height:100% alone collapses to 0 with the padding trick. */
+    .player-shell .wm-media-wrap {
+        position: absolute !important;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
     .player-shell .plyr,
+    .player-shell .wm-media-wrap > video,
+    .player-shell .wm-media-wrap > #lessonVideo,
     .player-shell > video,
     .player-shell > #lessonVideo {
         position: absolute !important;
@@ -100,6 +109,17 @@
         opacity: 0 !important;
         visibility: hidden !important;
         pointer-events: none !important;
+    }
+    .player-shell .ac-media-wm {
+        position: absolute;
+        top: 12px;
+        inset-inline-end: 12px;
+        inset-inline-start: auto;
+        width: min(18%, 120px);
+        height: auto;
+        pointer-events: none;
+        z-index: 5;
+        user-select: none;
     }
     .path-completion-ring {
         --pct: 0;
@@ -275,7 +295,7 @@
                 data-watched="{{ (int) ($progress->get($current->id)?->video_watched_seconds ?? 0) }}"
                 data-played="{{ (int) ($progress->get($current->id)?->video_played_seconds ?? 0) }}"
                 @if($progress->get($current->id)?->is_completed) data-completed="1" @endif>
-                <div class="wm-media-wrap" style="position:relative;width:100%;height:100%;">
+                <div class="wm-media-wrap">
                 @if($playback['provider'] === 'html5')
                 <video id="lessonVideo" playsinline preload="metadata"
                     controlsList="nodownload noplaybackrate" disablePictureInPicture
@@ -289,7 +309,7 @@
                 @endif
                 <img src="{{ asset('assets/images/academy_watermark.png') }}" alt="" aria-hidden="true"
                     class="ac-media-wm"
-                    style="position:absolute;top:12px;inset-inline-end:12px;inset-inline-start:auto;width:min(18%,120px);height:auto;opacity:{{ config('watermark.opacity', 0.38) }};pointer-events:none;z-index:5;user-select:none;">
+                    style="opacity:{{ config('watermark.opacity', 0.38) }};">
                 </div>
             </div>
             @else
