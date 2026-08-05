@@ -98,12 +98,19 @@ class ZiinaPaymentController extends Controller
             } elseif ($request->type === 'course') {
                 $item = \App\Models\Course::findOrFail($request->course_id);
                 $courseId = $item->id;
+
+                if ((int) ($item->trainer_id ?? 0) === (int) $user->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => __('messages.course_own_cannot_enroll'),
+                    ], 403);
+                }
             }
 
-            // 4. حساب الحسبة المالية (نفس معادلة الكود القديم 7.9% + 2 درهم)
+            // 4. حساب الحسبة المالية (نسبة + ثابت من إعدادات Ziina)
             $basePrice = (float) $item->price;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalAmount = $basePrice + $fees;
+            $totalAmount = $this->ziinaHandler->calculatePriceWithFees($basePrice);
+            $fees = $totalAmount - $basePrice;
 
             // 5. استخدام الـ Handler القديم (هذا هو سر النجاح)
             $successUrl = route('payment.success');
@@ -288,8 +295,8 @@ class ZiinaPaymentController extends Controller
             }
 
             $basePrice = (float) $specialRequest->price;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalAmount = $basePrice + $fees;
+            $totalAmount = $this->ziinaHandler->calculatePriceWithFees($basePrice);
+            $fees = $totalAmount - $basePrice;
 
             $successUrl = route('payment.special-request.return') . '?special_request_id=' . $specialRequest->id;
             $cancelUrl = route('payment.cancel');
@@ -440,8 +447,8 @@ class ZiinaPaymentController extends Controller
             }
 
             $basePrice = (float) $installment->amount;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalAmount = $basePrice + $fees;
+            $totalAmount = $this->ziinaHandler->calculatePriceWithFees($basePrice);
+            $fees = $totalAmount - $basePrice;
 
             $successUrl = route('payment.installment.return', ['installment_id' => $installment->id]);
             $cancelUrl = route('dashboard.special-request.show', $specialRequest->id);
@@ -656,8 +663,8 @@ class ZiinaPaymentController extends Controller
             }
 
             // ✅ إذا كانت الدورة مدفوعة، استمر بعملية الدفع
-            $fees = ($basePrice * 0.079) + 2;
-            $totalAmount = $basePrice + $fees;
+            $totalAmount = $this->ziinaHandler->calculatePriceWithFees($basePrice);
+            $fees = $totalAmount - $basePrice;
             $successUrl = route('course.payment.success');
             $cancelUrl  = route('course.payment.cancel');
 
@@ -892,8 +899,8 @@ class ZiinaPaymentController extends Controller
             }
 
             $basePrice = (float) $privateRequest->private_price;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalAmount = $basePrice + $fees;
+            $totalAmount = $this->ziinaHandler->calculatePriceWithFees($basePrice);
+            $fees = $totalAmount - $basePrice;
             $successUrl = route('course.private.payment.success');
             $cancelUrl = route('course.private.payment.cancel', ['private_request_id' => $privateRequest->id]);
 

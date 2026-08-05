@@ -296,7 +296,7 @@
             width: 1.7rem; height: 1.7rem; border-radius: 999px;
             display: inline-flex; align-items: center; justify-content: center;
             background: #ff3d7a; color: #fff; font-size: .72rem; font-weight: 800;
-            flex-shrink: 0;
+            flex-shrink: 0; object-fit: cover;
         }
         .academy-public-nav .ac-pub-profile-name {
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -433,7 +433,9 @@
                         <a href="{{ route('profile.edit') }}"
                             class="ac-pub-profile {{ request()->routeIs('profile.*') ? 'is-active' : '' }}"
                             title="{{ Auth::user()->name }}">
-                            <span class="ac-pub-profile-avatar">{{ mb_substr(Auth::user()->name, 0, 1) }}</span>
+                            <img src="{{ Auth::user()->avatarUrl() }}" alt=""
+                                class="ac-pub-profile-avatar"
+                                onerror="this.onerror=null;this.src='{{ Auth::user()->letterAvatarDataUri() }}';">
                             <span class="ac-pub-profile-name">{{ Auth::user()->name }}</span>
                         </a>
                         <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -519,9 +521,9 @@
                         <a href="{{ route('profile.edit') }}"
                             class="{{ request()->routeIs('profile.edit') ? 'bg-black text-white hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100' }} px-3 py-2 rounded-lg transition flex items-center gap-2 max-w-[12rem]"
                             title="{{ Auth::user()->name }}">
-                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-bold shrink-0">
-                                {{ mb_substr(Auth::user()->name, 0, 1) }}
-                            </span>
+                            <img src="{{ Auth::user()->avatarUrl() }}" alt=""
+                                class="w-7 h-7 rounded-full object-cover shrink-0"
+                                onerror="this.onerror=null;this.src='{{ Auth::user()->letterAvatarDataUri() }}';">
                             <span class="truncate text-sm font-medium">{{ Auth::user()->name }}</span>
                         </a>
                         <form method="POST" action="{{ route('logout') }}" class="inline">
@@ -685,9 +687,9 @@
             <a href="{{ route('profile.edit') }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium
                     {{ request()->routeIs('profile.edit') ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100' }}">
-                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-bold shrink-0">
-                    {{ mb_substr(Auth::user()->name, 0, 1) }}
-                </span>
+                <img src="{{ Auth::user()->avatarUrl() }}" alt=""
+                    class="w-7 h-7 rounded-full object-cover shrink-0"
+                    onerror="this.onerror=null;this.src='{{ Auth::user()->letterAvatarDataUri() }}';">
                 <span class="truncate">{{ Auth::user()->name }}</span>
             </a>
             @else

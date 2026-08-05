@@ -3,20 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\CourseCategory;
 use App\Support\ClientCompanyFields;
 use App\Support\EmployeeProfileStats;
 use App\Support\TrainerJourney;
+use App\Support\WatermarkedUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): View
     {
         $user = $request->user();
@@ -35,39 +35,68 @@ class ProfileController extends Controller
             ];
         }
 
+        $categories = $user->isTrainer()
+            ? CourseCategory::query()->where('is_active', true)->orderBy('sort_order')->orderBy('id')->get()
+            : collect();
+
         return view('profile.edit', [
             'user' => $user,
             'employeeStats' => $employeeStats,
             'trainerJourney' => $trainerJourney,
+            'categories' => $categories,
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $user = $request->user();
+        $validated = $request->validated();
 
-        // جلب البيانات التي تم التحقق منها من الـ Request
-        $user->fill($request->validated());
+        // Trainers cannot change email.
+        if ($user->isTrainer()) {
+            unset($validated['email']);
+        }
 
-        if ($user->isDirty('email')) {
+        $user->fill($validated);
+
+        if (! $user->isTrainer() && $user->isDirty('email')) {
             $user->email_verified_at = null;
         }
 
-        // تحديث الحقول الإضافية بما فيها حقول المحفظة الجديدة
-        $user->country = $request->country;
-        $user->withdrawal_method = $request->withdrawal_method;
-        $user->withdrawal_email = $request->withdrawal_email;
-        $user->withdrawal_notes = $request->withdrawal_notes;
+        $user->country = $request->input('country', $user->country);
+        $user->phone = $request->input('phone', $user->phone);
 
-        // الحقول الجديدة التي أضفناها للمحفظة
-        $user->wallet_type = $request->wallet_type;
-        $user->wallet_full_name = $request->wallet_full_name;
+        if ($user->role === 'partner') {
+            $user->withdrawal_method = $request->withdrawal_method;
+            $user->withdrawal_email = $request->withdrawal_email;
+            $user->withdrawal_notes = $request->withdrawal_notes;
+            $user->wallet_type = $request->wallet_type;
+            $user->wallet_full_name = $request->wallet_full_name;
+        }
 
         if ($user->role === 'client') {
             ClientCompanyFields::apply($user, $request);
+        }
+
+        if ($user->isTrainer()) {
+            $user->trainer_bio = $request->input('trainer_bio', $user->trainer_bio);
+            $user->linkedin_url = $request->input('linkedin_url', $user->linkedin_url);
+            $user->teaching_language = $request->input('teaching_language', $user->teaching_language) ?: 'ar';
+            $user->course_category_id = $request->input('course_category_id', $user->course_category_id);
+
+            if ($request->hasFile('avatar')) {
+                if ($user->avatar) {
+                    Storage::disk('public')->delete($user->avatar);
+                }
+                $user->avatar = WatermarkedUpload::store($request->file('avatar'), 'trainers/avatars');
+            }
+
+            if ($request->hasFile('teaching_sample')) {
+                if ($user->teaching_sample_path) {
+                    Storage::disk('public')->delete($user->teaching_sample_path);
+                }
+                $user->teaching_sample_path = $request->file('teaching_sample')->store('trainers/samples', 'public');
+            }
         }
 
         $user->save();
@@ -75,9 +104,6 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [

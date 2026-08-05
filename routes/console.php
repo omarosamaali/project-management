@@ -13,3 +13,4 @@ Schedule::command('attendance:mark-absences')->dailyAt('23:55');
 Schedule::command('private-courses:expire-requests')->everyFifteenMinutes();
 Schedule::command('private-courses:cancel-missing-meetings')->everyFiveMinutes();
 Schedule::command('private-courses:auto-confirm-refunds')->everyFifteenMinutes();
+Schedule::command('trainer-cashouts:auto-confirm')->everyFifteenMinutes();

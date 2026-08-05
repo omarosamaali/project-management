@@ -268,6 +268,20 @@
                             <span class="ml-3">أرباح المحاضرين</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.payout-methods.index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.payout-methods.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="{{ request()->routeIs('dashboard.academy.payout-methods.*') ? 'text-white' : '' }} fas fa-credit-card text-gray-500 pl-2"></i>
+                            <span class="ml-3">طرق سحب المحاضرين</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.cashouts.index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.cashouts.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="{{ request()->routeIs('dashboard.academy.cashouts.*') ? 'text-white' : '' }} fas fa-hand-holding-usd text-gray-500 pl-2"></i>
+                            <span class="ml-3">طلبات سحب المحاضرين</span>
+                        </a>
+                    </li>
                     @endif
                     @if (Auth::user()->isTrainer())
                     <li>
@@ -276,6 +290,20 @@
                             <i
                                 class="{{ request()->routeIs('dashboard.academy.my-profits') ? 'text-white' : '' }} fas fa-wallet text-gray-500 pl-2"></i>
                             <span class="ml-3">أرباح دوراتي</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.off-days.index') }}"
+                            class="{{ request()->routeIs('dashboard.academy.off-days.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="{{ request()->routeIs('dashboard.academy.off-days.*') ? 'text-white' : '' }} fas fa-calendar-times text-gray-500 pl-2"></i>
+                            <span class="ml-3">أيام الإجازة</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dashboard.academy.payment-profile.edit') }}"
+                            class="{{ request()->routeIs('dashboard.academy.payment-profile.*') ? 'text-white hover:bg-gray-800 bg-gray-700 dark:bg-gray-700' : '' }} flex items-center p-2 text-base font-medium text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                            <i class="{{ request()->routeIs('dashboard.academy.payment-profile.*') ? 'text-white' : '' }} fas fa-university text-gray-500 pl-2"></i>
+                            <span class="ml-3">إعدادات الدفع</span>
                         </a>
                     </li>
                     @endif

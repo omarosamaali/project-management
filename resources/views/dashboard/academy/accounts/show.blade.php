@@ -36,24 +36,16 @@
                 'label' => __('messages.trainer_category'),
             ],
             [
-                'ok' => (bool) $account->resumeUrl(),
-                'label' => __('messages.trainer_resume'),
+                'ok' => filled($account->linkedin_url),
+                'label' => __('messages.trainer_linkedin'),
             ],
             [
                 'ok' => (bool) $account->teachingSampleUrl(),
-                'label' => __('messages.trainer_sample'),
+                'label' => __('messages.trainer_sample').' ('.__('messages.optional').')',
             ],
             [
                 'ok' => filled($account->trainer_bio) && mb_strlen(trim((string) $account->trainer_bio)) >= 120,
                 'label' => __('messages.trainer_bio'),
-            ],
-            [
-                'ok' => (bool) $account->idCardFrontUrl(),
-                'label' => __('messages.trainer_id_front'),
-            ],
-            [
-                'ok' => (bool) $account->idCardBackUrl(),
-                'label' => __('messages.trainer_id_back'),
             ],
             [
                 'ok' => (bool) $account->terms_accepted_at,
@@ -246,34 +238,28 @@
             @endif
         </div>
 
-        {{-- Resume + sample --}}
+        {{-- LinkedIn + sample --}}
         <div class="grid lg:grid-cols-2 gap-4">
             <div class="bg-white dark:bg-gray-800 shadow-xl border rounded-2xl p-5 sm:p-6">
                 <div class="flex items-center gap-2 mb-4">
-                    <span class="w-9 h-9 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
-                        <i class="fas fa-file-pdf"></i>
+                    <span class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                        <i class="fab fa-linkedin-in"></i>
                     </span>
                     <div>
-                        <h3 class="text-base font-bold text-gray-900">{{ __('messages.trainer_resume') }}</h3>
-                        <p class="text-xs text-gray-500">PDF</p>
+                        <h3 class="text-base font-bold text-gray-900">{{ __('messages.trainer_linkedin') }}</h3>
                     </div>
                 </div>
-                @if($account->resumeUrl())
-                <a href="{{ $account->resumeUrl() }}" target="_blank" rel="noopener"
-                    class="group rounded-2xl border border-dashed border-red-200 bg-red-50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-red-300 hover:bg-red-100/70 transition">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <span class="w-12 h-12 rounded-xl bg-white text-red-600 border border-red-100 flex items-center justify-center text-xl flex-shrink-0">
-                            <i class="fas fa-file-pdf"></i>
-                        </span>
-                        <div class="min-w-0">
-                            <p class="font-bold text-gray-900 truncate">{{ __('messages.trainer_resume') }}</p>
-                            <p class="text-xs text-gray-500">{{ __('messages.trainer_review_open_file') }}</p>
-                        </div>
+                @if(filled($account->linkedin_url))
+                <a href="{{ $account->linkedin_url }}" target="_blank" rel="noopener"
+                    class="group rounded-2xl border border-dashed border-sky-200 bg-sky-50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-sky-300 hover:bg-sky-100/70 transition">
+                    <div class="min-w-0">
+                        <p class="font-bold text-gray-900 truncate" dir="ltr">{{ $account->linkedin_url }}</p>
+                        <p class="text-xs text-gray-500">{{ __('messages.trainer_review_open_file') }}</p>
                     </div>
                     <span class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm"
-                        style="background:#dc2626;color:#fff;">
+                        style="background:#0a66c2;color:#fff;">
                         <i class="fas fa-external-link-alt"></i>
-                        {{ __('messages.trainer_review_view_resume') }}
+                        LinkedIn
                     </span>
                 </a>
                 @else
@@ -304,12 +290,12 @@
                     {{ __('messages.trainer_review_open_sample') }}
                 </a>
                 @else
-                <p class="text-sm text-red-600 font-medium">{{ __('messages.trainer_review_missing') }}</p>
+                <p class="text-sm text-slate-500 font-medium">{{ __('messages.optional') }} — {{ __('messages.trainer_review_missing') }}</p>
                 @endif
             </div>
         </div>
 
-        {{-- ID documents --}}
+        {{-- ID documents (from payment config after apply) --}}
         <div class="bg-white dark:bg-gray-800 shadow-xl border rounded-2xl p-5 sm:p-6">
             <div class="flex items-center gap-2 mb-4">
                 <span class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
@@ -317,7 +303,7 @@
                 </span>
                 <div>
                     <h3 class="text-base font-bold text-gray-900">{{ __('messages.trainer_documents') }}</h3>
-                    <p class="text-xs text-gray-500">{{ __('messages.trainer_review_id_hint') }}</p>
+                    <p class="text-xs text-gray-500">{{ __('messages.trainer_review_id_from_payment_hint') }}</p>
                 </div>
             </div>
             <div class="grid sm:grid-cols-2 gap-4">
@@ -329,8 +315,8 @@
                             class="w-full max-h-64 object-contain rounded-2xl border border-slate-200 bg-slate-50 group-hover:ring-2 group-hover:ring-pink-300 transition">
                     </a>
                     @else
-                    <div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-8 text-center text-sm text-rose-600 font-medium">
-                        {{ __('messages.trainer_review_missing') }}
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500 font-medium">
+                        {{ __('messages.trainer_review_id_pending_payment') }}
                     </div>
                     @endif
                 </div>
@@ -342,8 +328,8 @@
                             class="w-full max-h-64 object-contain rounded-2xl border border-slate-200 bg-slate-50 group-hover:ring-2 group-hover:ring-pink-300 transition">
                     </a>
                     @else
-                    <div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/50 p-8 text-center text-sm text-rose-600 font-medium">
-                        {{ __('messages.trainer_review_missing') }}
+                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500 font-medium">
+                        {{ __('messages.trainer_review_id_pending_payment') }}
                     </div>
                     @endif
                 </div>

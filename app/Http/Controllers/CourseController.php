@@ -13,11 +13,14 @@ use App\Models\CourseDayExamQuestion;
 use App\Models\CoursePathExamAnswer;
 use App\Models\CoursePathExamQuestion;
 use App\Models\CoursePathItem;
+use App\Models\CoursePathLessonLink;
 use App\Models\CourseRating;
 use App\Models\CourseSpecialCertificate;
 use App\Models\CourseUnit;
 use App\Models\CourseWishlist;
 use App\Models\Setting;
+use App\Models\TrainerOffDay;
+use App\Support\CourseScheduleCalculator;
 use App\Support\YouTubeLive;
 use App\Support\LessonVideoSource;
 use App\Support\VideoDownloadGuard;
@@ -31,6 +34,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class CourseController extends Controller
 {
@@ -98,8 +102,15 @@ class CourseController extends Controller
 
         $trainerProfitPercentages = Setting::academyTrainerProfitPercentages();
         $trainerProfitPercentage = $trainerProfitPercentages['online'] ?? 60;
+        $trainerOffDaysByTrainer = $this->trainerOffDaysByTrainerMap($trainers, auth()->user());
 
-        return view('dashboard.courses.create', compact('categories', 'trainers', 'trainerProfitPercentage', 'trainerProfitPercentages'));
+        return view('dashboard.courses.create', compact(
+            'categories',
+            'trainers',
+            'trainerProfitPercentage',
+            'trainerProfitPercentages',
+            'trainerOffDaysByTrainer'
+        ));
     }
 
     protected function prepareJsonFields(Request $request, array &$data)
@@ -180,18 +191,61 @@ class CourseController extends Controller
         // أيام الراحة - الجديد
         $data['rest_days'] = $request->input('rest_days', []);
 
-        // Always derive count_days from calendar dates (same day = 1)
-        // Recorded courses have no schedule — keep sentinel count_days
+        // أيام الإجازة المختارة يدوياً من جدول المحاضر (لا تُطبَّق تلقائياً كلها)
+        $offDates = array_values(array_unique(array_filter(array_map(
+            static fn ($d) => is_string($d) ? trim($d) : '',
+            (array) $request->input('off_dates', [])
+        ))));
+        $data['off_dates'] = $offDates;
+
+        // Recorded courses have no schedule — keep sentinel count_days.
+        // For scheduled courses, count_days is now the trainer-entered session
+        // count (validated int >= 1); end_date is recomputed in applyScheduleCalculation().
         if (($data['location_type'] ?? $request->input('location_type')) === 'recorded') {
             $data['rest_days'] = [];
+            $data['off_dates'] = [];
             $data['count_days'] = 0;
-        } elseif (!empty($data['start_date']) && !empty($data['end_date'])) {
-            $data['count_days'] = Course::computeCourseDays(
-                $data['start_date'],
-                $data['end_date'],
-                $data['rest_days'] ?? []
-            );
         }
+    }
+
+    /**
+     * For non-recorded courses, recompute the authoritative end_date from
+     * start_date + count_days (session days) + rest_days + selected trainer off
+     * days, using CourseScheduleCalculator. The client-submitted end_date is
+     * only a preview and is never trusted directly.
+     */
+    protected function applyScheduleCalculation(array &$data): void
+    {
+        if (($data['location_type'] ?? null) === 'recorded') {
+            return;
+        }
+
+        if (empty($data['start_date']) || !isset($data['count_days'])) {
+            return;
+        }
+
+        $start = Carbon::parse($data['start_date']);
+        $sessionDays = max(1, (int) $data['count_days']);
+        $restDays = array_values((array) ($data['rest_days'] ?? []));
+        $horizon = max($sessionDays * 3 + 60, 120);
+        $restDates = CourseScheduleCalculator::expandWeekdayRestDates($start, $restDays, $horizon);
+
+        $selectedOffDates = array_values(array_unique(array_filter((array) ($data['off_dates'] ?? []))));
+        $allowedOffDates = [];
+        if (! empty($data['trainer_id'])) {
+            $allowedOffDates = TrainerOffDay::query()
+                ->where('user_id', $data['trainer_id'])
+                ->pluck('date')
+                ->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))
+                ->all();
+        }
+        $trainerOffDates = array_values(array_intersect($selectedOffDates, $allowedOffDates));
+        $data['off_dates'] = $trainerOffDates;
+
+        $result = CourseScheduleCalculator::calculate($start, $sessionDays, $restDates, $trainerOffDates);
+
+        $data['end_date'] = $result['end_date'];
+        $data['count_days'] = $sessionDays;
     }
 
     public function store(Request $request)
@@ -201,6 +255,7 @@ class CourseController extends Controller
         $data = $this->validateCourse($request);
         $this->prepareJsonFields($request, $data);
         $data['trainer_id'] = $this->resolveTrainerId($request);
+        $this->applyScheduleCalculation($data);
         $this->applyMeetingProvider($request, $data);
 
         if ($request->hasFile('main_image')) {
@@ -261,6 +316,54 @@ class CourseController extends Controller
 
         return $course?->trainer_id;
     }
+
+    /**
+     * Map of trainer_id => [{value: Y-m-d, label, note}] for the course schedule off-day multiselect.
+     *
+     * @param  \Illuminate\Support\Collection<int, User>  $trainers
+     * @return array<string, array<int, array{value: string, label: string, note: ?string}>>
+     */
+    protected function trainerOffDaysByTrainerMap(Collection $trainers, User $actor, ?int $courseTrainerId = null): array
+    {
+        $ids = [];
+        if ($actor->isTrainer() && ! $actor->isAdmin()) {
+            $ids[] = (int) $actor->id;
+        } else {
+            $ids = $trainers->pluck('id')->map(fn ($id) => (int) $id)->all();
+            if ($courseTrainerId) {
+                $ids[] = (int) $courseTrainerId;
+            }
+        }
+        $ids = array_values(array_unique(array_filter($ids)));
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $rows = TrainerOffDay::query()
+            ->whereIn('user_id', $ids)
+            ->orderBy('date')
+            ->get(['user_id', 'date', 'note']);
+
+        $map = [];
+        foreach ($ids as $id) {
+            $map[(string) $id] = [];
+        }
+
+        foreach ($rows as $row) {
+            $date = Carbon::parse($row->date)->format('Y-m-d');
+            $note = $row->note ? trim((string) $row->note) : null;
+            $label = $date.($note ? " — {$note}" : '');
+            $map[(string) $row->user_id][] = [
+                'value' => $date,
+                'label' => $label,
+                'note' => $note,
+            ];
+        }
+
+        return $map;
+    }
+
     public function show(Course $course)
     {
         $this->authorizeCourseManager($course);
@@ -296,8 +399,16 @@ class CourseController extends Controller
 
         $trainerProfitPercentages = Setting::academyTrainerProfitPercentages();
         $trainerProfitPercentage = Setting::academyTrainerProfitPercentageFor((string) $course->location_type);
+        $trainerOffDaysByTrainer = $this->trainerOffDaysByTrainerMap($trainers, auth()->user(), $course->trainer_id);
 
-        return view('dashboard.courses.edit', compact('course', 'categories', 'trainers', 'trainerProfitPercentage', 'trainerProfitPercentages'));
+        return view('dashboard.courses.edit', compact(
+            'course',
+            'categories',
+            'trainers',
+            'trainerProfitPercentage',
+            'trainerProfitPercentages',
+            'trainerOffDaysByTrainer'
+        ));
     }
 
     public function update(Request $request, Course $course)
@@ -311,6 +422,7 @@ class CourseController extends Controller
         $data = $this->validateCourse($request, $course->id);
         $this->prepareJsonFields($request, $data);
         $data['trainer_id'] = $this->resolveTrainerId($request, $course);
+        $this->applyScheduleCalculation($data);
         $this->applyMeetingProvider($request, $data, $course);
 
         $settingsLocked = $course->hasBegun();
@@ -523,9 +635,9 @@ class CourseController extends Controller
             'name_en' => 'required|string|max:255',
             'price' => $priceRules,
             'counter' => 'required|integer|min:0',
-            'count_days' => 'exclude_if:location_type,recorded|required|integer|min:0',
+            'count_days' => 'exclude_if:location_type,recorded|required|integer|min:1',
             'start_date' => 'exclude_if:location_type,recorded|required|date',
-            'end_date' => 'exclude_if:location_type,recorded|required|date|after_or_equal:start_date',
+            'end_date' => 'exclude_if:location_type,recorded|nullable|date',
             'last_date' => 'exclude_if:location_type,recorded|required|date|before_or_equal:start_date',
             'location_type' => 'required|in:online,on_site,recorded',
             'levels' => 'nullable|array',
@@ -571,6 +683,8 @@ class CourseController extends Controller
             // أيام الراحة - الجديد
             'rest_days' => 'nullable|array',
             'rest_days.*' => 'in:sunday,monday,tuesday,wednesday,thursday,friday,saturday',
+            'off_dates' => 'nullable|array',
+            'off_dates.*' => 'date_format:Y-m-d',
 
             'course_category_id' => 'required|exists:course_categories,id',
             'trainer_id' => 'nullable|exists:users,id',
@@ -1088,7 +1202,7 @@ class CourseController extends Controller
             ->when($course->course_category_id, fn ($q) => $q->where('course_category_id', $course->course_category_id))
             ->when(!$course->course_category_id, fn ($q) => $q->whereRaw('1 = 0'))
             ->where('id', '!=', $course->id)
-            ->with('category')
+            ->with(['category', 'trainer'])
             ->withCount(['payments' => function ($query) {
                 $query->whereIn('status', ['completed', 'success', 'paid']);
             }])
@@ -1534,12 +1648,14 @@ class CourseController extends Controller
                         $q->answers()->delete();
                         $q->delete();
                     });
+                    $this->syncPathItemResourceLinks($item, $itemData['links'] ?? []);
                 }
             }
 
             // Delete removed items in this unit
             $unit->items()->whereNotIn('id', $unitKeptItemIds ?: [0])->each(function (CoursePathItem $old) {
                 $this->deletePathItemMedia($old);
+                $old->resourceLinks()->delete();
                 $old->examQuestions()->each(function (CoursePathExamQuestion $q) {
                     $q->answers()->delete();
                     $q->delete();
@@ -1552,6 +1668,7 @@ class CourseController extends Controller
         $course->units()->whereNotIn('id', $keptUnitIds ?: [0])->each(function (CourseUnit $unit) {
             $unit->items->each(function (CoursePathItem $old) {
                 $this->deletePathItemMedia($old);
+                $old->resourceLinks()->delete();
                 $old->examQuestions()->each(function (CoursePathExamQuestion $q) {
                     $q->answers()->delete();
                     $q->delete();
@@ -1597,6 +1714,35 @@ class CourseController extends Controller
                     'sort_order' => $ai,
                 ]);
             }
+        }
+    }
+
+    protected function syncPathItemResourceLinks(CoursePathItem $item, array $links): void
+    {
+        $item->resourceLinks()->delete();
+
+        $order = 0;
+        foreach ($links as $linkData) {
+            $url = trim((string) ($linkData['url'] ?? ''));
+            $titleAr = trim((string) ($linkData['title_ar'] ?? ''));
+            $titleEn = trim((string) ($linkData['title_en'] ?? ''));
+            if ($url === '' || ($titleAr === '' && $titleEn === '')) {
+                continue;
+            }
+            if ($titleAr === '') {
+                $titleAr = $titleEn;
+            }
+            if ($titleEn === '') {
+                $titleEn = $titleAr;
+            }
+
+            CoursePathLessonLink::create([
+                'path_item_id' => $item->id,
+                'title_ar' => $titleAr,
+                'title_en' => $titleEn,
+                'url' => $url,
+                'sort_order' => $order++,
+            ]);
         }
     }
 

@@ -41,7 +41,8 @@
             ->first()
         : null;
     $is_already_in = (bool) $enrollmentPayment;
-    $canEnroll = auth()->check() && auth()->user()->canLearnCourses();
+    $isOwnCourse = auth()->check() && (int) auth()->id() === (int) ($course->trainer_id ?? 0);
+    $canEnroll = auth()->check() && auth()->user()->canLearnCourses() && ! $isOwnCourse;
     $registrationClosed = $course->isRegistrationClosed();
     $showApplyDeadline = $course->hasRegistrationDeadline();
     $applyUntilLabel = $showApplyDeadline
@@ -173,6 +174,147 @@
         align-items: center;
         gap: .55rem;
         margin-bottom: 1.35rem;
+    }
+    .course-trainer-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .3rem .85rem .3rem .35rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        color: #0f172a !important;
+        text-decoration: none;
+        font-size: .82rem;
+        font-weight: 800;
+        transition: background .15s, border-color .15s;
+    }
+    .course-trainer-chip:hover {
+        background: #e2e8f0;
+        border-color: #cbd5e1;
+        color: #0f172a !important;
+    }
+    .course-trainer-chip img {
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 1.5px solid #fff;
+        box-shadow: 0 0 0 1px #cbd5e1;
+        flex-shrink: 0;
+    }
+    .course-trainer-chip span {
+        color: inherit;
+        line-height: 1.2;
+    }
+    .course-schedule-dialog {
+        max-width: min(42rem, 100%);
+    }
+    .course-schedule-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .55rem .85rem;
+        align-items: center;
+    }
+    .course-schedule-legend__item {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .78rem;
+        font-weight: 700;
+        color: #334155;
+    }
+    .course-schedule-legend__item i {
+        width: .85rem;
+        height: .85rem;
+        border-radius: .3rem;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .course-schedule-legend__item b {
+        color: #0f172a;
+        font-weight: 800;
+    }
+    .course-schedule-legend__item.is-session i { background: #0b8f7f; }
+    .course-schedule-legend__item.is-rest i { background: #94a3b8; }
+    .course-schedule-legend__item.is-off i { background: #f59e0b; }
+    .course-cal-month__title {
+        font-size: .95rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 .75rem;
+        text-align: center;
+    }
+    .course-cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: .35rem;
+    }
+    .course-cal-head {
+        text-align: center;
+        font-size: .72rem;
+        font-weight: 800;
+        color: #64748b;
+        padding: .25rem 0;
+        letter-spacing: .02em;
+    }
+    .course-cal-cell {
+        min-height: 4.1rem;
+        border-radius: .75rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        padding: .4rem .35rem .35rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: .2rem;
+        color: #0f172a;
+    }
+    .course-cal-cell.is-muted {
+        opacity: .38;
+        background: #fff;
+        border-color: #f1f5f9;
+    }
+    .course-cal-day {
+        font-size: .82rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+    .course-cal-mark {
+        font-size: .62rem;
+        font-weight: 700;
+        line-height: 1.2;
+        text-align: center;
+        max-width: 100%;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        word-break: break-word;
+    }
+    .course-cal-cell.is-session {
+        background: #ecfdf8;
+        border-color: #99e6d6;
+        color: #0b5f55;
+        box-shadow: inset 0 0 0 1px rgba(11, 143, 127, .12);
+    }
+    .course-cal-cell.is-rest {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #475569;
+    }
+    .course-cal-cell.is-off {
+        background: #fff7ed;
+        border-color: #fdba74;
+        color: #9a3412;
+        box-shadow: inset 0 0 0 1px rgba(245, 158, 11, .16);
+    }
+    @media (max-width: 640px) {
+        .course-cal-cell { min-height: 3.35rem; padding: .3rem .2rem; border-radius: .55rem; }
+        .course-cal-day { font-size: .74rem; }
+        .course-cal-mark { font-size: .55rem; }
+        .course-cal-head { font-size: .65rem; }
+        .course-schedule-dialog { max-width: 100%; border-radius: 1rem; }
     }
     .course-type-badge {
         display: inline-flex;
@@ -633,8 +775,16 @@
 
         <div class="course-layout">
             <div class="course-main min-w-0">
-                @if($typeLabel || count($levelKeys) || $categoryName || $showApplyDeadline)
+                @if($typeLabel || count($levelKeys) || $categoryName || $showApplyDeadline || $course->trainer)
                 <div class="course-meta-row">
+                    @if($course->trainer)
+                    <a href="{{ route('academy.trainers.show', $course->trainer) }}"
+                        class="course-trainer-chip">
+                        <img src="{{ $course->trainer->avatarUrl() }}" alt=""
+                            onerror="this.onerror=null;this.src='{{ $course->trainer->letterAvatarDataUri() }}';">
+                        <span>{{ $course->trainer->name }}</span>
+                    </a>
+                    @endif
                     @if($typeLabel)
                     <span class="course-type-badge is-{{ $typeTone }}">
                         <i class="fas fa-{{ $typeTone === 'online' ? 'video' : ($typeTone === 'onsite' ? 'map-marker-alt' : 'play-circle') }}"></i>
@@ -668,6 +818,186 @@
                         · {{ $applyUntilLabel }}
                     </span>
                     @endif
+                </div>
+                @endif
+
+                @if(!$isRecorded && (int) ($course->count_days ?? 0) > 1 && $course->start_date)
+                @php
+                    $scheduleLocale = app()->getLocale() ?: 'ar';
+                    $trainerOffDays = $course->trainer
+                        ? $course->trainer->offDays()->get()
+                        : collect();
+                    $offNotesByDate = $trainerOffDays->mapWithKeys(function ($od) {
+                        $key = \Carbon\Carbon::parse($od->date)->toDateString();
+                        $note = trim((string) ($od->note ?? ''));
+
+                        return [$key => $note !== '' ? $note : null];
+                    })->all();
+
+                    $selectedOffDates = array_values(array_filter((array) ($course->off_dates ?? [])));
+                    $allowedOffDates = $trainerOffDays
+                        ->map(fn ($od) => \Carbon\Carbon::parse($od->date)->toDateString())
+                        ->all();
+                    $offDatesForSchedule = $selectedOffDates
+                        ? array_values(array_intersect($selectedOffDates, $allowedOffDates))
+                        : $allowedOffDates;
+
+                    $schedule = \App\Support\CourseScheduleCalculator::forCourse($course, $offDatesForSchedule);
+
+                    $scheduleDayMap = [];
+                    foreach ($schedule['teaching_dates'] as $d) {
+                        $scheduleDayMap[$d] = ['type' => 'session', 'note' => null];
+                    }
+                    foreach ($schedule['rest_dates'] as $d) {
+                        $scheduleDayMap[$d] = ['type' => 'rest', 'note' => null];
+                    }
+                    foreach ($schedule['off_dates'] as $d) {
+                        $scheduleDayMap[$d] = [
+                            'type' => 'off',
+                            'note' => $offNotesByDate[$d] ?? null,
+                        ];
+                    }
+
+                    $scheduleDatesSorted = array_keys($scheduleDayMap);
+                    sort($scheduleDatesSorted);
+
+                    $scheduleMonths = [];
+                    $weekdayLabels = [];
+                    if (! empty($scheduleDatesSorted)) {
+                        $weekStart = $scheduleLocale === 'ar'
+                            ? \Carbon\Carbon::SATURDAY
+                            : \Carbon\Carbon::SUNDAY;
+
+                        $probe = \Carbon\Carbon::now()->locale($scheduleLocale)->startOfWeek($weekStart);
+                        for ($i = 0; $i < 7; $i++) {
+                            $weekdayLabels[] = $probe->copy()->addDays($i)->translatedFormat('D');
+                        }
+
+                        $monthCursor = \Carbon\Carbon::parse($scheduleDatesSorted[0])->startOfMonth();
+                        $monthEnd = \Carbon\Carbon::parse(end($scheduleDatesSorted))->endOfMonth();
+                        while ($monthCursor->lte($monthEnd)) {
+                            $monthStart = $monthCursor->copy()->startOfMonth();
+                            $gridStart = $monthStart->copy()->startOfWeek($weekStart);
+                            $gridEnd = $monthStart->copy()->endOfMonth()->endOfWeek($weekStart);
+                            $weeks = [];
+                            $dayCursor = $gridStart->copy();
+                            while ($dayCursor->lte($gridEnd)) {
+                                $week = [];
+                                for ($i = 0; $i < 7; $i++) {
+                                    $key = $dayCursor->toDateString();
+                                    $meta = $scheduleDayMap[$key] ?? null;
+                                    $week[] = [
+                                        'date' => $key,
+                                        'day' => $dayCursor->day,
+                                        'in_month' => $dayCursor->month === $monthStart->month,
+                                        'type' => $meta['type'] ?? null,
+                                        'note' => $meta['note'] ?? null,
+                                        'label' => $dayCursor->copy()->locale($scheduleLocale)->translatedFormat('l'),
+                                    ];
+                                    $dayCursor->addDay();
+                                }
+                                $weeks[] = $week;
+                            }
+                            $scheduleMonths[] = [
+                                'title' => $monthStart->copy()->locale($scheduleLocale)->translatedFormat('F Y'),
+                                'weeks' => $weeks,
+                            ];
+                            $monthCursor->addMonth();
+                        }
+                    }
+                @endphp
+                <div class="section-block flex flex-wrap items-center gap-3">
+                    <div class="text-sm text-slate-600">
+                        <span class="font-bold text-slate-800">{{ __('messages.course_predicted_end') }}:</span>
+                        <span dir="ltr">{{ optional($course->end_date)->format('Y-m-d H:i') }}</span>
+                        · {{ __('messages.course_session_days') }}: {{ (int) $course->count_days }}
+                    </div>
+                    <button type="button" onclick="document.getElementById('course-schedule-modal').classList.remove('hidden')"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-white"
+                        style="background:linear-gradient(135deg,#0D2444,#0b8f7f);">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ __('messages.course_schedule_btn') }}
+                    </button>
+                </div>
+                <div id="course-schedule-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+                    onclick="if(event.target===this) this.classList.add('hidden')">
+                    <div class="course-schedule-dialog bg-white rounded-2xl w-full max-h-[88vh] overflow-hidden shadow-2xl">
+                        <div class="flex items-center justify-between px-5 py-4 border-b">
+                            <h3 class="font-bold text-lg">{{ __('messages.course_schedule_btn') }}</h3>
+                            <button type="button" class="text-2xl leading-none text-slate-400 hover:text-slate-600" onclick="document.getElementById('course-schedule-modal').classList.add('hidden')">&times;</button>
+                        </div>
+                        <div class="p-5 overflow-y-auto max-h-[calc(88vh-4.5rem)] space-y-5">
+                            <div class="course-schedule-legend">
+                                <span class="course-schedule-legend__item is-session">
+                                    <i></i>{{ __('messages.course_schedule_sessions') }}
+                                    <b>{{ count($schedule['teaching_dates']) }}</b>
+                                </span>
+                                <span class="course-schedule-legend__item is-rest">
+                                    <i></i>{{ __('messages.course_schedule_rest') }}
+                                    <b>{{ count($schedule['rest_dates']) }}</b>
+                                </span>
+                                <span class="course-schedule-legend__item is-off">
+                                    <i></i>{{ __('messages.course_schedule_trainer_off') }}
+                                    <b>{{ count($schedule['off_dates']) }}</b>
+                                </span>
+                            </div>
+
+                            @forelse($scheduleMonths as $month)
+                            <section class="course-cal-month">
+                                <h4 class="course-cal-month__title">{{ $month['title'] }}</h4>
+                                <div class="course-cal-grid" dir="ltr">
+                                    @foreach($weekdayLabels as $wd)
+                                    <div class="course-cal-head">{{ $wd }}</div>
+                                    @endforeach
+                                    @foreach($month['weeks'] as $week)
+                                        @foreach($week as $cell)
+                                        @php
+                                            $cellClass = 'course-cal-cell';
+                                            if (! $cell['in_month']) {
+                                                $cellClass .= ' is-muted';
+                                            }
+                                            if ($cell['type'] === 'session') {
+                                                $cellClass .= ' is-session';
+                                            } elseif ($cell['type'] === 'rest') {
+                                                $cellClass .= ' is-rest';
+                                            } elseif ($cell['type'] === 'off') {
+                                                $cellClass .= ' is-off';
+                                            }
+                                            $titleParts = [$cell['label'], $cell['date']];
+                                            if ($cell['type'] === 'session') {
+                                                $titleParts[] = __('messages.course_schedule_sessions');
+                                            } elseif ($cell['type'] === 'rest') {
+                                                $titleParts[] = __('messages.course_schedule_rest');
+                                            } elseif ($cell['type'] === 'off') {
+                                                $titleParts[] = __('messages.course_schedule_trainer_off');
+                                                if ($cell['note']) {
+                                                    $titleParts[] = $cell['note'];
+                                                }
+                                            }
+                                        @endphp
+                                        <div class="{{ $cellClass }}" title="{{ implode(' · ', $titleParts) }}">
+                                            <span class="course-cal-day">{{ $cell['day'] }}</span>
+                                            @if($cell['type'] && $cell['in_month'])
+                                            <span class="course-cal-mark">
+                                                @if($cell['type'] === 'session')
+                                                {{ __('messages.course_schedule_mark_session') }}
+                                                @elseif($cell['type'] === 'rest')
+                                                {{ __('messages.course_schedule_mark_rest') }}
+                                                @else
+                                                {{ $cell['note'] ?: __('messages.course_schedule_mark_off') }}
+                                                @endif
+                                            </span>
+                                            @endif
+                                        </div>
+                                        @endforeach
+                                    @endforeach
+                                </div>
+                            </section>
+                            @empty
+                            <p class="text-sm text-slate-500 text-center py-8">{{ __('messages.course_schedule_empty') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
                 </div>
                 @endif
 
@@ -903,12 +1233,34 @@
                     <div class="p-5">
                         <div class="mb-4 pb-4 border-b border-gray-100">
                             @if($course->price > 0)
-                            <div class="flex items-center justify-between gap-2">
-                                <span class="text-sm text-gray-500">السعر</span>
-                                <span class="text-2xl font-extrabold text-gray-900 flex items-center gap-1.5">
-                                    {{ number_format($course->price) }}
-                                    <img src="{{ asset('assets/images/drhm-icon.svg') }}" class="w-6" alt="">
-                                </span>
+                            @php
+                                $ziinaFeePct = (float) config('services.ziina.fee_percent', 7.9);
+                                $ziinaFeeFixed = (float) config('services.ziina.fee_fixed', 2);
+                                $ziinaFees = round(($course->price * ($ziinaFeePct / 100)) + $ziinaFeeFixed, 2);
+                                $ziinaTotal = round($course->price + $ziinaFees, 2);
+                            @endphp
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="text-sm text-gray-500">{{ __('messages.ziina_base_price_label') }}</span>
+                                    <span class="text-lg font-bold text-gray-900 flex items-center gap-1.5">
+                                        {{ number_format($course->price, 2) }}
+                                        <img src="{{ asset('assets/images/drhm-icon.svg') }}" class="w-5" alt="">
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 text-sm">
+                                    <span class="text-gray-500">{{ __('messages.ziina_fees_label') }} ({{ rtrim(rtrim(number_format($ziinaFeePct, 1), '0'), '.') }}% + {{ number_format($ziinaFeeFixed, 0) }})</span>
+                                    <span class="font-semibold text-amber-700 flex items-center gap-1">
+                                        {{ number_format($ziinaFees, 2) }}
+                                        <img src="{{ asset('assets/images/drhm-icon.svg') }}" class="w-4" alt="">
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-100">
+                                    <span class="text-sm font-bold text-gray-700">{{ __('messages.ziina_total_label') }}</span>
+                                    <span class="text-2xl font-extrabold text-gray-900 flex items-center gap-1.5">
+                                        {{ number_format($ziinaTotal, 2) }}
+                                        <img src="{{ asset('assets/images/drhm-icon.svg') }}" class="w-6" alt="">
+                                    </span>
+                                </div>
                             </div>
                             @else
                             <div class="text-xl font-extrabold text-green-700">
@@ -986,7 +1338,16 @@
                                 </span>
                             </button>
                             @auth
-                                @if (!$canEnroll)
+                                @if ($isOwnCourse)
+                                <div class="cta-disabled bg-teal-50 border-teal-200 text-teal-900 text-sm">
+                                    {{ __('messages.course_own_cannot_enroll') }}
+                                </div>
+                                <a href="{{ route('dashboard.courses.edit', $course) }}"
+                                    class="cta-primary inline-flex items-center justify-center gap-2">
+                                    <i class="fas fa-pen-to-square"></i>
+                                    {{ __('messages.course_own_manage') }}
+                                </a>
+                                @elseif (!$canEnroll)
                                 <div class="cta-disabled bg-amber-50 border-amber-300 text-amber-800 text-sm">
                                     الاشتراك متاح لحسابات المتدرب والمحاضر والإدارة فقط
                                 </div>
@@ -1132,7 +1493,7 @@
                 <span id="originalPrice" class="font-bold"></span>
             </div>
             <div class="flex justify-between items-center gap-3 text-sm text-gray-600">
-                <span class="inline-flex items-center gap-1 whitespace-nowrap">رسوم الدفع (7.9% + 2 <x-drhm-icon width="12" height="12" />):</span>
+                <span class="inline-flex items-center gap-1 whitespace-nowrap">{{ __('messages.ziina_fees_label') }} ({{ rtrim(rtrim(number_format((float) config('services.ziina.fee_percent', 7.9), 1), '0'), '.') }}% + {{ number_format((float) config('services.ziina.fee_fixed', 2), 0) }} <x-drhm-icon width="12" height="12" />):</span>
                 <span id="fees" class="whitespace-nowrap"></span>
             </div>
             <div class="flex justify-between text-lg font-bold border-t pt-3">
@@ -1247,10 +1608,12 @@
             return;
         }
 
-        const fees = (price * 0.079) + 2;
+        const feePercent = {{ (float) config('services.ziina.fee_percent', 7.9) }};
+        const feeFixed = {{ (float) config('services.ziina.fee_fixed', 2) }};
+        const fees = (price * (feePercent / 100)) + feeFixed;
         const total = price + fees;
         document.getElementById('modalTitle').textContent = title;
-        document.getElementById('priceLabel').textContent = type === 'course' ? 'سعر الدورة:' : 'سعر النظام:';
+        document.getElementById('priceLabel').textContent = type === 'course' ? @json(__('messages.ziina_base_price_label') . ':') : 'سعر النظام:';
         const aedIcon = '<img src="{{ asset('assets/images/drhm-icon.svg') }}" alt="" class="inline-block align-middle" style="width:12px;height:14px">';
         const formatAed = (n) => `<span class="inline-flex items-center gap-1 whitespace-nowrap" dir="ltr">${aedIcon}${Number(n).toFixed(2)}</span>`;
         document.getElementById('originalPrice').innerHTML = formatAed(price);

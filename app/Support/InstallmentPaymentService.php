@@ -119,7 +119,9 @@ class InstallmentPaymentService
             $base = (float) $payment->original_price;
         } else {
             $paidTotal = (float) ($payment?->amount ?? 0);
-            $base = $paidTotal > 0 ? round(($paidTotal - 2) / 1.079, 2) : 0.0;
+            $feePercent = config('services.ziina.fee_percent', 7.9) / 100;
+            $feeFixed = (float) config('services.ziina.fee_fixed', 2);
+            $base = $paidTotal > 0 ? round(($paidTotal - $feeFixed) / (1 + $feePercent), 2) : 0.0;
         }
 
         if ($payment && (float) $payment->fees > 0) {
@@ -127,7 +129,7 @@ class InstallmentPaymentService
         } elseif ($payment && (float) $payment->amount > 0 && (float) $payment->original_price > 0) {
             $fees = round((float) $payment->amount - (float) $payment->original_price, 2);
         } else {
-            $fees = round(($base * 0.079) + 2, 2);
+            $fees = round(($base * (config('services.ziina.fee_percent', 7.9) / 100)) + config('services.ziina.fee_fixed', 2), 2);
         }
 
         if ($payment && (float) $payment->amount > 0) {
@@ -146,7 +148,7 @@ class InstallmentPaymentService
     public static function buildInvoicePaymentPreview(RequestPayment $installment): Payment
     {
         $base = (float) $installment->amount;
-        $fees = round(($base * 0.079) + 2, 2);
+        $fees = round(($base * (config('services.ziina.fee_percent', 7.9) / 100)) + config('services.ziina.fee_fixed', 2), 2);
 
         $payment = new Payment([
             'user_id' => $installment->specialRequest?->user_id,

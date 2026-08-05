@@ -432,9 +432,24 @@
             <div class="pr-stat">
                 <dt>{{ $locale === 'ar' ? 'السعر' : 'Price' }}</dt>
                 <dd>
-                    <span class="inline-flex items-center gap-1.5" dir="ltr">
-                        <x-drhm-icon width="14" height="16" />
-                        {{ number_format((float) $privateRequest->private_price, 2) }}
+                    @php
+                        $prBase = (float) $privateRequest->private_price;
+                        $prFeePct = (float) config('services.ziina.fee_percent', 7.9);
+                        $prFeeFixed = (float) config('services.ziina.fee_fixed', 2);
+                        $prFees = round(($prBase * ($prFeePct / 100)) + $prFeeFixed, 2);
+                        $prTotal = round($prBase + $prFees, 2);
+                    @endphp
+                    <span class="inline-flex flex-col items-start gap-1" dir="ltr">
+                        <span class="inline-flex items-center gap-1.5">
+                            <x-drhm-icon width="14" height="16" />
+                            {{ number_format($prBase, 2) }}
+                        </span>
+                        <span class="text-xs font-normal text-amber-700">
+                            {{ __('messages.ziina_fees_label') }}: {{ number_format($prFees, 2) }}
+                        </span>
+                        <span class="text-sm font-bold text-slate-900">
+                            {{ __('messages.ziina_total_label') }}: {{ number_format($prTotal, 2) }}
+                        </span>
                     </span>
                 </dd>
             </div>
@@ -752,6 +767,27 @@
 <script>
 async function payPrivateRequest() {
     const btn = event.currentTarget;
+    const base = {{ (float) $privateRequest->private_price }};
+    const feePercent = {{ (float) config('services.ziina.fee_percent', 7.9) }};
+    const feeFixed = {{ (float) config('services.ziina.fee_fixed', 2) }};
+    const fees = (base * (feePercent / 100)) + feeFixed;
+    const total = base + fees;
+
+    const confirmed = await Swal.fire({
+        title: @json(__('messages.ziina_total_label')),
+        html: `<div style="text-align:start;line-height:1.8">
+            <div>{{ __('messages.ziina_base_price_label') }}: <b>${base.toFixed(2)} AED</b></div>
+            <div>{{ __('messages.ziina_fees_label') }}: <b>${fees.toFixed(2)} AED</b></div>
+            <div style="margin-top:.5rem;font-size:1.1rem">{{ __('messages.ziina_total_label') }}: <b>${total.toFixed(2)} AED</b></div>
+        </div>`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: @json(__('messages.ziina_confirm_pay')),
+        cancelButtonText: @json(__('messages.close') === 'messages.close' ? 'Cancel' : __('messages.close')),
+        confirmButtonColor: '#111111',
+    });
+    if (!confirmed.isConfirmed) return;
+
     btn.disabled = true;
     try {
         const res = await fetch(@json(route('private-requests.pay', $privateRequest)), {

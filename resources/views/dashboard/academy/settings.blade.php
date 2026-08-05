@@ -83,7 +83,30 @@
                 </div>
             </div>
 
+            <div class="border-t pt-5">
+                <h2 class="text-lg font-bold text-slate-800">حدود سحب أرباح المحاضرين (بالدرهم)</h2>
+                <p class="text-sm text-slate-500 mt-1">الحد الأدنى والأقصى لمبلغ طلب السحب الواحد لكل محاضر.</p>
+
+                <div class="mt-4 grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">الحد الأدنى للسحب (افتراضي 100)</label>
+                        <input type="number" name="cashout_min" min="0" step="0.01"
+                            value="{{ old('cashout_min', $cashoutMin) }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                        @error('cashout_min')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">الحد الأقصى للسحب (افتراضي 10000)</label>
+                        <input type="number" name="cashout_max" min="0" step="0.01"
+                            value="{{ old('cashout_max', $cashoutMax) }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" required>
+                        @error('cashout_max')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </div>
+
             <div class="flex gap-2 justify-end">
+                <a href="{{ route('dashboard.academy.payout-methods.index') }}" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">طرق السحب</a>
                 <a href="{{ route('dashboard.academy.profits.index') }}" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">عرض الأرباح</a>
                 <button type="submit" class="px-4 py-2 rounded-lg text-white text-sm" style="background:#0D2444;">حفظ الإعدادات</button>
             </div>

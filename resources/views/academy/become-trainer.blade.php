@@ -1055,27 +1055,26 @@
                             'required' => true,
                             'previewRounded' => true,
                         ])
+                        <div class="bt-avatar-example rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center gap-3">
+                            <img src="{{ asset('images/trainer-avatar-example.jpg') }}" alt="{{ __('messages.trainer_avatar_example_alt') }}"
+                                class="w-16 h-16 rounded-full object-cover border border-slate-200 flex-shrink-0">
+                            <p class="text-xs text-slate-600 leading-relaxed m-0">{{ __('messages.trainer_avatar_professional_note') }}</p>
+                        </div>
 
-                        <div class="bt-file-field">
-                            <label class="block text-sm font-medium mb-1" for="resume">
-                                {{ __('messages.trainer_resume') }}
-                                <span class="text-red-500">*</span>
-                            </label>
-                            <div class="bt-file-dropzone" data-file-dropzone="resume">
-                                <input type="file" id="resume" name="resume" accept="application/pdf,.pdf" required>
-                                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
-                                <p>{{ __('messages.trainer_resume_drop') }}</p>
-                                <small>{{ __('messages.trainer_resume_formats') }}</small>
-                                <span class="bt-file-name" data-file-name></span>
-                            </div>
-                            <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_resume_hint') }}</p>
-                            <x-input-error :messages="$errors->get('resume')" class="mt-2" />
+                        <div>
+                            <x-input-label for="linkedin_url" :value="__('messages.trainer_linkedin')" />
+                            <input id="linkedin_url" type="url" name="linkedin_url" required
+                                value="{{ old('linkedin_url') }}"
+                                placeholder="https://www.linkedin.com/in/your-profile"
+                                class="block mt-1 w-full" dir="ltr">
+                            <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_linkedin_hint') }}</p>
+                            <x-input-error :messages="$errors->get('linkedin_url')" class="mt-2" />
                         </div>
 
                         <div class="bt-file-field">
                             <label class="block text-sm font-medium mb-1" for="teaching_sample">
                                 {{ __('messages.trainer_sample') }}
-                                <span class="text-red-500">*</span>
+                                <span class="text-slate-400 text-xs font-normal">({{ __('messages.optional') }})</span>
                             </label>
                             <div class="bt-sample-guide">
                                 <p class="m-0">{{ __('messages.trainer_sample_intro') }}</p>
@@ -1086,13 +1085,13 @@
                                 </div>
                             </div>
                             <div class="bt-file-dropzone" data-file-dropzone="teaching_sample">
-                                <input type="file" id="teaching_sample" name="teaching_sample" accept="video/mp4,.mp4" required>
+                                <input type="file" id="teaching_sample" name="teaching_sample" accept="video/mp4,.mp4">
                                 <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
                                 <p>{{ __('messages.trainer_sample_drop') }}</p>
                                 <small>{{ __('messages.trainer_sample_formats') }}</small>
                                 <span class="bt-file-name" data-file-name></span>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_sample_hint') }}</p>
+                            <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_sample_hint_optional') }}</p>
                             <x-input-error :messages="$errors->get('teaching_sample')" class="mt-2" />
                         </div>
 
@@ -1108,23 +1107,6 @@
                             </div>
                             <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_bio_hint') }}</p>
                             <x-input-error :messages="$errors->get('trainer_bio')" class="mt-2" />
-                        </div>
-
-                        <div class="grid sm:grid-cols-2 gap-4">
-                            @include('dashboard.course-categories.partials.drag-image-input', [
-                                'name' => 'id_card_front',
-                                'label' => __('messages.trainer_id_front'),
-                                'hint' => __('messages.trainer_upload_required_hint'),
-                                'required' => true,
-                                'previewRounded' => false,
-                            ])
-                            @include('dashboard.course-categories.partials.drag-image-input', [
-                                'name' => 'id_card_back',
-                                'label' => __('messages.trainer_id_back'),
-                                'hint' => __('messages.trainer_upload_required_hint'),
-                                'required' => true,
-                                'previewRounded' => false,
-                            ])
                         </div>
                     </div>
 
@@ -1214,7 +1196,7 @@
             1: form.querySelector('[data-step-panel="1"]'),
             2: form.querySelector('[data-step-panel="2"]'),
         };
-        let step = {{ $openFormOnLoad && ($errors->has('course_category_id') || $errors->has('avatar') || $errors->has('resume') || $errors->has('teaching_sample') || $errors->has('trainer_bio') || $errors->has('id_card_front') || $errors->has('id_card_back') || $errors->has('accept_terms')) ? 2 : 1 }};
+        let step = {{ $openFormOnLoad && ($errors->has('course_category_id') || $errors->has('avatar') || $errors->has('linkedin_url') || $errors->has('teaching_sample') || $errors->has('trainer_bio') || $errors->has('accept_terms')) ? 2 : 1 }};
 
         function showStep(n, animate = true) {
             step = n;
@@ -1272,20 +1254,20 @@
 
         form.addEventListener('submit', (e) => {
             let valid = true;
-            form.querySelectorAll('.drag-image-input').forEach((input) => {
-                const zone = input.closest('.drag-image-dropzone');
-                const hasFile = input.files && input.files.length > 0;
+            const avatarInput = form.querySelector('input[name="avatar"]');
+            if (avatarInput) {
+                const zone = avatarInput.closest('.drag-image-dropzone');
+                const hasFile = avatarInput.files && avatarInput.files.length > 0;
                 zone?.classList.toggle('border-red-500', !hasFile);
                 zone?.classList.toggle('bg-red-50', !hasFile);
                 if (!hasFile) valid = false;
-            });
+            }
 
-            form.querySelectorAll('[data-file-dropzone]').forEach((zone) => {
-                const input = zone.querySelector('input[type="file"]');
-                const hasFile = input?.files && input.files.length > 0;
-                zone.classList.toggle('is-invalid', !hasFile);
-                if (!hasFile) valid = false;
-            });
+            const linkedin = form.querySelector('#linkedin_url');
+            if (!linkedin || !String(linkedin.value || '').trim()) {
+                valid = false;
+                linkedin?.focus();
+            }
 
             const bio = form.querySelector('#trainer_bio');
             const bioLen = (bio?.value || '').trim().length;
@@ -1297,7 +1279,7 @@
             if (!valid) {
                 e.preventDefault();
                 showStep(2);
-                alert(@json(__('messages.trainer_images_required_alert') . ' ' . __('messages.trainer_resume_required_alert') . ' ' . __('messages.trainer_sample_required_alert')));
+                alert(@json(__('messages.trainer_apply_incomplete_alert')));
             }
         });
 

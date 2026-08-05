@@ -28,6 +28,7 @@ class PrivateCourseRequestController extends Controller
         }
 
         abort_unless(Auth::user()->canLearnCourses(), 403);
+        abort_if((int) Auth::id() === (int) ($course->trainer_id ?? 0), 403, __('messages.course_own_cannot_enroll'));
 
         $privatePrice = $course->private_course_price ?? $course->price;
         $locale = app()->getLocale();
@@ -42,6 +43,7 @@ class PrivateCourseRequestController extends Controller
     {
         abort_unless(Auth::check(), 401);
         abort_unless(Auth::user()->canLearnCourses(), 403);
+        abort_if((int) Auth::id() === (int) ($course->trainer_id ?? 0), 403, __('messages.course_own_cannot_enroll'));
 
         $data = $request->validate([
             'trainee_note' => 'nullable|string|max:2000',

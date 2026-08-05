@@ -313,7 +313,7 @@
         transition: transform .55s cubic-bezier(.2,.8,.2,1);
     }
     .soni-card:hover .soni-card-media img { transform: scale(1.05); }
-    /* Locale-aware logo: AR → left, EN → right (via inset-inline-end) */
+    /* Locale-aware logo: AR → left, EN → right (via inset-inline-end) — under overlays */
     .soni-card-media::after {
         content: "";
         position: absolute;
@@ -325,14 +325,14 @@
         background: url("{{ asset('assets/images/academy_watermark.png') }}") center / contain no-repeat;
         opacity: {{ config('watermark.opacity', 0.38) }};
         pointer-events: none;
-        z-index: 3;
+        z-index: 1;
     }
     .soni-card-badges {
         position: absolute; top: .75rem; inset-inline-start: .75rem;
-        display: flex; flex-wrap: wrap; gap: .35rem; z-index: 1;
+        display: flex; flex-wrap: wrap; gap: .35rem; z-index: 4;
     }
     .soni-wish-btn {
-        position: absolute; bottom: 1.15rem; inset-inline-start: .85rem; z-index: 2;
+        position: absolute; bottom: 1.15rem; inset-inline-start: .85rem; z-index: 4;
         width: 2.45rem; height: 2.45rem; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.85);
         background: rgba(6,21,37,.55); color: #fff; cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
@@ -372,8 +372,55 @@
         box-shadow: 0 6px 14px rgba(217, 119, 6, .28);
     }
     .soni-badge-free {
-        background: var(--accent-mint); color: #053b32;
-        box-shadow: 0 6px 14px rgba(18,200,160,.3);
+        background: linear-gradient(135deg, #22d3ee, #0891b2);
+        color: #fff;
+        box-shadow: 0 6px 14px rgba(8, 145, 178, .28);
+    }
+    .soni-card-trainer {
+        position: absolute; top: .75rem; inset-inline-end: .75rem; z-index: 4;
+        display: inline-flex; align-items: center; gap: .5rem;
+        max-width: calc(100% - 5.5rem);
+        padding: .35rem .7rem .35rem .35rem;
+        border-radius: 999px;
+        background: rgba(6,21,37,.35);
+        color: #fff; text-decoration: none;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 18px rgba(6,21,37,.18);
+        transition: transform .2s, background .2s;
+    }
+    .soni-card-trainer:hover { transform: translateY(-1px); background: rgba(6,21,37,.52); color: #fff; }
+    .soni-card-trainer img {
+        width: 2.05rem; height: 2.05rem; border-radius: 999px; object-cover;
+        border: 1.5px solid rgba(255,255,255,.9); flex-shrink: 0;
+    }
+    .soni-card-trainer span {
+        font-size: .78rem; font-weight: 800; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis; line-height: 1.15;
+    }
+    .soni-private-badge {
+        position: absolute; bottom: 1.15rem; inset-inline-end: .85rem; z-index: 4;
+        display: inline-flex; align-items: center; gap: .35rem;
+        padding: .38rem .75rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #ff3d7a 0%, #7c3aed 100%);
+        color: #fff; text-decoration: none;
+        font-size: .62rem; font-weight: 800;
+        line-height: 1.2;
+        max-width: calc(100% - 1.5rem);
+        box-shadow: 0 10px 22px rgba(255, 61, 122, .35);
+        border: 1.5px solid rgba(255,255,255,.55);
+        transition: transform .2s, box-shadow .2s;
+    }
+    .soni-private-badge:hover {
+        transform: translateY(-2px) scale(1.03);
+        color: #fff;
+        box-shadow: 0 14px 28px rgba(124, 58, 237, .4);
+    }
+    .soni-private-badge i { font-size: .68rem; flex-shrink: 0; }
+    .soni-private-badge span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .soni-owned {
         margin: 0; font-size: .78rem; font-weight: 800; color: #0f766e;

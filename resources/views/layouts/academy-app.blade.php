@@ -432,6 +432,18 @@
             'route' => route('dashboard.academy.my-profits'),
             'active' => request()->routeIs('dashboard.academy.my-profits'),
         ];
+        $navItems[] = [
+            'label' => 'أيام الإجازة',
+            'icon' => 'fas fa-calendar-times',
+            'route' => route('dashboard.academy.off-days.index'),
+            'active' => request()->routeIs('dashboard.academy.off-days.*'),
+        ];
+        $navItems[] = [
+            'label' => 'إعدادات الدفع',
+            'icon' => 'fas fa-university',
+            'route' => route('dashboard.academy.payment-profile.edit'),
+            'active' => request()->routeIs('dashboard.academy.payment-profile.*'),
+        ];
     }
 
     $navItems[] = [

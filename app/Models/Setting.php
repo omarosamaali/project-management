@@ -166,4 +166,18 @@ class Setting extends Model
             'onsite' => ($onsiteRaw === null || $onsiteRaw === '') ? null : static::academyTrainerProfitPercentageFor('on_site'),
         ];
     }
+
+    public static function academyTrainerCashoutMinimum(): float
+    {
+        $raw = static::get('academy_trainer_cashout_minimum', null);
+
+        return ($raw === null || $raw === '') ? 100.0 : max(0, (float) $raw);
+    }
+
+    public static function academyTrainerCashoutMaximum(): float
+    {
+        $raw = static::get('academy_trainer_cashout_maximum', null);
+
+        return ($raw === null || $raw === '') ? 10000.0 : max(0, (float) $raw);
+    }
 }

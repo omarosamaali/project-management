@@ -22,7 +22,7 @@ class SpecialRequestController extends Controller
         ]);
 
         $base = (float) $payment->amount;
-        $fees = round(($base * 0.079) + 2, 2);
+        $fees = round(($base * (config('services.ziina.fee_percent', 7.9) / 100)) + config('services.ziina.fee_fixed', 2), 2);
 
         \App\Models\Payment::updateOrCreate(
             ['request_payment_id' => $payment->id],

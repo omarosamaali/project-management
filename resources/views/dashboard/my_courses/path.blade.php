@@ -312,6 +312,27 @@
                     style="opacity:{{ config('watermark.opacity', 0.38) }};">
                 </div>
             </div>
+            @php
+                $lessonLinks = $current->relationLoaded('resourceLinks')
+                    ? $current->resourceLinks
+                    : $current->resourceLinks()->orderBy('sort_order')->get();
+            @endphp
+            @if($lessonLinks->isNotEmpty())
+            <div class="px-4 py-3 border-t bg-slate-50">
+                <p class="text-xs font-bold text-slate-600 mb-2">{{ __('messages.lesson_resource_links') !== 'messages.lesson_resource_links' ? __('messages.lesson_resource_links') : 'موارد إضافية' }}</p>
+                <ul class="space-y-1.5">
+                    @foreach($lessonLinks as $link)
+                    <li>
+                        <a href="{{ $link->url }}" target="_blank" rel="noopener"
+                            class="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 hover:underline">
+                            <i class="fas fa-external-link-alt text-xs"></i>
+                            {{ $link->title(app()->getLocale()) }}
+                        </a>
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
             @else
             <div class="p-8 text-center text-red-600">لا يوجد فيديو لهذا الدرس.</div>
             @endif
@@ -648,7 +669,8 @@
             if (!d || !isFinite(d) || d < 1) return;
 
             const resumeAt = Math.min(Math.max(0, maxPosition), Math.max(0, d - 1));
-            if (resumeAt <= 0) return;
+            // Don't resume if user was within the last 5 seconds (treat as finished watching).
+            if (resumeAt <= 0 || resumeAt >= (d - 5)) return;
 
             try {
                 player.currentTime = resumeAt;

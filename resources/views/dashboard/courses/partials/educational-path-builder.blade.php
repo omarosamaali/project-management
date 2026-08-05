@@ -22,6 +22,17 @@
                         'video_duration_seconds' => $item->video_duration_seconds,
                         'exam_pass_score' => $item->exam_pass_score ?? 1,
                         'exam_duration_minutes' => $item->exam_duration_minutes ?? 30,
+                        'links' => $item->relationLoaded('resourceLinks')
+                            ? $item->resourceLinks->map(fn ($l) => [
+                                'title_ar' => $l->title_ar,
+                                'title_en' => $l->title_en,
+                                'url' => $l->url,
+                            ])->values()->all()
+                            : $item->resourceLinks()->get()->map(fn ($l) => [
+                                'title_ar' => $l->title_ar,
+                                'title_en' => $l->title_en,
+                                'url' => $l->url,
+                            ])->values()->all(),
                         'questions' => $item->examQuestions->map(function ($q) {
                             return [
                                 'question' => $q->question,
@@ -149,6 +160,16 @@
             if (titleEn) titleEn.name = `units[${uIndex}][title_en]`;
 
             unitEl.querySelectorAll('.path-item').forEach((itemEl, iIndex) => {
+                // Renumber resource-link data-name indices before applying unit/item prefix.
+                itemEl.querySelectorAll('.lesson-link-row').forEach((row, linkIndex) => {
+                    row.querySelectorAll('[data-name]').forEach((field) => {
+                        const base = field.getAttribute('data-name') || '';
+                        field.setAttribute(
+                            'data-name',
+                            base.replace(/\[links\]\[\d+\]/, `[links][${linkIndex}]`)
+                        );
+                    });
+                });
                 itemEl.querySelectorAll('[data-name]').forEach((field) => {
                     const base = field.getAttribute('data-name');
                     field.name = `units[${uIndex}][items][${iIndex}]${base}`;
@@ -229,6 +250,53 @@
 
     function escAttr(s) {
         return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+
+    function buildLessonLinkHtml(index, data) {
+        data = data || {};
+        return `
+            <div class="lesson-link-row rounded-xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-2 mb-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700 text-xs">
+                            <i class="fas fa-link"></i>
+                        </span>
+                        <span class="text-xs font-bold text-slate-700">رابط مورد</span>
+                    </div>
+                    <button type="button" class="remove-lesson-link inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 border border-rose-100 hover:bg-rose-100 transition" title="حذف">
+                        <i class="fas fa-trash-can"></i>
+                        <span>حذف</span>
+                    </button>
+                </div>
+                <div class="grid sm:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 mb-1">العنوان (عربي)</label>
+                        <input type="text" data-name="[links][${index}][title_ar]" value="${escAttr(data.title_ar || '')}"
+                            class="link-title-ar path-title-ar w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-teal-500 focus:ring-teal-500"
+                            placeholder="عنوان بالعربي">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 mb-1">Title (English)</label>
+                        <input type="text" data-name="[links][${index}][title_en]" value="${escAttr(data.title_en || '')}" dir="ltr"
+                            class="link-title-en path-title-en w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-teal-500 focus:ring-teal-500"
+                            placeholder="Title in English">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-slate-500 mb-1">الرابط</label>
+                    <div class="relative">
+                        <i class="fas fa-globe absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                        <input type="url" data-name="[links][${index}][url]" value="${escAttr(data.url || '')}" dir="ltr"
+                            class="w-full pe-3 ps-3 py-2 border border-slate-300 rounded-lg text-sm focus:border-teal-500 focus:ring-teal-500"
+                            style="padding-inline-start:2.25rem"
+                            placeholder="https://...">
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-400 mt-2 flex items-center gap-1">
+                    <i class="fas fa-language"></i>
+                    الترجمة التلقائية بين العربي والإنجليزي عند الكتابة
+                </p>
+            </div>`;
     }
 
     function probeHtml5Duration(src) {
@@ -540,6 +608,29 @@
                         <img src="" alt="" class="lesson-embed-thumb-preview mt-2 w-40 h-24 object-cover rounded border hidden">
                     </div>
                     <p class="text-xs text-gray-500 lesson-duration-label">المدة: ${formatDuration(data.video_duration_seconds || 0)}</p>
+                    <div class="mt-3 border-t border-dashed border-gray-200 pt-3 lesson-resource-links" data-links-wrap>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div>
+                                <label class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                                    <i class="fas fa-paperclip text-teal-600"></i>
+                                    روابط موارد إضافية
+                                    <span class="text-xs font-medium text-slate-400">(اختياري)</span>
+                                </label>
+                                <p class="text-[11px] text-slate-500 mt-0.5">ملفات PDF، مقالات، مراجع… تظهر تحت فيديو الدرس للمتدرب</p>
+                            </div>
+                            <button type="button" class="add-lesson-link inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-sm"
+                                style="background:linear-gradient(135deg,#0b8f7f,#0D2444);">
+                                <i class="fas fa-plus"></i>
+                                إضافة رابط
+                            </button>
+                        </div>
+                        <div class="lesson-links-list space-y-3">
+                            ${(data.links || []).map((lnk, li) => buildLessonLinkHtml(li, lnk)).join('')}
+                        </div>
+                        <p class="lesson-links-empty text-xs text-slate-400 text-center py-3 ${(data.links || []).length ? 'hidden' : ''}">
+                            لا توجد روابط بعد — اضغط «إضافة رابط» لإضافة مورد
+                        </p>
+                    </div>
                 </div>
             `;
         } else {
@@ -627,6 +718,23 @@
         }
         if (e.target.closest('.remove-item-btn')) {
             e.target.closest('.path-item')?.remove();
+            reindex();
+        }
+        if (e.target.closest('.add-lesson-link')) {
+            const wrap = e.target.closest('[data-links-wrap]');
+            const list = wrap?.querySelector('.lesson-links-list');
+            if (list) {
+                const li = list.querySelectorAll('.lesson-link-row').length;
+                list.insertAdjacentHTML('beforeend', buildLessonLinkHtml(li, {}));
+                wrap?.querySelector('.lesson-links-empty')?.classList.add('hidden');
+                reindex();
+            }
+        }
+        if (e.target.closest('.remove-lesson-link')) {
+            const wrap = e.target.closest('[data-links-wrap]');
+            e.target.closest('.lesson-link-row')?.remove();
+            const remaining = wrap?.querySelectorAll('.lesson-link-row').length || 0;
+            if (!remaining) wrap?.querySelector('.lesson-links-empty')?.classList.remove('hidden');
             reindex();
         }
         if (e.target.closest('.add-path-question')) {
@@ -735,19 +843,34 @@
             return;
         }
 
-        const titleAr = e.target.closest('.path-title-ar, .unit-title-ar');
+        const titleAr = e.target.closest('.path-title-ar, .unit-title-ar, .link-title-ar');
         if (titleAr) {
-            const pairRoot = titleAr.closest('.path-item, .path-unit-header, .path-unit');
-            const titleEn = pairRoot?.querySelector('.path-title-en, .unit-title-en');
-            schedulePathTitleTranslate(titleAr, titleEn, 'ar', 'en');
+            // Prefer the link row so we don't translate into the parent lesson title.
+            const pairRoot = titleAr.closest('.lesson-link-row')
+                || titleAr.closest('.path-item, .path-unit-header, .path-unit');
+            const titleEn = pairRoot?.querySelector(
+                titleAr.classList.contains('link-title-ar')
+                    ? '.link-title-en'
+                    : '.path-title-en, .unit-title-en, .link-title-en'
+            );
+            if (titleEn && titleEn !== titleAr) {
+                schedulePathTitleTranslate(titleAr, titleEn, 'ar', 'en');
+            }
             return;
         }
 
-        const titleEn = e.target.closest('.path-title-en, .unit-title-en');
+        const titleEn = e.target.closest('.path-title-en, .unit-title-en, .link-title-en');
         if (titleEn) {
-            const pairRoot = titleEn.closest('.path-item, .path-unit-header, .path-unit');
-            const titleArEl = pairRoot?.querySelector('.path-title-ar, .unit-title-ar');
-            schedulePathTitleTranslate(titleEn, titleArEl, 'en', 'ar');
+            const pairRoot = titleEn.closest('.lesson-link-row')
+                || titleEn.closest('.path-item, .path-unit-header, .path-unit');
+            const titleArEl = pairRoot?.querySelector(
+                titleEn.classList.contains('link-title-en')
+                    ? '.link-title-ar'
+                    : '.path-title-ar, .unit-title-ar, .link-title-ar'
+            );
+            if (titleArEl && titleArEl !== titleEn) {
+                schedulePathTitleTranslate(titleEn, titleArEl, 'en', 'ar');
+            }
         }
     });
 

@@ -32,6 +32,7 @@ class User extends Authenticatable
         'course_category_id',
         'teaching_language',
         'resume_path',
+        'linkedin_url',
         'teaching_sample_path',
         'trainer_bio',
         'otp',
@@ -378,6 +379,11 @@ class User extends Authenticatable
         return $this->hasMany(Course::class, 'trainer_id');
     }
 
+    public function offDays()
+    {
+        return $this->hasMany(TrainerOffDay::class);
+    }
+
     public function wishlistCourses()
     {
         return $this->belongsToMany(Course::class, 'course_wishlists')
@@ -517,5 +523,15 @@ class User extends Authenticatable
     public function employeeAdjustments()
     {
         return $this->hasMany(EmployeeAdjustment::class);
+    }
+
+    public function paymentProfile()
+    {
+        return $this->hasOne(TrainerPaymentProfile::class);
+    }
+
+    public function cashoutRequests()
+    {
+        return $this->hasMany(TrainerCashoutRequest::class);
     }
 }

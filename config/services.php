@@ -40,6 +40,8 @@ return [
         'api_key' => env('ZIINA_API_KEY'),
         'test_mode' => env('ZIINA_TEST_MODE', true),
         'webhook_secret' => env('ZIINA_WEBHOOK_SECRET'),
+        'fee_percent' => (float) env('ZIINA_FEE_PERCENT', 7.9),
+        'fee_fixed' => (float) env('ZIINA_FEE_FIXED', 2),
     ],
     
 ];

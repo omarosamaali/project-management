@@ -45,7 +45,7 @@ class ZiinaSystemPaymentHandler
 
     public function calculatePriceWithFees($basePrice)
     {
-        $fees = ($basePrice * 0.079) + 2;
+        $fees = ($basePrice * (config('services.ziina.fee_percent', 7.9) / 100)) + config('services.ziina.fee_fixed', 2);
         return $basePrice + $fees;
     }
 
@@ -62,8 +62,8 @@ class ZiinaSystemPaymentHandler
             ? 'دفع طلب خاص كامل (طلب #' . $model->id . ')'
             : 'دفع دفعة جزئية - ' . ($model->payment_name ?? 'دفعة') . ' (طلب #' . $model->special_request_id . ')';
 
-        $fees = ($baseAmount * 0.079) + 2;
-        $totalAmount = $baseAmount + $fees;
+        $totalAmount = $this->calculatePriceWithFees($baseAmount);
+        $fees = $totalAmount - $baseAmount;
         $amountInFils = round($totalAmount * 100);
 
         $payload = [
@@ -113,8 +113,8 @@ class ZiinaSystemPaymentHandler
             }
 
             $basePrice = $system->price ?? 0;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalPrice = $basePrice + $fees;
+            $totalPrice = $this->calculatePriceWithFees($basePrice);
+            $fees = $totalPrice - $basePrice;
 
             if ($totalPrice < 2) {
                 throw new Exception("System price ($totalPrice AED) is below minimum (2 AED)");
@@ -187,8 +187,8 @@ class ZiinaSystemPaymentHandler
             }
 
             $basePrice = $course->price ?? 0;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalPrice = $basePrice + $fees;
+            $totalPrice = $this->calculatePriceWithFees($basePrice);
+            $fees = $totalPrice - $basePrice;
 
             if ($totalPrice < 2) {
                 throw new Exception("Course price ($totalPrice AED) is below minimum (2 AED)");
@@ -270,8 +270,8 @@ class ZiinaSystemPaymentHandler
             }
 
             $basePrice = $specialRequest->price ?? 0;
-            $fees = ($basePrice * 0.079) + 2;
-            $totalPrice = $basePrice + $fees;
+            $totalPrice = $this->calculatePriceWithFees($basePrice);
+            $fees = $totalPrice - $basePrice;
 
             if ($totalPrice < 2) {
                 throw new Exception("Special request price ($totalPrice AED) is below minimum (2 AED)");

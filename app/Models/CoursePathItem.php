@@ -39,6 +39,11 @@ class CoursePathItem extends Model
         return $this->hasMany(CoursePathExamQuestion::class, 'path_item_id')->orderBy('sort_order');
     }
 
+    public function resourceLinks(): HasMany
+    {
+        return $this->hasMany(CoursePathLessonLink::class, 'path_item_id')->orderBy('sort_order');
+    }
+
     public function isLesson(): bool
     {
         return $this->type === 'lesson';

@@ -187,22 +187,34 @@
                 'required' => true,
                 'previewRounded' => true,
             ])
+            <p class="text-xs text-slate-500">{{ __('messages.trainer_avatar_professional_note') }}</p>
+            <div class="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <img src="{{ asset('images/trainer-avatar-example.jpg') }}" alt="{{ __('messages.trainer_avatar_example_alt') }}"
+                    class="w-14 h-14 rounded-full object-cover border border-slate-200 flex-shrink-0">
+                <p class="text-xs text-slate-600 m-0">{{ __('messages.trainer_avatar_professional_note') }}</p>
+            </div>
 
-            <div class="grid sm:grid-cols-2 gap-4">
-                @include('dashboard.course-categories.partials.drag-image-input', [
-                    'name' => 'id_card_front',
-                    'label' => __('messages.trainer_id_front'),
-                    'hint' => __('messages.trainer_upload_required_hint'),
-                    'required' => true,
-                    'previewRounded' => false,
-                ])
-                @include('dashboard.course-categories.partials.drag-image-input', [
-                    'name' => 'id_card_back',
-                    'label' => __('messages.trainer_id_back'),
-                    'hint' => __('messages.trainer_upload_required_hint'),
-                    'required' => true,
-                    'previewRounded' => false,
-                ])
+            <div>
+                <x-input-label for="linkedin_url" :value="__('messages.trainer_linkedin')" />
+                <input id="linkedin_url" type="url" name="linkedin_url" class="block mt-1 w-full" dir="ltr"
+                    value="{{ old('linkedin_url') }}" placeholder="https://www.linkedin.com/in/your-profile">
+                <x-input-error :messages="$errors->get('linkedin_url')" class="mt-2" />
+            </div>
+
+            <div>
+                <x-input-label for="teaching_sample" :value="__('messages.trainer_sample')" />
+                <p class="text-xs text-slate-500 mt-1 mb-2">{{ __('messages.trainer_sample_hint_optional') }}</p>
+                <input id="teaching_sample" type="file" name="teaching_sample" accept="video/mp4,.mp4"
+                    class="block mt-1 w-full text-sm">
+                <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_sample_formats') }}</p>
+                <x-input-error :messages="$errors->get('teaching_sample')" class="mt-2" />
+            </div>
+
+            <div>
+                <x-input-label for="trainer_bio" :value="__('messages.trainer_bio')" />
+                <textarea id="trainer_bio" name="trainer_bio" rows="4" class="block mt-1 w-full"
+                    minlength="120" maxlength="2000">{{ old('trainer_bio') }}</textarea>
+                <x-input-error :messages="$errors->get('trainer_bio')" class="mt-2" />
             </div>
 
             <div>

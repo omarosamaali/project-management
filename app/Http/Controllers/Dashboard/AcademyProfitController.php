@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Setting;
+use App\Models\TrainerCashoutRequest;
+use App\Models\TrainerPaymentProfile;
 use App\Models\User;
+use App\Support\TrainerProfitWallet;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -50,6 +53,20 @@ class AcademyProfitController extends Controller
         $percentages = Setting::academyTrainerProfitPercentages();
         $trainer = $this->buildTrainerProfitRow($trainerUser);
 
+        $wallet = \App\Support\TrainerProfitWallet::summary($trainerUser);
+        $cashoutMin = Setting::academyTrainerCashoutMinimum();
+        $cashoutMax = Setting::academyTrainerCashoutMaximum();
+        $cashouts = \App\Models\TrainerCashoutRequest::query()
+            ->where('user_id', $trainerUser->id)
+            ->with(['screenshots', 'payoutMethod'])
+            ->latest()
+            ->limit(20)
+            ->get();
+        $paymentProfile = \App\Models\TrainerPaymentProfile::query()
+            ->where('user_id', $trainerUser->id)
+            ->first();
+        $egpRate = \App\Support\CurrencyRate::aedToEgp();
+
         $allCourses = $trainer['courses'];
         $summary = [
             'courses_count' => $trainer['courses_count'],
@@ -57,6 +74,10 @@ class AcademyProfitController extends Controller
             'gross_revenue' => $trainer['gross_revenue'],
             'trainer_profit' => $trainer['trainer_profit'],
             'platform_profit' => $trainer['platform_profit'],
+            'total_earned' => $wallet['total'],
+            'available' => $wallet['available'],
+            'withdrawn' => $wallet['withdrawn'],
+            'pending' => $wallet['pending'],
         ];
 
         $perPage = 9;
@@ -77,6 +98,11 @@ class AcademyProfitController extends Controller
             'percentage' => $percentages['online'] ?? 60,
             'percentages' => $percentages,
             'summary' => $summary,
+            'cashoutMin' => $cashoutMin,
+            'cashoutMax' => $cashoutMax,
+            'cashouts' => $cashouts,
+            'paymentProfile' => $paymentProfile,
+            'egpRate' => $egpRate,
         ]);
     }
 

@@ -71,6 +71,27 @@
             @endif
         </div>
         @endif
+        @if($course->trainer)
+        @php
+            $trainerProfileUrl = route('academy.trainers.show', $course->trainer);
+            $trainerAvatar = $course->trainer->avatarUrl();
+        @endphp
+        <a href="{{ $trainerProfileUrl }}" class="soni-card-trainer" title="{{ $course->trainer->name }}">
+            <img src="{{ $trainerAvatar }}" alt="">
+            <span>{{ $course->trainer->name }}</span>
+        </a>
+        @endif
+        @if($course->allows_private_requests)
+        @php
+            $privateUrl = auth()->check()
+                ? route('courses.private-request.create', $course)
+                : \App\Support\AuthUi::loginUrl(['redirect' => route('courses.private-request.create', $course)]);
+        @endphp
+        <a href="{{ $privateUrl }}" class="soni-private-badge" title="{{ __('messages.academy_private_badge_hint') }}">
+            <i class="fas fa-user-graduate" aria-hidden="true"></i>
+            <span>{{ __('messages.academy_private_badge') }}</span>
+        </a>
+        @endif
         <button type="button"
             class="soni-wish-btn {{ $wishlisted ? 'is-on' : '' }}"
             data-wishlist-toggle

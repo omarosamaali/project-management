@@ -139,170 +139,85 @@
                                 <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
-
-                            <!-- Price / Free toggle -->
-                            @php
-                                // Only treat as free when an explicit price of 0 was posted (never empty/default).
-                                $isFreeOld = old('price') !== null && old('price') !== '' && (float) old('price') <= 0;
-                                $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
-                                $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
-                                $allowPrivateOld = (string) old('allows_private_requests', '0') === '1';
-                                $trainerPrivateCapped = $trainerPriceCapped;
-                            @endphp
-                            <div class="space-y-3">
-                                <div>
-                                    <label for="is_free_toggle" class="block text-sm font-medium text-gray-700 mb-2">
-                                        دورة مجانية
-                                    </label>
-                                    <label class="course-switch-field cursor-pointer">
-                                        <span class="text-sm text-gray-600 truncate">تفعيل = سعر 0 بدون إدخال سعر</span>
-                                        <span class="course-switch">
-                                            <input type="checkbox" id="is_free_toggle"
-                                                {{ $isFreeOld ? 'checked' : '' }}>
-                                            <span class="course-switch-track" aria-hidden="true"></span>
-                                        </span>
-                                    </label>
-                                </div>
-
-                                <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }} space-y-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        السعر الكلي <span class="text-red-600">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <input type="number" name="price" id="price" min="0" step="0.01"
-                                            @if($trainerPriceCapped) max="{{ $trainerMaxPrice }}" @endif
-                                            value="{{ old('price', $isFreeOld ? '0' : '') }}"
-                                            {{ $isFreeOld ? '' : 'required' }}
-                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
-                                            placeholder="{{ $trainerPriceCapped ? number_format($trainerMaxPrice, 2, '.', '') : '999.00' }}">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
-                                            <x-drhm-icon width="12" height="14" />
-                                        </span>
-                                    </div>
-                                    @if($trainerPriceCapped)
-                                    <p class="text-xs text-slate-500">
-                                        الحد الأقصى للسعر هو
-                                        <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
-                                            {{ number_format($trainerMaxPrice, 0) }}
-                                            <x-drhm-icon width="11" height="12" />
-                                        </span>
-                                    </p>
-                                    @endif
-                                    @error('price')
-                                    <span class="text-red-600 text-xs">{{ $message }}</span>
-                                    @enderror
-                                    @include('dashboard.courses.partials.trainer-profit-preview', [
-                                        'trainerProfitPercentage' => $trainerProfitPercentage ?? null,
-                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
-                                    ])
-                                </div>
-                            </div>
-
-                            <!-- Private course requests -->
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        طلبات الدورات الخاصة
-                                    </label>
-                                    <label class="course-switch-field cursor-pointer">
-                                        <span class="text-sm text-gray-600 truncate">السماح بطلب دورة خاصة فردية</span>
-                                        <span class="course-switch">
-                                            <input type="hidden" name="allows_private_requests" value="0">
-                                            <input type="checkbox" name="allows_private_requests" id="allows_private_requests"
-                                                value="1" {{ $allowPrivateOld ? 'checked' : '' }}>
-                                            <span class="course-switch-track" aria-hidden="true"></span>
-                                        </span>
-                                    </label>
-                                </div>
-                                <div id="private_price_wrap" class="{{ $allowPrivateOld ? '' : 'hidden' }} space-y-2">
-                                    <label class="block text-sm font-medium text-gray-700">
-                                        سعر الدورة الخاصة <span class="text-red-600">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <input type="number" name="private_course_price" id="private_course_price" min="0" step="0.01"
-                                            @if($trainerPrivateCapped) max="500" @endif
-                                            value="{{ old('private_course_price') }}"
-                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
-                                            placeholder="{{ $trainerPrivateCapped ? '500.00' : '999.00' }}">
-                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
-                                            <x-drhm-icon width="12" height="14" />
-                                        </span>
-                                    </div>
-                                    @if($trainerPrivateCapped)
-                                    <p class="text-xs text-slate-500">
-                                        الحد الأقصى لسعر الدورة الخاصة للمحاضر
-                                        <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
-                                            500 <x-drhm-icon width="11" height="12" />
-                                        </span>
-                                    </p>
-                                    @endif
-                                    @error('private_course_price')
-                                    <span class="text-red-600 text-xs">{{ $message }}</span>
-                                    @enderror
-                                    @include('dashboard.courses.partials.trainer-profit-preview-private', [
-                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
-                                    ])
-                                </div>
-                            </div>
-
-                            <!-- Category -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    التصنيف <span class="text-red-600">*</span>
-                                </label>
-                                <select id="course_category_id" name="course_category_id" required
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">-- اختر التصنيف --</option>
-                                    @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}" {{ (string) old('course_category_id') === (string) $category->id ? 'selected' : '' }}>
-                                        {{ $category->title(app()->getLocale()) }}
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('course_category_id')
-                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            @if(auth()->user()->isAdmin())
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    المحاضر المسؤول
-                                </label>
-                                <select id="trainer_id" name="trainer_id"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">-- بدون محاضر / تعيين لاحقاً --</option>
-                                    @foreach(($trainers ?? []) as $trainer)
-                                    <option value="{{ $trainer->id }}" {{ (string) old('trainer_id') === (string) $trainer->id ? 'selected' : '' }}>
-                                        {{ $trainer->name }} ({{ $trainer->email }})
-                                    </option>
-                                    @endforeach
-                                </select>
-                                @error('trainer_id')
-                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            @endif
-
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    الحد الأقصى لعدد المشتركين في الدورة <span class="text-red-600">*</span>
-                                </label>
-                                <input type="number" name="counter" required min="0" step="1"
-                                    value="{{ old('counter', 0) }}"
-                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="0">
-                                @error('counter')
-                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                                <p class="text-xs text-gray-500 mt-1">
-                                    كم شخص يمكن تسجيله في هذه الدورة كحد أقصى؟
-                                </p>
-                            </div>
-
                         </div>
 
-                        <!-- Course type (moved above dates) -->
+                        <!-- Category & Level -->
+                        <div class="mt-8 pt-6 border-t" id="course_category_section">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-folder-tree text-blue-600"></i>
+                                التصنيف والمستوى
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                                <!-- Category -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        التصنيف <span class="text-red-600">*</span>
+                                    </label>
+                                    <select id="course_category_id" name="course_category_id" required
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">-- اختر التصنيف --</option>
+                                        @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}" {{ (string) old('course_category_id') === (string) $category->id ? 'selected' : '' }}>
+                                            {{ $category->title(app()->getLocale()) }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    @error('course_category_id')
+                                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                @if(auth()->user()->isAdmin())
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        المحاضر المسؤول
+                                    </label>
+                                    <select id="trainer_id" name="trainer_id"
+                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="">-- بدون محاضر / تعيين لاحقاً --</option>
+                                        @foreach(($trainers ?? []) as $trainer)
+                                        <option value="{{ $trainer->id }}" {{ (string) old('trainer_id') === (string) $trainer->id ? 'selected' : '' }}>
+                                            {{ $trainer->name }} ({{ $trainer->email }})
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    @error('trainer_id')
+                                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                @endif
+                            </div>
+
+                            <!-- Levels -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-3">
+                                    مستوى الدورة
+                                </label>
+                                <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                    @php
+                                        $selectedLevels = old('levels', []);
+                                        if (!is_array($selectedLevels)) $selectedLevels = [];
+                                    @endphp
+                                    @foreach(\App\Models\Course::levelOptions() as $level)
+                                    <label class="flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                                        <input type="checkbox" name="levels[]" value="{{ $level['key'] }}"
+                                            {{ in_array($level['key'], $selectedLevels, true) ? 'checked' : '' }}
+                                            class="w-4 h-4 rounded border-gray-300" style="accent-color:#0b8f7f;">
+                                        <span class="text-sm font-medium text-gray-800">{{ $level['label_ar'] }}</span>
+                                    </label>
+                                    @endforeach
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">يمكن اختيار أكثر من مستوى. شارة «مجاني» تظهر تلقائياً عند تفعيل دورة مجانية.</p>
+                                @error('levels')
+                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                                @error('levels.*')
+                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Location Type -->
                         <div class="mt-8 pt-6 border-t" id="course_type_section">
                             <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                                 <i class="fas fa-layer-group text-blue-600"></i>
@@ -359,35 +274,143 @@
                                 <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
+                        </div>
 
-                            <!-- Levels -->
-                            <div class="mb-6">
-                                <label class="block text-sm font-medium text-gray-700 mb-3">
-                                    مستوى الدورة
-                                </label>
-                                <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-3">
-                                    @php
-                                        $selectedLevels = old('levels', []);
-                                        if (!is_array($selectedLevels)) $selectedLevels = [];
-                                    @endphp
-                                    @foreach(\App\Models\Course::levelOptions() as $level)
-                                    <label class="flex items-center gap-2 p-3 border-2 rounded-lg cursor-pointer hover:bg-slate-50 transition">
-                                        <input type="checkbox" name="levels[]" value="{{ $level['key'] }}"
-                                            {{ in_array($level['key'], $selectedLevels, true) ? 'checked' : '' }}
-                                            class="w-4 h-4 rounded border-gray-300" style="accent-color:#0b8f7f;">
-                                        <span class="text-sm font-medium text-gray-800">{{ $level['label_ar'] }}</span>
-                                    </label>
-                                    @endforeach
+                        <!-- Pricing & Capacity -->
+                        <div class="mt-8 pt-6 border-t" id="course_pricing_section">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-tag text-blue-600"></i>
+                                السعر وعدد المشتركين
+                            </h3>
+                            @php
+                                // Only treat as free when an explicit price of 0 was posted (never empty/default).
+                                $isFreeOld = old('price') !== null && old('price') !== '' && (float) old('price') <= 0;
+                                $trainerPriceCapped = auth()->user()->isTrainer() && ! auth()->user()->isAdmin();
+                                $trainerMaxPrice = (float) config('courses.trainer_max_price', 400);
+                                $allowPrivateOld = (string) old('allows_private_requests', '0') === '1';
+                                $trainerPrivateCapped = $trainerPriceCapped;
+                            @endphp
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <!-- Price / Free toggle -->
+                                <div class="space-y-3">
+                                    <div>
+                                        <label for="is_free_toggle" class="block text-sm font-medium text-gray-700 mb-2">
+                                            دورة مجانية
+                                        </label>
+                                        <label class="course-switch-field cursor-pointer">
+                                            <span class="text-sm text-gray-600 truncate">تفعيل = سعر 0 بدون إدخال سعر</span>
+                                            <span class="course-switch">
+                                                <input type="checkbox" id="is_free_toggle"
+                                                    {{ $isFreeOld ? 'checked' : '' }}>
+                                                <span class="course-switch-track" aria-hidden="true"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div id="price_field_wrap" class="{{ $isFreeOld ? 'hidden' : '' }} space-y-2">
+                                        <label class="block text-sm font-medium text-gray-700">
+                                            السعر الكلي <span class="text-red-600">*</span>
+                                        </label>
+                                        <div class="relative">
+                                            <input type="number" name="price" id="price" min="0" step="0.01"
+                                                @if($trainerPriceCapped) max="{{ $trainerMaxPrice }}" @endif
+                                                value="{{ old('price', $isFreeOld ? '0' : '') }}"
+                                                {{ $isFreeOld ? '' : 'required' }}
+                                                class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
+                                                placeholder="{{ $trainerPriceCapped ? number_format($trainerMaxPrice, 2, '.', '') : '999.00' }}">
+                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                                <x-drhm-icon width="12" height="14" />
+                                            </span>
+                                        </div>
+                                        @if($trainerPriceCapped)
+                                        <p class="text-xs text-slate-500">
+                                            الحد الأقصى للسعر هو
+                                            <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
+                                                {{ number_format($trainerMaxPrice, 0) }}
+                                                <x-drhm-icon width="11" height="12" />
+                                            </span>
+                                        </p>
+                                        @endif
+                                        @error('price')
+                                        <span class="text-red-600 text-xs">{{ $message }}</span>
+                                        @enderror
+                                        @include('dashboard.courses.partials.trainer-profit-preview', [
+                                            'trainerProfitPercentage' => $trainerProfitPercentage ?? null,
+                                            'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
+                                        ])
+                                    </div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-2">يمكن اختيار أكثر من مستوى. شارة «مجاني» تظهر تلقائياً عند تفعيل دورة مجانية.</p>
-                                @error('levels')
-                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                                @error('levels.*')
-                                <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
 
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        الحد الأقصى لعدد المشتركين في الدورة <span class="text-red-600">*</span>
+                                    </label>
+                                    <input type="number" name="counter" required min="0" step="1"
+                                        value="{{ old('counter', 0) }}"
+                                        class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="0">
+                                    @error('counter')
+                                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                                    @enderror
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        كم شخص يمكن تسجيله في هذه الدورة كحد أقصى؟
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Private course requests -->
+                        <div class="mt-8 pt-6 border-t" id="course_private_section">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <i class="fas fa-user-lock text-blue-600"></i>
+                                طلبات الدورات الخاصة
+                            </h3>
+                            <div class="space-y-3 max-w-xl">
+                                <div>
+                                    <label class="course-switch-field cursor-pointer">
+                                        <span class="text-sm text-gray-600 truncate">السماح بطلب دورة خاصة فردية</span>
+                                        <span class="course-switch">
+                                            <input type="hidden" name="allows_private_requests" value="0">
+                                            <input type="checkbox" name="allows_private_requests" id="allows_private_requests"
+                                                value="1" {{ $allowPrivateOld ? 'checked' : '' }}>
+                                            <span class="course-switch-track" aria-hidden="true"></span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="private_price_wrap" class="{{ $allowPrivateOld ? '' : 'hidden' }} space-y-2">
+                                    <label class="block text-sm font-medium text-gray-700">
+                                        سعر الدورة الخاصة <span class="text-red-600">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" name="private_course_price" id="private_course_price" min="0" step="0.01"
+                                            @if($trainerPrivateCapped) max="500" @endif
+                                            value="{{ old('private_course_price') }}"
+                                            class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
+                                            placeholder="{{ $trainerPrivateCapped ? '500.00' : '999.00' }}">
+                                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                            <x-drhm-icon width="12" height="14" />
+                                        </span>
+                                    </div>
+                                    @if($trainerPrivateCapped)
+                                    <p class="text-xs text-slate-500">
+                                        الحد الأقصى لسعر الدورة الخاصة للمحاضر
+                                        <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
+                                            500 <x-drhm-icon width="11" height="12" />
+                                        </span>
+                                    </p>
+                                    @endif
+                                    @error('private_course_price')
+                                    <span class="text-red-600 text-xs">{{ $message }}</span>
+                                    @enderror
+                                    @include('dashboard.courses.partials.trainer-profit-preview-private', [
+                                        'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
+                                    ])
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Streaming platform / meeting link + venue details -->
+                        <div class="mt-8 pt-6 border-t" id="course_location_details_section">
                             <!-- Online Link / YouTube Live -->
                             <div id="online_link_container" class="hidden space-y-4">
                                 <div>
@@ -512,20 +535,6 @@
             @enderror
         </div>
 
-        <!-- تاريخ النهاية -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                تاريخ ووقت النهاية <span class="text-red-600">*</span>
-            </label>
-            <input type="datetime-local" id="end_date" name="end_date"
-                value="{{ old('end_date', isset($course) ? $course->end_date?->format('Y-m-d\TH:i') : '') }}"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('end_date') border-red-500 @enderror"
-                required>
-            @error('end_date')
-            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
-            @enderror
-        </div>
-
         <!-- آخر موعد للتسجيل -->
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -539,136 +548,275 @@
             <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
             @enderror
         </div>
-    </div>
 
-    <!-- أيام الراحة -->
-    <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-            أيام الراحة (اختياري)
-        </label>
-        <p class="text-xs text-gray-500 mb-3" id="rest-days-hint">
-            اختر تاريخ البداية والنهاية أولاً لعرض الأيام المتاحة
-        </p>
-
-        <div id="rest-days-container" class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200"
-            style="display: none !important;">
-            <!-- سيتم إنشاء الـ checkboxes ديناميكياً بواسطة JavaScript -->
-        </div>
-    </div>
-
-    <!-- عرض الحسابات -->
-    <div class="grid md:grid-cols-3 gap-4">
+        <!-- عدد أيام الدورة (الجلسات) -->
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
-                إجمالي الأيام بين التاريخين
+                عدد أيام الدورة (جلسات التدريس) <span class="text-red-600">*</span>
             </label>
-            <input type="text" id="total_days_display" readonly value="0"
-                class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                عدد أيام الراحة
-            </label>
-            <input type="text" id="rest_days_count_display" readonly value="0"
-                class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
-        </div>
-
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                عدد أيام الدورة الفعلية <span class="text-red-600">*</span>
-            </label>
-            <input type="number" id="count_days" name="count_days"
-                value="{{ old('count_days', isset($course) ? $course->count_days : 0) }}" readonly
-                class="w-full px-4 py-3 bg-blue-50 border border-blue-300 rounded-lg text-blue-700 font-semibold @error('count_days') border-red-500 @enderror"
+            <input type="number" id="count_days" name="count_days" min="1" step="1"
+                value="{{ old('count_days', isset($course) && $course->count_days ? $course->count_days : 1) }}"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('count_days') border-red-500 @enderror"
                 required>
             @error('count_days')
             <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
             @enderror
         </div>
     </div>
+
+    <!-- أيام الراحة -->
+    <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+            أيام الراحة الأسبوعية (اختياري)
+        </label>
+        <p class="text-xs text-gray-500 mb-3">
+            الأيام التي لا تُقام فيها جلسات — لن تُحتسب ضمن أيام الدورة وسيُمدَّد تاريخ الانتهاء تلقائياً لتعويضها
+        </p>
+
+        <div id="rest-days-container" class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <!-- سيتم إنشاء الـ checkboxes ديناميكياً بواسطة JavaScript -->
+        </div>
+    </div>
+
+    @include('dashboard.courses.partials.trainer-off-days-select')
+
+    <!-- عرض الحسابات -->
+    <div class="grid md:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                تاريخ الانتهاء المتوقع
+            </label>
+            <input type="text" id="end_date_display" readonly value=""
+                class="w-full px-4 py-3 bg-blue-50 border border-blue-300 rounded-lg text-blue-700 font-semibold">
+            <!-- القيمة الفعلية المُرسلة مع النموذج -->
+            <input type="hidden" id="end_date" name="end_date" value="{{ old('end_date', isset($course) ? $course->end_date?->format('Y-m-d\TH:i') : '') }}">
+            @error('end_date')
+            <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                إجمالي المدة التقويمية (بالأيام)
+            </label>
+            <input type="text" id="total_days_display" readonly value="0"
+                class="w-full px-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+        </div>
+    </div>
+    <p class="text-xs text-gray-500 mt-2" id="off-days-hint"></p>
 </div>
 
-<!-- JavaScript لحساب الأيام تلقائياً -->
+<!-- JavaScript لحساب تاريخ الانتهاء تلقائياً من تاريخ البداية وعدد الأيام -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
     const startDateInput = document.getElementById('start_date');
-    const endDateInput = document.getElementById('end_date');
-    const restDaysContainer = document.getElementById('rest-days-container');
-    const restDaysHint = document.getElementById('rest-days-hint');
-    const totalDaysDisplay = document.getElementById('total_days_display');
-    const restDaysCountDisplay = document.getElementById('rest_days_count_display');
     const countDaysInput = document.getElementById('count_days');
+    const restDaysContainer = document.getElementById('rest-days-container');
+    const endDateHidden = document.getElementById('end_date');
+    const endDateDisplay = document.getElementById('end_date_display');
+    const totalDaysDisplay = document.getElementById('total_days_display');
+    const offDaysHint = document.getElementById('off-days-hint');
 
     const daysMap = {
         'sunday': 'الأحد', 'monday': 'الإثنين', 'tuesday': 'الثلاثاء',
         'wednesday': 'الأربعاء', 'thursday': 'الخميس', 'friday': 'الجمعة', 'saturday': 'السبت'
     };
+    const daysOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 
     const preSelectedDays = @json(old('rest_days', isset($course) ? $course->rest_days : []));
+    const trainerOffDaysByTrainer = @json($trainerOffDaysByTrainer ?? []);
+    const preSelectedOffDates = @json(old('off_dates', isset($course) ? ($course->off_dates ?? []) : []));
+    const initialTrainerId = @json(old('trainer_id', isset($course) ? $course->trainer_id : (auth()->user()->isTrainer() ? auth()->id() : null)));
+    const emptyMsg = @json(__('messages.course_off_days_empty'));
+    const noOptionsMsg = @json(__('messages.course_off_days_no_options'));
+
+    function normalizeDateKey(v) {
+        const s = String(v || '').trim();
+        const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+        return m ? m[1] : s;
+    }
+
+    let selectedOffDates = (Array.isArray(preSelectedOffDates) ? preSelectedOffDates : [])
+        .map(normalizeDateKey)
+        .filter(Boolean);
+    let currentOffOptions = [];
+
+    const rsRoot = document.getElementById('trainer-off-days-rs');
+    const rsEmpty = document.getElementById('trainer-off-days-empty');
+    const rsValues = rsRoot?.querySelector('[data-rs-values]');
+    const rsPlaceholder = rsRoot?.querySelector('[data-rs-placeholder]');
+    const rsMenu = rsRoot?.querySelector('[data-rs-menu]');
+    const rsMenuList = rsRoot?.querySelector('[data-rs-menu-list]');
+    const rsInputs = rsRoot?.querySelector('[data-rs-inputs]');
+    const rsClear = rsRoot?.querySelector('[data-rs-clear]');
+    const rsSep = rsRoot?.querySelector('[data-rs-sep]');
+    const trainerSelect = document.getElementById('trainer_id');
 
     function getDayName(date) {
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         return days[date.getDay()];
     }
 
-    // تصفير الوقت للمقارنة بالأيام فقط
-    function resetTime(date) {
-        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    function toDateKey(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     }
 
-    function recalculateRestDays() {
-        if (!startDateInput.value || !endDateInput.value) return;
+    function pad2(n) { return String(n).padStart(2, '0'); }
 
-        const start = resetTime(new Date(startDateInput.value));
-        const end = resetTime(new Date(endDateInput.value));
+    function resolveTrainerKey() {
+        if (trainerSelect && trainerSelect.value) return String(trainerSelect.value);
+        if (initialTrainerId) return String(initialTrainerId);
+        return null;
+    }
 
-        // Inclusive calendar days: same day => 1
-        const totalDays = Math.max(0, Math.round((end - start) / (1000 * 60 * 60 * 24))) + 1;
+    function loadOffOptionsForTrainer() {
+        const key = resolveTrainerKey();
+        currentOffOptions = (key && trainerOffDaysByTrainer[key] ? trainerOffDaysByTrainer[key] : []).map((o) => ({
+            ...o,
+            value: normalizeDateKey(o.value),
+        }));
+        const allowed = new Set(currentOffOptions.map(o => o.value));
+        selectedOffDates = selectedOffDates.map(normalizeDateKey).filter(d => allowed.has(d));
+        renderOffDaysSelect();
+        calculateSchedule();
+    }
 
-        const selectedRestDays = Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked'))
-                                     .map(cb => cb.value);
+    function renderOffDaysSelect() {
+        if (!rsRoot || !rsEmpty) return;
 
-        let restDaysCount = 0;
-        let currentDate = new Date(start);
-        while (currentDate <= end) {
-            const dayName = getDayName(currentDate);
-            if (selectedRestDays.includes(dayName)) {
-                restDaysCount++;
+        if (!currentOffOptions.length) {
+            rsRoot.classList.add('hidden');
+            rsEmpty.classList.remove('hidden');
+            if (rsInputs) rsInputs.innerHTML = '';
+            selectedOffDates = [];
+            return;
+        }
+
+        rsEmpty.classList.add('hidden');
+        rsRoot.classList.remove('hidden');
+
+        // chips
+        const chips = selectedOffDates.map(value => {
+            const opt = currentOffOptions.find(o => o.value === value);
+            const label = opt ? opt.label : value;
+            return `<div class="rs-multi__multi-value" data-value="${value}">
+                <div class="rs-multi__multi-value__label">${label}</div>
+                <button type="button" class="rs-multi__multi-value__remove" data-rs-remove="${value}" aria-label="Remove">×</button>
+            </div>`;
+        }).join('');
+
+        if (rsValues) {
+            rsValues.innerHTML = chips + (rsPlaceholder ? rsPlaceholder.outerHTML : '');
+            const ph = rsValues.querySelector('[data-rs-placeholder]');
+            if (ph) ph.style.display = selectedOffDates.length ? 'none' : '';
+        }
+
+        if (rsClear) {
+            rsClear.classList.toggle('hidden', selectedOffDates.length === 0);
+        }
+        if (rsSep) {
+            rsSep.style.display = selectedOffDates.length ? '' : 'none';
+        }
+
+        // hidden inputs
+        if (rsInputs) {
+            rsInputs.innerHTML = selectedOffDates.map(v =>
+                `<input type="hidden" name="off_dates[]" value="${v}">`
+            ).join('');
+        }
+
+        // menu options (not yet selected)
+        const available = currentOffOptions.filter(o => !selectedOffDates.includes(o.value));
+        if (rsMenuList) {
+            if (!available.length) {
+                rsMenuList.innerHTML = `<div class="rs-multi__menu-notice">${noOptionsMsg}</div>`;
+            } else {
+                rsMenuList.innerHTML = available.map(o =>
+                    `<button type="button" class="rs-multi__option" data-rs-option="${o.value}">${o.label}</button>`
+                ).join('');
             }
-            currentDate.setDate(currentDate.getDate() + 1);
         }
-
-        const actualCourseDays = Math.max(0, totalDays - restDaysCount);
-
-        totalDaysDisplay.value = totalDays;
-        restDaysCountDisplay.value = restDaysCount;
-        countDaysInput.value = actualCourseDays;
     }
 
-    function generateRestDaysCheckboxes(startDate, endDate) {
-        const uniqueDays = new Set();
-        let currentDate = resetTime(new Date(startDate));
-        const end = resetTime(new Date(endDate));
+    function openRsMenu() {
+        if (!rsMenu || rsRoot.classList.contains('hidden')) return;
+        rsMenu.classList.remove('hidden');
+        rsRoot.classList.add('is-focused');
+    }
 
-        // إضافة كل الأيام في الفترة للمجموعة
-        while (currentDate <= end) {
-            uniqueDays.add(getDayName(currentDate));
-            currentDate.setDate(currentDate.getDate() + 1);
+    function closeRsMenu() {
+        if (!rsMenu) return;
+        rsMenu.classList.add('hidden');
+        rsRoot.classList.remove('is-focused');
+    }
+
+    function toggleOffDate(value) {
+        value = normalizeDateKey(value);
+        if (!value) return;
+        if (selectedOffDates.includes(value)) {
+            selectedOffDates = selectedOffDates.filter(d => d !== value);
+        } else {
+            selectedOffDates.push(value);
         }
+        renderOffDaysSelect();
+        calculateSchedule();
+    }
 
-        const daysOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const sortedDays = daysOrder.filter(day => uniqueDays.has(day));
+    if (rsRoot) {
+        rsRoot.querySelector('[data-rs-control]')?.addEventListener('click', function(e) {
+            if (e.target.closest('[data-rs-remove]') || e.target.closest('[data-rs-clear]')) return;
+            if (rsMenu?.classList.contains('hidden')) openRsMenu();
+            else closeRsMenu();
+        });
 
-        const currentSelections = Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked'))
-                                       .map(cb => cb.value);
+        rsRoot.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('[data-rs-remove]');
+            if (removeBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleOffDate(removeBtn.getAttribute('data-rs-remove'));
+                return;
+            }
+            const optBtn = e.target.closest('[data-rs-option]');
+            if (optBtn) {
+                e.preventDefault();
+                toggleOffDate(optBtn.getAttribute('data-rs-option'));
+                openRsMenu();
+            }
+        });
+
+        rsClear?.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedOffDates = [];
+            renderOffDaysSelect();
+            calculateSchedule();
+            closeRsMenu();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!rsRoot.contains(e.target)) closeRsMenu();
+        });
+    }
+
+    if (trainerSelect) {
+        trainerSelect.addEventListener('change', loadOffOptionsForTrainer);
+    }
+
+    function renderRestDaysCheckboxes() {
+        const currentSelections = restDaysContainer.querySelectorAll('.rest-day-checkbox').length
+            ? Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked')).map(cb => cb.value)
+            : preSelectedDays;
 
         restDaysContainer.innerHTML = '';
-        sortedDays.forEach(dayValue => {
-            const isChecked = currentSelections.includes(dayValue) || preSelectedDays.includes(dayValue);
+        daysOrder.forEach(dayValue => {
+            const isChecked = currentSelections.includes(dayValue);
             const checkboxHtml = `
                 <label class="inline-flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition ${isChecked ? 'border-blue-500 bg-blue-50' : ''}">
-                    <input class="rest-day-checkbox w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" 
+                    <input class="rest-day-checkbox w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                            type="checkbox" name="rest_days[]" value="${dayValue}" ${isChecked ? 'checked' : ''}>
                     <span class="text-sm font-medium text-gray-700 ${isChecked ? 'text-blue-700' : ''}">${daysMap[dayValue]}</span>
                 </label>`;
@@ -680,31 +828,110 @@
                 const label = this.closest('label');
                 label.classList.toggle('border-blue-500', this.checked);
                 label.classList.toggle('bg-blue-50', this.checked);
-                recalculateRestDays();
+                calculateSchedule();
             });
         });
-
-        restDaysContainer.style.display = 'flex';
-        recalculateRestDays();
     }
 
-    function calculateDays() {
-        if (!startDateInput.value || !endDateInput.value) {
-            totalDaysDisplay.value = '0'; restDaysCountDisplay.value = '0'; countDaysInput.value = '0';
-            restDaysContainer.style.display = 'none'; return;
-        }
-        const start = resetTime(new Date(startDateInput.value));
-        const end = resetTime(new Date(endDateInput.value));
+    function projectSchedule(offSet) {
+        const sessionDays = Math.max(1, parseInt(countDaysInput.value, 10) || 1);
+        const restSelected = Array.from(restDaysContainer.querySelectorAll('.rest-day-checkbox:checked')).map(cb => cb.value);
+        const start = new Date(startDateInput.value);
+        const hours = start.getHours();
+        const minutes = start.getMinutes();
 
-        if (end < start) {
-            alert('تاريخ النهاية لا يمكن أن يكون قبل تاريخ البداية'); return;
+        let current = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        let teachingCount = 0;
+        let offHits = 0;
+        let overlapHits = 0;
+        let lastTeachingDate = new Date(current);
+        const maxIterations = Math.max(sessionDays * 30, 3650);
+        let iterations = 0;
+
+        while (teachingCount < sessionDays && iterations < maxIterations) {
+            const key = toDateKey(current);
+            const dayName = getDayName(current);
+            const isRest = restSelected.includes(dayName);
+            const isOff = offSet.has(key);
+
+            if (isOff && isRest) {
+                overlapHits++;
+            } else if (isOff) {
+                offHits++;
+            } else if (isRest) {
+                // weekly rest
+            } else {
+                teachingCount++;
+                lastTeachingDate = new Date(current);
+            }
+
+            if (teachingCount >= sessionDays) break;
+            current.setDate(current.getDate() + 1);
+            iterations++;
         }
-        generateRestDaysCheckboxes(start, end);
+
+        const endDate = new Date(lastTeachingDate.getFullYear(), lastTeachingDate.getMonth(), lastTeachingDate.getDate(), hours, minutes);
+        const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const calendarSpanDays = Math.round((endDate - startDay) / (1000 * 60 * 60 * 24)) + 1;
+
+        return { endDate, hours, minutes, calendarSpanDays, offHits, overlapHits };
     }
 
-    startDateInput.addEventListener('change', calculateDays);
-    endDateInput.addEventListener('change', calculateDays);
-    if (startDateInput.value && endDateInput.value) calculateDays();
+    // يحاكي منطق CourseScheduleCalculator::calculate() في الخادم
+    function calculateSchedule() {
+        if (!startDateInput.value || !countDaysInput.value) {
+            endDateDisplay.value = ''; endDateHidden.value = ''; totalDaysDisplay.value = '0';
+            offDaysHint.textContent = '';
+            return;
+        }
+
+        const normalizedOffs = selectedOffDates.map(normalizeDateKey).filter(Boolean);
+        selectedOffDates = Array.from(new Set(normalizedOffs));
+        const offDatesSet = new Set(selectedOffDates);
+
+        const baseline = projectSchedule(new Set());
+        const projected = projectSchedule(offDatesSet);
+
+        const isoLocal = `${projected.endDate.getFullYear()}-${pad2(projected.endDate.getMonth() + 1)}-${pad2(projected.endDate.getDate())}T${pad2(projected.hours)}:${pad2(projected.minutes)}`;
+        endDateHidden.value = isoLocal;
+        endDateDisplay.value = projected.endDate.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        totalDaysDisplay.value = String(projected.calendarSpanDays);
+
+        [endDateDisplay, totalDaysDisplay].forEach((el) => {
+            if (!el) return;
+            el.classList.add('ring-2', 'ring-teal-400');
+            setTimeout(() => el.classList.remove('ring-2', 'ring-teal-400'), 450);
+        });
+
+        const extendedBy = projected.calendarSpanDays - baseline.calendarSpanDays;
+        if (extendedBy > 0) {
+            offDaysHint.textContent = `تم تمديد المدة المتوقعة بمقدار ${extendedBy} يوم بسبب أيام الإجازة المختارة ضمن الفترة.`;
+            offDaysHint.className = 'text-xs text-teal-700 mt-2 font-semibold';
+        } else if (projected.overlapHits > 0 && selectedOffDates.length > 0) {
+            offDaysHint.textContent = `الأيام المختارة توافق أيام راحة أسبوعية بالفعل، لذلك لم تتغير المدة أو تاريخ الانتهاء. اختر يوماً ليس يوم راحة لترى التمديد.`;
+            offDaysHint.className = 'text-xs text-amber-700 mt-2 font-semibold';
+        } else if (selectedOffDates.length > 0 && projected.offHits === 0 && projected.overlapHits === 0) {
+            offDaysHint.textContent = `أيام الإجازة المختارة خارج فترة الدورة المتوقعة، لذلك لم تؤثر على الحساب.`;
+            offDaysHint.className = 'text-xs text-amber-700 mt-2 font-semibold';
+        } else {
+            offDaysHint.textContent = '';
+            offDaysHint.className = 'text-xs text-gray-500 mt-2';
+        }
+    }
+
+    window.__courseOffDaysApi = {
+        getSelected: () => selectedOffDates.slice(),
+        setSelected: (dates) => {
+            selectedOffDates = (Array.isArray(dates) ? dates : []).map(normalizeDateKey).filter(Boolean);
+            loadOffOptionsForTrainer();
+        },
+    };
+
+    startDateInput.addEventListener('change', calculateSchedule);
+    countDaysInput.addEventListener('input', calculateSchedule);
+
+    renderRestDaysCheckboxes();
+    loadOffOptionsForTrainer();
 });
 </script>
 
@@ -1265,10 +1492,10 @@
                                 class="prev-tab px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
                                 <i class="fas fa-arrow-right ml-2"></i> السابق
                             </button>
-                            <button type="submit"
-                                class="px-8 py-3 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-lg hover:shadow-xl">
-                                <i class="fas fa-save ml-2"></i>
-                                حفظ الدورة
+                            <button type="submit" id="course-save-btn"
+                                class="px-8 py-3 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-lg hover:shadow-xl inline-flex items-center gap-2">
+                                <i class="fas fa-save" data-save-icon></i>
+                                <span data-save-label>حفظ الدورة</span>
                             </button>
                         </div>
                     </div>
@@ -2069,6 +2296,7 @@
             const data = {
                 scalars: {},
                 rest_days: [],
+                off_dates: [],
                 requirements: [],
                 features: [],
                 suitable_for: [],
@@ -2095,6 +2323,7 @@
             data.scalars.allows_private_requests = form.querySelector('#allows_private_requests')?.checked ? '1' : '0';
 
             data.rest_days = Array.from(form.querySelectorAll('input[name="rest_days[]"]:checked')).map(cb => cb.value);
+            data.off_dates = Array.from(form.querySelectorAll('input[name="off_dates[]"]')).map(inp => inp.value);
             data.levels = Array.from(form.querySelectorAll('input[name="levels[]"]:checked')).map(cb => cb.value);
 
             form.querySelectorAll('.requirement-row').forEach(row => {
@@ -2213,16 +2442,22 @@
                 window.__renderPrivateTrainerProfitPreview();
             }
 
-            // Dates -> rebuild rest-day checkboxes, then restore selections
+            // Dates -> restore rest-day / off-day selections, then recompute predicted end date
             const startEl = form.querySelector('[name="start_date"]');
-            const endEl = form.querySelector('[name="end_date"]');
-            if (startEl && startEl.value && endEl && endEl.value) {
-                startEl.dispatchEvent(new Event('change', { bubbles: true }));
-                endEl.dispatchEvent(new Event('change', { bubbles: true }));
+            const countDaysEl = form.querySelector('[name="count_days"]');
+            if (startEl && startEl.value) {
                 (draft.rest_days || []).forEach(day => {
                     const cb = form.querySelector(`input[name="rest_days[]"][value="${day}"]`);
-                    if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+                    if (cb) {
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
                 });
+                if (window.__courseOffDaysApi && Array.isArray(draft.off_dates)) {
+                    window.__courseOffDaysApi.setSelected(draft.off_dates);
+                }
+                startEl.dispatchEvent(new Event('change', { bubbles: true }));
+                if (countDaysEl) countDaysEl.dispatchEvent(new Event('input', { bubbles: true }));
             }
 
             // Course levels
@@ -2429,6 +2664,10 @@
             if (btn) {
                 btn.disabled = true;
                 btn.classList.add('opacity-70', 'cursor-wait');
+                const icon = btn.querySelector('[data-save-icon]');
+                const label = btn.querySelector('[data-save-label]');
+                if (icon) icon.className = 'fas fa-circle-notch fa-spin';
+                if (label) label.textContent = 'جاري الحفظ…';
             }
         });
     })();

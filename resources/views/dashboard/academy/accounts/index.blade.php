@@ -73,11 +73,8 @@
                             $docsReady = $meta['role'] === 'trainer'
                                 && $account->avatar
                                 && $account->course_category_id
-                                && $account->resume_path
-                                && $account->teaching_sample_path
-                                && filled($account->trainer_bio)
-                                && ($account->id_card_front_path || $account->id_card_path)
-                                && $account->id_card_back_path;
+                                && filled($account->linkedin_url)
+                                && filled($account->trainer_bio);
                             $teachLangShort = ($account->teaching_language ?? 'ar') === 'en'
                                 ? __('messages.become_trainer_teaching_lang_en')
                                 : __('messages.become_trainer_teaching_lang_ar');

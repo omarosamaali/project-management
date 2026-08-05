@@ -7,6 +7,9 @@ use App\Http\Controllers\Dashboard\AcademyAccountController;
 use App\Http\Controllers\Dashboard\AcademyProfitController;
 use App\Http\Controllers\Dashboard\AcademyRatingController;
 use App\Http\Controllers\Dashboard\AcademySettingsController;
+use App\Http\Controllers\Dashboard\PayoutMethodController;
+use App\Http\Controllers\Dashboard\TrainerPaymentProfileController;
+use App\Http\Controllers\Dashboard\TrainerCashoutController;
 use App\Http\Controllers\Dashboard\CurrencyRateController;
 use App\Http\Controllers\Dashboard\RequestsController;
 use App\Http\Controllers\Dashboard\SupportController;
@@ -212,6 +215,43 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.academy.private-refunds.mark-ready');
     Route::post('academy/private-refunds/{refund}/confirm', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'confirmRefund'])
         ->name('dashboard.academy.private-refunds.confirm');
+
+    // Trainer payout methods (admin)
+    Route::prefix('academy')->group(function () {
+        Route::resource('payout-methods', PayoutMethodController::class)
+            ->except(['show'])
+            ->names('dashboard.academy.payout-methods');
+    });
+
+    // Trainer payment profile
+    Route::get('academy/payment-profile', [TrainerPaymentProfileController::class, 'edit'])
+        ->name('dashboard.academy.payment-profile.edit');
+    Route::put('academy/payment-profile', [TrainerPaymentProfileController::class, 'update'])
+        ->name('dashboard.academy.payment-profile.update');
+
+    // Trainer cashout requests
+    Route::post('academy/cashouts', [TrainerCashoutController::class, 'store'])
+        ->name('dashboard.academy.cashouts.store');
+    Route::post('academy/cashouts/{cashout}/confirm', [TrainerCashoutController::class, 'confirm'])
+        ->name('dashboard.academy.cashouts.confirm');
+    Route::get('academy/cashouts', [TrainerCashoutController::class, 'adminIndex'])
+        ->name('dashboard.academy.cashouts.index');
+    Route::get('academy/cashouts/files/{screenshot}', [TrainerCashoutController::class, 'showScreenshotFile'])
+        ->name('dashboard.academy.cashouts.screenshot-file');
+    Route::post('academy/cashouts/{cashout}/screenshot', [TrainerCashoutController::class, 'uploadScreenshot'])
+        ->name('dashboard.academy.cashouts.upload-screenshot');
+    Route::post('academy/cashouts/{cashout}/mark-ready', [TrainerCashoutController::class, 'markReadyForTrainer'])
+        ->name('dashboard.academy.cashouts.mark-ready');
+    Route::post('academy/cashouts/{cashout}/reject', [TrainerCashoutController::class, 'reject'])
+        ->name('dashboard.academy.cashouts.reject');
+
+    Route::get('academy/off-days', [\App\Http\Controllers\Dashboard\TrainerOffDayController::class, 'index'])
+        ->name('dashboard.academy.off-days.index');
+    Route::post('academy/off-days', [\App\Http\Controllers\Dashboard\TrainerOffDayController::class, 'store'])
+        ->name('dashboard.academy.off-days.store');
+    Route::delete('academy/off-days/{offDay}', [\App\Http\Controllers\Dashboard\TrainerOffDayController::class, 'destroy'])
+        ->name('dashboard.academy.off-days.destroy');
+
     Route::post('/payments/{payment}/special-certificate', [CourseController::class, 'uploadSpecialCertificate'])
         ->name('dashboard.courses.special-certificate.upload');
     Route::get('/payments/{payment}/special-certificate', [CourseController::class, 'downloadSpecialCertificate'])

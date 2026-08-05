@@ -25,6 +25,8 @@ class AcademySettingsController extends Controller
             'profitRecorded' => $profits['recorded'],
             'profitPrivate' => $profits['private'],
             'profitOnsite' => $profits['onsite'],
+            'cashoutMin' => Setting::academyTrainerCashoutMinimum(),
+            'cashoutMax' => Setting::academyTrainerCashoutMaximum(),
         ]);
     }
 
@@ -40,6 +42,8 @@ class AcademySettingsController extends Controller
             'trainer_profit_recorded' => 'required|numeric|min:0|max:100',
             'trainer_profit_private' => 'required|numeric|min:0|max:100',
             'trainer_profit_onsite' => 'nullable|numeric|min:0|max:100',
+            'cashout_min' => 'required|numeric|min:0|lte:cashout_max',
+            'cashout_max' => 'required|numeric|min:0|gte:cashout_min',
         ]);
 
         if (! Setting::hasStorage()) {
@@ -81,6 +85,9 @@ class AcademySettingsController extends Controller
         } else {
             Setting::set('academy_trainer_profit_onsite', '');
         }
+
+        Setting::set('academy_trainer_cashout_minimum', (string) $validated['cashout_min']);
+        Setting::set('academy_trainer_cashout_maximum', (string) $validated['cashout_max']);
 
         return redirect()
             ->route('dashboard.academy.settings.edit')

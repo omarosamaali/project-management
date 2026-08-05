@@ -3,28 +3,48 @@
     'label' => 'الأيقونة — اختياري',
     'existingUrl' => null,
     'showRemove' => false,
+    'removeName' => 'remove_icon',
+    'removeLabel' => 'حذف الأيقونة',
     'hint' => 'إن لم تُرفع صورة، تُستخدم أيقونة افتراضية.',
     'required' => false,
     'previewRounded' => true,
 ])
 
-<div class="drag-image-field">
+@php
+    $hasExisting = filled($existingUrl);
+@endphp
+
+<div class="drag-image-field" data-has-existing="{{ $hasExisting ? '1' : '0' }}">
     @if ($label)
-    <label class="block text-sm font-medium text-gray-700 mb-1">
-        {{ $label }}
-        @if ($required)
-        <span class="text-red-500">*</span>
-        @endif
-    </label>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <label class="block text-sm font-medium text-gray-700">
+            {{ $label }}
+            @if ($required)
+            <span class="text-red-500">*</span>
+            @endif
+        </label>
+        <span class="drag-image-status inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full
+            {{ $hasExisting ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200' }}"
+            data-empty-label="لم تُرفع صورة"
+            data-existing-label="صورة محفوظة"
+            data-new-label="تم اختيار صورة جديدة">
+            <i class="drag-image-status-icon fas {{ $hasExisting ? 'fa-check-circle' : 'fa-image' }}"></i>
+            <span class="drag-image-status-text">{{ $hasExisting ? 'صورة محفوظة' : 'لم تُرفع صورة' }}</span>
+        </span>
+    </div>
     @endif
-    <div class="relative drag-image-dropzone border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:border-blue-500 transition cursor-pointer">
+    <div class="relative drag-image-dropzone border-2 border-dashed border-gray-300 rounded-lg p-5 text-center hover:border-blue-500 transition cursor-pointer {{ $hasExisting ? 'border-emerald-300 bg-emerald-50/30' : '' }}">
         <input type="file" name="{{ $name }}" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml,.jpg,.jpeg,.png,.webp,.gif,.svg"
             class="drag-image-input absolute inset-0 w-full h-full opacity-0 cursor-pointer"
             @if ($required) required @endif>
         <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
         <p class="text-sm text-gray-600">اضغط أو اسحب الصورة هنا</p>
         <p class="text-xs text-gray-400 mt-1">JPG, PNG, WEBP, GIF, SVG (حد 2MB)</p>
-        <p class="drag-image-filename text-xs text-blue-600 mt-2 font-medium hidden"></p>
+        <p class="drag-image-filename text-xs text-blue-600 mt-2 font-medium {{ $hasExisting ? '' : 'hidden' }}">
+            @if ($hasExisting)
+            الصورة الحالية محفوظة — اختر ملفاً جديداً لاستبدالها
+            @endif
+        </p>
     </div>
     @error($name)
     <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
@@ -34,7 +54,7 @@
             class="drag-image-preview {{ $previewRounded ? 'w-16 h-16 rounded-full' : 'w-28 h-20 rounded-lg' }} {{ $existingUrl && str_ends_with(strtolower((string) $existingUrl), '.svg') ? 'object-contain p-1' : 'object-cover' }} border bg-slate-100 {{ $existingUrl ? '' : 'hidden' }}">
         @if ($showRemove)
         <label class="drag-image-remove-wrap inline-flex items-center gap-1 text-xs text-red-600 {{ $existingUrl ? '' : 'hidden' }}">
-            <input type="checkbox" name="remove_icon" value="1"> حذف الأيقونة
+            <input type="checkbox" name="{{ $removeName }}" value="1"> {{ $removeLabel }}
         </label>
         @endif
     </div>
