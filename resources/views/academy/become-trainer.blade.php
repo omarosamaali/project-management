@@ -1072,7 +1072,7 @@
                         </div>
 
                         <div class="bt-file-field">
-                            <label class="block text-sm font-medium mb-1" for="teaching_sample">
+                            <label class="block text-sm font-medium mb-1">
                                 {{ __('messages.trainer_sample') }}
                                 <span class="text-slate-400 text-xs font-normal">({{ __('messages.optional') }})</span>
                             </label>
@@ -1084,15 +1084,10 @@
                                     {{ __('messages.trainer_sample_warn') }}
                                 </div>
                             </div>
-                            <div class="bt-file-dropzone" data-file-dropzone="teaching_sample">
-                                <input type="file" id="teaching_sample" name="teaching_sample" accept="video/mp4,.mp4">
-                                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
-                                <p>{{ __('messages.trainer_sample_drop') }}</p>
-                                <small>{{ __('messages.trainer_sample_formats') }}</small>
-                                <span class="bt-file-name" data-file-name></span>
-                            </div>
-                            <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_sample_hint_optional') }}</p>
-                            <x-input-error :messages="$errors->get('teaching_sample')" class="mt-2" />
+                            @include('academy.partials.teaching-sample-input', [
+                                'variant' => 'become',
+                                'sampleType' => old('teaching_sample_type', 'upload'),
+                            ])
                         </div>
 
                         <div>
@@ -1196,7 +1191,7 @@
             1: form.querySelector('[data-step-panel="1"]'),
             2: form.querySelector('[data-step-panel="2"]'),
         };
-        let step = {{ $openFormOnLoad && ($errors->has('course_category_id') || $errors->has('avatar') || $errors->has('linkedin_url') || $errors->has('teaching_sample') || $errors->has('trainer_bio') || $errors->has('accept_terms')) ? 2 : 1 }};
+        let step = {{ $openFormOnLoad && ($errors->has('course_category_id') || $errors->has('avatar') || $errors->has('linkedin_url') || $errors->has('teaching_sample') || $errors->has('teaching_sample_link') || $errors->has('trainer_bio') || $errors->has('accept_terms')) ? 2 : 1 }};
 
         function showStep(n, animate = true) {
             step = n;

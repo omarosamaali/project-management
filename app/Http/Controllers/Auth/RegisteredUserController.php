@@ -73,7 +73,9 @@ class RegisteredUserController extends Controller
                 'max:500',
                 'regex:/^https?:\/\/(www\.)?linkedin\.com\/.+/i',
             ],
+            'teaching_sample_type' => ['exclude_unless:role,trainer', 'nullable', 'in:upload,link'],
             'teaching_sample' => ['exclude_unless:role,trainer', 'nullable', 'file', 'mimetypes:video/mp4,video/quicktime,video/x-m4v', 'max:307200'],
+            'teaching_sample_link' => ['exclude_unless:role,trainer', 'nullable', 'url', 'max:1000'],
             'trainer_bio' => ['exclude_unless:role,trainer', 'required', 'string', 'min:120', 'max:2000'],
             'accept_terms' => ['exclude_unless:role,trainer', 'accepted'],
         ];
@@ -99,6 +101,7 @@ class RegisteredUserController extends Controller
                 'linkedin_url.regex' => __('messages.trainer_linkedin_invalid'),
                 'teaching_sample.mimetypes' => __('messages.trainer_sample_mimes'),
                 'teaching_sample.max' => __('messages.trainer_sample_max'),
+                'teaching_sample_link.url' => __('messages.trainer_sample_link_invalid'),
                 'trainer_bio.required' => __('messages.trainer_bio_required'),
                 'trainer_bio.min' => __('messages.trainer_bio_min'),
                 'trainer_bio.max' => __('messages.trainer_bio_max'),
@@ -144,10 +147,14 @@ class RegisteredUserController extends Controller
         $role = $request->role;
         $avatarPath = null;
         $teachingSamplePath = null;
+        $teachingSampleLink = null;
 
         if ($isTrainer) {
             $avatarPath = WatermarkedUpload::store($request->file('avatar'), 'trainers/avatars');
-            if ($request->hasFile('teaching_sample')) {
+            $sampleType = $request->input('teaching_sample_type', 'upload');
+            if ($sampleType === 'link' && $request->filled('teaching_sample_link')) {
+                $teachingSampleLink = $request->input('teaching_sample_link');
+            } elseif ($request->hasFile('teaching_sample') && $request->file('teaching_sample')->isValid()) {
                 $teachingSamplePath = $request->file('teaching_sample')->store('trainers/samples', 'public');
             }
         }
@@ -172,6 +179,7 @@ class RegisteredUserController extends Controller
             'teaching_language' => $isTrainer ? ($request->input('teaching_language') ?: 'ar') : null,
             'linkedin_url' => $isTrainer ? $request->input('linkedin_url') : null,
             'teaching_sample_path' => $teachingSamplePath,
+            'teaching_sample_link' => $teachingSampleLink,
             'trainer_bio' => $isTrainer ? $request->input('trainer_bio') : null,
             'terms_accepted_at' => $isTrainer ? now() : null,
         ]);

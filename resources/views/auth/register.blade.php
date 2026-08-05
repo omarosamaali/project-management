@@ -202,12 +202,12 @@
             </div>
 
             <div>
-                <x-input-label for="teaching_sample" :value="__('messages.trainer_sample')" />
-                <p class="text-xs text-slate-500 mt-1 mb-2">{{ __('messages.trainer_sample_hint_optional') }}</p>
-                <input id="teaching_sample" type="file" name="teaching_sample" accept="video/mp4,.mp4"
-                    class="block mt-1 w-full text-sm">
-                <p class="text-[11px] text-slate-400 mt-1">{{ __('messages.trainer_sample_formats') }}</p>
-                <x-input-error :messages="$errors->get('teaching_sample')" class="mt-2" />
+                <x-input-label :value="__('messages.trainer_sample')" />
+                <p class="text-xs text-slate-500 mt-1 mb-1">{{ __('messages.trainer_sample_hint_optional') }}</p>
+                @include('academy.partials.teaching-sample-input', [
+                    'variant' => 'register',
+                    'sampleType' => old('teaching_sample_type', 'upload'),
+                ])
             </div>
 
             <div>

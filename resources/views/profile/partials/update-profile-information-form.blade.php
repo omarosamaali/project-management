@@ -243,18 +243,17 @@
                 </div>
 
                 <div class="sm:col-span-2">
-                    <x-input-label for="teaching_sample" :value="__('messages.trainer_sample')" />
-                    <input id="teaching_sample" type="file" name="teaching_sample" accept="video/mp4,.mp4"
-                        class="mt-1.5 block w-full text-sm rounded-xl border border-slate-300 bg-white px-3 py-2.5">
-                    <p class="text-xs text-slate-500 mt-1.5">{{ __('messages.trainer_sample_hint_optional') }}</p>
-                    @if($user->teachingSampleUrl())
-                    <a href="{{ $user->teachingSampleUrl() }}" target="_blank"
-                        class="text-xs text-teal-700 font-bold mt-2 inline-flex items-center gap-1.5 hover:underline">
-                        <i class="fas fa-play-circle"></i>
-                        {{ __('messages.trainer_review_open_sample') }}
-                    </a>
-                    @endif
-                    <x-input-error class="mt-2" :messages="$errors->get('teaching_sample')" />
+                    <x-input-label :value="__('messages.trainer_sample')" />
+                    <p class="text-xs text-slate-500 mt-1 mb-1">{{ __('messages.trainer_sample_hint_optional') }}</p>
+                    @include('academy.partials.teaching-sample-input', [
+                        'variant' => 'profile',
+                        'sampleType' => old(
+                            'teaching_sample_type',
+                            $user->teachingSampleIsExternal() ? 'link' : 'upload'
+                        ),
+                        'existingSampleUrl' => $user->teachingSampleUrl(),
+                        'existingIsExternal' => $user->teachingSampleIsExternal(),
+                    ])
                 </div>
             </div>
 

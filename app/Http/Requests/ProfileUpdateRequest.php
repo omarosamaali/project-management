@@ -50,7 +50,9 @@ class ProfileUpdateRequest extends FormRequest
                 ],
                 'teaching_language' => ['nullable', 'in:ar,en'],
                 'course_category_id' => ['nullable', 'exists:course_categories,id'],
+                'teaching_sample_type' => ['nullable', 'in:upload,link'],
                 'teaching_sample' => ['nullable', 'file', 'mimetypes:video/mp4,video/quicktime,video/x-m4v', 'max:307200'],
+                'teaching_sample_link' => ['nullable', 'url', 'max:1000'],
             ]);
         }
 
@@ -63,6 +65,7 @@ class ProfileUpdateRequest extends FormRequest
             'linkedin_url.regex' => __('messages.trainer_linkedin_invalid'),
             'linkedin_url.url' => __('messages.trainer_linkedin_invalid'),
             'trainer_bio.min' => __('messages.trainer_bio_min'),
+            'teaching_sample_link.url' => __('messages.trainer_sample_link_invalid'),
         ]);
     }
 }

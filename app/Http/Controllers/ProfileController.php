@@ -91,11 +91,21 @@ class ProfileController extends Controller
                 $user->avatar = WatermarkedUpload::store($request->file('avatar'), 'trainers/avatars');
             }
 
-            if ($request->hasFile('teaching_sample')) {
+            $sampleType = $request->input('teaching_sample_type', $user->teachingSampleIsExternal() ? 'link' : 'upload');
+            if ($sampleType === 'link') {
+                if ($request->filled('teaching_sample_link')) {
+                    if ($user->teaching_sample_path) {
+                        Storage::disk('public')->delete($user->teaching_sample_path);
+                        $user->teaching_sample_path = null;
+                    }
+                    $user->teaching_sample_link = $request->input('teaching_sample_link');
+                }
+            } elseif ($request->hasFile('teaching_sample') && $request->file('teaching_sample')->isValid()) {
                 if ($user->teaching_sample_path) {
                     Storage::disk('public')->delete($user->teaching_sample_path);
                 }
                 $user->teaching_sample_path = $request->file('teaching_sample')->store('trainers/samples', 'public');
+                $user->teaching_sample_link = null;
             }
         }
 

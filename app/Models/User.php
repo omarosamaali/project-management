@@ -34,6 +34,7 @@ class User extends Authenticatable
         'resume_path',
         'linkedin_url',
         'teaching_sample_path',
+        'teaching_sample_link',
         'trainer_bio',
         'otp',
         'email',
@@ -234,9 +235,36 @@ class User extends Authenticatable
 
     public function teachingSampleUrl(): ?string
     {
+        if (filled($this->teaching_sample_link)) {
+            return $this->teaching_sample_link;
+        }
+
         return $this->teaching_sample_path
             ? asset('storage/' . ltrim($this->teaching_sample_path, '/'))
             : null;
+    }
+
+    public function teachingSampleIsExternal(): bool
+    {
+        return filled($this->teaching_sample_link);
+    }
+
+    public function teachingSampleEmbedUrl(): ?string
+    {
+        $url = trim((string) $this->teaching_sample_link);
+        if ($url === '') {
+            return null;
+        }
+
+        if (preg_match('~(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([A-Za-z0-9_-]{6,})~', $url, $m)) {
+            return 'https://www.youtube.com/embed/'.$m[1];
+        }
+
+        if (preg_match('~vimeo\.com/(?:video/)?(\d+)~', $url, $m)) {
+            return 'https://player.vimeo.com/video/'.$m[1];
+        }
+
+        return null;
     }
 
     public function isPendingApproval(): bool

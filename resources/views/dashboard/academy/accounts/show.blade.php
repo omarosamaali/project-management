@@ -278,6 +278,20 @@
                     </div>
                 </div>
                 @if($account->teachingSampleUrl())
+                @if($account->teachingSampleIsExternal())
+                    @if($account->teachingSampleEmbedUrl())
+                    <div class="rounded-2xl overflow-hidden border border-slate-200 bg-black aspect-video">
+                        <iframe src="{{ $account->teachingSampleEmbedUrl() }}" title="{{ __('messages.trainer_sample') }}"
+                            class="w-full h-full min-h-[16rem]" allowfullscreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                    </div>
+                    @endif
+                    <a href="{{ $account->teachingSampleUrl() }}" target="_blank" rel="noopener"
+                        class="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-indigo-700 hover:underline break-all">
+                        <i class="fas fa-external-link-alt"></i>
+                        {{ __('messages.trainer_review_open_sample') }}
+                    </a>
+                @else
                 <div class="rounded-2xl overflow-hidden border border-slate-200 bg-black">
                     <video controls preload="metadata" class="w-full max-h-72 bg-black"
                         src="{{ $account->teachingSampleUrl() }}">
@@ -289,6 +303,7 @@
                     <i class="fas fa-external-link-alt"></i>
                     {{ __('messages.trainer_review_open_sample') }}
                 </a>
+                @endif
                 @else
                 <p class="text-sm text-slate-500 font-medium">{{ __('messages.optional') }} — {{ __('messages.trainer_review_missing') }}</p>
                 @endif
