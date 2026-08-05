@@ -1250,12 +1250,21 @@
         form.addEventListener('submit', (e) => {
             let valid = true;
             const avatarInput = form.querySelector('input[name="avatar"]');
+            const maxAvatarBytes = 2 * 1024 * 1024;
             if (avatarInput) {
                 const zone = avatarInput.closest('.drag-image-dropzone');
-                const hasFile = avatarInput.files && avatarInput.files.length > 0;
+                const file = avatarInput.files?.[0];
+                const hasFile = !!file;
                 zone?.classList.toggle('border-red-500', !hasFile);
                 zone?.classList.toggle('bg-red-50', !hasFile);
-                if (!hasFile) valid = false;
+                if (!hasFile) {
+                    valid = false;
+                } else if (file.size > maxAvatarBytes) {
+                    valid = false;
+                    zone?.classList.add('border-red-500', 'bg-red-50');
+                    alert(@json(__('messages.trainer_image_max_2')));
+                    avatarInput.focus();
+                }
             }
 
             const linkedin = form.querySelector('#linkedin_url');
@@ -1274,7 +1283,10 @@
             if (!valid) {
                 e.preventDefault();
                 showStep(2);
-                alert(@json(__('messages.trainer_apply_incomplete_alert')));
+                // Avoid clearing a real size error with the generic incomplete alert.
+                if (!(avatarInput?.files?.[0]?.size > maxAvatarBytes)) {
+                    alert(@json(__('messages.trainer_apply_incomplete_alert')));
+                }
             }
         });
 
@@ -1456,20 +1468,28 @@
         });
     }
 
-    // Successful application → advance browser journey to review step.
-    const form = document.getElementById('become-trainer-form');
-    form?.addEventListener('submit', () => {
-        // Only mark applied if HTML5 constraints pass; server may still reject.
-        if (!form.checkValidity()) return;
-        writeStore({ step: 2, completed: 1, allDone: false, source: 'application' });
-    });
+    // Successful application is recorded only after server redirect to login?trainer_applied=1.
+    // Do NOT write localStorage on submit — a server validation failure would still leave a
+    // false "pending approval" state and hide the form.
 
+    const hasServerErrors = @json($errors->any());
     const stored = readStore();
     let step = serverStep;
     let allDone = @json($allDone);
 
-    if (hasAuthTrainer) {
+    if (hasServerErrors && !hasAuthTrainer) {
+        // Discard any premature client "applied" flag so the form stays visible for fixes.
+        if (stored && stored.source === 'application') {
+            try { localStorage.removeItem(KEY); } catch (e) {}
+        }
+        paintJourney(serverStep, false);
+        const formSection = document.querySelector('[data-bt-form-section]');
+        const banner = document.getElementById('bt-applied-banner');
+        if (formSection) formSection.hidden = false;
+        if (banner) banner.hidden = true;
+    } else if (hasAuthTrainer) {
         writeStore({ step: serverStep, completed: {{ (int) $completedSteps }}, allDone: allDone, source: 'server' });
+        paintJourney(serverStep, allDone);
     } else if (stored && Number(stored.step) > step) {
         step = Math.min(5, Number(stored.step) || 2);
         allDone = !!stored.allDone;
@@ -1481,6 +1501,8 @@
             if (formSection) formSection.hidden = true;
             if (banner) banner.hidden = false;
         }
+    } else {
+        paintJourney(step, allDone);
     }
 })();
 </script>
