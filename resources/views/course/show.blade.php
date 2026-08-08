@@ -3,7 +3,7 @@
 @section('title', 'دورة - ' . ($course->name_ar ?? $course->name_en))
 
 @section('content')
-<meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
 @php
     $locale = app()->getLocale();
@@ -53,7 +53,7 @@
     $privateLoginUrl = \App\Support\AuthUi::loginUrl(['ui' => 'academy', 'redirect' => $privateRequestUrl]);
 
     $visibleButtons = collect($course->buttons ?? [])->filter(fn ($b) => empty($b['needs_login']));
-@endphp
+                            @endphp
 
 <style>
     .course-public { font-family: "Cairo", sans-serif; color: #111827; }
@@ -740,7 +740,7 @@
                 <circle cx="48" cy="48" r="44" stroke="currentColor" stroke-width="3.5"/>
                 <path d="M40 30.5v35l28-17.5L40 30.5z" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round" fill="none"/>
             </svg>
-        </button>
+                                </button>
         @else
         <img class="hero-media" src="{{ $heroMediaUrl }}" alt="{{ $courseName }}">
         @endif
@@ -754,10 +754,10 @@
                         <i class="fas fa-{{ $typeTone === 'online' ? 'video' : ($typeTone === 'onsite' ? 'map-marker-alt' : 'play-circle') }}"></i>
                         {{ $typeLabel }}
                     </span>
-                </div>
+                                        </div>
                 @endif
-            </div>
-        </div>
+                                            </div>
+                                        </div>
     </section>
 
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-8">
@@ -765,12 +765,12 @@
             class="mb-5 inline-flex items-center gap-2 text-gray-700 hover:text-black text-sm font-medium transition">
             <i class="fa fa-{{ $locale == 'ar' ? 'arrow-right' : 'arrow-left' }}"></i>
             العودة
-        </button>
+                                            </button>
 
         @if (session('success'))
         <div class="mb-6 bg-green-100 border-r-4 border-green-500 text-green-700 p-4 rounded-lg">
             <p class="font-semibold">{{ session('success') }}</p>
-        </div>
+                                </div>
         @endif
 
         <div class="course-layout">
@@ -817,8 +817,8 @@
                         {{ $registrationClosed ? __('messages.academy_apply_closed_status') : __('messages.academy_apply_open_status') }}
                         · {{ $applyUntilLabel }}
                     </span>
-                    @endif
-                </div>
+                            @endif
+                        </div>
                 @endif
 
                 @if(!$isRecorded && (int) ($course->count_days ?? 0) > 1 && $course->start_date)
@@ -983,15 +983,15 @@
                                                 {{ __('messages.course_schedule_mark_session') }}
                                                 @elseif($cell['type'] === 'rest')
                                                 {{ __('messages.course_schedule_mark_rest') }}
-                                                @else
+                                @else
                                                 {{ $cell['note'] ?: __('messages.course_schedule_mark_off') }}
                                                 @endif
-                                            </span>
-                                            @endif
-                                        </div>
+                                </span>
+                                @endif
+                            </div>
                                         @endforeach
                                     @endforeach
-                                </div>
+                        </div>
                             </section>
                             @empty
                             <p class="text-sm text-slate-500 text-center py-8">{{ __('messages.course_schedule_empty') }}</p>
@@ -1052,8 +1052,8 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                                </div>
+                            </div>
 
                 {{-- Target audience --}}
                 @if (!empty($course->suitable_for))
@@ -1064,11 +1064,11 @@
                         <div class="audience-chip">
                             <i class="fas fa-user-check text-black"></i>
                             <span>{{ $locale === 'en' ? ($item['en'] ?? $item['ar'] ?? '') : ($item['ar'] ?? $item['en'] ?? '') }}</span>
-                        </div>
+        </div>
                         @endforeach
-                    </div>
-                </div>
-                @endif
+    </div>
+</div>
+@endif
 
                 {{-- What you'll learn = features --}}
                 @if (!empty($course->features))
@@ -1079,11 +1079,11 @@
                         <div class="learn-item">
                             <i class="fas fa-check text-black mt-1"></i>
                             <span class="text-gray-700">{{ $locale === 'en' ? ($feature['en'] ?? '') : ($feature['ar'] ?? '') }}</span>
-                        </div>
+        </div>
                         @endforeach
-                    </div>
-                </div>
-                @endif
+    </div>
+</div>
+@endif
 
                 {{-- Prerequisites = requirements --}}
                 @if (!empty($course->requirements))
@@ -1105,7 +1105,7 @@
                     $pathUnits = $isRecorded
                         ? $course->units->filter(fn ($unit) => $unit->items->isNotEmpty())->values()
                         : collect();
-                @endphp
+            @endphp
                 @if ($pathUnits->isNotEmpty())
                 <div class="section-block" id="course-curriculum">
                     <h2 class="section-title">مسار التعلم</h2>
@@ -1121,7 +1121,7 @@
                             <span class="flex items-center gap-2 min-w-0">
                                 <i class="fas fa-chevron-down path-chevron text-xs"></i>
                                 <span class="truncate">{{ $unit->localizedTitle() }}</span>
-                            </span>
+            </span>
                             <span class="text-xs font-semibold text-gray-500 shrink-0">
                                 {{ $unitLessonCount }} {{ $unitLessonCount == 1 ? 'درس' : 'دروس' }}
                                 @if($exams->count())
@@ -1142,11 +1142,11 @@
                                 <span class="text-xs text-violet-500 shrink-0">{{ $item->formattedExamDuration() }}</span>
                                 @endif
                             </div>
-                            @endforeach
-                        </div>
-                    </div>
+            @endforeach
+        </div>
+    </div>
                     @endforeach
-                </div>
+</div>
                 @endif
 
                 {{-- Student reviews --}}
@@ -1163,7 +1163,7 @@
                                 @endfor
                             </span>
                             ({{ $featuredCount }})
-                        </div>
+                                    </div>
                         @endif
                     </div>
                     <div class="grid sm:grid-cols-2 gap-4">
@@ -1191,8 +1191,8 @@
                                     </span>
                                     <span>{{ number_format($reviewScore, 1) }}</span>
                                 </div>
-                                @endif
-                            </div>
+                            @endif
+                        </div>
                             <p class="review-card-body">
                                 <i class="fas fa-quote-left review-card-quote" aria-hidden="true"></i>
                                 {{ $rating->feedbackText() ?: 'تقييم إيجابي للدورة' }}
@@ -1215,10 +1215,10 @@
                                 class="w-full h-36 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition">
                             <x-media-watermark brand="academy" size="sm" />
                         </div>
-                        @endforeach
-                    </div>
-                </div>
-                @endif
+                                        @endforeach
+                                </div>
+                            </div>
+                        @endif
             </div>
 
             {{-- Sticky side card --}}
@@ -1229,7 +1229,7 @@
                         <img class="side-cover" src="{{ Storage::url($course->main_image) }}" alt="{{ $courseName }}">
                         <x-media-watermark brand="academy" size="sm" />
                     </div>
-                    @endif
+                                @endif
                     <div class="p-5">
                         <div class="mb-4 pb-4 border-b border-gray-100">
                             @if($course->price > 0)
@@ -1245,7 +1245,7 @@
                                     <span class="text-lg font-bold text-gray-900 flex items-center gap-1.5">
                                         {{ number_format($course->price, 2) }}
                                         <img src="{{ asset('assets/images/drhm-icon.svg') }}" class="w-5" alt="">
-                                    </span>
+                                </span>
                                 </div>
                                 <div class="flex items-center justify-between gap-2 text-sm">
                                     <span class="text-gray-500">{{ __('messages.ziina_fees_label') }} ({{ rtrim(rtrim(number_format($ziinaFeePct, 1), '0'), '.') }}% + {{ number_format($ziinaFeeFixed, 0) }})</span>
@@ -1266,13 +1266,13 @@
                             <div class="text-xl font-extrabold text-green-700">
                                 <i class="fas fa-check ml-1"></i> دورة مجانية
                             </div>
-                            @endif
+                        @endif
 
                             @if($showApplyDeadline)
                             <div class="course-apply-status {{ $registrationClosed ? 'is-closed' : 'is-open' }}">
                                 <span class="course-apply-status__icon" aria-hidden="true">
                                     <i class="fas {{ $registrationClosed ? 'fa-ban' : 'fa-calendar-check' }}"></i>
-                                </span>
+                                            </span>
                                 <div>
                                     <p class="course-apply-status__title">
                                         {{ $registrationClosed
@@ -1285,8 +1285,8 @@
                                     @if($registrationClosed)
                                     <p class="course-apply-status__hint">{{ __('messages.academy_apply_ended_hint') }}</p>
                                     @endif
+                                        </div>
                                 </div>
-                            </div>
                             @endif
                         </div>
 
@@ -1310,7 +1310,7 @@
                                 <i class="fas fa-clipboard-list"></i>
                                 <span>{{ $examCount }} {{ $examCount == 1 ? 'اختبار' : 'اختبارات' }}</span>
                             </div>
-                            @endif
+                        @endif
                             @if(($contentDurationSeconds ?? 0) > 0)
                             <div class="include-row">
                                 <i class="fas fa-clock"></i>
@@ -1323,7 +1323,7 @@
                         <div class="space-y-2">
                             @php
                                 $wishlisted = (bool) ($course->academy_wishlisted ?? false);
-                            @endphp
+                                @endphp
                             <button type="button"
                                 class="w-full inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition
                                     {{ $wishlisted ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-gray-200 bg-white text-gray-700 hover:border-rose-300 hover:text-rose-600' }}"
@@ -1341,7 +1341,7 @@
                                 @if ($isOwnCourse)
                                 <div class="cta-disabled bg-teal-50 border-teal-200 text-teal-900 text-sm">
                                     {{ __('messages.course_own_cannot_enroll') }}
-                                </div>
+                                    </div>
                                 <a href="{{ route('dashboard.courses.edit', $course) }}"
                                     class="cta-primary inline-flex items-center justify-center gap-2">
                                     <i class="fas fa-pen-to-square"></i>
@@ -1372,14 +1372,14 @@
                                     @endif
                                 @elseif($actual_remaining <= 0)
                                 <div class="cta-disabled bg-red-50 border-red-300 text-red-700 text-sm">
-                                    عذراً، اكتمل العدد ولا توجد مقاعد شاغرة
-                                </div>
+                                        عذراً، اكتمل العدد ولا توجد مقاعد شاغرة
+                                    </div>
                                 @else
                                 <button type="button"
-                                    onclick="handlePayment({{ $course->id }}, {{ $course->price }}, 'course', 'تأكيد الاشتراك')"
+                                        onclick="handlePayment({{ $course->id }}, {{ $course->price }}, 'course', 'تأكيد الاشتراك')"
                                     class="cta-primary">
                                     التحق بالدورة
-                                </button>
+                                    </button>
                                 @if($allowsPrivate)
                                 <a href="{{ $privateRequestUrl }}"
                                     class="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-pink-300 bg-pink-50 px-4 py-3 text-sm font-bold text-pink-700 hover:bg-pink-100 transition">
@@ -1421,13 +1421,13 @@
                         @if ($visibleButtons->isNotEmpty())
                         <div class="mt-4 space-y-2">
                             @foreach ($visibleButtons as $button)
-                            <a href="{{ $button['link'] ?? '#' }}" target="_blank"
+                                    <a href="{{ $button['link'] ?? '#' }}" target="_blank"
                                 class="block text-center px-4 py-2.5 rounded-lg text-white text-sm font-semibold hover:opacity-90"
                                 style="background-color: {{ $button['color'] ?? '#111111' }}">
                                 {{ $locale == 'ar' ? ($button['text_ar'] ?? '') : ($button['text_en'] ?? '') }}
-                            </a>
-                            @endforeach
-                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
                         @endif
 
                         @if ($course->category)
@@ -1453,12 +1453,12 @@
             <div class="soni-grid">
                 @foreach($related_courses as $item)
                     @include('academy.partials.course-card', ['course' => $item, 'locale' => $locale])
-                @endforeach
-            </div>
-        </div>
+                                    @endforeach
+                                </div>
+                            </div>
     </section>
-    @endif
-</div>
+                        @endif
+                    </div>
 
 {{-- Description modal --}}
 <div id="description-modal"
@@ -1470,10 +1470,10 @@
             <button type="button" onclick="closeDescriptionModal()" class="text-white hover:text-gray-200">
                 <i class="fas fa-times text-2xl"></i>
             </button>
-        </div>
+                </div>
         <div class="p-8 overflow-y-auto max-h-[calc(85vh-160px)]">
             <div class="text-lg text-gray-700 leading-relaxed whitespace-pre-line">{{ $description }}</div>
-        </div>
+            </div>
         <div class="p-6 border-t bg-gray-50 flex justify-end">
             <button type="button" onclick="closeDescriptionModal()"
                 class="px-8 py-3 bg-black text-white rounded-lg hover:bg-gray-900 font-semibold">
@@ -1484,31 +1484,31 @@
 </div>
 
 {{-- Payment modal --}}
-<div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-xl font-bold mb-4" id="modalTitle">تأكيد الدفع</h3>
-        <div class="space-y-3 mb-6">
-            <div class="flex justify-between">
-                <span id="priceLabel">السعر:</span>
-                <span id="originalPrice" class="font-bold"></span>
-            </div>
+    <div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4" id="modalTitle">تأكيد الدفع</h3>
+            <div class="space-y-3 mb-6">
+                <div class="flex justify-between">
+                    <span id="priceLabel">السعر:</span>
+                    <span id="originalPrice" class="font-bold"></span>
+                </div>
             <div class="flex justify-between items-center gap-3 text-sm text-gray-600">
                 <span class="inline-flex items-center gap-1 whitespace-nowrap">{{ __('messages.ziina_fees_label') }} ({{ rtrim(rtrim(number_format((float) config('services.ziina.fee_percent', 7.9), 1), '0'), '.') }}% + {{ number_format((float) config('services.ziina.fee_fixed', 2), 0) }} <x-drhm-icon width="12" height="12" />):</span>
                 <span id="fees" class="whitespace-nowrap"></span>
+                </div>
+                <div class="flex justify-between text-lg font-bold border-t pt-3">
+                    <span>الإجمالي:</span>
+                    <span id="totalPrice"></span>
+                </div>
             </div>
-            <div class="flex justify-between text-lg font-bold border-t pt-3">
-                <span>الإجمالي:</span>
-                <span id="totalPrice"></span>
-            </div>
-        </div>
-        <div class="flex gap-3">
-            <button onclick="document.getElementById('paymentModal').classList.add('hidden')"
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('paymentModal').classList.add('hidden')"
                 class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">إلغاء</button>
-            <button onclick="proceedPayment()" id="payButton"
+                <button onclick="proceedPayment()" id="payButton"
                 class="flex-1 bg-black text-white py-2 rounded-lg hover:bg-gray-900">متابعة الدفع</button>
+            </div>
         </div>
     </div>
-</div>
 
 <script>
 (function () {
@@ -1565,7 +1565,7 @@
 })();
 </script>
 
-<script>
+    <script>
     function openDescriptionModal() {
         document.getElementById('description-modal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
@@ -1578,130 +1578,130 @@
         if (e.key === 'Escape') closeDescriptionModal();
     });
 
-    let currentItemId = null;
-    let currentItemType = null;
+        let currentItemId = null;
+        let currentItemType = null;
 
-    async function handlePayment(itemId, price, type, title = 'تأكيد الدفع') {
-        currentItemId = itemId;
-        currentItemType = type;
+        async function handlePayment(itemId, price, type, title = 'تأكيد الدفع') {
+            currentItemId = itemId;
+            currentItemType = type;
 
-        if (price == 0) {
-            const result = await Swal.fire({
+            if (price == 0) {
+                const result = await Swal.fire({
                 title: 'دورة مجانية!',
-                text: 'هذه الدورة مجانية تماماً. هل تريد الاشتراك الآن؟',
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'نعم، اشترك الآن',
-                cancelButtonText: 'إلغاء',
+                    text: 'هذه الدورة مجانية تماماً. هل تريد الاشتراك الآن؟',
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'نعم، اشترك الآن',
+                    cancelButtonText: 'إلغاء',
                 confirmButtonColor: '#111111',
-                cancelButtonColor: '#6B7280'
-            });
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'جاري الاشتراك...',
-                    html: '<i class="fas fa-spinner fa-spin fa-3x"></i>',
-                    showConfirmButton: false,
-                    allowOutsideClick: false
+                    cancelButtonColor: '#6B7280'
                 });
-                await proceedFreeEnrollment();
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'جاري الاشتراك...',
+                        html: '<i class="fas fa-spinner fa-spin fa-3x"></i>',
+                        showConfirmButton: false,
+                        allowOutsideClick: false
+                    });
+                    await proceedFreeEnrollment();
+                }
+                return;
             }
-            return;
-        }
 
         const feePercent = {{ (float) config('services.ziina.fee_percent', 7.9) }};
         const feeFixed = {{ (float) config('services.ziina.fee_fixed', 2) }};
         const fees = (price * (feePercent / 100)) + feeFixed;
-        const total = price + fees;
-        document.getElementById('modalTitle').textContent = title;
+            const total = price + fees;
+            document.getElementById('modalTitle').textContent = title;
         document.getElementById('priceLabel').textContent = type === 'course' ? @json(__('messages.ziina_base_price_label') . ':') : 'سعر النظام:';
         const aedIcon = '<img src="{{ asset('assets/images/drhm-icon.svg') }}" alt="" class="inline-block align-middle" style="width:12px;height:14px">';
         const formatAed = (n) => `<span class="inline-flex items-center gap-1 whitespace-nowrap" dir="ltr">${aedIcon}${Number(n).toFixed(2)}</span>`;
         document.getElementById('originalPrice').innerHTML = formatAed(price);
         document.getElementById('fees').innerHTML = formatAed(fees);
         document.getElementById('totalPrice').innerHTML = formatAed(total);
-        document.getElementById('paymentModal').classList.remove('hidden');
-    }
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
 
-    async function proceedFreeEnrollment() {
-        try {
-            const response = await fetch('{{ route('course.payment.create') }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
+        async function proceedFreeEnrollment() {
+            try {
+                const response = await fetch('{{ route('course.payment.create') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
                 body: JSON.stringify({ course_id: currentItemId })
-            });
-            const data = await response.json();
-            if (data.success && data.is_free) {
-                await Swal.fire({
-                    title: 'تم الاشتراك بنجاح!',
-                    text: data.message,
-                    icon: 'success',
-                    confirmButtonText: 'رائع!',
-                    confirmButtonColor: '#111111'
                 });
-                window.location.reload();
-            } else {
+                const data = await response.json();
+                if (data.success && data.is_free) {
+                    await Swal.fire({
+                    title: 'تم الاشتراك بنجاح!',
+                        text: data.message,
+                        icon: 'success',
+                        confirmButtonText: 'رائع!',
+                    confirmButtonColor: '#111111'
+                    });
+                    window.location.reload();
+                } else {
                 Swal.fire({ title: 'خطأ!', text: data.message || 'حدث خطأ أثناء الاشتراك', icon: 'error' });
-            }
-        } catch (error) {
+                }
+            } catch (error) {
             Swal.fire({ title: 'خطأ!', text: 'حدث خطأ في الاتصال', icon: 'error' });
         }
     }
 
-    async function proceedPayment() {
-        const payButton = document.getElementById('payButton');
-        payButton.disabled = true;
-        payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
-        let endpoint = '';
-        let payload = {};
-        if (currentItemType === 'course') {
-            endpoint = '{{ route('course.payment.create') }}';
+        async function proceedPayment() {
+            const payButton = document.getElementById('payButton');
+            payButton.disabled = true;
+            payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
+            let endpoint = '';
+            let payload = {};
+            if (currentItemType === 'course') {
+                endpoint = '{{ route('course.payment.create') }}';
             payload = { course_id: currentItemId };
-        } else {
-            endpoint = '{{ route('payment.create') }}';
-            payload = { system_id: currentItemId };
-        }
-        try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            if (data.success) {
-                if (data.is_free) {
-                    alert(data.message);
-                    window.location.reload();
-                } else {
-                    window.location.href = data.payment_url;
-                }
             } else {
-                alert(data.message || 'حدث خطأ أثناء إنشاء الدفع');
+                endpoint = '{{ route('payment.create') }}';
+            payload = { system_id: currentItemId };
+            }
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (data.is_free) {
+                        alert(data.message);
+                        window.location.reload();
+                    } else {
+                        window.location.href = data.payment_url;
+                    }
+                } else {
+                    alert(data.message || 'حدث خطأ أثناء إنشاء الدفع');
+                    payButton.disabled = false;
+                    payButton.innerHTML = 'متابعة الدفع';
+                }
+            } catch (error) {
+                alert('حدث خطأ في الاتصال');
                 payButton.disabled = false;
                 payButton.innerHTML = 'متابعة الدفع';
             }
-        } catch (error) {
-            alert('حدث خطأ في الاتصال');
-            payButton.disabled = false;
-            payButton.innerHTML = 'متابعة الدفع';
         }
-    }
 
-    function openModal(imageUrl) {
-        Swal.fire({
-            imageUrl: imageUrl,
+        function openModal(imageUrl) {
+            Swal.fire({
+                imageUrl: imageUrl,
             imageAlt: 'صورة تفصيلية',
-            showCloseButton: true,
-            showConfirmButton: false,
-            background: '#fff',
-            padding: '1rem',
-        });
-    }
+                showCloseButton: true,
+                showConfirmButton: false,
+                background: '#fff',
+                padding: '1rem',
+            });
+        }
 
     @auth
     @if($canEnroll && !$is_already_in && !$registrationClosed && $actual_remaining > 0 && request()->boolean('enroll'))
@@ -1717,7 +1717,7 @@
     });
     @endif
     @endauth
-</script>
+    </script>
 @include('academy.partials.wishlist-script')
 <x-video-protect />
 @endsection

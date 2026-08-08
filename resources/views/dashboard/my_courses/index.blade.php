@@ -176,12 +176,12 @@
     @endif
 
     <div class="mx-auto w-full">
-        @if(session('success'))
+            @if(session('success'))
         <div class="mb-4 p-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200 flex items-center gap-2">
-            <i class="fas fa-check-circle"></i>
-            <span>{{ session('success') }}</span>
-        </div>
-        @endif
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+            @endif
 
         @if(auth()->user()->usesAcademyShell())
         {{-- Academy shell: responsive card grid --}}
@@ -466,8 +466,8 @@
                     <tbody>
                         @forelse($myPayments as $payment)
                         @php
-                            $course = $payment->course;
-                            $now = \Carbon\Carbon::now();
+                        $course = $payment->course;
+                        $now = \Carbon\Carbon::now();
                             $startDate = $course->start_date ? \Carbon\Carbon::parse($course->start_date) : null;
                             $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
                             $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
@@ -510,7 +510,7 @@
                                 @elseif($isFinished)
                                     <span class="px-2 py-1 rounded-full text-[11px] font-medium bg-gray-200 text-gray-700">منتهية</span>
                                 @else
-                                    مدفوع
+                                مدفوع
                                 @endif
                             </td>
                             <td class="px-4 py-4 text-center">
@@ -526,22 +526,22 @@
                                         <x-course-lecture-link :course="$course" :payment="$payment"
                                             label="دخول المحاضرة"
                                             classes="inline-flex items-center px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 animate-pulse">
-                                            <i class="fas fa-video ml-2"></i> دخول المحاضرة
+                                    <i class="fas fa-video ml-2"></i> دخول المحاضرة
                                         </x-course-lecture-link>
-                                        @elseif($isFinished)
-                                        <span class="text-red-500 font-semibold italic text-xs">الدورة انتهت</span>
+                                @elseif($isFinished)
+                                <span class="text-red-500 font-semibold italic text-xs">الدورة انتهت</span>
                                         @if($course->canAccessLectureChat())
                                         <a href="{{ route('dashboard.courses.chat-archive', $course) }}"
                                             class="inline-flex items-center px-3 py-1 bg-slate-700 text-white rounded-lg hover:bg-slate-800 text-xs">
                                             <i class="fas fa-comments ml-1"></i> أرشيف النقاش
                                         </a>
                                         @endif
-                                        @else
-                                        <div class="text-gray-400 text-xs flex flex-col">
-                                            <span>الرابط سيظهر في:</span>
+                                @else
+                                <div class="text-gray-400 text-xs flex flex-col">
+                                    <span>الرابط سيظهر في:</span>
                                             <span class="font-bold">{{ $startDate?->format('Y-m-d h:i A') ?? '—' }}</span>
-                                        </div>
-                                        @endif
+                                </div>
+                                @endif
                                     @elseif($course->location_type == 'recorded')
                                         @if($isFinished)
                                         <span class="text-green-700 font-semibold text-xs">
@@ -555,9 +555,9 @@
                                             <i class="fas fa-route ml-2"></i>
                                             {{ $isFinished ? 'مراجعة المسار' : 'المسار التعليمي' }}
                                         </a>
-                                    @else
-                                        <span class="text-gray-500 text-xs italic">حضور شخصي (مقر)</span>
-                                    @endif
+                                @else
+                                <span class="text-gray-500 text-xs italic">حضور شخصي (مقر)</span>
+                                @endif
 
                                     @if($canCertificate)
                                     <div class="flex flex-wrap items-center justify-center gap-1.5">
@@ -600,9 +600,9 @@
                                     </a>
                                     @if((float) ($payment->course->price ?? 0) > 0)
                                     <a href="{{ route('dashboard.payment.invoice', $payment->id) }}" class="btn-style" title="الفاتورة">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </a>
-                                    @endif
+                                        <i class="fas fa-file-invoice"></i> 
+                                                                            </a>
+                                                                            @endif
                                 </div>
                             </td>
                         </tr>
