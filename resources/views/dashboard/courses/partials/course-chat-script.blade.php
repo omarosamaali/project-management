@@ -582,9 +582,20 @@
         pollTimer = setInterval(poll, ms);
     };
 
+    const setStatus = (text, ok) => {
+        if (!statusEl) return;
+        statusEl.textContent = text;
+        statusEl.classList.toggle('text-green-600', !!ok);
+        statusEl.classList.toggle('text-amber-600', !ok);
+    };
+
     const subscribeChat = (Echo) => {
         if (!courseId) return;
-        stopPolling();
+
+        // Keep a fast poll until the socket is actually connected (Echo existing ≠ connected).
+        startFallbackPolling(2500);
+        setStatus('مزامنة…', false);
+
         Echo.private('course.' + courseId + '.chat')
             .listen('.chat.message.created', (e) => {
                 if (e && e.message) handleRealtimeMessage(e.message);
@@ -612,7 +623,33 @@
                 }
             });
 
-        // Refresh once when tab becomes visible again (missed events while backgrounded).
+        const conn = Echo.connector?.pusher?.connection;
+        const markLive = () => {
+            // Slow safety poll in case an event is missed.
+            startFallbackPolling(20000);
+            setStatus('متصل', true);
+        };
+        const markPolling = () => {
+            startFallbackPolling(2500);
+            setStatus('تحديث دوري', false);
+        };
+
+        if (conn) {
+            conn.bind('connected', markLive);
+            conn.bind('unavailable', markPolling);
+            conn.bind('failed', markPolling);
+            conn.bind('disconnected', markPolling);
+            if (conn.state === 'connected') {
+                markLive();
+            } else {
+                setTimeout(() => {
+                    if (conn.state !== 'connected') markPolling();
+                }, 4000);
+            }
+        } else {
+            markPolling();
+        }
+
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) poll();
         });
@@ -621,26 +658,21 @@
     if (!live) {
         // Archive page: one-shot load is enough.
     } else {
+        // Always poll first so other members see messages even when WSS is down.
+        startFallbackPolling(2500);
+        setStatus('تحديث دوري', false);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) poll();
+        });
+
         const wait = typeof window.whenEchoReady === 'function'
-            ? window.whenEchoReady(8000)
+            ? window.whenEchoReady(3000)
             : (window.Echo
                 ? Promise.resolve(window.Echo)
-                : new Promise((resolve, reject) => {
-                    const started = Date.now();
-                    const t = setInterval(() => {
-                        if (window.Echo) {
-                            clearInterval(t);
-                            resolve(window.Echo);
-                        } else if (Date.now() - started > 8000) {
-                            clearInterval(t);
-                            reject(new Error('Echo timeout'));
-                        }
-                    }, 50);
-                }));
+                : Promise.reject(new Error('Echo missing')));
 
         wait.then(subscribeChat).catch(() => {
-            // Websocket unavailable — fall back to slow polling, not 2.5s.
-            startFallbackPolling(15000);
+            // Stay on polling — Echo unavailable (common on HTTPS + HTTP Reverb).
         });
     }
 })();
