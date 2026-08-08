@@ -133,6 +133,20 @@
                     <code class="bg-slate-100 px-1 rounded">MEETING_API_KEY</code> و
                     <code class="bg-slate-100 px-1 rounded">MEETING_API_SECRET</code> في ملف البيئة قبل الاستخدام.
                 </p>
+                @else
+                <div class="mt-3 p-3 rounded-lg border text-sm {{ ($meetingPing['ok'] ?? false) ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-red-50 border-red-200 text-red-900' }}">
+                    <p class="font-semibold">
+                        {{ ($meetingPing['ok'] ?? false) ? 'اتصال API ناجح' : 'فشل اتصال API من هذا السيرفر' }}
+                    </p>
+                    <p class="mt-1 text-xs font-mono break-all">
+                        host: {{ $meetingBaseHost ?? '(not set)' }}
+                    </p>
+                    <p class="mt-1 text-xs break-words">{{ $meetingPing['message'] ?? '' }}</p>
+                    <p class="mt-2 text-[11px] opacity-80">
+                        إذا ظهر host قديم بعد تعديل .env شغّل على السيرفر:
+                        <code class="bg-white/70 px-1 rounded">php artisan config:clear</code>
+                    </p>
+                </div>
                 @endunless
             </div>
 

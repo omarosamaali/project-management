@@ -5,6 +5,7 @@ namespace App\Support;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
 class MeetingIntegrationClient
 {
@@ -13,6 +14,58 @@ class MeetingIntegrationClient
         return $this->baseUrl() !== ''
             && $this->apiKey() !== ''
             && $this->apiSecret() !== '';
+    }
+
+    /**
+     * Lightweight connectivity + HMAC check for admin diagnostics.
+     *
+     * @return array{ok: bool, message: string, status?: int}
+     */
+    public function ping(): array
+    {
+        if (! $this->isConfigured()) {
+            return [
+                'ok' => false,
+                'message' => 'MEETING_BASE_URL / MEETING_API_KEY / MEETING_API_SECRET missing.',
+            ];
+        }
+
+        try {
+            // Authenticated GET against a non-existent id: 404 = auth+reachability OK; 401 = bad HMAC.
+            $this->request('GET', '/api/v1/meetings/__ping_probe__');
+
+            return ['ok' => true, 'message' => 'Meeting API reachable.', 'status' => 200];
+        } catch (RuntimeException $e) {
+            $code = (int) $e->getCode();
+            $msg = $e->getMessage();
+
+            if ($code === 404 || str_contains($msg, 'HTTP 404')) {
+                return [
+                    'ok' => true,
+                    'message' => 'Meeting API reachable (HMAC accepted). Host: '.$this->baseUrl(),
+                    'status' => 404,
+                ];
+            }
+
+            if ($code === 401 || str_contains($msg, 'HTTP 401')) {
+                return [
+                    'ok' => false,
+                    'message' => 'Reachable but HMAC rejected — check MEETING_API_KEY / MEETING_API_SECRET match the meeting service.',
+                    'status' => 401,
+                ];
+            }
+
+            return [
+                'ok' => false,
+                'message' => $msg,
+                'status' => $code > 0 ? $code : null,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'ok' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
     }
 
     /**

@@ -18,6 +18,15 @@ class AcademySettingsController extends Controller
 
         $profits = Setting::academyTrainerProfitPercentages();
 
+        $meetingApiConfigured = filled(config('services.meeting.base_url'))
+            && filled(config('services.meeting.api_key'))
+            && filled(config('services.meeting.api_secret'));
+
+        $meetingPing = ['ok' => false, 'message' => 'Not configured.'];
+        if ($meetingApiConfigured) {
+            $meetingPing = app(\App\Support\MeetingIntegrationClient::class)->ping();
+        }
+
         return view('dashboard.academy.settings', [
             'academyLogoUrl' => Setting::academyLogoUrl(),
             'academyHeroImageUrl' => Setting::academyHeroImageUrl(),
@@ -28,9 +37,9 @@ class AcademySettingsController extends Controller
             'cashoutMin' => Setting::academyTrainerCashoutMinimum(),
             'cashoutMax' => Setting::academyTrainerCashoutMaximum(),
             'embeddedMeetingsEnabled' => Setting::academyEmbeddedMeetingsEnabled(),
-            'meetingApiConfigured' => filled(config('services.meeting.base_url'))
-                && filled(config('services.meeting.api_key'))
-                && filled(config('services.meeting.api_secret')),
+            'meetingApiConfigured' => $meetingApiConfigured,
+            'meetingPing' => $meetingPing,
+            'meetingBaseHost' => parse_url((string) config('services.meeting.base_url'), PHP_URL_HOST) ?: null,
         ]);
     }
 
