@@ -181,14 +181,20 @@ class CourseLectureController extends Controller
 
         $youtubeEmbed = $useEmbedded ? null : YouTubeLive::embedUrl($course->online_link);
 
-        // Chromium leaves navigator.mediaDevices undefined in a cross-origin iframe when the
-        // top-level academy page is not HTTPS — even with a correct iframe allow= attribute.
+        // Chromium blocks mic/camera in cross-origin iframes when the academy page is HTTP.
+        // Still allow embedding when the join URL is HTTPS (ngrok) so the room can load.
         $parentSecure = request()->secure();
+        $joinIsHttps = is_string($embeddedJoinUrl)
+            && str_starts_with(strtolower($embeddedJoinUrl), 'https://');
         $embeddedInsecureParent = $useEmbedded && ! $parentSecure;
 
         if ($useEmbedded) {
-            $showEmbed = $parentSecure;
-            $openExternalTab = $embeddedInsecureParent && filled($embeddedJoinUrl);
+            // Show iframe whenever we have an https join link, or always on HTTPS academy.
+            $showEmbed = $parentSecure || $joinIsHttps || filled($embeddedMeetingError) || ! $meetingAvailable;
+            $openExternalTab = $embeddedInsecureParent && filled($embeddedJoinUrl) && ! $joinIsHttps;
+            if ($openExternalTab) {
+                $showEmbed = false;
+            }
         } else {
             $showEmbed = $youtubeEmbed !== null;
             $openExternalTab = ! $showEmbed && filled($course->online_link);

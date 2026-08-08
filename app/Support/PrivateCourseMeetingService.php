@@ -132,7 +132,50 @@ class PrivateCourseMeetingService
         ]);
 
         $joinUrl = $result['joinUrl'] ?? null;
+        if (! is_string($joinUrl) || $joinUrl === '') {
+            return null;
+        }
 
-        return is_string($joinUrl) && $joinUrl !== '' ? $joinUrl : null;
+        return $this->rewriteJoinUrlToConfiguredBase($joinUrl);
+    }
+
+    /**
+     * Meeting APIs often mint join links using PUBLIC_APP_URL (e.g. LAN IP) even when
+     * the LMS calls the service through ngrok. Force the LMS MEETING_BASE_URL origin.
+     */
+    protected function rewriteJoinUrlToConfiguredBase(string $joinUrl): string
+    {
+        $base = rtrim((string) config('services.meeting.base_url', ''), '/');
+        if ($base === '') {
+            return $joinUrl;
+        }
+
+        $baseParts = parse_url($base);
+        $joinParts = parse_url($joinUrl);
+        if (! is_array($baseParts) || ! is_array($joinParts) || empty($joinParts['path'])) {
+            return $joinUrl;
+        }
+
+        $scheme = $baseParts['scheme'] ?? 'https';
+        $host = $baseParts['host'] ?? null;
+        if (! $host) {
+            return $joinUrl;
+        }
+
+        $port = isset($baseParts['port']) ? ':'.$baseParts['port'] : '';
+        $path = $joinParts['path'] ?? '/';
+        $query = isset($joinParts['query']) ? '?'.$joinParts['query'] : '';
+        $fragment = isset($joinParts['fragment']) ? '#'.$joinParts['fragment'] : '';
+
+        $rewritten = $scheme.'://'.$host.$port.$path.$query.$fragment;
+
+        if ($rewritten !== $joinUrl) {
+            Log::info('[MEETING] rewrote join URL host', [
+                'from' => $joinParts['host'] ?? null,
+                'to' => $host,
+            ]);
+        }
+
+        return $rewritten;
     }
 }

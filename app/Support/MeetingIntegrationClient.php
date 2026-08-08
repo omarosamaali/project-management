@@ -81,6 +81,8 @@ class MeetingIntegrationClient
                 'X-Api-Key' => $this->apiKey(),
                 'X-Timestamp' => $timestamp,
                 'X-Signature' => $signature,
+                // Free ngrok interstitial breaks JSON clients without this header.
+                'ngrok-skip-browser-warning' => 'true',
             ]);
 
         if (! config('services.meeting.verify_ssl', true)) {

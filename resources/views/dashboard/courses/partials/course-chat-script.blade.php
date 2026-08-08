@@ -567,34 +567,21 @@
     });
 
     updateComposerVisibility();
-    // Initial history load only — realtime updates come from Echo.
+    // History once; live updates only via Echo (no polling loop).
     poll();
-
-    let pollTimer = null;
-    const stopPolling = () => {
-        if (pollTimer) {
-            clearInterval(pollTimer);
-            pollTimer = null;
-        }
-    };
-    const startFallbackPolling = (ms) => {
-        stopPolling();
-        pollTimer = setInterval(poll, ms);
-    };
 
     const setStatus = (text, ok) => {
         if (!statusEl) return;
         statusEl.textContent = text;
         statusEl.classList.toggle('text-green-600', !!ok);
         statusEl.classList.toggle('text-amber-600', !ok);
+        statusEl.classList.toggle('text-red-600', ok === false && text.indexOf('غير') !== -1);
     };
 
     const subscribeChat = (Echo) => {
         if (!courseId) return;
 
-        // Keep a fast poll until the socket is actually connected (Echo existing ≠ connected).
-        startFallbackPolling(2500);
-        setStatus('مزامنة…', false);
+        setStatus('جارٍ الاتصال…', false);
 
         Echo.private('course.' + courseId + '.chat')
             .listen('.chat.message.created', (e) => {
@@ -624,32 +611,25 @@
             });
 
         const conn = Echo.connector?.pusher?.connection;
-        const markLive = () => {
-            // Slow safety poll in case an event is missed.
-            startFallbackPolling(20000);
-            setStatus('متصل', true);
-        };
-        const markPolling = () => {
-            startFallbackPolling(2500);
-            setStatus('تحديث دوري', false);
-        };
+        const markLive = () => setStatus('متصل', true);
+        const markDown = () => setStatus('غير متصل — أعد تشغيل Reverb', false);
 
         if (conn) {
             conn.bind('connected', markLive);
-            conn.bind('unavailable', markPolling);
-            conn.bind('failed', markPolling);
-            conn.bind('disconnected', markPolling);
-            if (conn.state === 'connected') {
-                markLive();
-            } else {
+            conn.bind('unavailable', markDown);
+            conn.bind('failed', markDown);
+            conn.bind('disconnected', markDown);
+            if (conn.state === 'connected') markLive();
+            else {
                 setTimeout(() => {
-                    if (conn.state !== 'connected') markPolling();
-                }, 4000);
+                    if (conn.state !== 'connected') markDown();
+                }, 5000);
             }
         } else {
-            markPolling();
+            markDown();
         }
 
+        // One refresh when returning to the tab (not a poll loop).
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) poll();
         });
@@ -658,21 +638,19 @@
     if (!live) {
         // Archive page: one-shot load is enough.
     } else {
-        // Always poll first so other members see messages even when WSS is down.
-        startFallbackPolling(2500);
-        setStatus('تحديث دوري', false);
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) poll();
-        });
-
         const wait = typeof window.whenEchoReady === 'function'
-            ? window.whenEchoReady(3000)
+            ? window.whenEchoReady(5000)
             : (window.Echo
                 ? Promise.resolve(window.Echo)
                 : Promise.reject(new Error('Echo missing')));
 
         wait.then(subscribeChat).catch(() => {
-            // Stay on polling — Echo unavailable (common on HTTPS + HTTP Reverb).
+            const reason = window.__REVERB_SKIP_REASON__;
+            if (reason === 'https-page-needs-reverb-tls') {
+                setStatus('الويب سوكيت يحتاج HTTP محلي أو Reverb بـ HTTPS', false);
+            } else {
+                setStatus('غير متصل — شغّل php artisan reverb:start', false);
+            }
         });
     }
 })();

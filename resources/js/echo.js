@@ -5,28 +5,31 @@ window.Pusher = Pusher;
 
 const cfg = (typeof window !== 'undefined' && window.__REVERB__) ? window.__REVERB__ : {};
 const key = cfg.key || import.meta.env.VITE_REVERB_APP_KEY;
-const scheme = cfg.scheme || import.meta.env.VITE_REVERB_SCHEME || 'http';
+const scheme = (cfg.scheme || import.meta.env.VITE_REVERB_SCHEME || 'http').toLowerCase();
 const configuredHost = cfg.host || import.meta.env.VITE_REVERB_HOST || 'localhost';
 const wsPort = Number(cfg.port || import.meta.env.VITE_REVERB_PORT || 8080);
 
+const pageHost = (typeof window !== 'undefined' && window.location?.hostname)
+    ? window.location.hostname
+    : configuredHost;
 const pageIsHttps = typeof window !== 'undefined'
     && window.location?.protocol === 'https:';
 
-// Pusher-js forces WSS on HTTPS pages. An HTTP-only Reverb (:8080) will never connect.
+// Pusher-js always uses WSS on HTTPS pages. HTTP-only Reverb cannot serve that.
 const reverbTls = scheme === 'https';
-const echoCompatible = Boolean(key) && (!pageIsHttps || reverbTls);
-
-if (!echoCompatible) {
+if (!key || (pageIsHttps && !reverbTls)) {
     window.Echo = undefined;
+    window.__REVERB_SKIP_REASON__ = !key
+        ? 'missing-key'
+        : 'https-page-needs-reverb-tls';
 } else {
-    const pageHost = (typeof window !== 'undefined' && window.location?.hostname)
-        ? window.location.hostname
-        : configuredHost;
-
     const isLoopbackOrLan = /^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})$/i
         .test(pageHost);
     const hostIsLocal = /^(localhost|127\.0\.0\.1)$/i.test(String(configuredHost || ''));
-    const wsHost = (isLoopbackOrLan || hostIsLocal) ? pageHost : configuredHost;
+    // LAN/dev: hit the same machine the page is on. Public HTTPS: use configured host.
+    const wsHost = (!reverbTls && (isLoopbackOrLan || hostIsLocal))
+        ? pageHost
+        : configuredHost;
 
     window.Echo = new Echo({
         broadcaster: 'reverb',
@@ -35,7 +38,8 @@ if (!echoCompatible) {
         wsPort,
         wssPort: wsPort,
         forceTLS: reverbTls,
-        enabledTransports: reverbTls ? ['ws', 'wss'] : ['ws'],
+        enabledTransports: reverbTls ? ['wss', 'ws'] : ['ws'],
+        disableStats: true,
         authEndpoint: '/broadcasting/auth',
     });
 }
