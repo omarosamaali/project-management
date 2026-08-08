@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/css/intlTelInput.css">
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    @include('partials.reverb-config')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>

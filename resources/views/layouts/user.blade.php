@@ -14,6 +14,7 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/css/intlTelInput.css">
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/images/fav-icon.webp') }}">
+    @include('partials.reverb-config')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @php
         $authUi = \App\Support\AuthUi::resolve();

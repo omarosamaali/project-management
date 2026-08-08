@@ -167,6 +167,9 @@ class CourseLectureController extends Controller
                     'error' => $e->getMessage(),
                 ]);
                 $embeddedMeetingError = 'خدمة الاجتماعات غير متاحة حالياً. حاول لاحقاً.';
+                if (config('app.debug')) {
+                    $embeddedMeetingError .= ' ('.$e->getMessage().')';
+                }
             }
         }
 
@@ -320,10 +323,12 @@ class CourseLectureController extends Controller
         ]);
         $message->load('user:id,name,role,avatar');
 
-        broadcast(CourseChatMessageCreated::fromMessage(
-            $message,
-            $this->formatMessageForBroadcast($message)
-        ))->toOthers();
+        $this->safeBroadcast(
+            CourseChatMessageCreated::fromMessage(
+                $message,
+                $this->formatMessageForBroadcast($message)
+            )
+        );
 
         return response()->json([
             'message' => $this->formatMessage($message, $course->canModerateChat(Auth::user())),
@@ -342,10 +347,10 @@ class CourseLectureController extends Controller
         ]);
 
         $fresh = $message->fresh('user');
-        broadcast(new CourseChatMessageUpdated(
+        $this->safeBroadcast(new CourseChatMessageUpdated(
             (int) $course->id,
             $this->formatMessageForBroadcast($fresh)
-        ))->toOthers();
+        ));
 
         return response()->json(['ok' => true, 'message' => $this->formatMessage($fresh, true)]);
     }
@@ -362,10 +367,10 @@ class CourseLectureController extends Controller
         ]);
 
         $fresh = $message->fresh('user');
-        broadcast(new CourseChatMessageUpdated(
+        $this->safeBroadcast(new CourseChatMessageUpdated(
             (int) $course->id,
             $this->formatMessageForBroadcast($fresh)
-        ))->toOthers();
+        ));
 
         return response()->json(['ok' => true, 'message' => $this->formatMessage($fresh, true)]);
     }
@@ -394,7 +399,7 @@ class CourseLectureController extends Controller
             ['blocked_by' => Auth::id(), 'reason' => $data['reason'] ?? null]
         );
 
-        broadcast(new CourseChatUserModerationChanged((int) $course->id, $targetId, true))->toOthers();
+        $this->safeBroadcast(new CourseChatUserModerationChanged((int) $course->id, $targetId, true));
 
         return response()->json(['ok' => true]);
     }
@@ -407,7 +412,7 @@ class CourseLectureController extends Controller
             ->where('user_id', $userId)
             ->delete();
 
-        broadcast(new CourseChatUserModerationChanged((int) $course->id, (int) $userId, false))->toOthers();
+        $this->safeBroadcast(new CourseChatUserModerationChanged((int) $course->id, (int) $userId, false));
 
         return response()->json(['ok' => true]);
     }
@@ -427,10 +432,10 @@ class CourseLectureController extends Controller
             'chat_locked_for_trainees' => (bool) $data['locked'],
         ]);
 
-        broadcast(new CourseChatLockToggled(
+        $this->safeBroadcast(new CourseChatLockToggled(
             (int) $course->id,
             (bool) $course->chat_locked_for_trainees
-        ))->toOthers();
+        ));
 
         return response()->json([
             'ok' => true,
@@ -506,5 +511,20 @@ class CourseLectureController extends Controller
         $payload['can_moderate'] = false;
 
         return $payload;
+    }
+
+    /**
+     * Broadcast without failing the HTTP request when Reverb is down.
+     */
+    protected function safeBroadcast(object $event): void
+    {
+        try {
+            broadcast($event)->toOthers();
+        } catch (Throwable $e) {
+            Log::warning('[CHAT] broadcast failed', [
+                'event' => $event::class,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

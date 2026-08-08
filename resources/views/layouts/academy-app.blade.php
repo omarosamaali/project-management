@@ -12,6 +12,7 @@
         integrity="sha512-Kc323vGBEqzTmouAECnVceyQqyqdsSiqLQISBL29aUW4U/M7pSPA/gEUZQqv1cwx4OnYxTxve5UMg5GT6L4JJg=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/images/fav-icon.webp') }}">
+    @include('partials.reverb-config')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         :root {
