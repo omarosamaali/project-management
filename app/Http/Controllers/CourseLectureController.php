@@ -152,7 +152,9 @@ class CourseLectureController extends Controller
             try {
                 $service = app(PrivateCourseMeetingService::class);
                 if (! $service->usesEmbeddedMeetings()) {
-                    $embeddedMeetingError = 'الاجتماعات المضمّنة مفعّلة لكن إعدادات MEETING_* غير مكتملة في البيئة.';
+                    $base = (string) config('services.meeting.base_url', '');
+                    $embeddedMeetingError = 'الاجتماعات المضمّنة مفعّلة لكن إعدادات MEETING_* غير مكتملة في البيئة.'
+                        .' (base='.($base !== '' ? parse_url($base, PHP_URL_HOST) : 'missing').')';
                 } else {
                     $embeddedJoinUrl = $service->joinUrlForUser($course, $user);
                     $course->refresh();
@@ -164,12 +166,13 @@ class CourseLectureController extends Controller
                 Log::warning('[MEETING] join URL failed', [
                     'course_id' => $course->id,
                     'user_id' => $user?->id,
+                    'meeting_base' => config('services.meeting.base_url'),
                     'error' => $e->getMessage(),
                 ]);
-                $embeddedMeetingError = 'خدمة الاجتماعات غير متاحة حالياً. حاول لاحقاً.';
-                if (config('app.debug')) {
-                    $embeddedMeetingError .= ' ('.$e->getMessage().')';
-                }
+                // Always surface a short technical hint — this feature is experimental.
+                $hint = $this->summarizeMeetingError($e->getMessage());
+                $embeddedMeetingError = 'خدمة الاجتماعات غير متاحة حالياً. حاول لاحقاً.'
+                    .($hint !== '' ? ' — '.$hint : '');
             }
         }
 
@@ -517,6 +520,41 @@ class CourseLectureController extends Controller
         $payload['can_moderate'] = false;
 
         return $payload;
+    }
+
+    /**
+     * Short, safe hint for the lecture UI (no secrets).
+     */
+    protected function summarizeMeetingError(string $raw): string
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return '';
+        }
+
+        if (str_contains($raw, 'cURL error 28') || str_contains(strtolower($raw), 'timed out')) {
+            return 'انتهت مهلة الاتصال بخادم الاجتماعات (تحقق أن MEETING_BASE_URL يصل من هذا السيرفر، مثل رابط ngrok).';
+        }
+        if (str_contains($raw, 'cURL error 6') || str_contains(strtolower($raw), 'could not resolve')) {
+            return 'تعذّر حل اسم مضيف MEETING_BASE_URL من السيرفر.';
+        }
+        if (str_contains($raw, 'cURL error 7') || str_contains(strtolower($raw), 'failed to connect')) {
+            return 'تعذّر الاتصال بـ MEETING_BASE_URL (السيرفر لا يصل للعنوان، غالباً IP محلي من الاستضافة).';
+        }
+        if (str_contains($raw, 'cURL error 60') || str_contains(strtolower($raw), 'ssl certificate')) {
+            return 'مشكلة شهادة SSL — جرّب MEETING_SSL_VERIFY=false محلياً فقط.';
+        }
+        if (preg_match('/HTTP (\d{3})/i', $raw, $m)) {
+            return 'ردّ API بالخطأ HTTP '.$m[1].' (مفاتيح HMAC أو حالة الاجتماع).';
+        }
+        if (str_contains($raw, 'not configured')) {
+            return 'MEETING_BASE_URL / MEETING_API_KEY / MEETING_API_SECRET غير مكتملة على هذا السيرفر.';
+        }
+
+        // Keep last path segment of URL noise out; cap length.
+        $clean = preg_replace('/https?:\/\/[^\s]+/i', '[url]', $raw) ?? $raw;
+
+        return mb_substr($clean, 0, 180);
     }
 
     /**

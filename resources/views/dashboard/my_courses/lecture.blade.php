@@ -309,6 +309,11 @@
     <div class="mb-3 p-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg">
         <i class="fas fa-exclamation-triangle ml-1"></i>
         {{ $embeddedMeetingError }}
+        <p class="mt-2 text-[11px] text-red-700/80 font-mono break-all">
+            server MEETING_BASE_URL host:
+            {{ parse_url((string) config('services.meeting.base_url'), PHP_URL_HOST) ?: '(not set)' }}
+            · page: {{ request()->getSchemeAndHttpHost() }}
+        </p>
     </div>
     @elseif(($embeddedInsecureParent ?? false) && ($useEmbeddedMeeting ?? false))
     <div class="mb-3 p-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg">
