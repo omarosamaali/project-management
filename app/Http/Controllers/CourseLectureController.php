@@ -557,6 +557,10 @@ class CourseLectureController extends Controller
             return 'مشكلة شهادة SSL — جرّب MEETING_SSL_VERIFY=false محلياً فقط.';
         }
         if (preg_match('/HTTP (\d{3})/i', $raw, $m)) {
+            if ($m[1] === '409') {
+                return 'تعارض 409: الاجتماع منتهٍ أو ممتلئ أو externalId مكرر — سيتم إنشاء اجتماع جديد تلقائياً بعد التحديث.';
+            }
+
             return 'ردّ API بالخطأ HTTP '.$m[1].' (مفاتيح HMAC أو حالة الاجتماع).';
         }
         if (str_contains($raw, 'not configured')) {

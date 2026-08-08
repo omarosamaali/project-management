@@ -136,6 +136,8 @@ class MeetingIntegrationClient
                 'X-Signature' => $signature,
                 // Free ngrok interstitial breaks JSON clients without this header.
                 'ngrok-skip-browser-warning' => 'true',
+                // Avoid browser-like UA so ngrok is less likely to return the HTML warning page.
+                'User-Agent' => 'EvorqMeetingClient/1.0',
             ]);
 
         if (! config('services.meeting.verify_ssl', true)) {
@@ -199,7 +201,12 @@ class MeetingIntegrationClient
 
     protected function looksLikeNgrokInterstitial(string $body): bool
     {
-        $sample = strtolower(mb_substr($body, 0, 2000));
+        $trim = ltrim($body);
+        if ($trim === '' || str_starts_with($trim, '{') || str_starts_with($trim, '[')) {
+            return false;
+        }
+
+        $sample = strtolower(mb_substr($trim, 0, 2000));
 
         return str_contains($sample, 'ngrok')
             && (
@@ -207,6 +214,8 @@ class MeetingIntegrationClient
                 || str_contains($sample, 'visit site')
                 || str_contains($sample, 'browser warning')
                 || str_contains($sample, 'ngrok-free')
+                || str_contains($sample, '<!doctype html')
+                || str_contains($sample, '<html')
             );
     }
 
