@@ -10,6 +10,7 @@ use App\Models\Course;
 use App\Models\CourseChatBlock;
 use App\Models\CourseChatMessage;
 use App\Models\Payment;
+use App\Support\MeetingIntegrationClient;
 use App\Support\MeetingLink;
 use App\Support\PrivateCourseMeetingService;
 use App\Support\YouTubeLive;
@@ -185,18 +186,25 @@ class CourseLectureController extends Controller
         $youtubeEmbed = $useEmbedded ? null : YouTubeLive::embedUrl($course->online_link);
 
         // Chromium blocks mic/camera in cross-origin iframes when the academy page is HTTP.
-        // Still allow embedding when the join URL is HTTPS (ngrok) so the room can load.
+        // Free ngrok also injects a browser warning that iframes cannot skip (no custom headers).
         $parentSecure = request()->secure();
         $joinIsHttps = is_string($embeddedJoinUrl)
             && str_starts_with(strtolower($embeddedJoinUrl), 'https://');
+        $usesNgrok = app(MeetingIntegrationClient::class)->usesNgrokTunnel();
         $embeddedInsecureParent = $useEmbedded && ! $parentSecure;
+        $embeddedNgrokExternal = $useEmbedded && $usesNgrok && filled($embeddedJoinUrl);
 
         if ($useEmbedded) {
-            // Show iframe whenever we have an https join link, or always on HTTPS academy.
-            $showEmbed = $parentSecure || $joinIsHttps || filled($embeddedMeetingError) || ! $meetingAvailable;
-            $openExternalTab = $embeddedInsecureParent && filled($embeddedJoinUrl) && ! $joinIsHttps;
-            if ($openExternalTab) {
+            if ($embeddedNgrokExternal) {
+                // Open meeting in a top-level tab so the user can pass ngrok's warning once.
                 $showEmbed = false;
+                $openExternalTab = true;
+            } else {
+                $showEmbed = $parentSecure || $joinIsHttps || filled($embeddedMeetingError) || ! $meetingAvailable;
+                $openExternalTab = $embeddedInsecureParent && filled($embeddedJoinUrl) && ! $joinIsHttps;
+                if ($openExternalTab) {
+                    $showEmbed = false;
+                }
             }
         } else {
             $showEmbed = $youtubeEmbed !== null;
@@ -212,6 +220,7 @@ class CourseLectureController extends Controller
             'embeddedJoinUrl' => $embeddedJoinUrl,
             'embeddedMeetingError' => $embeddedMeetingError,
             'embeddedInsecureParent' => $embeddedInsecureParent,
+            'embeddedNgrokExternal' => $embeddedNgrokExternal,
         ];
     }
 
@@ -532,6 +541,9 @@ class CourseLectureController extends Controller
             return '';
         }
 
+        if (str_contains($raw, 'ngrok')) {
+            return 'تحذير متصفح ngrok يمنع iframe — يُفتح الاجتماع في تبويب جديد، أو استخدم نفقاً بدون صفحة تحذير.';
+        }
         if (str_contains($raw, 'cURL error 28') || str_contains(strtolower($raw), 'timed out')) {
             return 'انتهت مهلة الاتصال بخادم الاجتماعات (تحقق أن MEETING_BASE_URL يصل من هذا السيرفر، مثل رابط ngrok).';
         }

@@ -315,6 +315,16 @@
             · page: {{ request()->getSchemeAndHttpHost() }}
         </p>
     </div>
+    @elseif(($embeddedNgrokExternal ?? false) && ($useEmbeddedMeeting ?? false))
+    <div class="mb-3 p-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg">
+        <i class="fas fa-external-link-alt ml-1"></i>
+        رابط الاجتماع عبر <strong>ngrok المجاني</strong> لا يعمل داخل iframe بسبب صفحة تحذير المتصفح
+        (لا يمكن إرسال هيدر التجاوز من الإطار).
+        يُفتح الاجتماع في <strong>تبويب جديد</strong> — اضغط «Visit Site» مرة إن ظهرت، وأبقِ هذه الصفحة للنقاش.
+        <span class="inline-flex items-center gap-1 ms-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-950 border border-amber-300">
+            ميزة تجريبية — غير جاهزة للإنتاج
+        </span>
+    </div>
     @elseif(($embeddedInsecureParent ?? false) && ($useEmbeddedMeeting ?? false))
     <div class="mb-3 p-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg">
         <i class="fas fa-exclamation-triangle ml-1"></i>

@@ -151,22 +151,63 @@ class MeetingIntegrationClient
         }
 
         if (! $response->successful()) {
+            $body = $response->body();
             Log::warning('[MEETING] API request failed', [
                 'method' => $method,
                 'path' => $path,
                 'status' => $response->status(),
-                'body' => $response->body(),
+                'body' => mb_substr($body, 0, 500),
             ]);
 
+            if ($this->looksLikeNgrokInterstitial($body)) {
+                throw new RuntimeException(
+                    'ngrok browser warning blocked the API response. Server calls need header ngrok-skip-browser-warning; iframes cannot set it — use a new tab or a paid/stable tunnel.',
+                    $response->status()
+                );
+            }
+
             throw new RuntimeException(
-                'Meeting API error HTTP ' . $response->status() . ': ' . $response->body(),
+                'Meeting API error HTTP ' . $response->status() . ': ' . mb_substr($body, 0, 300),
                 $response->status()
+            );
+        }
+
+        $contentType = strtolower((string) $response->header('Content-Type', ''));
+        $body = $response->body();
+        if ($this->looksLikeNgrokInterstitial($body) || (str_contains($contentType, 'text/html') && ! str_contains($contentType, 'json'))) {
+            throw new RuntimeException(
+                'ngrok browser warning HTML returned instead of JSON. Add ngrok-skip-browser-warning on API calls, or avoid free-ngrok iframes.'
             );
         }
 
         $json = $response->json();
 
         return is_array($json) ? $json : [];
+    }
+
+    public function usesNgrokTunnel(): bool
+    {
+        $host = strtolower((string) (parse_url($this->baseUrl(), PHP_URL_HOST) ?: ''));
+
+        return $host !== '' && (
+            str_contains($host, 'ngrok-free.app')
+            || str_contains($host, 'ngrok-free.dev')
+            || str_contains($host, 'ngrok.io')
+            || str_ends_with($host, '.ngrok.app')
+        );
+    }
+
+    protected function looksLikeNgrokInterstitial(string $body): bool
+    {
+        $sample = strtolower(mb_substr($body, 0, 2000));
+
+        return str_contains($sample, 'ngrok')
+            && (
+                str_contains($sample, 'err_ngrok')
+                || str_contains($sample, 'visit site')
+                || str_contains($sample, 'browser warning')
+                || str_contains($sample, 'ngrok-free')
+            );
     }
 
     protected function baseUrl(): string
