@@ -571,42 +571,16 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 <script>
 @auth
-(function () {
-    const checkUrl = @json(route('dashboard.courses.exam.pending-check'));
-    const path = window.location.pathname;
-    if (/\/courses\/[^/]+\/exam/.test(path)) return;
-
-    let redirecting = false;
-    const poll = () => {
-        if (redirecting || document.hidden) return;
-        fetch(checkUrl, {
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin'
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.redirect || redirecting) return;
-            redirecting = true;
-            const go = () => { window.location.href = data.redirect; };
-            if (typeof Swal === 'undefined') { go(); return; }
-            Swal.fire({
-                title: 'الاختبار متاح الآن',
-                text: data.course_name ? ('يتم تحويلك لاختبار: ' + data.course_name) : 'يتم تحويلك لصفحة الاختبار الآن',
-                icon: 'info',
-                timer: 900,
-                showConfirmButton: false,
-                allowOutsideClick: false,
-            }).then(go);
-            setTimeout(go, 1000);
-        })
-        .catch(() => {});
-    };
-    poll();
-    setInterval(poll, 2000);
-    document.addEventListener('visibilitychange', function () {
-        if (!document.hidden) poll();
-    });
-})();
+@if(auth()->user()->role !== 'admin')
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.setupDayExamRealtime === 'function') {
+        window.setupDayExamRealtime({
+            checkUrl: @json(route('dashboard.courses.exam.pending-check')),
+            userId: {{ (int) auth()->id() }},
+        });
+    }
+});
+@endif
 @endauth
 </script>
 @stack('scripts')

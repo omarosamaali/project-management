@@ -14,7 +14,7 @@ $endDate = \Carbon\Carbon::parse($course->end_date);
 $now = \Carbon\Carbon::now();
 $pathCompletion = $isRecorded ? $course->pathCompletionForUser($learnerId) : null;
 
-$hasMeetingLink = filled($course->online_link);
+$hasMeetingLink = $course->hasLiveMeetingAccess();
 $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
 // منطق ظهور الرابط (قبل 30 دقيقة) — للأونلاين والدورات الخاصة فقط عند وجود رابط
 $showLink = $isLiveMeetingCourse
@@ -432,6 +432,18 @@ $typeLabel = match ($course->location_type) {
                         <p class="font-bold">بانتظار رابط الاجتماع من المحاضر.</p>
                         <p>إذا مرّ موعد بدء الدورة بدون رابط، تُلغى الدورة تلقائياً ويُنشأ طلب استرداد للمتدرب.</p>
                     </div>
+                </div>
+                @elseif($showLink && $course->usesEmbeddedMeeting())
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p class="text-sm text-blue-700 dark:text-blue-400">
+                        الاجتماع المضمّن جاهز — انضم من غرفة المحاضرة داخل المنصة.
+                        <span class="inline-flex items-center gap-1 ms-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                            تجريبي
+                        </span>
+                    </p>
+                    <x-course-lecture-link :course="$course" :payment="$payment"
+                        label="انضم الآن"
+                        classes="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold" />
                 </div>
                 @elseif($showLink)
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">

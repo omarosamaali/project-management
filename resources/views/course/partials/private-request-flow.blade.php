@@ -2,6 +2,7 @@
 @php
     $locale = $locale ?? app()->getLocale();
     $activeStep = (int) ($activeStep ?? 1);
+    $isFreePrivate = (bool) ($isFreePrivate ?? false);
     $steps = [
         1 => [
             'title' => __('messages.private_flow_step_1_title'),
@@ -19,13 +20,13 @@
             'icon' => 'fa-handshake',
         ],
         4 => [
-            'title' => __('messages.private_flow_step_4_title'),
-            'body' => __('messages.private_flow_step_4_body'),
-            'icon' => 'fa-credit-card',
+            'title' => __($isFreePrivate ? 'messages.private_flow_step_4_title_free' : 'messages.private_flow_step_4_title'),
+            'body' => __($isFreePrivate ? 'messages.private_flow_step_4_body_free' : 'messages.private_flow_step_4_body'),
+            'icon' => $isFreePrivate ? 'fa-gift' : 'fa-credit-card',
         ],
         5 => [
             'title' => __('messages.private_flow_step_5_title'),
-            'body' => __('messages.private_flow_step_5_body'),
+            'body' => __($isFreePrivate ? 'messages.private_flow_step_5_body_free' : 'messages.private_flow_step_5_body'),
             'icon' => 'fa-graduation-cap',
         ],
     ];

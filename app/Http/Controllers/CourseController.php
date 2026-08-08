@@ -21,6 +21,7 @@ use App\Models\CourseWishlist;
 use App\Models\Setting;
 use App\Models\TrainerOffDay;
 use App\Support\CourseScheduleCalculator;
+use App\Support\DayExamRealtimeNotifier;
 use App\Support\YouTubeLive;
 use App\Support\LessonVideoSource;
 use App\Support\VideoDownloadGuard;
@@ -1051,6 +1052,8 @@ class CourseController extends Controller
             'skipped_by' => null,
         ]);
 
+        DayExamRealtimeNotifier::notifyCourseAttendees($course, $dayExam->fresh());
+
         return back()->with('success', 'تم بدء الاختبار. سيتم تحويل الحضور تلقائياً لصفحة الاختبار.');
     }
 
@@ -1295,6 +1298,10 @@ class CourseController extends Controller
         $payment->is_attended = !$payment->is_attended;
         $payment->save();
 
+        if ($payment->is_attended && $payment->user_id) {
+            DayExamRealtimeNotifier::notifyUserIfExamPending((int) $payment->user_id);
+        }
+
         return back()->with('success', 'تم تحديث حالة الحضور بنجاح');
     }
 
@@ -1314,6 +1321,18 @@ class CourseController extends Controller
             ->whereIn('id', $data['payment_ids'])
             ->where('is_attended', !$markAsAttended)
             ->update(['is_attended' => $markAsAttended]);
+
+        if ($markAsAttended && $updated > 0) {
+            $running = $course->runningDayExam();
+            if ($running) {
+                $userIds = Payment::where('course_id', $course->id)
+                    ->whereIn('id', $data['payment_ids'])
+                    ->pluck('user_id');
+                foreach ($userIds as $userId) {
+                    DayExamRealtimeNotifier::notifyUserIfExamPending((int) $userId);
+                }
+            }
+        }
 
         if ($updated === 0) {
             return back()->with(

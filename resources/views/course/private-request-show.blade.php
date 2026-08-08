@@ -422,7 +422,11 @@
     </div>
     @else
     <div class="pr-card">
-        @include('course.partials.private-request-flow', ['activeStep' => $activeStep, 'locale' => $locale])
+        @include('course.partials.private-request-flow', [
+            'activeStep' => $activeStep,
+            'locale' => $locale,
+            'isFreePrivate' => (float) $privateRequest->private_price <= 0,
+        ])
     </div>
     @endif
 
@@ -434,11 +438,18 @@
                 <dd>
                     @php
                         $prBase = (float) $privateRequest->private_price;
+                        $prIsFree = $prBase <= 0;
                         $prFeePct = (float) config('services.ziina.fee_percent', 7.9);
                         $prFeeFixed = (float) config('services.ziina.fee_fixed', 2);
-                        $prFees = round(($prBase * ($prFeePct / 100)) + $prFeeFixed, 2);
-                        $prTotal = round($prBase + $prFees, 2);
+                        $prFees = $prIsFree ? 0.0 : round(($prBase * ($prFeePct / 100)) + $prFeeFixed, 2);
+                        $prTotal = $prIsFree ? 0.0 : round($prBase + $prFees, 2);
                     @endphp
+                    @if($prIsFree)
+                    <span class="inline-flex items-center gap-1.5 text-emerald-700 font-bold">
+                        <i class="fas fa-gift"></i>
+                        {{ __('messages.private_request_free_label') }}
+                    </span>
+                    @else
                     <span class="inline-flex flex-col items-start gap-1" dir="ltr">
                         <span class="inline-flex items-center gap-1.5">
                             <x-drhm-icon width="14" height="16" />
@@ -451,6 +462,7 @@
                             {{ __('messages.ziina_total_label') }}: {{ number_format($prTotal, 2) }}
                         </span>
                     </span>
+                    @endif
                 </dd>
             </div>
             @if($privateRequest->trainee)
@@ -517,10 +529,17 @@
 
         @if($isTrainee && $status === PrivateCourseRequest::STATUS_AWAITING_PAYMENT)
         <div class="pr-action-box">
+            @if((float) $privateRequest->private_price <= 0)
+            <p class="pr-action-title">{{ __('messages.private_flow_step_4_body_free') }}</p>
+            <button type="button" onclick="payPrivateRequest()" class="pr-btn pr-btn-primary">
+                <i class="fas fa-gift"></i> {{ __('messages.private_request_confirm_free') }}
+            </button>
+            @else
             <p class="pr-action-title">{{ __('messages.private_flow_step_4_body') }}</p>
             <button type="button" onclick="payPrivateRequest()" class="pr-btn pr-btn-primary">
                 <i class="fas fa-credit-card"></i> {{ __('messages.private_request_pay_now') }}
             </button>
+            @endif
         </div>
         @endif
 
@@ -602,10 +621,29 @@
                 {{ __('messages.private_meeting_link_title') }}
             </p>
 
+            @php
+                $embeddedMeetingsOn = \App\Models\Setting::academyEmbeddedMeetingsEnabled();
+            @endphp
+
             @if($privateCourse->isCanceled())
             <p class="text-sm text-red-700 font-bold">
                 {{ $locale === 'ar' ? 'تم إلغاء الدورة الخاصة.' : 'This private course was canceled.' }}
             </p>
+            @elseif($embeddedMeetingsOn)
+            <div class="p-3 text-sm text-teal-900 bg-teal-50 border border-teal-200 rounded-xl space-y-2">
+                <p class="font-bold">
+                    <i class="fas fa-video ml-1"></i>
+                    {{ $locale === 'ar' ? 'الاجتماع المضمّن مفعّل لهذه الدورة الخاصة.' : 'Embedded meeting is enabled for this private course.' }}
+                </p>
+                <p class="text-xs text-teal-800">
+                    {{ $locale === 'ar'
+                        ? 'لا حاجة لإضافة رابط يوتيوب أو رابط خارجي. الانضمام يتم من غرفة المحاضرة داخل المنصة.'
+                        : 'No YouTube/external link is required. Join from the in-app lecture room.' }}
+                </p>
+                <span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                    ميزة تجريبية — غير جاهزة للإنتاج
+                </span>
+            </div>
             @elseif(($isTrainer || $isAdmin) && $canEditMeetingLink)
             @php
                 $isYouTubeLink = \App\Support\YouTubeLive::isYouTubeUrl(old('online_link', $privateCourse->online_link));
@@ -719,7 +757,7 @@
             <a href="{{ $traineeCoursesUrl }}" class="pr-btn pr-btn-primary inline-flex">
                 <i class="fas fa-graduation-cap"></i> {{ $locale === 'ar' ? 'الذهاب لدورتي الخاصة' : 'Go to my private course' }}
             </a>
-            @elseif($privateCourse->online_link && ($isTrainer || $isAdmin))
+            @elseif(($isTrainer || $isAdmin) && $privateCourse->hasLiveMeetingAccess())
             <a href="{{ route('dashboard.courses.lecture', $privateCourse) }}" class="pr-btn pr-btn-outline inline-flex">
                 <i class="fas fa-door-open"></i> {{ $locale === 'ar' ? 'غرفة المحاضرة' : 'Lecture room' }}
             </a>
@@ -768,25 +806,40 @@
 async function payPrivateRequest() {
     const btn = event.currentTarget;
     const base = {{ (float) $privateRequest->private_price }};
-    const feePercent = {{ (float) config('services.ziina.fee_percent', 7.9) }};
-    const feeFixed = {{ (float) config('services.ziina.fee_fixed', 2) }};
-    const fees = (base * (feePercent / 100)) + feeFixed;
-    const total = base + fees;
+    const isFree = base <= 0;
 
-    const confirmed = await Swal.fire({
-        title: @json(__('messages.ziina_total_label')),
-        html: `<div style="text-align:start;line-height:1.8">
-            <div>{{ __('messages.ziina_base_price_label') }}: <b>${base.toFixed(2)} AED</b></div>
-            <div>{{ __('messages.ziina_fees_label') }}: <b>${fees.toFixed(2)} AED</b></div>
-            <div style="margin-top:.5rem;font-size:1.1rem">{{ __('messages.ziina_total_label') }}: <b>${total.toFixed(2)} AED</b></div>
-        </div>`,
-        icon: 'info',
-        showCancelButton: true,
-        confirmButtonText: @json(__('messages.ziina_confirm_pay')),
-        cancelButtonText: @json(__('messages.close') === 'messages.close' ? 'Cancel' : __('messages.close')),
-        confirmButtonColor: '#111111',
-    });
-    if (!confirmed.isConfirmed) return;
+    if (isFree) {
+        const confirmed = await Swal.fire({
+            title: @json(__('messages.private_request_confirm_free')),
+            text: @json(__('messages.private_request_free_confirm_text')),
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: @json(__('messages.private_request_confirm_free')),
+            cancelButtonText: @json(__('messages.close') === 'messages.close' ? 'Cancel' : __('messages.close')),
+            confirmButtonColor: '#0b8f7f',
+        });
+        if (!confirmed.isConfirmed) return;
+    } else {
+        const feePercent = {{ (float) config('services.ziina.fee_percent', 7.9) }};
+        const feeFixed = {{ (float) config('services.ziina.fee_fixed', 2) }};
+        const fees = (base * (feePercent / 100)) + feeFixed;
+        const total = base + fees;
+
+        const confirmed = await Swal.fire({
+            title: @json(__('messages.ziina_total_label')),
+            html: `<div style="text-align:start;line-height:1.8">
+                <div>{{ __('messages.ziina_base_price_label') }}: <b>${base.toFixed(2)} AED</b></div>
+                <div>{{ __('messages.ziina_fees_label') }}: <b>${fees.toFixed(2)} AED</b></div>
+                <div style="margin-top:.5rem;font-size:1.1rem">{{ __('messages.ziina_total_label') }}: <b>${total.toFixed(2)} AED</b></div>
+            </div>`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: @json(__('messages.ziina_confirm_pay')),
+            cancelButtonText: @json(__('messages.close') === 'messages.close' ? 'Cancel' : __('messages.close')),
+            confirmButtonColor: '#111111',
+        });
+        if (!confirmed.isConfirmed) return;
+    }
 
     btn.disabled = true;
     try {
@@ -800,7 +853,9 @@ async function payPrivateRequest() {
             body: JSON.stringify({}),
         });
         const data = await res.json();
-        if (data.success && data.payment_url) {
+        if (data.success && data.is_free && data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else if (data.success && data.payment_url) {
             window.location.href = data.payment_url;
         } else {
             alert(data.message || 'Error');

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PrivateCourseRefund;
 use App\Models\PrivateCourseRefundScreenshot;
 use App\Models\PrivateCourseRequest;
+use App\Models\Setting;
 use App\Models\User;
 use App\Support\PrivateCourseRequestService;
 use Carbon\Carbon;
@@ -177,6 +178,10 @@ class PrivateCourseRequestDashboardController extends Controller
         $privateRequest->loadMissing('privateCourse');
         $course = $privateRequest->privateCourse;
         abort_unless($course && $course->isPrivate() && ! $course->isCanceled(), 422);
+
+        if (Setting::academyEmbeddedMeetingsEnabled()) {
+            return back()->with('error', 'الاجتماعات المضمّنة مفعّلة — لا حاجة لإضافة رابط اجتماع خارجي.');
+        }
 
         $data = $request->validate([
             'meeting_provider' => ['required', 'in:youtube,external'],

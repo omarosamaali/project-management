@@ -122,10 +122,16 @@
             <span class="pr-chip"><i class="fas fa-chalkboard-teacher"></i> {{ $course->trainer->name }}</span>
             @endif
             <span class="pr-chip"><i class="fas fa-tag"></i>
+                @if((float) $privatePrice <= 0)
+                <span class="inline-flex items-center gap-1">
+                    <i class="fas fa-gift"></i> {{ __('messages.private_request_free_label') }}
+                </span>
+                @else
                 <span class="inline-flex items-center gap-1" dir="ltr">
                     <x-drhm-icon width="12" height="14" color="#ffffff" />
                     {{ number_format((float) $privatePrice, 2) }}
                 </span>
+                @endif
             </span>
             <span class="pr-chip"><i class="fas fa-user"></i> {{ __('messages.private_flow_one_to_one') }}</span>
         </div>
@@ -133,17 +139,23 @@
 
     <div class="pr-grid">
         <div class="pr-card">
-            @include('course.partials.private-request-flow', ['activeStep' => 1, 'locale' => $locale])
+            @include('course.partials.private-request-flow', [
+                'activeStep' => 1,
+                'locale' => $locale,
+                'isFreePrivate' => (float) $privatePrice <= 0,
+            ])
         </div>
 
         <div class="pr-card">
             <h2>{{ __('messages.private_request_terms_title') }}</h2>
             <ul class="pr-terms">
-                <li><i class="fas fa-check-circle"></i><span>{{ __('messages.private_request_term_1') }}</span></li>
+                <li><i class="fas fa-check-circle"></i><span>{{ (float) $privatePrice <= 0 ? __('messages.private_request_term_1_free') : __('messages.private_request_term_1') }}</span></li>
                 <li><i class="fas fa-check-circle"></i><span>{{ __('messages.private_request_term_2') }}</span></li>
-                <li><i class="fas fa-check-circle"></i><span>{{ __('messages.private_request_term_3') }}</span></li>
-                <li><i class="fas fa-check-circle"></i><span>{{ __('messages.private_request_term_4') }}</span></li>
+                <li><i class="fas fa-check-circle"></i><span>{{ (float) $privatePrice <= 0 ? __('messages.private_request_term_3_free') : __('messages.private_request_term_3') }}</span></li>
+                <li><i class="fas fa-check-circle"></i><span>{{ (float) $privatePrice <= 0 ? __('messages.private_request_term_4_free') : __('messages.private_request_term_4') }}</span></li>
+                @if((float) $privatePrice > 0)
                 <li><i class="fas fa-check-circle"></i><span>{{ __('messages.private_request_term_5') }}</span></li>
+                @endif
                 <li><i class="fas fa-check-circle"></i><span>{{ __('messages.private_request_term_6') }}</span></li>
             </ul>
 

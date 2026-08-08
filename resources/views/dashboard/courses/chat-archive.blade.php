@@ -13,7 +13,9 @@
     .lecture-msg .msg-body { display:flex; flex-direction:column; align-items:flex-start; min-width:0; max-width:100%; }
     .lecture-msg.mine .msg-body { align-items:flex-end; }
     .lecture-msg .bubble { padding:.5rem .75rem; border-radius:.75rem; background:#fff; border:1px solid transparent; font-size:.875rem; line-height:1.5; word-break:break-word; width:fit-content; max-width:100%; color:#1e293b; }
-    .lecture-msg.hidden-msg .bubble { opacity:.45; text-decoration:line-through; }
+    .lecture-msg.hidden-msg .bubble { opacity:.55; text-decoration:line-through; text-decoration-thickness:1px; }
+    .lecture-msg.hidden-msg .meta > span:not([data-hidden-author-label]):not([data-hidden-badge]) { text-decoration:line-through; text-decoration-thickness:1px; opacity:.7; }
+    .lecture-msg .hidden-author-label { display:inline-flex; align-items:center; gap:.25rem; font-size:.68rem; font-weight:700; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:9999px; padding:.1rem .45rem; text-decoration:none !important; opacity:1 !important; }
     .lecture-msg .meta { font-size:.7rem; color:#94a3b8; margin-top:.2rem; display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
     .lecture-msg.mine .meta { justify-content:flex-end; }
     .chat-lock-toggle { display:inline-flex; align-items:center; gap:.4rem; cursor:pointer; user-select:none; }
@@ -21,7 +23,7 @@
     .chat-lock-toggle input { position:absolute; opacity:0; width:0; height:0; }
     .chat-lock-slider { width:2.25rem; height:1.2rem; border-radius:9999px; background:#cbd5e1; position:relative; transition:background .2s; flex-shrink:0; }
     .chat-lock-slider::after { content:''; position:absolute; top:2px; inset-inline-start:2px; width:.9rem; height:.9rem; border-radius:9999px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:inset-inline-start .2s; }
-    .chat-lock-toggle input:checked + .chat-lock-slider { background:#dc2626; }
+    .chat-lock-toggle input:checked + .chat-lock-slider { background:#0b8f7f; }
     .chat-lock-toggle input:checked + .chat-lock-slider::after { inset-inline-start:calc(100% - .9rem - 2px); }
 </style>
 
@@ -47,6 +49,7 @@
     <div class="lecture-chat shadow" id="archiveChat"
         data-live="0"
         data-course-id="{{ $course->id }}"
+        data-auth-user-id="{{ (int) auth()->id() }}"
         data-can-moderate="{{ $canModerate ? '1' : '0' }}"
         data-is-blocked="{{ $course->isUserChatBlocked(auth()->id()) ? '1' : '0' }}"
         data-can-chat="1"
@@ -62,9 +65,9 @@
             <p class="text-sm font-bold text-slate-800">سجل النقاش المحفوظ</p>
             <div class="flex items-center gap-3 shrink-0">
                 @if($canModerate)
-                <label class="chat-lock-toggle" title="منع المتدربين من إرسال الرسائل">
+                <label class="chat-lock-toggle" title="السماح أو منع المتدربين من إرسال الرسائل">
                     <span class="chat-lock-label" id="chatLockLabel">{{ $chatLocked ? 'المتدربون ممنوعون' : 'السماح للمتدربين' }}</span>
-                    <input type="checkbox" id="chatLockToggle" {{ $chatLocked ? 'checked' : '' }}>
+                    <input type="checkbox" id="chatLockToggle" {{ $chatLocked ? '' : 'checked' }}>
                     <span class="chat-lock-slider"></span>
                 </label>
                 @endif

@@ -140,7 +140,7 @@ class MyCoursesController extends Controller
                 $course
                 && $course->isPrivate()
                 && ! $course->isCanceled()
-                && ! filled($course->online_link)
+                && ! $course->hasLiveMeetingAccess()
                 && $course->start_date
                 && now()->greaterThanOrEqualTo(Carbon::parse($course->start_date))
             ) {

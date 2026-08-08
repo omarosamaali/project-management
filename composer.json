@@ -13,6 +13,7 @@
         "barryvdh/laravel-dompdf": "^3.1",
         "khaled.alshamaa/ar-php": "^7.0",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.11",
         "laravel/tinker": "^2.10.1",
         "stichoza/google-translate-php": "^5.3",
         "umpirsky/country-list": "^2.0"
@@ -51,7 +52,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74,#86efac\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" \"php artisan reverb:start\" --names='server,queue,vite,reverb'"
         ],
         "test": [
             "@php artisan config:clear --ansi",

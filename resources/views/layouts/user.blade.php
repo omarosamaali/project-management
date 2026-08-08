@@ -336,9 +336,11 @@
                 <div class="ac-pub-cluster ac-pub-cluster--start">
                     <div class="ac-pub-side ac-pub-side-start">
                         <div class="ac-pub-links">
+                            @guest
                             <a href="{{ route('academy.index') }}" class="ac-pub-cta {{ request()->routeIs('academy.index') ? 'is-active' : '' }}">
                                 {{ __('messages.academy') }}
                             </a>
+                            @endguest
                             <a href="{{ route('academy.courses') }}" class="ac-pub-link {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') || request()->routeIs('courses.show') ? 'is-active' : '' }}">
                                 {{ __('messages.academy_view_all_courses') }}
                             </a>
@@ -466,12 +468,14 @@
                         {{ __('messages.systems') }}
                     </a>
                     @endunless
+                    @guest
                     <a href="{{ route('academy.index') }}" class="px-4 py-2 rounded-lg transition
                             {{ request()->routeIs('academy.*')
                                 ? 'bg-black text-white hover:bg-gray-700'
                                 : 'text-gray-700 hover:bg-gray-100' }}">
                         {{ __('messages.academy') }}
                     </a>
+                    @endguest
                     @auth
                     @unless(auth()->user()->isTrainee() || auth()->user()->isTrainer())
                     <a href="{{ route('special-request.index') }}"
@@ -604,11 +608,13 @@
 
         <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
             @if($isAcademyPage)
+            @guest
             <a href="{{ route('academy.index') }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('academy.index') ? 'is-drawer-active' : '' }}">
                 <i class="fas fa-home w-5 text-center opacity-70"></i>
                 {{ __('messages.academy') }}
             </a>
+            @endguest
             <a href="{{ route('academy.courses') }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium {{ request()->routeIs('academy.courses') || request()->routeIs('academy.category') || request()->routeIs('courses.show') ? 'is-drawer-active' : '' }}">
                 <i class="fas fa-layer-group w-5 text-center opacity-70"></i>
@@ -663,12 +669,14 @@
                 {{ __('messages.systems') }}
             </a>
             @endunless
+            @guest
             <a href="{{ route('academy.index') }}"
                 class="mobile-drawer-link flex items-center gap-3 px-4 py-3 rounded-xl transition text-sm font-medium
                     {{ request()->routeIs('academy.*') ? 'bg-black text-white' : 'text-gray-700 hover:bg-gray-100' }}">
                 <i class="fas fa-graduation-cap w-5 text-center {{ request()->routeIs('academy.*') ? 'text-white/80' : 'text-gray-400' }}"></i>
                 {{ __('messages.academy') }}
             </a>
+            @endguest
             @auth
             @unless(auth()->user()->isTrainee() || auth()->user()->isTrainer())
             <a href="{{ route('special-request.index') }}"

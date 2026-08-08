@@ -194,7 +194,7 @@
                 $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
                 $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
                 $showLink = $isLiveMeetingCourse
-                    && filled($course->online_link)
+                    && $course->hasLiveMeetingAccess()
                     && $startDate && $endDate
                     && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
                     && $now->lessThanOrEqualTo($endDate);
@@ -241,9 +241,9 @@
                         </x-course-lecture-link>
                         @elseif($isLiveMeetingCourse && $course->isCanceled())
                         <span class="text-xs font-bold text-red-600">ملغاة — بانتظار الاسترداد</span>
-                        @elseif($isLiveMeetingCourse && ! filled($course->online_link) && $startDate && $now->greaterThanOrEqualTo($startDate))
+                        @elseif($isLiveMeetingCourse && ! $course->hasLiveMeetingAccess() && $startDate && $now->greaterThanOrEqualTo($startDate))
                         <span class="text-xs font-bold text-red-600">انتهى الموعد بدون رابط — جاري الإلغاء</span>
-                        @elseif($isLiveMeetingCourse && ! filled($course->online_link))
+                        @elseif($isLiveMeetingCourse && ! $course->hasLiveMeetingAccess())
                         <span class="text-xs font-bold text-amber-700">بانتظار رابط الاجتماع</span>
                         @elseif($course->location_type == 'recorded')
                         <a href="{{ route('dashboard.my_courses.path', $payment->id) }}"
@@ -322,7 +322,7 @@
                 $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
                 $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
                 $showLink = $isLiveMeetingCourse
-                    && filled($course->online_link)
+                    && $course->hasLiveMeetingAccess()
                     && $startDate && $endDate
                     && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
                     && $now->lessThanOrEqualTo($endDate);
@@ -362,9 +362,9 @@
                 @if($isLiveMeetingCourse)
                     @if($course->isCanceled())
                     <p class="text-red-600 text-xs font-semibold">ملغاة — بانتظار الاسترداد</p>
-                    @elseif(! filled($course->online_link) && $startDate && $now->greaterThanOrEqualTo($startDate))
+                    @elseif(! $course->hasLiveMeetingAccess() && $startDate && $now->greaterThanOrEqualTo($startDate))
                     <p class="text-red-600 text-xs font-semibold">انتهى الموعد بدون رابط — جاري الإلغاء</p>
-                    @elseif(! filled($course->online_link))
+                    @elseif(! $course->hasLiveMeetingAccess())
                     <p class="text-amber-700 text-xs font-semibold">بانتظار رابط الاجتماع</p>
                     @elseif($showLink)
                     <x-course-lecture-link :course="$course" :payment="$payment"
@@ -472,7 +472,7 @@
                             $endDate = $course->end_date ? \Carbon\Carbon::parse($course->end_date) : null;
                             $isLiveMeetingCourse = in_array($course->location_type, ['online', 'private'], true);
                             $showLink = $isLiveMeetingCourse
-                                && filled($course->online_link)
+                                && $course->hasLiveMeetingAccess()
                                 && $startDate && $endDate
                                 && $now->greaterThanOrEqualTo($startDate->copy()->subMinutes(30))
                                 && $now->lessThanOrEqualTo($endDate);
@@ -518,9 +518,9 @@
                                     @if($isLiveMeetingCourse)
                                         @if($course->isCanceled())
                                         <span class="text-red-600 font-semibold text-xs">ملغاة — بانتظار الاسترداد</span>
-                                        @elseif(! filled($course->online_link) && $startDate && $now->greaterThanOrEqualTo($startDate))
+                                        @elseif(! $course->hasLiveMeetingAccess() && $startDate && $now->greaterThanOrEqualTo($startDate))
                                         <span class="text-red-600 font-semibold text-xs">انتهى الموعد بدون رابط — جاري الإلغاء</span>
-                                        @elseif(! filled($course->online_link))
+                                        @elseif(! $course->hasLiveMeetingAccess())
                                         <span class="text-amber-700 font-semibold text-xs">بانتظار رابط الاجتماع</span>
                                         @elseif($showLink)
                                         <x-course-lecture-link :course="$course" :payment="$payment"

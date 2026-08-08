@@ -10,6 +10,7 @@ use App\Models\PrivateCourseRefund;
 use App\Models\PrivateCourseRefundScreenshot;
 use App\Models\PrivateCourseRequest;
 use App\Models\PrivateCourseRequestEvent;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\WhatsAppOTPService;
 use Carbon\Carbon;
@@ -169,15 +170,18 @@ class PrivateCourseRequestService
         $req->loadMissing(['sourceCourse', 'trainer', 'trainee']);
         $courseName = $req->sourceCourse?->name_ar ?: $req->sourceCourse?->name_en;
         $url = $this->privateRequestUrl($req);
-        $payNote = 'لديك 24 ساعة لإتمام الدفع.';
+        $isFree = (float) $req->private_price <= 0;
+        $payNote = $isFree
+            ? 'أكد الاشتراك المجاني خلال 24 ساعة.'
+            : 'لديك 24 ساعة لإتمام الدفع.';
 
         if ($req->trainee) {
             $this->notifyUser(
                 $req->trainee,
-                'أكمل الدفع للدورة الخاصة',
+                $isFree ? 'أكد الدورة الخاصة المجانية' : 'أكمل الدفع للدورة الخاصة',
                 "تم قبول المواعيد للدورة «{$courseName}». {$payNote}",
                 $url,
-                'fa-credit-card',
+                $isFree ? 'fa-gift' : 'fa-credit-card',
                 'warning',
             );
         }
@@ -374,6 +378,7 @@ class PrivateCourseRequestService
             $payment->forceFill([
                 'course_id' => $clone->id,
                 'private_course_request_id' => $req->id,
+                'is_attended' => true,
             ])->save();
 
             if ($req->trainee && ! $clone->students()->where('user_id', $req->trainee_id)->exists()) {
@@ -405,7 +410,9 @@ class PrivateCourseRequestService
                 $this->notifyUser(
                     $req->trainee,
                     'تم تأكيد الدورة الخاصة',
-                    "تم تأكيد الدفع للدورة «{$courseName}». يمكنك الانضمام للدورة من لوحة التحكم.",
+                    ((float) $req->private_price <= 0)
+                        ? "تم تأكيد الدورة المجانية «{$courseName}». يمكنك الانضمام للدورة من لوحة التحكم."
+                        : "تم تأكيد الدفع للدورة «{$courseName}». يمكنك الانضمام للدورة من لوحة التحكم.",
                     $courseUrl,
                     'fa-check-circle',
                     'success',
@@ -416,8 +423,10 @@ class PrivateCourseRequestService
             if ($owner) {
                 $this->notifyUser(
                     $owner,
-                    'تم دفع الدورة الخاصة',
-                    "أكمل المتدرب الدفع للدورة «{$courseName}». يرجى إعداد رابط الاجتماع قبل الموعد.",
+                    ((float) $req->private_price <= 0) ? 'تم تأكيد دورة خاصة مجانية' : 'تم دفع الدورة الخاصة',
+                    ((float) $req->private_price <= 0)
+                        ? "أكّد المتدرب الدورة المجانية «{$courseName}». يرجى إعداد رابط الاجتماع قبل الموعد."
+                        : "أكمل المتدرب الدفع للدورة «{$courseName}». يرجى إعداد رابط الاجتماع قبل الموعد.",
                     $requestUrl,
                     'fa-link',
                     'info',
@@ -560,6 +569,10 @@ class PrivateCourseRequestService
 
     public function cancelMissingMeetingLinks(): int
     {
+        if (Setting::academyEmbeddedMeetingsEnabled()) {
+            return 0;
+        }
+
         $requests = PrivateCourseRequest::query()
             ->where('status', PrivateCourseRequest::STATUS_PAID)
             ->whereNotNull('private_course_id')
@@ -571,7 +584,7 @@ class PrivateCourseRequestService
                     return false;
                 }
 
-                if (filled($course->online_link)) {
+                if (filled($course->online_link) || filled($course->embedded_meeting_id)) {
                     return false;
                 }
 

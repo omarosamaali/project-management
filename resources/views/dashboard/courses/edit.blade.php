@@ -340,34 +340,54 @@
                                             </span>
                                         </label>
                                     </div>
-                                    <div id="private_price_wrap" class="{{ $allowPrivateOld ? '' : 'hidden' }} space-y-2">
-                                        <label class="block text-sm font-medium text-gray-700">
-                                            سعر الدورة الخاصة <span class="text-red-600">*</span>
-                                        </label>
-                                        <div class="relative">
-                                            <input type="number" name="private_course_price" id="private_course_price" min="0" step="0.01"
-                                                @if($trainerPrivateCapped) max="500" @endif
-                                                value="{{ old('private_course_price', $course->private_course_price) }}"
-                                                class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
-                                                placeholder="{{ $trainerPrivateCapped ? '500.00' : '999.00' }}">
-                                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
-                                                <x-drhm-icon width="12" height="14" />
-                                            </span>
+                                    <div id="private_price_wrap" class="{{ $allowPrivateOld ? '' : 'hidden' }} space-y-3">
+                                        @php
+                                            $editPrivatePrice = old('private_course_price', $course->private_course_price);
+                                            $privateFreeOld = $editPrivatePrice !== null && $editPrivatePrice !== '' && (float) $editPrivatePrice <= 0;
+                                        @endphp
+                                        <div>
+                                            <label for="is_private_free_toggle" class="block text-sm font-medium text-gray-700 mb-2">
+                                                دورة خاصة مجانية
+                                            </label>
+                                            <label class="course-switch-field cursor-pointer">
+                                                <span class="text-sm text-gray-600 truncate">تفعيل = سعر خاص 0 بدون إدخال سعر</span>
+                                                <span class="course-switch">
+                                                    <input type="checkbox" id="is_private_free_toggle"
+                                                        {{ $privateFreeOld ? 'checked' : '' }}>
+                                                    <span class="course-switch-track" aria-hidden="true"></span>
+                                                </span>
+                                            </label>
                                         </div>
-                                        @if($trainerPrivateCapped)
-                                        <p class="text-xs text-slate-500">
-                                            الحد الأقصى لسعر الدورة الخاصة للمحاضر
-                                            <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
-                                                500 <x-drhm-icon width="11" height="12" />
-                                            </span>
-                                        </p>
-                                        @endif
-                                        @error('private_course_price')
-                                        <span class="text-red-600 text-xs">{{ $message }}</span>
-                                        @enderror
-                                        @include('dashboard.courses.partials.trainer-profit-preview-private', [
-                                            'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
-                                        ])
+                                        <div id="private_price_field_wrap" class="{{ $privateFreeOld ? 'hidden' : '' }} space-y-2">
+                                            <label class="block text-sm font-medium text-gray-700">
+                                                سعر الدورة الخاصة <span class="text-red-600">*</span>
+                                            </label>
+                                            <div class="relative">
+                                                <input type="number" name="private_course_price" id="private_course_price" min="0" step="0.01"
+                                                    @if($trainerPrivateCapped) max="500" @endif
+                                                    value="{{ old('private_course_price', $course->private_course_price) }}"
+                                                    class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pl-20"
+                                                    placeholder="{{ $trainerPrivateCapped ? '500.00' : '999.00' }}"
+                                                    {{ ($allowPrivateOld && ! $privateFreeOld) ? 'required' : '' }}>
+                                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                                                    <x-drhm-icon width="12" height="14" />
+                                                </span>
+                                            </div>
+                                            @if($trainerPrivateCapped)
+                                            <p class="text-xs text-slate-500">
+                                                الحد الأقصى لسعر الدورة الخاصة للمحاضر
+                                                <span class="inline-flex items-center gap-1 font-semibold text-slate-700" dir="ltr">
+                                                    500 <x-drhm-icon width="11" height="12" />
+                                                </span>
+                                            </p>
+                                            @endif
+                                            @error('private_course_price')
+                                            <span class="text-red-600 text-xs">{{ $message }}</span>
+                                            @enderror
+                                            @include('dashboard.courses.partials.trainer-profit-preview-private', [
+                                                'trainerProfitPercentages' => $trainerProfitPercentages ?? null,
+                                            ])
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1739,17 +1759,34 @@
     function setupPrivateRequestsToggle() {
         const toggle = document.getElementById('allows_private_requests');
         const wrap = document.getElementById('private_price_wrap');
+        const freeToggle = document.getElementById('is_private_free_toggle');
+        const priceFieldWrap = document.getElementById('private_price_field_wrap');
         const priceInput = document.getElementById('private_course_price');
         if (!toggle || !wrap) return;
 
-        function apply() {
-            const on = toggle.checked;
-            wrap.classList.toggle('hidden', !on);
-            if (priceInput) {
-                if (on) {
-                    priceInput.setAttribute('required', 'required');
-                } else {
-                    priceInput.removeAttribute('required');
+        let lastPaidPrivatePrice = '';
+        if (priceInput) {
+            const current = String(priceInput.value || '').trim();
+            if (current !== '' && parseFloat(current) > 0) {
+                lastPaidPrivatePrice = current;
+            }
+        }
+
+        function applyFreeState() {
+            if (!freeToggle || !priceInput || !priceFieldWrap) return;
+            const isFree = freeToggle.checked;
+            priceFieldWrap.classList.toggle('hidden', isFree);
+            if (isFree) {
+                const cur = String(priceInput.value || '').trim();
+                if (cur !== '' && parseFloat(cur) > 0) {
+                    lastPaidPrivatePrice = cur;
+                }
+                priceInput.value = '0';
+                priceInput.removeAttribute('required');
+            } else if (toggle.checked) {
+                priceInput.setAttribute('required', 'required');
+                if (!priceInput.value || parseFloat(priceInput.value) <= 0) {
+                    priceInput.value = lastPaidPrivatePrice || '';
                 }
             }
             if (typeof window.__renderPrivateTrainerProfitPreview === 'function') {
@@ -1757,7 +1794,23 @@
             }
         }
 
+        function apply() {
+            const on = toggle.checked;
+            wrap.classList.toggle('hidden', !on);
+            if (!on) {
+                if (priceInput) priceInput.removeAttribute('required');
+            } else {
+                applyFreeState();
+            }
+            if (typeof window.__renderPrivateTrainerProfitPreview === 'function') {
+                window.__renderPrivateTrainerProfitPreview();
+            }
+        }
+
         toggle.addEventListener('change', apply);
+        if (freeToggle) {
+            freeToggle.addEventListener('change', applyFreeState);
+        }
         apply();
     }
 

@@ -180,4 +180,28 @@ class Setting extends Model
 
         return ($raw === null || $raw === '') ? 10000.0 : max(0, (float) $raw);
     }
+
+    /**
+     * Admin toggle: use embedded meeting app for private courses (testing feature).
+     */
+    public static function academyEmbeddedMeetingsEnabled(): bool
+    {
+        return (string) static::get('academy_embedded_meetings_enabled', '0') === '1';
+    }
+
+    /**
+     * Toggle is on and meeting API credentials are configured.
+     */
+    public static function academyEmbeddedMeetingsActive(): bool
+    {
+        if (! static::academyEmbeddedMeetingsEnabled()) {
+            return false;
+        }
+
+        $base = (string) config('services.meeting.base_url', '');
+        $key = (string) config('services.meeting.api_key', '');
+        $secret = (string) config('services.meeting.api_secret', '');
+
+        return $base !== '' && $key !== '' && $secret !== '';
+    }
 }

@@ -16,6 +16,8 @@ class Course extends Model
         'location_type',
         'levels',
         'online_link',
+        'embedded_meeting_id',
+        'embedded_meeting_status',
         'venue_name',
         'venue_map_url',
         'venue_details',
@@ -118,6 +120,23 @@ class Course extends Model
     public function isOnSite(): bool
     {
         return $this->location_type === 'on_site';
+    }
+
+    /**
+     * Whether learners/trainers can enter the lecture room (external link or embedded meeting).
+     */
+    public function hasLiveMeetingAccess(): bool
+    {
+        if (filled($this->online_link) || filled($this->embedded_meeting_id)) {
+            return true;
+        }
+
+        return $this->isPrivate() && Setting::academyEmbeddedMeetingsEnabled();
+    }
+
+    public function usesEmbeddedMeeting(): bool
+    {
+        return $this->isPrivate() && Setting::academyEmbeddedMeetingsEnabled();
     }
 
     public function isPrivate(): bool

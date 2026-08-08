@@ -13,9 +13,13 @@ use App\Http\Controllers\RequestMessageController;
 use App\Http\Controllers\Auth\OTPController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseLectureController;
+use App\Http\Controllers\MeetingWebhookController;
 
 Route::get('/courses/{course}/video/stream', [CourseController::class, 'streamPromo'])
     ->name('courses.video.stream');
+
+Route::post('/webhooks/meetings', MeetingWebhookController::class)
+    ->name('webhooks.meetings');
 
 Route::patch('special-request/payment/{payment}/mark-paid', [SpecialRequestController::class, 'markPaymentAsPaid'])
     ->name('special-request.payment.mark-paid');

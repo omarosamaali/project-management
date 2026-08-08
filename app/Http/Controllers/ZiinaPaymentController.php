@@ -899,6 +899,39 @@ class ZiinaPaymentController extends Controller
             }
 
             $basePrice = (float) $privateRequest->private_price;
+
+            // Free private course: confirm without Ziina (fixed fee would still charge ~2 AED).
+            if ($basePrice <= 0) {
+                $payment = Payment::create([
+                    'user_id' => auth()->id(),
+                    'course_id' => $privateRequest->source_course_id,
+                    'private_course_request_id' => $privateRequest->id,
+                    'payment_id' => 'FREE-PRIVATE-' . time() . '-' . auth()->id(),
+                    'amount' => 0,
+                    'original_price' => 0,
+                    'fees' => 0,
+                    'status' => 'completed',
+                    'payment_method' => 'free',
+                    'currency' => 'AED',
+                ]);
+
+                $clone = app(PrivateCourseRequestService::class)->markPaidAndClone($privateRequest, $payment);
+
+                Log::info('اشتراك مجاني في دورة خاصة', [
+                    'user_id' => auth()->id(),
+                    'private_course_request_id' => $privateRequest->id,
+                    'private_course_id' => $clone->id,
+                    'payment_id' => $payment->id,
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'is_free' => true,
+                    'message' => __('messages.private_request_free_success'),
+                    'redirect_url' => route('private-requests.show', $privateRequest->fresh()),
+                ]);
+            }
+
             $totalAmount = $this->ziinaHandler->calculatePriceWithFees($basePrice);
             $fees = $totalAmount - $basePrice;
             $successUrl = route('course.private.payment.success');
@@ -936,6 +969,7 @@ class ZiinaPaymentController extends Controller
 
             return response()->json([
                 'success' => true,
+                'is_free' => false,
                 'payment_url' => $response['redirect_url'],
                 'total_amount' => $totalAmount,
                 'fees' => round($fees, 2),

@@ -3,6 +3,7 @@
 @section('title', 'إعدادات الأكاديمية')
 
 @section('content')
+@include('dashboard.courses.partials.course-switch-styles')
 <section class="p-3 sm:p-5">
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard') }}" second="الأكاديمية" third="إعدادات الأكاديمية" />
 
@@ -103,6 +104,36 @@
                         @error('cashout_max')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
+            </div>
+
+            <div class="border-t pt-5">
+                <h2 class="text-lg font-bold text-slate-800">اجتماعات الدورات الخاصة المضمّنة</h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    عند التفعيل، تُنشأ غرفة اجتماع داخل المنصة للدورات الخاصة بدل لصق رابط يوتيوب/خارجي من المحاضر.
+                </p>
+
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                    <input type="hidden" name="academy_embedded_meetings_enabled" value="0">
+                    <label class="course-switch-field cursor-pointer !w-auto !min-h-0 !py-2 !px-3">
+                        <span class="text-sm text-gray-700 truncate">تفعيل الاجتماعات المضمّنة</span>
+                        <span class="course-switch">
+                            <input type="checkbox" name="academy_embedded_meetings_enabled" value="1"
+                                {{ old('academy_embedded_meetings_enabled', $embeddedMeetingsEnabled) ? 'checked' : '' }}>
+                            <span class="course-switch-track" aria-hidden="true"></span>
+                        </span>
+                    </label>
+                    <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md bg-amber-100 text-amber-900 border border-amber-200">
+                        <i class="fas fa-flask" aria-hidden="true"></i>
+                        ميزة تجريبية — غير جاهزة للإنتاج
+                    </span>
+                </div>
+                @unless($meetingApiConfigured)
+                <p class="mt-2 text-xs text-slate-500">
+                    عيّن <code class="bg-slate-100 px-1 rounded">MEETING_BASE_URL</code> و
+                    <code class="bg-slate-100 px-1 rounded">MEETING_API_KEY</code> و
+                    <code class="bg-slate-100 px-1 rounded">MEETING_API_SECRET</code> في ملف البيئة قبل الاستخدام.
+                </p>
+                @endunless
             </div>
 
             <div class="flex gap-2 justify-end">

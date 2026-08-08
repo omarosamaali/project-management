@@ -169,8 +169,28 @@
         color: #1e293b;
     }
     .lecture-msg.hidden-msg .bubble {
-        opacity: 0.45;
+        opacity: 0.55;
         text-decoration: line-through;
+        text-decoration-thickness: 1px;
+    }
+    .lecture-msg.hidden-msg .meta > span:not([data-hidden-author-label]):not([data-hidden-badge]) {
+        text-decoration: line-through;
+        text-decoration-thickness: 1px;
+        opacity: 0.7;
+    }
+    .lecture-msg .hidden-author-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #b45309;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 9999px;
+        padding: 0.1rem 0.45rem;
+        text-decoration: none !important;
+        opacity: 1 !important;
     }
     .lecture-msg .meta {
         font-size: 0.7rem;
@@ -222,7 +242,7 @@
         transition: inset-inline-start .2s;
     }
     .chat-lock-toggle input:checked + .chat-lock-slider {
-        background: #dc2626;
+        background: #0b8f7f;
     }
     .chat-lock-toggle input:checked + .chat-lock-slider::after {
         inset-inline-start: calc(100% - 0.9rem - 2px);
@@ -264,11 +284,19 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
+            @if(!($useEmbeddedMeeting ?? false) && filled($course->online_link))
             <a href="{{ $course->online_link }}" target="_blank" rel="noopener noreferrer"
                 class="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
                 <i class="fas fa-external-link-alt"></i>
                 {{ ($showEmbed ?? false) ? 'فتح البث في نافذة جديدة' : 'فتح الاجتماع في نافذة جديدة' }}
             </a>
+            @elseif(($useEmbeddedMeeting ?? false) && filled($embeddedJoinUrl ?? null))
+            <a href="{{ $embeddedJoinUrl }}" target="_blank" rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+                <i class="fas fa-external-link-alt"></i>
+                فتح الاجتماع في نافذة جديدة
+            </a>
+            @endif
             <a href="{{ route('dashboard.courses.chat-archive', $course) }}"
                 class="inline-flex items-center gap-2 px-3 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-black">
                 <i class="fas fa-comments"></i>
@@ -277,7 +305,32 @@
         </div>
     </div>
 
-    @if($openExternalTab ?? false)
+    @if($embeddedMeetingError ?? null)
+    <div class="mb-3 p-3 text-sm text-red-800 bg-red-50 border border-red-200 rounded-lg">
+        <i class="fas fa-exclamation-triangle ml-1"></i>
+        {{ $embeddedMeetingError }}
+    </div>
+    @elseif(($embeddedInsecureParent ?? false) && ($useEmbeddedMeeting ?? false))
+    <div class="mb-3 p-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg">
+        <i class="fas fa-exclamation-triangle ml-1"></i>
+        الميكروفون والكاميرا لا يعملان داخل الإطار لأن الأكاديمية تعمل على <strong>HTTP</strong>.
+        المتصفح يمنع ذلك حتى مع صلاحيات iframe.
+        يُفتح الاجتماع في تبويب جديد (HTTPS)، وأبقِ هذه الصفحة للنقاش.
+        للتجربة داخل الإطار شغّل الأكاديمية عبر HTTPS.
+        <span class="inline-flex items-center gap-1 ms-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-950 border border-amber-300">
+            ميزة تجريبية — غير جاهزة للإنتاج
+        </span>
+    </div>
+    @elseif($useEmbeddedMeeting ?? false)
+    <div class="mb-3 p-3 text-sm text-teal-900 bg-teal-50 border border-teal-200 rounded-lg">
+        <i class="fas fa-video ml-1"></i>
+        اجتماع مضمّن داخل المنصة — النقاش المباشر بجانب غرفة الاجتماع.
+        <span class="inline-flex items-center gap-1 ms-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+            ميزة تجريبية — غير جاهزة للإنتاج
+        </span>
+        <span id="meetingEmbedStatus" class="block mt-1 text-xs text-teal-800/80" hidden></span>
+    </div>
+    @elseif($openExternalTab ?? false)
     <div class="mb-3 p-3 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg">
         <i class="fas fa-info-circle ml-1"></i>
         الاجتماع الخارجي يُفتح في تبويب جديد تلقائياً. أبقِ هذه الصفحة مفتوحة للنقاش المباشر.
@@ -297,7 +350,7 @@
         data-open-at="{{ $meetingOpenAt->toIso8601String() }}"
         data-show-embed="{{ ($showEmbed ?? false) ? '1' : '0' }}"
         data-open-external="{{ ($openExternalTab ?? false) ? '1' : '0' }}"
-        data-meeting-url="{{ $course->online_link }}"
+        data-meeting-url="{{ ($useEmbeddedMeeting ?? false) ? ($embeddedJoinUrl ?? '') : ($course->online_link ?? '') }}"
         data-course-id="{{ $course->id }}">
 
         @if($showEmbed ?? false)
@@ -314,6 +367,22 @@
                 </p>
                 <div class="countdown" id="lectureCountdown">--:--:--</div>
             </div>
+            @elseif($useEmbeddedMeeting ?? false)
+            @if(filled($embeddedJoinUrl ?? null))
+            <iframe
+                id="meeting-frame"
+                src="{{ $embeddedJoinUrl }}"
+                title="اجتماع {{ $course->name_ar }}"
+                allow="microphone *; camera *; autoplay *; display-capture *; clipboard-write *; fullscreen *"
+                referrerpolicy="strict-origin-when-cross-origin"
+            ></iframe>
+            @else
+            <div class="lecture-waiting">
+                <i class="fas fa-exclamation-triangle text-3xl text-amber-300"></i>
+                <p class="text-base font-semibold text-white">تعذّر تحميل غرفة الاجتماع</p>
+                <p class="text-sm text-slate-300">{{ $embeddedMeetingError ?? 'حاول تحديث الصفحة.' }}</p>
+            </div>
+            @endif
             @else
             <iframe
                 src="{{ $youtubeEmbed }}"
@@ -336,6 +405,7 @@
 
         <div class="lecture-chat shadow" id="lectureChat"
             data-course-id="{{ $course->id }}"
+            data-auth-user-id="{{ (int) auth()->id() }}"
             data-can-moderate="{{ $canModerate ? '1' : '0' }}"
             data-is-blocked="{{ $isBlocked ? '1' : '0' }}"
             data-can-chat="{{ $canChat ? '1' : '0' }}"
@@ -354,9 +424,9 @@
                 </div>
                 <div class="flex items-center gap-3 shrink-0">
                     @if($canModerate)
-                    <label class="chat-lock-toggle" title="منع المتدربين من إرسال الرسائل">
+                    <label class="chat-lock-toggle" title="السماح أو منع المتدربين من إرسال الرسائل">
                         <span class="chat-lock-label" id="chatLockLabel">{{ $chatLocked ? 'المتدربون ممنوعون' : 'السماح للمتدربين' }}</span>
-                        <input type="checkbox" id="chatLockToggle" {{ $chatLocked ? 'checked' : '' }}>
+                        <input type="checkbox" id="chatLockToggle" {{ $chatLocked ? '' : 'checked' }}>
                         <span class="chat-lock-slider"></span>
                     </label>
                     @endif
@@ -409,6 +479,13 @@
     const courseId = shell.dataset.courseId || '0';
     let secondsLeft = parseInt(shell.dataset.secondsUntilOpen || '0', 10) || 0;
     const countdownEl = document.getElementById('lectureCountdown');
+    const embedStatusEl = document.getElementById('meetingEmbedStatus');
+    const meetingBaseUrl = @json(rtrim((string) config('services.meeting.base_url', ''), '/'));
+    let meetingOrigin = '';
+    try {
+        if (meetingBaseUrl) meetingOrigin = new URL(meetingBaseUrl).origin;
+        else if (meetingUrl) meetingOrigin = new URL(meetingUrl).origin;
+    } catch (e) {}
 
     function formatRemain(sec) {
         sec = Math.max(0, Math.floor(sec));
@@ -417,6 +494,29 @@
         const s = String(sec % 60).padStart(2, '0');
         return h + ':' + m + ':' + s;
     }
+
+    function setEmbedStatus(text, isError) {
+        if (!embedStatusEl) return;
+        embedStatusEl.hidden = !text;
+        embedStatusEl.textContent = text || '';
+        embedStatusEl.classList.toggle('text-red-700', !!isError);
+        embedStatusEl.classList.toggle('text-teal-800/80', !isError);
+    }
+
+    // INTEGRATION.md: meeting iframe posts meeting:* to window.parent
+    window.addEventListener('message', function (event) {
+        if (meetingOrigin && event.origin !== meetingOrigin) return;
+        const msg = event.data;
+        if (!msg || msg.source !== 'meeting-embed') return;
+        if (msg.type === 'meeting:ready') {
+            setEmbedStatus('الاتصال بالاجتماع جاهز.', false);
+        } else if (msg.type === 'meeting:ended') {
+            setEmbedStatus('انتهى الاجتماع أو غادرت الغرفة.', false);
+        } else if (msg.type === 'meeting:error') {
+            setEmbedStatus(msg.message || 'حدث خطأ في غرفة الاجتماع.', true);
+            console.error('[meeting-embed]', msg.message || msg);
+        }
+    });
 
     function openExternalMeeting() {
         if (!openExternal || !meetingUrl) return;

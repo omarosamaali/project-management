@@ -43,5 +43,18 @@ return [
         'fee_percent' => (float) env('ZIINA_FEE_PERCENT', 7.9),
         'fee_fixed' => (float) env('ZIINA_FEE_FIXED', 2),
     ],
-    
+
+    /*
+    | Embedded private-course meetings (HMAC integration). Secrets stay server-side only.
+    | See public/assets/INTEGRATION.md
+    */
+    'meeting' => [
+        'base_url' => rtrim((string) env('MEETING_BASE_URL', ''), '/'),
+        'api_key' => env('MEETING_API_KEY'),
+        'api_secret' => env('MEETING_API_SECRET'),
+        'webhook_secret' => env('MEETING_WEBHOOK_SECRET'),
+        // Local Docker often uses a self-signed cert — set MEETING_SSL_VERIFY=false for local only.
+        'verify_ssl' => filter_var(env('MEETING_SSL_VERIFY', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
 ];

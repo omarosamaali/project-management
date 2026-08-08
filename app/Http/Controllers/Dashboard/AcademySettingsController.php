@@ -27,6 +27,10 @@ class AcademySettingsController extends Controller
             'profitOnsite' => $profits['onsite'],
             'cashoutMin' => Setting::academyTrainerCashoutMinimum(),
             'cashoutMax' => Setting::academyTrainerCashoutMaximum(),
+            'embeddedMeetingsEnabled' => Setting::academyEmbeddedMeetingsEnabled(),
+            'meetingApiConfigured' => filled(config('services.meeting.base_url'))
+                && filled(config('services.meeting.api_key'))
+                && filled(config('services.meeting.api_secret')),
         ]);
     }
 
@@ -44,6 +48,7 @@ class AcademySettingsController extends Controller
             'trainer_profit_onsite' => 'nullable|numeric|min:0|max:100',
             'cashout_min' => 'required|numeric|min:0|lte:cashout_max',
             'cashout_max' => 'required|numeric|min:0|gte:cashout_min',
+            'academy_embedded_meetings_enabled' => 'nullable|boolean',
         ]);
 
         if (! Setting::hasStorage()) {
@@ -88,6 +93,10 @@ class AcademySettingsController extends Controller
 
         Setting::set('academy_trainer_cashout_minimum', (string) $validated['cashout_min']);
         Setting::set('academy_trainer_cashout_maximum', (string) $validated['cashout_max']);
+        Setting::set(
+            'academy_embedded_meetings_enabled',
+            $request->boolean('academy_embedded_meetings_enabled') ? '1' : '0'
+        );
 
         return redirect()
             ->route('dashboard.academy.settings.edit')
