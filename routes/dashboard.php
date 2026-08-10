@@ -185,6 +185,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/course/private/payment/success', [ZiinaPaymentController::class, 'privateCourseSuccess'])->name('course.private.payment.success');
     Route::get('/course/private/payment/cancel', [ZiinaPaymentController::class, 'privateCourseCancel'])->name('course.private.payment.cancel');
 
+    // Keep academy admin/cockpit routes under /dashboard/... so domain split does not
+    // send /academy/* to the public academy host (403 / wrong page).
+    Route::prefix('dashboard')->group(function () {
     Route::get('academy/my-private-requests', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'traineeIndex'])
         ->name('dashboard.academy.private-requests.trainee-index');
     Route::get('academy/private-requests/inbox', [\App\Http\Controllers\Dashboard\PrivateCourseRequestDashboardController::class, 'trainerInbox'])
@@ -251,6 +254,7 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.academy.off-days.store');
     Route::delete('academy/off-days/{offDay}', [\App\Http\Controllers\Dashboard\TrainerOffDayController::class, 'destroy'])
         ->name('dashboard.academy.off-days.destroy');
+    }); // end dashboard prefix (academy cockpit routes)
 
     Route::post('/payments/{payment}/special-certificate', [CourseController::class, 'uploadSpecialCertificate'])
         ->name('dashboard.courses.special-certificate.upload');
@@ -286,6 +290,7 @@ Route::middleware('auth')->group(function () {
             ->defaults('role', $role)
             ->name("dashboard.{$plural}.destroy");
     }
+    Route::prefix('dashboard')->group(function () {
     Route::get('academy/ratings', [AcademyRatingController::class, 'index'])
         ->name('dashboard.academy.ratings.index');
     Route::get('academy/ratings/{rating}', [AcademyRatingController::class, 'show'])
@@ -300,6 +305,7 @@ Route::middleware('auth')->group(function () {
         ->name('dashboard.academy.my-profits');
     Route::get('academy/currency/aed-egp', [CurrencyRateController::class, 'aedToEgp'])
         ->name('dashboard.academy.currency.aed-egp');
+    });
 
     Route::resource('requests', RequestsController::class)->names('dashboard.requests');
     Route::resource('tasks', RequestsController::class)->names('dashboard.tasks');
@@ -318,6 +324,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/independent-partners', IndependentPartnerController::class)
         ->names('dashboard.independent-partners');
 });
+// Legacy path (pre domain-split fix): /academy/settings → cockpit settings.
+Route::middleware('auth')->get('/academy/settings', function () {
+    return redirect()->route('dashboard.academy.settings.edit', absolute: true);
+});
+
 Route::get('/dashboard/salaries/fetch-attendance/{user_id}', [SalaryController::class, 'fetchAttendance'])->name('salaries.fetchAttendance');
 Route::get('/dashboard/salaries/fetch-adjustments/{user_id}', [SalaryController::class, 'fetchAdjustments'])->name('dashboard.salaries.fetchAdjustments');
 // Register Partner

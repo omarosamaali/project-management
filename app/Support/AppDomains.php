@@ -119,6 +119,11 @@ class AppDomains
             return false;
         }
 
+        // Cockpit academy admin lives under /dashboard/academy/* — never treat as public academy.
+        if ($path === '/dashboard' || str_starts_with($path, '/dashboard/')) {
+            return false;
+        }
+
         $prefixes = [
             '/academy',
             '/private-requests',
