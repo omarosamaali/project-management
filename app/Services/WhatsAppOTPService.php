@@ -59,7 +59,6 @@ class WhatsAppOTPService
     // ── تأكيد الدورة (متدرب) — template: acadmy ───────
     public function sendCourseConfirmation($phone, $userName, $courseName, $course)
     {
-        $imageUrl = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80';
         $body2 = $this->sanitizeTrabarText(
             'تم تأكيد اشتراكك في دورة «'.$courseName.'». يمكنك الدخول إلى قمرة القيادة ومتابعة دوراتك. — أكاديمية إيفورك.'
         );
@@ -68,7 +67,7 @@ class WhatsAppOTPService
             (string) $phone,
             (string) $userName,
             $body2,
-            $imageUrl
+            $this->academyNotificationImageUrl($course)
         );
     }
 
@@ -90,7 +89,7 @@ class WhatsAppOTPService
             $phone,
             $userName,
             $bodyText,
-            $imageUrl
+            $imageUrl ?: $this->academyNotificationImageUrl()
         );
     }
 
@@ -133,8 +132,7 @@ class WhatsAppOTPService
     ): bool {
         $recipientName = $this->sanitizeTrabarText($recipientName, 120);
         $bodyText = $this->sanitizeTrabarText($bodyText);
-        $headerImage = $imageUrl
-            ?: (string) config('services.whatsapp_academy.default_image', 'https://evorq.online/assets/images/salaray.jpeg');
+        $headerImage = $imageUrl ?: $this->academyNotificationImageUrl();
 
         $params = [
             [
@@ -701,6 +699,46 @@ class WhatsAppOTPService
     }
 
     // ── Helpers ───────────────────────────────────────
+    /**
+     * Header image for academy WhatsApp: course image if public HTTPS, else academy hero upload.
+     */
+    private function academyNotificationImageUrl(mixed $course = null): string
+    {
+        if ($course && is_object($course) && method_exists($course, 'mainImageUrl')) {
+            $courseImage = (string) $course->mainImageUrl();
+            if ($this->isPublicHttpsUrl($courseImage)) {
+                return $courseImage;
+            }
+        }
+
+        try {
+            return \App\Models\Setting::academyHeroImagePublicUrl();
+        } catch (\Throwable $e) {
+            return (string) config(
+                'services.whatsapp_academy.default_image',
+                'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'
+            );
+        }
+    }
+
+    private function isPublicHttpsUrl(string $url): bool
+    {
+        if (! str_starts_with(strtolower($url), 'https://')) {
+            return false;
+        }
+
+        $host = parse_url($url, PHP_URL_HOST);
+        if (! is_string($host) || $host === '') {
+            return false;
+        }
+
+        $host = strtolower($host);
+
+        return ! in_array($host, ['localhost', '127.0.0.1'], true)
+            && ! str_ends_with($host, '.test')
+            && ! str_ends_with($host, '.local');
+    }
+
     private function sanitizeTrabarText(string $text, int $maxLength = 900): string
     {
         $text = str_replace(['«', '»', '"', '“', '”'], '', $text);

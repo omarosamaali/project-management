@@ -92,6 +92,41 @@ class Setting extends Model
         return 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80';
     }
 
+    /**
+     * Absolute HTTPS hero URL for WhatsApp / email (Meta cannot fetch localhost paths).
+     */
+    public static function academyHeroImagePublicUrl(): string
+    {
+        $path = static::academyHeroImagePath();
+        $fallback = (string) config(
+            'services.whatsapp_academy.default_image',
+            'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'
+        );
+
+        if (! $path) {
+            return $fallback;
+        }
+
+        $relative = Storage::url($path);
+        if (str_starts_with($relative, 'http://') || str_starts_with($relative, 'https://')) {
+            $absolute = $relative;
+        } else {
+            $absolute = rtrim(\App\Support\AppDomains::liveAcademyBase(), '/').'/'.ltrim($relative, '/');
+        }
+
+        // WhatsApp media fetch requires a public HTTPS URL.
+        if (str_starts_with($absolute, 'http://')) {
+            $absolute = 'https://'.substr($absolute, strlen('http://'));
+        }
+
+        $host = parse_url($absolute, PHP_URL_HOST);
+        if (is_string($host) && in_array(strtolower($host), ['localhost', '127.0.0.1'], true)) {
+            return $fallback;
+        }
+
+        return $absolute;
+    }
+
     public static function academyTrainerProfitPercentage(): float
     {
         return max(0, min(100, (float) static::get('academy_trainer_profit_percentage', 50)));
