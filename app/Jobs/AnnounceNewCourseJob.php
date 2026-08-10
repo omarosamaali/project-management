@@ -36,12 +36,11 @@ class AnnounceNewCourseJob implements ShouldQueue
 
         $courseName = $course->name_ar;
         $courseUrl = $course->publicUrl();
-        $imageUrl = $course->mainImageUrl();
 
         User::whereIn('role', ['trainer', 'trainee'])
             ->notBlocked()
             ->select('id', 'name', 'phone', 'email')
-            ->chunkById(100, function ($users) use ($whatsapp, $course, $courseName, $courseUrl, $imageUrl) {
+            ->chunkById(100, function ($users) use ($whatsapp, $course, $courseName, $courseUrl) {
                 foreach ($users as $user) {
                     try {
                         AppNotification::notify(
@@ -59,7 +58,6 @@ class AnnounceNewCourseJob implements ShouldQueue
                                 $user->name,
                                 $courseName,
                                 $courseUrl,
-                                $imageUrl,
                             );
                         }
 

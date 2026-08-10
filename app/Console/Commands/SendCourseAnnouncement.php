@@ -33,7 +33,6 @@ class SendCourseAnnouncement extends Command
         $channel = $this->option('channel');
         $courseName = $course->name_ar;
         $courseUrl = $course->publicUrl();
-        $imageUrl = $course->mainImageUrl();
 
         $this->info("الدورة: {$courseName} (#{$course->id})");
         $this->line("الرابط: {$courseUrl}");
@@ -42,7 +41,7 @@ class SendCourseAnnouncement extends Command
 
         // ── وضع الاختبار: إرسال لمستلم واحد فقط ──
         if ($test = $this->option('test')) {
-            return $this->sendTest($whatsapp, $course, $test, $channel, $courseName, $courseUrl, $imageUrl);
+            return $this->sendTest($whatsapp, $course, $test, $channel, $courseName, $courseUrl);
         }
 
         $recipients = $this->resolveRecipients($course);
@@ -78,7 +77,7 @@ class SendCourseAnnouncement extends Command
 
             if ($channel !== 'email' && !empty($user->phone)) {
                 try {
-                    $ok = $whatsapp->sendNewCourseAnnouncement($user->phone, $user->name, $courseName, $courseUrl, $imageUrl);
+                    $ok = $whatsapp->sendNewCourseAnnouncement($user->phone, $user->name, $courseName, $courseUrl);
                     $ok ? $waSent++ : $waFail++;
                 } catch (\Throwable $e) {
                     $waFail++;
@@ -156,7 +155,6 @@ class SendCourseAnnouncement extends Command
         string $channel,
         string $courseName,
         string $courseUrl,
-        string $imageUrl,
     ): int {
         $isEmail = str_contains($test, '@');
 
@@ -169,7 +167,7 @@ class SendCourseAnnouncement extends Command
                 return self::FAILURE;
             }
         } else {
-            $ok = $whatsapp->sendNewCourseAnnouncement($test, 'عميلنا العزيز', $courseName, $courseUrl, $imageUrl);
+            $ok = $whatsapp->sendNewCourseAnnouncement($test, 'عميلنا العزيز', $courseName, $courseUrl);
             $ok
                 ? $this->info("تم إرسال واتساب تجريبي إلى: {$test}")
                 : $this->error("فشل إرسال الواتساب إلى: {$test} — راجع سجل whatsapp_messages / laravel.log");

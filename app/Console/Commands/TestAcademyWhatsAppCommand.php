@@ -57,15 +57,12 @@ class TestAcademyWhatsAppCommand extends Command
             'confirmation' => function () use ($whatsapp, $phone, $name, $courseName, $course) {
                 return $whatsapp->sendCourseConfirmation($phone, $name, $courseName, $course ?? (object) []);
             },
-            'announce' => function () use ($whatsapp, $phone, $name, $courseName, $courseUrl, $course) {
-                $image = $course?->mainImageUrl();
-
+            'announce' => function () use ($whatsapp, $phone, $name, $courseName, $courseUrl) {
                 return $whatsapp->sendNewCourseAnnouncement(
                     $phone,
                     $name,
                     $courseName,
                     $courseUrl,
-                    $image
                 );
             },
             'exam' => function () use ($whatsapp, $phone, $name, $courseName) {

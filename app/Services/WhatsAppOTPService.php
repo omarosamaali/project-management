@@ -67,7 +67,6 @@ class WhatsAppOTPService
             (string) $phone,
             (string) $userName,
             $body2,
-            $this->academyNotificationImageUrl($course)
         );
     }
 
@@ -77,7 +76,6 @@ class WhatsAppOTPService
         string $userName,
         string $courseName,
         ?string $courseUrl = null,
-        ?string $imageUrl = null,
     ): bool {
         $bodyText = "أطلقنا دورة تدريبية جديدة: «{$courseName}». سارِع بحجز مقعدك والاطلاع على التفاصيل والتسجيل الآن.";
         if ($courseUrl) {
@@ -85,12 +83,7 @@ class WhatsAppOTPService
         }
         $bodyText .= " — إيفورك للتكنولوجيا.";
 
-        return $this->sendAcademyNotification(
-            $phone,
-            $userName,
-            $bodyText,
-            $imageUrl ?: $this->academyNotificationImageUrl()
-        );
+        return $this->sendAcademyNotification($phone, $userName, $bodyText);
     }
 
     // ── نجاح الاختبار + إتاحة الشهادة ─────────────────
@@ -700,17 +693,10 @@ class WhatsAppOTPService
 
     // ── Helpers ───────────────────────────────────────
     /**
-     * Header image for academy WhatsApp: course image if public HTTPS, else academy hero upload.
+     * Header image for academy WhatsApp: uploaded academy hero (HTTPS), else configured fallback.
      */
-    private function academyNotificationImageUrl(mixed $course = null): string
+    private function academyNotificationImageUrl(): string
     {
-        if ($course && is_object($course) && method_exists($course, 'mainImageUrl')) {
-            $courseImage = (string) $course->mainImageUrl();
-            if ($this->isPublicHttpsUrl($courseImage)) {
-                return $courseImage;
-            }
-        }
-
         try {
             return \App\Models\Setting::academyHeroImagePublicUrl();
         } catch (\Throwable $e) {
@@ -719,24 +705,6 @@ class WhatsAppOTPService
                 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80'
             );
         }
-    }
-
-    private function isPublicHttpsUrl(string $url): bool
-    {
-        if (! str_starts_with(strtolower($url), 'https://')) {
-            return false;
-        }
-
-        $host = parse_url($url, PHP_URL_HOST);
-        if (! is_string($host) || $host === '') {
-            return false;
-        }
-
-        $host = strtolower($host);
-
-        return ! in_array($host, ['localhost', '127.0.0.1'], true)
-            && ! str_ends_with($host, '.test')
-            && ! str_ends_with($host, '.local');
     }
 
     private function sanitizeTrabarText(string $text, int $maxLength = 900): string
