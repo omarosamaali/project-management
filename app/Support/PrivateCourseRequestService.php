@@ -796,11 +796,10 @@ class PrivateCourseRequestService
             $whatsapp = app(WhatsAppOTPService::class);
 
             if (filled($user->phone)) {
-                $whatsapp->sendProjectNotification(
+                $whatsapp->sendAcademyNotification(
                     (string) $user->phone,
                     (string) $user->name,
                     $message,
-                    $title,
                 );
             } elseif (filled($user->email)) {
                 $whatsapp->sendEmailNotification(

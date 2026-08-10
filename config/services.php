@@ -57,4 +57,23 @@ return [
         'verify_ssl' => filter_var(env('MEETING_SSL_VERIFY', true), FILTER_VALIDATE_BOOLEAN),
     ],
 
+    /*
+    | Academy trainee/trainer WhatsApp templates (w-hub.4ja.ai — template: acadmy).
+    | Project OTP / trabar still use the legacy 4jawaly credentials in WhatsAppOTPService.
+    */
+    'whatsapp_academy' => [
+        'url' => env(
+            'WHATSAPP_ACADEMY_URL',
+            'https://w-hub.4ja.ai/api/v1/CzmhkBCH/message/template'
+        ),
+        'token' => env('WHATSAPP_ACADEMY_TOKEN'),
+        'template' => env('WHATSAPP_ACADEMY_TEMPLATE', 'acadmy'),
+        'namespace' => env('WHATSAPP_ACADEMY_NAMESPACE', 'ce014d4c_0214_4b10_83a1_d4b9f34e2436'),
+        'language' => env('WHATSAPP_ACADEMY_LANGUAGE', 'ar'),
+        'default_image' => env(
+            'WHATSAPP_ACADEMY_DEFAULT_IMAGE',
+            'https://evorq.online/assets/images/salaray.jpeg'
+        ),
+    ],
+
 ];

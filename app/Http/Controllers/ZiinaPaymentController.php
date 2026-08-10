@@ -806,37 +806,13 @@ class ZiinaPaymentController extends Controller
     private function sendWhatsAppConfirmation($user, $course)
     {
         try {
-            // تنظيف رقم الهاتف
-            $phone = str_replace([' ', '+'], '', $user->phone);
-            if (!str_starts_with($phone, '20')) {
-                $phone = '20' . ltrim($phone, '0');
-            }
-
             $courseName = app()->getLocale() == 'ar' ? $course->name_ar : $course->name_en;
-
-            // إعداد الطلب لـ API 4Jawaly بناءً على الـ JSON المرسل من المدير
-            \Illuminate\Support\Facades\Http::withHeaders([
-                'Authorization' => 'Basic b0ZhZlVyaVZMQkVoTGtab3lkU1FMOXZzYktiUU02OEc1emVqQkJhYjoxd0l5Wjhkd2lTWER6d1ozc0Fhdmp5dUQwWHRvS1R6czNFMU10Wmd5OHlKa1R0Y0FmWFM1Q2JVQ2t2NEs3b3hBRzVvV2dEU3FDcG5ldDhGajJaMUVvWTNkem9pb0xUNFBmaW01',
-                'Content-Type'  => 'application/json',
-                'accept'        => 'application/json',
-            ])->post('https://api-users.4jawaly.com/api/v1/whatsapp/669', [
-                "path" => "message/template",
-                "params" => [
-                    "phone" => $phone,
-                    "template" => "trabar",
-                    "language" => ["policy" => "deterministic", "code" => "ar"],
-                    "namespace" => "d62f7444_aa0b_40b8_8f46_0bb55ef2862e",
-                    "params" => [
-                        [
-                            "type" => "body",
-                            "parameters" => [
-                                ["type" => "text", "text" => $user->name],   // BODY_1: اسم المشترك
-                                ["type" => "text", "text" => $courseName]    // BODY_2: اسم الدورة
-                            ]
-                        ]
-                    ]
-                ]
-            ]);
+            app(\App\Services\WhatsAppOTPService::class)->sendCourseConfirmation(
+                (string) $user->phone,
+                (string) $user->name,
+                (string) $courseName,
+                $course
+            );
         } catch (\Exception $e) {
             Log::error("فشل إرسال واتساب: " . $e->getMessage());
         }

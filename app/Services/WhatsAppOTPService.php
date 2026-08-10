@@ -56,26 +56,20 @@ class WhatsAppOTPService
         return $this->executeRequest($phone, 'trabar', 'ar', $params);
     }
 
-    // ── تأكيد الدورة ─────────────────────────────────
+    // ── تأكيد الدورة (متدرب) — template: acadmy ───────
     public function sendCourseConfirmation($phone, $userName, $courseName, $course)
     {
         $imageUrl = 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=800&q=80';
+        $body2 = $this->sanitizeTrabarText(
+            'تم تأكيد اشتراكك في دورة «'.$courseName.'». يمكنك الدخول إلى قمرة القيادة ومتابعة دوراتك. — أكاديمية إيفورك.'
+        );
 
-        $params = [
-            [
-                "type" => "header",
-                "parameters" => [["type" => "image", "image" => ["link" => $imageUrl]]]
-            ],
-            [
-                "type" => "body",
-                "parameters" => [
-                    ["type" => "text", "text" => (string) $userName],
-                    ["type" => "text", "text" => (string) $courseName]
-                ]
-            ]
-        ];
-
-        return $this->executeRequest($phone, 'trabar', 'ar', $params);
+        return $this->sendAcademyNotification(
+            (string) $phone,
+            (string) $userName,
+            $body2,
+            $imageUrl
+        );
     }
 
     // ── إعلان دورة تدريبية جديدة لكل العملاء ─────────────
@@ -92,25 +86,12 @@ class WhatsAppOTPService
         }
         $bodyText .= " — إيفورك للتكنولوجيا.";
 
-        $bodyText = $this->sanitizeTrabarText($bodyText);
-        $recipientName = $this->sanitizeTrabarText($userName, 120);
-        $headerImage = $imageUrl ?: 'https://evorq.online/assets/images/salaray.jpeg';
-
-        return $this->executeRequest($phone, 'trabar', 'ar', [
-            [
-                'type' => 'header',
-                'parameters' => [
-                    ['type' => 'image', 'image' => ['link' => $headerImage]],
-                ],
-            ],
-            [
-                'type' => 'body',
-                'parameters' => [
-                    ['type' => 'text', 'text' => $recipientName],
-                    ['type' => 'text', 'text' => $bodyText],
-                ],
-            ],
-        ]);
+        return $this->sendAcademyNotification(
+            $phone,
+            $userName,
+            $bodyText,
+            $imageUrl
+        );
     }
 
     // ── نجاح الاختبار + إتاحة الشهادة ─────────────────
@@ -123,7 +104,7 @@ class WhatsAppOTPService
     ): bool {
         $bodyText = "مبروك! لقد اجتزت اختبار دورة «{$courseName}» بنجاح. درجتك: {$score} من {$totalQuestions}. شهادة الحضور متاحة الآن من قمرة القيادة — دوراتي. شكراً لالتزامك ومشاركتك الفعّالة مع إيفورك للتكنولوجيا.";
 
-        return $this->sendTrabar($phone, $userName, $bodyText);
+        return $this->sendAcademyNotification($phone, $userName, $bodyText);
     }
 
     // ── موافقة حساب محاضر ─────────────────────────────
@@ -131,13 +112,47 @@ class WhatsAppOTPService
     {
         $bodyText = 'مبروك! تمت الموافقة على حسابك كمحاضر في أكاديمية إيفورك. يمكنك الآن تسجيل الدخول والبدء في إنشاء وإدارة دوراتك التدريبية.';
         $host = $loginUrl ? parse_url($loginUrl, PHP_URL_HOST) : null;
-        $isPublicUrl = $host && !in_array($host, ['127.0.0.1', 'localhost'], true);
+        $isPublicUrl = $host && ! in_array($host, ['127.0.0.1', 'localhost'], true);
         if ($loginUrl && $isPublicUrl) {
             $bodyText .= " رابط الدخول: {$loginUrl}";
         }
         $bodyText .= ' — إيفورك للتكنولوجيا.';
 
-        return $this->sendTrabar($phone, $userName, $bodyText);
+        return $this->sendAcademyNotification($phone, $userName, $bodyText);
+    }
+
+    /**
+     * إشعار أكاديمية عام للمتدرب/المحاضر — template: acadmy
+     * BODY_1 = الاسم، BODY_2 = نص الإشعار، FILE_URL = صورة الهيدر
+     */
+    public function sendAcademyNotification(
+        string $phone,
+        string $recipientName,
+        string $bodyText,
+        ?string $imageUrl = null,
+    ): bool {
+        $recipientName = $this->sanitizeTrabarText($recipientName, 120);
+        $bodyText = $this->sanitizeTrabarText($bodyText);
+        $headerImage = $imageUrl
+            ?: (string) config('services.whatsapp_academy.default_image', 'https://evorq.online/assets/images/salaray.jpeg');
+
+        $params = [
+            [
+                'type' => 'body',
+                'parameters' => [
+                    ['type' => 'text', 'text' => $recipientName],
+                    ['type' => 'text', 'text' => $bodyText],
+                ],
+            ],
+            [
+                'type' => 'header',
+                'parameters' => [
+                    ['type' => 'image', 'image' => ['link' => $headerImage]],
+                ],
+            ],
+        ];
+
+        return $this->executeAcademyRequest($phone, $params);
     }
 
     // ── إشعار تذكرة دعم فني للـ Partner ─────────────
@@ -556,6 +571,135 @@ class WhatsAppOTPService
         }
     }
 
+    /**
+     * إرسال قالب acadmy للمتدربين/المحاضرين عبر w-hub.4ja.ai
+     * BODY_1 = الاسم، BODY_2 = النص، FILE_URL = صورة الهيدر
+     */
+    private function executeAcademyRequest(string $phone, array $params): bool
+    {
+        $url = (string) config('services.whatsapp_academy.url', '');
+        $token = (string) config('services.whatsapp_academy.token', '');
+        $template = (string) config('services.whatsapp_academy.template', 'acadmy');
+        $namespace = (string) config('services.whatsapp_academy.namespace', '');
+        $lang = (string) config('services.whatsapp_academy.language', 'ar');
+
+        if ($url === '' || $token === '' || $namespace === '') {
+            Log::warning('[WHATSAPP] academy hub not configured (WHATSAPP_ACADEMY_*)');
+
+            return false;
+        }
+
+        $cleanPhone = preg_replace('/[^0-9]/', '', trim($phone));
+        $knownCodes = ['971', '966', '965', '968', '974', '973', '970', '962', '963', '961', '20'];
+        $hasCode = false;
+        foreach ($knownCodes as $code) {
+            if (str_starts_with($cleanPhone, $code)) {
+                $hasCode = true;
+                break;
+            }
+        }
+        if (! $hasCode) {
+            $cleanPhone = '20'.ltrim($cleanPhone, '0');
+        }
+
+        if (strlen($cleanPhone) < 10 || strlen($cleanPhone) > 15) {
+            Log::warning('[WHATSAPP] رقم غير صالح (academy)', [
+                'original' => $phone,
+                'cleaned' => $cleanPhone,
+            ]);
+            $this->logWhatsAppMessage($cleanPhone, $template, $params, 'invalid_phone', null, 'رقم الهاتف غير صالح');
+
+            return false;
+        }
+
+        Log::info('[WHATSAPP] إرسال (academy)', [
+            'phone' => $cleanPhone,
+            'template' => $template,
+            'user_id' => Auth::id() ?? 'غير مسجل',
+        ]);
+
+        try {
+            $messageRecord = $this->logWhatsAppMessage(
+                $cleanPhone,
+                $template,
+                $params,
+                'pending',
+                null,
+                $this->generateMessagePreview($params, $template)
+            );
+        } catch (\Exception $e) {
+            Log::error('[WHATSAPP] فشل إنشاء سجل الرسالة (academy)', ['error' => $e->getMessage()]);
+            $messageRecord = null;
+        }
+
+        $payload = [
+            'phone' => $cleanPhone,
+            'template' => $template,
+            'language' => [
+                'policy' => 'deterministic',
+                'code' => $lang,
+            ],
+            'namespace' => $namespace,
+            'params' => $params,
+        ];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'Authorization' => 'Bearer '.$token,
+                    'Content-Type' => 'application/json',
+                    'accept' => 'application/json',
+                ])
+                ->timeout(30)
+                ->post($url, $payload);
+
+            $responseData = json_decode($response->body(), true) ?? [];
+
+            Log::info('[WHATSAPP] رد API (academy)', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'phone' => $cleanPhone,
+                'template' => $template,
+            ]);
+
+            $sent = ($responseData['sent'] ?? false) === true
+                || ($responseData['status'] ?? null) === true
+                || ($responseData['success'] ?? false) === true
+                || $response->successful();
+
+            // Prefer explicit failure flags when present.
+            if (isset($responseData['sent']) && $responseData['sent'] !== true) {
+                $sent = false;
+            }
+
+            if ($sent && $response->successful()) {
+                $messageRecord?->update([
+                    'status' => 'sent',
+                    'message_id' => $responseData['id'] ?? ($responseData['message_id'] ?? null),
+                ]);
+
+                return true;
+            }
+
+            $errorMsg = $responseData['error']
+                ?? $responseData['message']
+                ?? $response->body()
+                ?? 'فشل غير معروف';
+            $messageRecord?->update(['status' => 'failed', 'error_message' => is_string($errorMsg) ? $errorMsg : json_encode($errorMsg)]);
+
+            return false;
+        } catch (\Exception $e) {
+            Log::error('[WHATSAPP] استثناء (academy)', [
+                'message' => $e->getMessage(),
+                'phone' => $cleanPhone,
+                'template' => $template,
+            ]);
+            $messageRecord?->update(['status' => 'failed', 'error_message' => $e->getMessage()]);
+
+            return false;
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────
     private function sanitizeTrabarText(string $text, int $maxLength = 900): string
     {
@@ -612,7 +756,7 @@ class WhatsAppOTPService
 
     private function generateMessagePreview($params, $template): string
     {
-        if ($template === 'trabar') {
+        if (in_array($template, ['trabar', 'acadmy'], true)) {
             $bodyParams = [];
             foreach ($params as $component) {
                 if (($component['type'] ?? null) === 'body') {
@@ -622,7 +766,7 @@ class WhatsAppOTPService
             }
             $name = $bodyParams[0]['text'] ?? 'غير معروف';
             $text = $bodyParams[1]['text'] ?? 'غير معروف';
-            return "trabar: {$name} — {$text}";
+            return "{$template}: {$name} — {$text}";
         }
 
         if (in_array($template, ['general_notices_ar', 'general_notices_en'])) {
