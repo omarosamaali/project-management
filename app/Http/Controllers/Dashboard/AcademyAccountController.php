@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\WhatsAppOTPService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -103,7 +104,7 @@ class AcademyAccountController extends Controller
         $search = trim((string) $request->input('search', ''));
 
         $users = User::where('role', $role)
-            ->when($role === 'trainer', fn ($q) => $q->with('courseCategory'))
+            ->when($role === 'trainer', fn ($q) => $q->with('courseCategory')->withCount('trainedCourses'))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', '%' . $search . '%')
@@ -264,10 +265,29 @@ class AcademyAccountController extends Controller
         $role = $this->routeRole();
         $meta = $this->meta($role);
         $account = $this->findAccount($role, $user);
-        $account->delete();
+
+        $deletedCoursesCount = 0;
+        DB::transaction(function () use ($account, $role, &$deletedCoursesCount) {
+            if ($role === 'trainer') {
+                $deletedCoursesCount = Course::query()
+                    ->where('trainer_id', $account->id)
+                    ->count();
+
+                Course::query()
+                    ->where('trainer_id', $account->id)
+                    ->delete();
+            }
+
+            $account->delete();
+        });
+
+        $successMessage = __('messages.account_deleted_successfully');
+        if ($role === 'trainer' && $deletedCoursesCount > 0) {
+            $successMessage .= ' — ' . __('messages.deleted_related_courses_count', ['count' => $deletedCoursesCount]);
+        }
 
         return redirect()
             ->route($meta['route'] . '.index')
-            ->with('success', __('messages.account_deleted_successfully'));
+            ->with('success', $successMessage);
     }
 }

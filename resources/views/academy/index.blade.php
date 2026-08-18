@@ -141,8 +141,12 @@
         </div>
         <div class="snap-slider-wrap {{ $trainers->count() > 1 ? '' : 'is-nav-hidden' }}"
             data-snap-slider-wrap
-            data-autoplay="{{ $trainers->count() > 4 ? '1' : '0' }}"
-            data-fixed-slide="210">
+            data-autoplay="{{ $trainers->count() > 5 ? '1' : '0' }}"
+            data-fixed-slide="236"
+            data-min-slide="236"
+            data-max-per-view="5"
+            data-desktop-reserve-slots="5"
+            data-lock-slide-width="1">
             <button type="button" class="snap-nav prev" data-snap-prev aria-label="{{ __('messages.academy_prev') }}"><i class="fas fa-chevron-{{ $locale === 'ar' ? 'right' : 'left' }}"></i></button>
             <button type="button" class="snap-nav next" data-snap-next aria-label="{{ __('messages.academy_next') }}"><i class="fas fa-chevron-{{ $locale === 'ar' ? 'left' : 'right' }}"></i></button>
             <div class="snap-slider-viewport">

@@ -12,6 +12,8 @@
         const naturalSlides = wrap.getAttribute('data-natural-slides') === '1';
         const maxPerView = Math.max(1, parseInt(wrap.getAttribute('data-max-per-view') || '0', 10) || 0);
         const reserveSlots = Math.max(0, parseInt(wrap.getAttribute('data-reserve-slots') || '0', 10) || 0);
+        const desktopReserveSlots = Math.max(0, parseInt(wrap.getAttribute('data-desktop-reserve-slots') || '0', 10) || 0);
+        const lockSlideWidth = wrap.getAttribute('data-lock-slide-width') === '1';
         let animating = false;
         let index = 0;
 
@@ -109,12 +111,27 @@
                 return { perView: slots, step: slideW + gapVal, count: list.length, natural: false, gap: gapVal };
             }
 
+            // Desktop exact-fill mode (no partial next card): used by trainers section.
+            if (desktopReserveSlots > 0 && window.matchMedia('(min-width: 1024px)').matches) {
+                const maxFit = Math.max(1, Math.floor((vw + gapVal) / (minSlide + gapVal)));
+                const slots = Math.min(desktopReserveSlots, maxFit, Math.max(1, list.length));
+                const slideW = fillWidth(slots);
+                list.forEach((el) => {
+                    el.style.flex = `0 0 ${slideW}px`;
+                    el.style.width = `${slideW}px`;
+                    el.style.minWidth = `${slideW}px`;
+                    el.style.maxWidth = `${slideW}px`;
+                });
+                return { perView: slots, step: slideW + gapVal, count: list.length, natural: false, gap: gapVal };
+            }
+
             const baseW = fixedSlide > 0 ? Math.min(fixedSlide, maxSlide) : Math.min(minSlide, maxSlide);
             let perView = Math.max(1, Math.floor((vw + gapVal) / (baseW + gapVal)));
             if (maxPerView > 0) perView = Math.min(perView, maxPerView);
             perView = Math.min(perView, list.length);
 
-            const slideW = fillWidth(perView);
+            // Keep a constant card width/gap when requested (used by trainers slider).
+            const slideW = lockSlideWidth ? baseW : fillWidth(perView);
             list.forEach((el) => {
                 el.style.flex = `0 0 ${slideW}px`;
                 el.style.width = `${slideW}px`;

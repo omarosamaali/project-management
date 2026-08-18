@@ -44,5 +44,11 @@ class DatabaseSeeder extends Seeder
             WorkTimeSeeder::class,
             AcademySeeder::class,
         ]);
+
+        if (app()->environment('local')) {
+            $this->call([
+                LocalTrainerSeeder::class,
+            ]);
+        }
     }
 }

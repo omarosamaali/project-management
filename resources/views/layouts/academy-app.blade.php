@@ -522,6 +522,8 @@
     @endforeach
 </nav>
 
+@include('partials.custom-dialogs')
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <style>
     .academy-shell .swal2-popup {

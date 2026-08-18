@@ -126,7 +126,9 @@
                                 </a>
                                 <form action="{{ route($meta['route'] . '.destroy', $account) }}" method="POST"
                                     class="inline js-delete-form"
-                                    data-delete-name="{{ $account->name }}">
+                                    data-delete-name="{{ $account->name }}"
+                                    data-delete-courses="{{ $meta['role'] === 'trainer' ? (int) ($account->trained_courses_count ?? 0) : 0 }}"
+                                    data-delete-role="{{ $meta['role'] }}">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
@@ -187,9 +189,17 @@
                 e.preventDefault();
                 activeForm = form;
                 const name = form.dataset.deleteName || '';
-                text.textContent = name
+                const role = form.dataset.deleteRole || '';
+                const coursesCount = parseInt(form.dataset.deleteCourses || '0', 10) || 0;
+                let msg = name
                     ? `{{ __('messages.confirm_delete') }}: ${name}`
                     : `{{ __('messages.confirm_delete') }}`;
+
+                if (role === 'trainer' && coursesCount > 0) {
+                    msg += `\n{{ __('messages.deleted_related_courses_count', ['count' => '__COUNT__']) }}`.replace('__COUNT__', coursesCount);
+                }
+
+                text.textContent = msg;
                 modal.classList.remove('hidden');
                 modal.setAttribute('aria-hidden', 'false');
             });

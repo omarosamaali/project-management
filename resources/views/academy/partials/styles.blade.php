@@ -637,7 +637,7 @@
 
     /* Trainers — modern simple portrait cards */
     .trainer-card {
-        width: 210px; min-width: 210px; max-width: 210px;
+        width: 236px; min-width: 236px; max-width: 236px;
         display: flex; flex-direction: column;
         background: #fff;
         border: 1px solid var(--line);
@@ -649,10 +649,14 @@
     }
     @media (max-width: 480px) {
         .trainer-card {
-            width: min(190px, calc(100vw - 5.5rem));
-            min-width: min(190px, calc(100vw - 5.5rem));
-            max-width: min(190px, calc(100vw - 5.5rem));
+            width: min(204px, calc(100vw - 5.5rem));
+            min-width: min(204px, calc(100vw - 5.5rem));
+            max-width: min(204px, calc(100vw - 5.5rem));
         }
+    }
+    /* Keep trainers tighter than the generic slider spacing */
+    #trainers .snap-slider {
+        gap: .72rem;
     }
     .trainer-card:hover {
         transform: translateY(-6px);
