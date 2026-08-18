@@ -656,7 +656,15 @@
     }
     /* Keep trainers tighter than the generic slider spacing */
     #trainers .snap-slider {
-        gap: .72rem;
+        gap: .55rem;
+    }
+    @media (min-width: 1024px) {
+        /* Desktop exact-fill slots: card should fill its slide (no inner whitespace). */
+        #trainers .snap-slide .trainer-card {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+        }
     }
     .trainer-card:hover {
         transform: translateY(-6px);
