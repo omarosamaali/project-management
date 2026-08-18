@@ -32,25 +32,34 @@
                 <p class="academy-kicker">{{ $trainer->academy_category_label ?: __('messages.academy_trainer_fallback') }}</p>
                 <h1 class="trainer-profile-name display">{{ $trainer->name }}</h1>
 
-                <div class="trainer-profile-stats">
-                    <div class="trainer-stat">
-                        <i class="fas fa-chalkboard-teacher"></i>
-                        <span>{{ trans_choice('messages.academy_trainer_courses_count', $coursesCount, ['count' => $coursesCount]) }}</span>
-                    </div>
-                    <div class="trainer-stat">
-                        <i class="fas fa-users"></i>
-                        <span>{{ trans_choice('messages.academy_trainer_learners_count', $learnersCount, ['count' => number_format($learnersCount)]) }}</span>
-                    </div>
-                    <div class="trainer-stat">
-                        <i class="fas fa-star"></i>
-                        <span>{{ number_format($trScore, 1) }} / 5</span>
-                    </div>
-                </div>
+                <div class="trainer-profile-highlight">
+                    <div class="trainer-profile-highlight-main">
+                        <div class="trainer-profile-stats">
+                            <div class="trainer-stat">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span>{{ trans_choice('messages.academy_trainer_courses_count', $coursesCount, ['count' => $coursesCount]) }}</span>
+                            </div>
+                            <div class="trainer-stat">
+                                <i class="fas fa-users"></i>
+                                <span>{{ trans_choice('messages.academy_trainer_learners_count', $learnersCount, ['count' => number_format($learnersCount)]) }}</span>
+                            </div>
+                            <div class="trainer-stat">
+                                <i class="fas fa-star"></i>
+                                <span>{{ number_format($trScore, 1) }} / 5</span>
+                            </div>
+                        </div>
 
-                <div class="trainer-profile-stars" aria-hidden="true">
-                    @for($i = 1; $i <= 5; $i++)
-                    <i class="fas fa-star" style="{{ $i <= round($trScore) ? '' : 'opacity:.28' }}"></i>
-                    @endfor
+                        <div class="trainer-profile-stars" aria-hidden="true">
+                            @for($i = 1; $i <= 5; $i++)
+                            <i class="fas fa-star" style="{{ $i <= round($trScore) ? '' : 'opacity:.28' }}"></i>
+                            @endfor
+                        </div>
+                    </div>
+
+                    <button type="button" class="trainer-bio-btn" data-trainer-bio-open>
+                        <i class="fas fa-quote-right" aria-hidden="true"></i>
+                        {{ __('messages.academy_trainer_view_bio') }}
+                    </button>
                 </div>
 
                 @if($skills->isNotEmpty())
@@ -101,4 +110,49 @@
         @endif
     </section>
 </div>
+
+<div id="trainer-bio-modal" class="trainer-bio-modal" hidden>
+    <div class="trainer-bio-modal-backdrop" data-trainer-bio-close></div>
+    <div class="trainer-bio-modal-card" role="dialog" aria-modal="true" aria-labelledby="trainer-bio-title">
+        <button type="button" class="trainer-bio-modal-close" data-trainer-bio-close aria-label="{{ __('messages.cancel') }}">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="trainer-bio-modal-head">
+            <img src="{{ $trainer->avatarUrl() }}" alt="{{ $trainer->name }}"
+                onerror="this.src='{{ asset('assets/images/logo.webp') }}'">
+            <div>
+                <p class="kicker">{{ $trainer->academy_category_label ?: __('messages.academy_trainer_fallback') }}</p>
+                <h2 id="trainer-bio-title" class="display">{{ __('messages.academy_trainer_bio_title', ['name' => $trainer->name]) }}</h2>
+            </div>
+        </div>
+        @if(filled($trainer->trainer_bio))
+        <p class="trainer-bio-modal-body">{{ $trainer->trainer_bio }}</p>
+        @else
+        <p class="trainer-bio-modal-body is-empty">{{ __('messages.academy_trainer_bio_empty') }}</p>
+        @endif
+    </div>
+</div>
+
+<script>
+(function () {
+    var modal = document.getElementById('trainer-bio-modal');
+    if (!modal) return;
+    var openBtn = document.querySelector('[data-trainer-bio-open]');
+    function openModal() {
+        modal.hidden = false;
+        document.body.classList.add('overflow-hidden');
+    }
+    function closeModal() {
+        modal.hidden = true;
+        document.body.classList.remove('overflow-hidden');
+    }
+    if (openBtn) openBtn.addEventListener('click', openModal);
+    modal.querySelectorAll('[data-trainer-bio-close]').forEach(function (el) {
+        el.addEventListener('click', closeModal);
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+})();
+</script>
 @endsection

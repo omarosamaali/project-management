@@ -798,6 +798,93 @@
         color: var(--muted); font-size: .95rem; line-height: 1.7; margin: 0 0 1.15rem;
         max-width: 42rem;
     }
+    .trainer-profile-highlight {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: .85rem 1.25rem; flex-wrap: wrap;
+        margin-bottom: .35rem;
+    }
+    .trainer-profile-highlight-main { min-width: 0; flex: 1 1 16rem; }
+    .trainer-bio-btn {
+        display: inline-flex; align-items: center; gap: .5rem;
+        flex: 0 0 auto; align-self: center;
+        padding: .72rem 1.15rem; border-radius: 999px; border: 0;
+        background: linear-gradient(135deg, #fff, #fff5f8);
+        color: var(--action-deep); font-weight: 800; font-size: .86rem;
+        cursor: pointer; font-family: inherit;
+        box-shadow: 0 0 0 1.5px rgba(255,61,122,.28), 0 10px 22px rgba(255,61,122,.14);
+        transition: transform .2s ease, box-shadow .2s ease, filter .2s;
+    }
+    .trainer-bio-btn i {
+        width: 1.7rem; height: 1.7rem; border-radius: 999px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, var(--action), var(--accent-purple));
+        color: #fff; font-size: .72rem;
+    }
+    .trainer-bio-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.03);
+        box-shadow: 0 0 0 1.5px rgba(255,61,122,.4), 0 14px 28px rgba(255,61,122,.2);
+    }
+    .trainer-bio-modal {
+        position: fixed; inset: 0; z-index: 80;
+        display: flex; align-items: center; justify-content: center;
+        padding: 1.25rem; box-sizing: border-box;
+    }
+    .trainer-bio-modal[hidden] { display: none !important; }
+    .trainer-bio-modal-backdrop {
+        position: absolute; inset: 0;
+        background: rgba(6,21,37,.55);
+        backdrop-filter: blur(8px);
+    }
+    .trainer-bio-modal-card {
+        position: relative; z-index: 1;
+        width: min(34rem, 100%);
+        max-height: min(86vh, 40rem);
+        overflow: auto;
+        background:
+            radial-gradient(420px 180px at 100% 0%, rgba(255,61,122,.12), transparent 55%),
+            radial-gradient(380px 160px at 0% 100%, rgba(139,92,246,.12), transparent 50%),
+            #fff;
+        border: 1px solid rgba(212,224,236,.9);
+        border-radius: 1.6rem;
+        box-shadow: 0 28px 60px rgba(6,21,37,.28);
+        padding: 1.35rem 1.35rem 1.5rem;
+    }
+    .trainer-bio-modal-close {
+        position: absolute; top: .85rem; inset-inline-end: .85rem;
+        width: 2.15rem; height: 2.15rem; border-radius: 999px; border: 0;
+        background: #f3f7fb; color: var(--ink); cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: background .15s, transform .15s;
+    }
+    .trainer-bio-modal-close:hover { background: #e8eef5; transform: scale(1.05); }
+    .trainer-bio-modal-head {
+        display: flex; align-items: center; gap: .85rem;
+        padding-inline-end: 2.2rem; margin-bottom: 1.1rem;
+    }
+    .trainer-bio-modal-head img {
+        width: 3.6rem; height: 3.6rem; border-radius: 1.05rem; object-fit: cover;
+        border: 2px solid #fff; box-shadow: 0 8px 18px rgba(6,21,37,.14);
+        background: #e8eef5; flex-shrink: 0;
+    }
+    .trainer-bio-modal-head .kicker {
+        margin: 0 0 .2rem; color: var(--action); font-size: .72rem; font-weight: 800;
+    }
+    .trainer-bio-modal-head h2 {
+        margin: 0; font-size: 1.15rem; font-weight: 800; color: var(--ink);
+        font-family: var(--display); line-height: 1.35;
+    }
+    .trainer-bio-modal-body {
+        color: var(--ink-soft); font-size: .95rem; line-height: 1.85;
+        white-space: pre-line; margin: 0;
+        padding: 1rem 1.05rem;
+        background: rgba(243,247,251,.8);
+        border: 1px solid var(--line);
+        border-radius: 1.15rem;
+    }
+    .trainer-bio-modal-body.is-empty {
+        color: var(--muted); font-weight: 600; text-align: center;
+    }
     .academy-empty {
         text-align: center; padding: 3rem 1.25rem;
         background: #fff; border: 1px dashed var(--line); border-radius: 1.25rem;
