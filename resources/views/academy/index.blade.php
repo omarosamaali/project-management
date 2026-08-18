@@ -137,7 +137,6 @@
                 <p class="academy-kicker">{{ __('messages.academy_trainers_kicker') }}</p>
                 <h2 class="academy-h2 display">{{ __('messages.academy_trainers_title') }}</h2>
             </div>
-            <p class="academy-sub">{{ __('messages.academy_trainers_sub') }}</p>
         </div>
         <div class="snap-slider-wrap {{ $trainers->count() > 1 ? '' : 'is-nav-hidden' }}"
             data-snap-slider-wrap
