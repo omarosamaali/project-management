@@ -27,7 +27,7 @@ class AuthenticatedSessionController extends Controller
      */ 
     public function store(LoginRequest $request): RedirectResponse
     {
-        AuthUi::resolve($request->input('ui', $request->query('ui')));
+        $authUi = AuthUi::resolve($request->input('ui', $request->query('ui')));
 
         $request->authenticate();
 
@@ -79,6 +79,12 @@ class AuthenticatedSessionController extends Controller
             return redirect()
                 ->route('otp.verify')
                 ->with('success', 'أدخل رمز التحقق المرسل إلى بريدك الإلكتروني لتفعيل الحساب.');
+        }
+
+        // Admin login from academy form:
+        // keep session intact and send directly to dashboard (avoid system/index flow on academy domain).
+        if ($authUi === AuthUi::ACADEMY && $user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
+            return redirect()->intended(route('dashboard'));
         }
 
         $redirect = $request->input('redirect') ?: $request->query('redirect');
