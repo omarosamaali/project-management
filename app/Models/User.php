@@ -13,6 +13,8 @@ use App\Models\WorkTime;
 use App\Models\Salary;
 use App\Models\EmployeeAdjustment;
 use App\Support\SystemManager;
+use App\Support\AuthUi;
+use App\Support\AppDomains;
 
 class User extends Authenticatable
 {
@@ -23,6 +25,7 @@ class User extends Authenticatable
         'id_card_front_path',
         'id_card_back_path',
         'terms_accepted_at',
+        'academy_access_at',
         'verification_video',
         'name',
         'account_type',
@@ -139,6 +142,7 @@ class User extends Authenticatable
             'hiring_date' => 'date',
             'note_date' => 'date',
             'expires_at' => 'datetime',
+            'academy_access_at' => 'datetime',
         ];
     }
 
@@ -355,10 +359,32 @@ class User extends Authenticatable
         return $this->isTrainee() && is_null($this->email_verified_at);
     }
 
+    /** Whether this user has unlocked academy learner access (OG clients after first academy login). */
+    public function hasAcademyAccess(): bool
+    {
+        return $this->isClient() && $this->academy_access_at !== null;
+    }
+
+    /** True when the current request/session is in the academy UI or domain. */
+    public function inAcademyContext(): bool
+    {
+        return AuthUi::isAcademy() || AppDomains::isAcademyRequest();
+    }
+
+    /** Trainee role or OG client with academy access — for learner UI in academy. */
+    public function actsAsAcademyTrainee(): bool
+    {
+        return $this->isTrainee() || $this->hasAcademyAccess();
+    }
+
     /** Modern academy shell (top/bottom nav) instead of main admin dashboard chrome. */
     public function usesAcademyShell(): bool
     {
-        return $this->isTrainer() || $this->isTrainee();
+        if ($this->isTrainer() || $this->isTrainee()) {
+            return true;
+        }
+
+        return $this->hasAcademyAccess() && $this->inAcademyContext();
     }
 
     /**
@@ -366,7 +392,11 @@ class User extends Authenticatable
      */
     public function publicHomeRoute(): string
     {
-        return $this->isTrainee() ? 'academy.index' : 'system.index';
+        if ($this->isTrainee() || ($this->hasAcademyAccess() && $this->inAcademyContext())) {
+            return 'academy.index';
+        }
+
+        return 'system.index';
     }
 
     public function isClient(): bool
@@ -377,7 +407,11 @@ class User extends Authenticatable
     /** Can enroll in / take courses (learner path). */
     public function canLearnCourses(): bool
     {
-        return in_array($this->role, ['admin', 'trainee', 'trainer'], true);
+        if (in_array($this->role, ['admin', 'trainee', 'trainer'], true)) {
+            return true;
+        }
+
+        return $this->hasAcademyAccess() && $this->inAcademyContext();
     }
 
     /** Can manage courses (create/edit/attendance/exams). */

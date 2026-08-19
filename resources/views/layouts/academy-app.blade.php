@@ -389,7 +389,7 @@
     /** @var \App\Models\User $acUser */
     $acUser = Auth::user();
     $isTrainer = $acUser->isTrainer();
-    $isTrainee = $acUser->isTrainee();
+    $isTrainee = $acUser->actsAsAcademyTrainee();
 
     $navItems = [];
     $navItems[] = [
@@ -572,41 +572,7 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 });
 </script>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Auto-submit all GET search forms after 500ms from last interaction.
-    const forms = document.querySelectorAll('form[method="GET"], form[method="get"]');
-
-    forms.forEach((form) => {
-        const searchInput = form.querySelector('input[name="search"], input[type="search"][name]');
-        if (!searchInput || form.dataset.noAutosearch === '1') return;
-
-        let timer = null;
-        let touched = false;
-        let lastValue = searchInput.value;
-
-        const triggerSubmit = () => {
-            if (!touched) return;
-            const currentValue = searchInput.value;
-            if (currentValue === lastValue) return;
-            lastValue = currentValue;
-            form.submit();
-        };
-
-        const scheduleSubmit = () => {
-            touched = true;
-            if (timer) clearTimeout(timer);
-            timer = setTimeout(triggerSubmit, 500);
-        };
-
-        searchInput.addEventListener('input', scheduleSubmit);
-        searchInput.addEventListener('change', scheduleSubmit);
-        form.querySelectorAll('button, [role="button"], a').forEach((el) => {
-            el.addEventListener('click', scheduleSubmit);
-        });
-    });
-});
-</script>
+@include('partials.auto-search-forms')
 <script>
 @auth
 @if(auth()->user()->role !== 'admin')

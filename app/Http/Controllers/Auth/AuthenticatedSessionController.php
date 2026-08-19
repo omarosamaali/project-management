@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Support\AuthUi;
+use App\Support\AppDomains;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
@@ -56,6 +57,12 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        $isAcademyLogin = $authUi === AuthUi::ACADEMY || AppDomains::isAcademyRequest($request);
+
+        if ($isAcademyLogin && $user->isClient() && is_null($user->academy_access_at)) {
+            $user->forceFill(['academy_access_at' => now()])->save();
+        }
+
         if ($user && method_exists($user, 'needsEmailOtpVerification') && $user->needsEmailOtpVerification()) {
             try {
                 if (empty($user->otp)) {
@@ -102,6 +109,14 @@ class AuthenticatedSessionController extends Controller
 
         if ($user && method_exists($user, 'isTrainer') && $user->isTrainer()) {
             return redirect()->intended(route('academy.index'));
+        }
+
+        if ($isAcademyLogin && $user && $user->isClient()) {
+            return redirect()->intended(route('academy.index'));
+        }
+
+        if ($user && $user->isClient()) {
+            return redirect()->intended(route('dashboard'));
         }
 
         return redirect()->intended(route('system.index'));
