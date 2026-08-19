@@ -7,7 +7,7 @@
 <section class="!pl-0 p-3 sm:p-5">
     <x-breadcrumb first="الرئيسية" link="{{ route('dashboard.clients.index') }}" second="العملاء" />
     <div class="mx-auto w-full">
-        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-visible">
             <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
                 <div class="w-full md:w-1/2">
                     <form action="{{ route('dashboard.clients.index') }}" method="GET" class="flex items-center">
@@ -45,7 +45,7 @@
                     </a>
                 </div>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto overflow-y-visible pb-16 min-h-[220px]">
                 @if(session('success'))
                 <div class="mx-4 p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 border border-green-200"
                     role="alert">

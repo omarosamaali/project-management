@@ -6,7 +6,7 @@
 <section class="!pl-0 p-3 sm:p-5">
     <x-breadcrumb first="{{ __('messages.home') }}" link="{{ route($meta['route'] . '.index') }}" second="{{ $meta['title'] }}" />
     <div class="mx-auto w-full">
-        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-visible">
             <div class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0 md:space-x-4 p-4">
                 <div class="w-full md:w-1/2">
                     <form action="{{ route($meta['route'] . '.index') }}" method="GET" class="flex items-center">
@@ -36,7 +36,7 @@
             </div>
             @endif
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto overflow-y-visible pb-16 min-h-[220px]">
                 <table class="w-full text-sm text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
