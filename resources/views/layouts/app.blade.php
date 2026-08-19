@@ -848,7 +848,7 @@
                 const scheduleSubmit = () => {
                     touched = true;
                     if (timer) clearTimeout(timer);
-                    timer = setTimeout(triggerSubmit, 3000);
+                    timer = setTimeout(triggerSubmit, 1500);
                 };
 
                 searchInput.addEventListener('input', scheduleSubmit);
