@@ -866,7 +866,7 @@
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Auto-submit all GET search forms after 3 seconds from last interaction.
+            // Auto-submit all GET search forms after 500ms from last interaction.
             const forms = document.querySelectorAll('form[method="GET"], form[method="get"]');
 
             forms.forEach((form) => {
@@ -888,7 +888,7 @@
                 const scheduleSubmit = () => {
                     touched = true;
                     if (timer) clearTimeout(timer);
-                    timer = setTimeout(triggerSubmit, 1500);
+                    timer = setTimeout(triggerSubmit, 500);
                 };
 
                 searchInput.addEventListener('input', scheduleSubmit);
