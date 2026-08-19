@@ -102,13 +102,14 @@ class AcademyAccountController extends Controller
         $role = $this->routeRole();
         $meta = $this->meta($role);
         $search = trim((string) $request->input('search', ''));
+        $normalizedSearch = mb_strtolower($search);
 
         $users = User::where('role', $role)
             ->when($role === 'trainer', fn ($q) => $q->with('courseCategory')->withCount('trainedCourses'))
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('email', 'like', '%' . $search . '%')
+            ->when($search !== '', function ($query) use ($search, $normalizedSearch) {
+                $query->where(function ($q) use ($search, $normalizedSearch) {
+                    $q->whereRaw('LOWER(name) like ?', ['%' . $normalizedSearch . '%'])
+                        ->orWhereRaw('LOWER(email) like ?', ['%' . $normalizedSearch . '%'])
                         ->orWhere('phone', 'like', '%' . $search . '%');
                 });
             })

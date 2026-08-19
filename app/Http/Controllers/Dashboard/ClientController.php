@@ -14,12 +14,13 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search', ''));
+        $normalizedSearch = mb_strtolower($search);
         $clients = User::where('role', 'client')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                        ->orWhere('company_name', 'like', '%' . $search . '%')
-                        ->orWhere('email', 'like', '%' . $search . '%');
+            ->when($search !== '', function ($query) use ($search, $normalizedSearch) {
+                $query->where(function ($q) use ($search, $normalizedSearch) {
+                    $q->whereRaw('LOWER(name) like ?', ['%' . $normalizedSearch . '%'])
+                        ->orWhereRaw('LOWER(company_name) like ?', ['%' . $normalizedSearch . '%'])
+                        ->orWhereRaw('LOWER(email) like ?', ['%' . $normalizedSearch . '%']);
                 });
             })
             ->latest()

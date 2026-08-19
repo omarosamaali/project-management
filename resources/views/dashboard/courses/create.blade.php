@@ -346,9 +346,9 @@
                                         الحد الأقصى لعدد المشتركين في الدورة <span class="text-red-600">*</span>
                                     </label>
                                     <input type="number" name="counter" required min="0" step="1"
-                                        value="{{ old('counter', 0) }}"
+                                        value="{{ old('counter', 50) }}"
                                         class="placeholder-gray-400 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="0">
+                                        placeholder="50">
                                     @error('counter')
                                     <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
                                     @enderror

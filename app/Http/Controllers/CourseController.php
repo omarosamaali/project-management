@@ -253,6 +253,10 @@ class CourseController extends Controller
     {
         $this->authorizeCourseManageList();
 
+        if (! $request->filled('counter')) {
+            $request->merge(['counter' => 50]);
+        }
+
         $data = $this->validateCourse($request);
         $this->prepareJsonFields($request, $data);
         $data['trainer_id'] = $this->resolveTrainerId($request);
