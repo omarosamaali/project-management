@@ -279,6 +279,11 @@ class CourseController extends Controller
             );
         }
 
+        $activationError = $this->activationReadinessError($data);
+        if ($activationError) {
+            return back()->withErrors(['status' => $activationError])->withInput();
+        }
+
         $course = DB::transaction(function () use ($data, $request) {
             $course = Course::create($data);
             $this->syncDayExams($course, $request);
@@ -293,6 +298,70 @@ class CourseController extends Controller
         return redirect()->route('dashboard.courses.index')
             ->with('success', 'تم إضافة الدورة بنجاح.')
             ->with('clear_course_create_draft', true);
+    }
+
+    /**
+     * Validate that a course has all required data before it can be set active.
+     * Returns an error message string, or null if activation is allowed.
+     */
+    protected function activationReadinessError(array $data, ?Course $course = null): ?string
+    {
+        if (($data['status'] ?? null) !== 'active') {
+            return null;
+        }
+
+        $locationType = $data['location_type'] ?? ($course?->location_type);
+
+        if ($locationType === 'online') {
+            $hasLink = filled($data['online_link'] ?? $course?->online_link);
+            $hasStart = filled($data['start_date'] ?? $course?->start_date);
+            $hasEnd = filled($data['end_date'] ?? $course?->end_date);
+            if (!$hasLink || !$hasStart || !$hasEnd) {
+                return 'لا يمكن تفعيل الدورة الإلكترونية قبل إدخال رابط الاجتماع وتواريخ الدورة.';
+            }
+        } elseif ($locationType === 'on_site') {
+            $hasVenueName = filled($data['venue_name'] ?? $course?->venue_name);
+            $hasStart = filled($data['start_date'] ?? $course?->start_date);
+            $hasEnd = filled($data['end_date'] ?? $course?->end_date);
+            if (!$hasVenueName || !$hasStart || !$hasEnd) {
+                return 'لا يمكن تفعيل الدورة الحضورية قبل إدخال بيانات الموقع (اسم المكان) وتواريخ الدورة.';
+            }
+        } elseif ($locationType === 'recorded') {
+            // For recorded courses, we need at least 1 unit with 1 lesson and 1 exam.
+            // On create, there's no course yet; the educational path submitted in the request is checked.
+            // On update, load existing units from the course.
+            if ($course !== null) {
+                $course->loadMissing('units.items');
+                $hasLesson = false;
+                $hasExam = false;
+                foreach ($course->units as $unit) {
+                    foreach ($unit->items as $item) {
+                        if ($item->type === 'lesson') $hasLesson = true;
+                        if ($item->type === 'exam') $hasExam = true;
+                    }
+                }
+                if (!$hasLesson || !$hasExam) {
+                    return 'لا يمكن تفعيل الدورة المسجلة قبل إضافة وحدة تحتوي على درس وامتحان واحد على الأقل.';
+                }
+            } else {
+                // On creation, units are submitted via the request (path_units).
+                // Check if at least one lesson and one exam are included.
+                $units = request()->input('path_units', []);
+                $hasLesson = false;
+                $hasExam = false;
+                foreach ($units as $unit) {
+                    foreach ($unit['items'] ?? [] as $item) {
+                        if (($item['type'] ?? '') === 'lesson') $hasLesson = true;
+                        if (($item['type'] ?? '') === 'exam') $hasExam = true;
+                    }
+                }
+                if (!$hasLesson || !$hasExam) {
+                    return 'لا يمكن تفعيل الدورة المسجلة قبل إضافة وحدة تحتوي على درس وامتحان واحد على الأقل.';
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function resolveTrainerId(Request $request, ?Course $course = null): ?int
@@ -437,6 +506,11 @@ class CourseController extends Controller
                 $data['exam_pass_score'],
                 $data['exam_duration_minutes']
             );
+        } else {
+            $activationError = $this->activationReadinessError($data, $course);
+            if ($activationError) {
+                return back()->withErrors(['status' => $activationError])->withInput();
+            }
         }
 
         if ($request->hasFile('main_image')) {

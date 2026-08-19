@@ -67,6 +67,34 @@
 
                 <x-client-company-fields :user="$client" />
 
+                <!-- تحويل الدور -->
+                <div class="border rounded-lg p-5 bg-gray-50">
+                    <h3 class="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-user-tag text-blue-500"></i>
+                        نوع الحساب / الدور
+                    </h3>
+                    <p class="text-xs text-gray-500 mb-4">يمكنك تحويل هذا الحساب إلى متدرب أكاديمية. هذا الإجراء لا يمكن التراجع عنه بسهولة.</p>
+                    <div class="flex gap-4 flex-wrap">
+                        <label class="flex items-center gap-3 p-4 border-2 border-blue-300 bg-white rounded-lg cursor-pointer hover:bg-blue-50 transition flex-1 min-w-[140px]">
+                            <input type="radio" name="role" value="client" {{ old('role', 'client') === 'client' ? 'checked' : '' }} class="w-5 h-5 text-blue-600">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-user text-blue-600"></i>
+                                <span class="font-medium text-blue-700">عميل</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-3 p-4 border-2 border-purple-300 bg-white rounded-lg cursor-pointer hover:bg-purple-50 transition flex-1 min-w-[140px]">
+                            <input type="radio" name="role" value="trainee" {{ old('role') === 'trainee' ? 'checked' : '' }} class="w-5 h-5 text-purple-600">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-user-graduate text-purple-600"></i>
+                                <span class="font-medium text-purple-700">متدرب أكاديمية</span>
+                            </div>
+                        </label>
+                    </div>
+                    @error('role')
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">كلمة
                         المرور:</label>

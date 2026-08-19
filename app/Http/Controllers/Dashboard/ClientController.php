@@ -82,6 +82,7 @@ class ClientController extends Controller
             'password' => 'nullable|string|min:8',
             'phone' => 'nullable|string|max:20',
             'status' => 'required|in:active,inactive',
+            'role' => 'nullable|in:client,trainee',
         ];
 
         $validated = $request->validate(
@@ -89,7 +90,7 @@ class ClientController extends Controller
             ClientCompanyFields::messages()
         );
 
-        $validated['role'] = 'client';
+        $validated['role'] = $validated['role'] ?? 'client';
 
         if (!empty($request->password)) {
             $validated['password'] = Hash::make($validated['password']);

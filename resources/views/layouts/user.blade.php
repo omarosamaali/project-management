@@ -777,11 +777,32 @@
 
         const input = document.querySelector("#phone");
         if(input) {
-            window.intlTelInput(input, {
+            window._phoneIti = window.intlTelInput(input, {
                 loadUtils: () => import("https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.2/build/js/utils.js"),
                 initialCountry: "ae",
                 separateDialCode: true
             });
+
+            // Sync dial code when country select changes
+            (function syncPhoneCodeFromCountry() {
+                const $countrySelect = document.querySelector('#country_select2');
+                if (!$countrySelect) return;
+                $countrySelect.addEventListener('change', function () {
+                    const code = this.value;
+                    if (code && window._phoneIti) {
+                        try { window._phoneIti.setCountry(code.toLowerCase()); } catch(e) {}
+                    }
+                });
+                // Also handle select2's custom change event
+                if (window.jQuery) {
+                    jQuery('#country_select2').on('select2:select', function (e) {
+                        const code = e.params?.data?.id || this.value;
+                        if (code && window._phoneIti) {
+                            try { window._phoneIti.setCountry(code.toLowerCase()); } catch(e) {}
+                        }
+                    });
+                }
+            })();
         }
 
         var scroll = new SmoothScroll('a[href*="#"]', {

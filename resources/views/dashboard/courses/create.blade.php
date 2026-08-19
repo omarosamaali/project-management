@@ -1472,7 +1472,7 @@
                                 <div class="flex gap-4">
                                     <label
                                         class="flex items-center gap-3 p-4 border-2 border-green-300 bg-white rounded-lg cursor-pointer hover:bg-green-50 transition flex-1">
-                                        <input type="radio" name="status" value="active" {{ old('status', 'active'
+                                        <input type="radio" name="status" value="active" {{ old('status', 'inactive'
                                             )=='active' ? 'checked' : '' }} class="w-5 h-5 text-green-600">
                                         <div class="flex items-center gap-2">
                                             <i class="fas fa-check-circle text-green-600"></i>

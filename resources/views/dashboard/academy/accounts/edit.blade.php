@@ -49,6 +49,52 @@
                         @endforeach
                     </select>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.country') }}</label>
+                    <div class="country-select2-host is-classic">
+                        <select id="trainer_country_select2" name="country" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            <option value="">{{ app()->getLocale() === 'ar' ? 'اختر الدولة' : 'Select country' }}</option>
+                        </select>
+                    </div>
+                    @error('country')
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.trainer_linkedin') }}</label>
+                    <input type="url" name="linkedin_url" value="{{ old('linkedin_url', $account->linkedin_url) }}"
+                        placeholder="https://linkedin.com/in/username"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg" dir="ltr">
+                    @error('linkedin_url')
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.become_trainer_teaching_lang') }}</label>
+                    <div class="flex gap-4">
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" name="teaching_language" value="ar" {{ old('teaching_language', $account->teaching_language ?? 'ar') === 'ar' ? 'checked' : '' }}>
+                            {{ __('messages.become_trainer_teaching_lang_ar') }}
+                        </label>
+                        <label class="inline-flex items-center gap-2">
+                            <input type="radio" name="teaching_language" value="en" {{ old('teaching_language', $account->teaching_language) === 'en' ? 'checked' : '' }}>
+                            {{ __('messages.become_trainer_teaching_lang_en') }}
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('messages.trainer_bio_label') }}</label>
+                    <textarea name="trainer_bio" rows="5"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-y"
+                        placeholder="اكتب نبذة تعريفية عن المحاضر...">{{ old('trainer_bio', $account->trainer_bio) }}</textarea>
+                    @error('trainer_bio')
+                    <span class="text-red-600 text-xs mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
                 @endif
 
                 <div>
@@ -82,4 +128,11 @@
         </div>
     </div>
 </section>
+@if($meta['role'] === 'trainer')
+@include('partials.country-select2', [
+    'selector' => '#trainer_country_select2',
+    'oldCountry' => old('country', $account->country ?? ''),
+    'variant' => 'classic',
+])
+@endif
 @endsection

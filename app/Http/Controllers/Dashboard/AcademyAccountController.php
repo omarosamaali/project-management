@@ -215,6 +215,9 @@ class AcademyAccountController extends Controller
 
         if ($role === 'trainer') {
             $rules['course_category_id'] = ['nullable', 'exists:course_categories,id'];
+            $rules['linkedin_url'] = ['nullable', 'url', 'max:500'];
+            $rules['teaching_language'] = ['nullable', 'in:ar,en'];
+            $rules['trainer_bio'] = ['nullable', 'string', 'max:5000'];
         }
 
         $validated = $request->validate($rules);
@@ -230,6 +233,9 @@ class AcademyAccountController extends Controller
 
         if ($role === 'trainer') {
             $payload['course_category_id'] = $validated['course_category_id'] ?? null;
+            $payload['linkedin_url'] = $validated['linkedin_url'] ?? null;
+            $payload['teaching_language'] = $validated['teaching_language'] ?? null;
+            $payload['trainer_bio'] = $validated['trainer_bio'] ?? null;
         }
 
         if (!empty($validated['password'])) {

@@ -360,6 +360,7 @@ return [
     'trainer_sample_max' => 'Teaching sample size must not exceed 300MB.',
     'trainer_sample_required_alert' => 'Please upload a teaching sample video before submitting.',
     'trainer_bio' => 'Tell us about yourself',
+    'trainer_bio_label' => 'Bio',
     'trainer_bio_placeholder' => 'I specialize in… I previously worked with… and I would like to provide…',
     'trainer_bio_hint' => 'Include your specialty, experience, and motivation. Prefer 2–4 lines (at least 120 characters).',
     'trainer_bio_required' => 'A short bio is required.',
