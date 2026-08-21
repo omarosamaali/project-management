@@ -45,6 +45,9 @@ class RegisteredUserController extends Controller
         // Academy registrations are always personal accounts (no client / business flow).
         if ($isAcademy) {
             $request->merge(['account_type' => 'personal']);
+        } else {
+            // Classic OG registration is client-only (trainers/trainees use academy flows).
+            $request->merge(['role' => 'client']);
         }
 
         $isTrainer = $request->input('role') === 'trainer';
@@ -55,7 +58,7 @@ class RegisteredUserController extends Controller
                 : ['required', 'in:personal,business'],
             'role' => $isAcademy
                 ? ['required', 'in:trainer,trainee']
-                : ['required', 'in:client,trainer,trainee'],
+                : ['required', 'in:client'],
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],

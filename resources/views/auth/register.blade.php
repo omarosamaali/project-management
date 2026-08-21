@@ -48,37 +48,7 @@
         </div>
         @endif
 
-        <div>
-            <x-input-label value="نوع العضوية" />
-            <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                @php $selectedRole = old('role', 'client'); @endphp
-                <label class="flex items-start gap-2 p-3 border-2 rounded-lg cursor-pointer transition role-option {{ $selectedRole === 'client' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="role" value="client" class="mt-1 text-black focus:ring-black shrink-0"
-                        {{ $selectedRole === 'client' ? 'checked' : '' }} required>
-                    <span class="min-w-0">
-                        <span class="block font-bold text-gray-800">عميل</span>
-                        <span class="text-xs text-gray-500 leading-snug">للمشاريع والخدمات — بدون الدورات التدريبية</span>
-                    </span>
-                </label>
-                <label class="flex items-start gap-2 p-3 border-2 rounded-lg cursor-pointer transition role-option {{ $selectedRole === 'trainer' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="role" value="trainer" class="mt-1 text-black focus:ring-black shrink-0"
-                        {{ $selectedRole === 'trainer' ? 'checked' : '' }}>
-                    <span class="min-w-0">
-                        <span class="block font-bold text-gray-800">محاضر</span>
-                        <span class="text-xs text-gray-500 leading-snug">إنشاء وإدارة الدورات، والتحضير، والاختبارات</span>
-                    </span>
-                </label>
-                <label class="flex items-start gap-2 p-3 border-2 rounded-lg cursor-pointer transition role-option {{ $selectedRole === 'trainee' ? 'border-black bg-gray-50' : 'border-gray-200' }}">
-                    <input type="radio" name="role" value="trainee" class="mt-1 text-black focus:ring-black shrink-0"
-                        {{ $selectedRole === 'trainee' ? 'checked' : '' }}>
-                    <span class="min-w-0">
-                        <span class="block font-bold text-gray-800">متدرب</span>
-                        <span class="text-xs text-gray-500 leading-snug">الاشتراك في الدورات والاختبارات والشهادات</span>
-                    </span>
-                </label>
-            </div>
-            <x-input-error :messages="$errors->get('role')" class="mt-2" />
-        </div>
+        <input type="hidden" name="role" value="client">
 
         <div>
             <x-input-label :value="__('messages.account_type')" />
@@ -161,77 +131,6 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div id="trainer-fields" class="space-y-5 {{ old('role') === 'trainer' ? '' : 'hidden' }}">
-            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <i class="fas fa-info-circle ml-1"></i>
-                {{ __('messages.trainer_register_notice') }}
-            </div>
-
-            <div>
-                <x-input-label for="course_category_id" :value="__('messages.trainer_category')" />
-                <select id="course_category_id" name="course_category_id" class="block mt-1 w-full">
-                    <option value="">{{ __('messages.trainer_category_placeholder') }}</option>
-                    @foreach(($categories ?? []) as $category)
-                    <option value="{{ $category->id }}" @selected((string) old('course_category_id') === (string) $category->id)>
-                        {{ $category->title(app()->getLocale()) }}
-                    </option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('course_category_id')" class="mt-2" />
-            </div>
-
-            @include('dashboard.course-categories.partials.drag-image-input', [
-                'name' => 'avatar',
-                'label' => __('messages.trainer_avatar'),
-                'hint' => __('messages.trainer_avatar_hint'),
-                'required' => true,
-                'previewRounded' => true,
-            ])
-            <p class="text-xs text-slate-500">{{ __('messages.trainer_avatar_professional_note') }}</p>
-            <div class="mt-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <img src="{{ asset('images/trainer-avatar-example.jpg') }}" alt="{{ __('messages.trainer_avatar_example_alt') }}"
-                    class="w-14 h-14 rounded-full object-cover border border-slate-200 flex-shrink-0">
-                <p class="text-xs text-slate-600 m-0">{{ __('messages.trainer_avatar_professional_note') }}</p>
-            </div>
-
-            <div>
-                <x-input-label for="linkedin_url" :value="__('messages.trainer_linkedin')" />
-                <input id="linkedin_url" type="url" name="linkedin_url" class="block mt-1 w-full" dir="ltr"
-                    value="{{ old('linkedin_url') }}" placeholder="https://www.linkedin.com/in/your-profile">
-                <x-input-error :messages="$errors->get('linkedin_url')" class="mt-2" />
-            </div>
-
-            <div>
-                <x-input-label :value="__('messages.trainer_sample')" />
-                <p class="text-xs text-slate-500 mt-1 mb-1">{{ __('messages.trainer_sample_hint_optional') }}</p>
-                @include('academy.partials.teaching-sample-input', [
-                    'variant' => 'register',
-                    'sampleType' => old('teaching_sample_type', 'upload'),
-                ])
-            </div>
-
-            <div>
-                <x-input-label for="trainer_bio" :value="__('messages.trainer_bio')" />
-                <textarea id="trainer_bio" name="trainer_bio" rows="4" class="block mt-1 w-full"
-                    minlength="120" maxlength="2000">{{ old('trainer_bio') }}</textarea>
-                <x-input-error :messages="$errors->get('trainer_bio')" class="mt-2" />
-            </div>
-
-            <div>
-                <label class="inline-flex items-start gap-2 cursor-pointer">
-                    <input type="checkbox" name="accept_terms" value="1" class="mt-1"
-                        {{ old('accept_terms') ? 'checked' : '' }}>
-                    <span class="text-sm text-gray-700 leading-relaxed">
-                        {{ __('messages.trainer_terms_agree') }}
-                        <button type="button" id="open-trainer-terms" class="text-black font-bold underline underline-offset-2 hover:text-gray-700">
-                            {{ __('messages.trainer_terms_link') }}
-                        </button>
-                    </span>
-                </label>
-                <x-input-error :messages="$errors->get('accept_terms')" class="mt-2" />
-            </div>
-        </div>
-
         <button type="submit" class="w-full bg-black text-white py-4 rounded-lg font-bold text-lg
             hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl">
             {{ __('messages.register_button') }}
@@ -248,27 +147,6 @@
     </div>
     </div>
 </div>
-
-{{-- Terms modal --}}
-<div id="trainer-terms-modal" class="fixed inset-0 z-[80] hidden" aria-hidden="true">
-    <div class="absolute inset-0 bg-black/50" data-close-terms></div>
-    <div class="relative mx-auto my-8 w-[94%] max-w-2xl max-h-[85vh] overflow-hidden rounded-xl bg-white shadow-2xl flex flex-col">
-        <div class="flex items-center justify-between gap-3 border-b px-5 py-4">
-            <h3 class="text-lg font-bold text-gray-900">{{ __('messages.trainer_terms_title') }}</h3>
-            <button type="button" class="text-gray-500 hover:text-gray-800 text-xl leading-none" data-close-terms aria-label="Close">&times;</button>
-        </div>
-        <div class="px-5 py-4 overflow-y-auto text-sm text-gray-700 leading-7 space-y-3">
-            {!! __('messages.trainer_terms_body') !!}
-        </div>
-        <div class="border-t px-5 py-3 flex justify-end">
-            <button type="button" class="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800" data-close-terms>
-                {{ __('messages.close') }}
-            </button>
-        </div>
-    </div>
-</div>
-
-@include('dashboard.course-categories.partials.drag-image-script')
 
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -307,91 +185,6 @@
 
             accountRadios.forEach((radio) => radio.addEventListener('change', syncAccountType));
             syncAccountType();
-
-            const roleRadios = document.querySelectorAll('input[name="role"]');
-            const roleOptions = document.querySelectorAll('.role-option');
-            const trainerFields = document.getElementById('trainer-fields');
-            const categorySelect = document.getElementById('course_category_id');
-            const termsCheckbox = document.querySelector('input[name="accept_terms"]');
-
-            function syncTrainerFields() {
-                const isTrainer = document.querySelector('input[name="role"]:checked')?.value === 'trainer';
-                trainerFields?.classList.toggle('hidden', !isTrainer);
-
-                trainerFields?.querySelectorAll('.drag-image-input').forEach((input) => {
-                    input.disabled = !isTrainer;
-                    input.required = isTrainer;
-                    if (!isTrainer) {
-                        input.value = '';
-                        const field = input.closest('.drag-image-field');
-                        field?.querySelector('.drag-image-preview')?.classList.add('hidden');
-                        field?.querySelector('.drag-image-filename')?.classList.add('hidden');
-                        input.closest('.drag-image-dropzone')?.classList.remove('border-red-500', 'bg-red-50');
-                    }
-                });
-                if (categorySelect) {
-                    categorySelect.disabled = !isTrainer;
-                    categorySelect.required = isTrainer;
-                }
-                if (termsCheckbox) {
-                    termsCheckbox.disabled = !isTrainer;
-                    termsCheckbox.required = isTrainer;
-                }
-            }
-
-            function syncRoleOption() {
-                roleOptions.forEach((label) => {
-                    const radio = label.querySelector('input[type="radio"]');
-                    const selected = radio?.checked;
-                    label.classList.toggle('border-black', selected);
-                    label.classList.toggle('bg-gray-50', selected);
-                    label.classList.toggle('border-gray-200', !selected);
-                });
-                syncTrainerFields();
-            }
-            roleRadios.forEach((radio) => radio.addEventListener('change', syncRoleOption));
-            syncRoleOption();
-
-            const registerForm = document.querySelector('form[action="{{ route('register') }}"]');
-            registerForm?.addEventListener('submit', (e) => {
-                const isTrainer = document.querySelector('input[name="role"]:checked')?.value === 'trainer';
-                if (!isTrainer) return;
-
-                let valid = true;
-                trainerFields?.querySelectorAll('.drag-image-input').forEach((input) => {
-                    const zone = input.closest('.drag-image-dropzone');
-                    const hasFile = input.files && input.files.length > 0;
-                    zone?.classList.toggle('border-red-500', !hasFile);
-                    zone?.classList.toggle('bg-red-50', !hasFile);
-                    zone?.classList.toggle('border-gray-300', hasFile);
-                    if (!hasFile) valid = false;
-                });
-
-                if (!valid) {
-                    e.preventDefault();
-                    trainerFields?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    alert(@json(__('messages.trainer_images_required_alert')));
-                }
-            });
-
-            const termsModal = document.getElementById('trainer-terms-modal');
-            const openTerms = document.getElementById('open-trainer-terms');
-            function setTermsOpen(open) {
-                if (!termsModal) return;
-                termsModal.classList.toggle('hidden', !open);
-                termsModal.setAttribute('aria-hidden', open ? 'false' : 'true');
-                document.body.classList.toggle('overflow-hidden', open);
-            }
-            openTerms?.addEventListener('click', (e) => {
-                e.preventDefault();
-                setTermsOpen(true);
-            });
-            termsModal?.querySelectorAll('[data-close-terms]').forEach((el) => {
-                el.addEventListener('click', () => setTermsOpen(false));
-            });
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') setTermsOpen(false);
-            });
         });
 </script>
 @endsection
